@@ -73,12 +73,59 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.sql.ResultSet;
 
-public class AsciiTableWriter implements TableWriter
+import uk.ac.starlink.table.ColumnInfo;
+import uk.ac.starlink.table.RowListStarTable;
+import uk.ac.starlink.votable.DataFormat;
+import uk.ac.starlink.votable.VOTableWriter;
+
+public class TapTableWriter implements TableWriter
 {
-	public void write( ResultSet rs, OutputStream out )
+	public void write( ResultSet rs, OutputStream output )
+	{
+		throw new UnsupportedOperationException( "Don't know where to get a result set from yet." );
+	}
+	
+	public void write( String message, OutputStream output )
 		throws IOException
 	{
-		// TODO Auto-generated method stub
+	    // Define table.
+		ColumnInfo[] columnInfo = new ColumnInfo[1];
+	    columnInfo[0] = new ColumnInfo( "Message", String.class, "Message text" );
+	    RowListStarTable table = new RowListStarTable( columnInfo );
+	    
+	    // Populate table.
+	    table.addRow( new Object[] { message } );
+	    
+        //  Specify output format as XML, rather than FITS or binary.
+        VOTableWriter voWriter = new VOTableWriter( DataFormat.TABLEDATA, true );
+
+        //  Write table.
+        voWriter.writeStarTable( table, output );
+	}
+	
+	public void write( Throwable thrown, OutputStream output )
+		throws IOException
+	{
+	    // Define table.
+		ColumnInfo[] columnInfo = new ColumnInfo[1];
+	    columnInfo[0] = new ColumnInfo( "Message", String.class, "Message text" );
+	    RowListStarTable table = new RowListStarTable( columnInfo );
+	    
+	    // Populate table.
+	    table.addRow( new Object[] { thrown.getMessage() } );
+	    Throwable cause = thrown.getCause();
+	    while ( cause != null )
+	    {
+	    	String message = cause.getMessage();
+		    table.addRow( new Object[] { message } );
+		    cause = cause.getCause();
+	    }
+	    
+        //  Specify output format as XML, rather than FITS or binary.
+        VOTableWriter voWriter = new VOTableWriter( DataFormat.TABLEDATA, true );
+
+        //  Write table.
+        voWriter.writeStarTable( table, output );
 	}
 
 }
