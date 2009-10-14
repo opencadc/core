@@ -150,8 +150,8 @@ public class JobsTest extends TestConfig
             Element root = document.getDocumentElement();
             assertNotNull(propertiesFilename + " XML returned from GET of " + baseUrl + " missing uws:jobs element", root);
 
-            NodeList list = root.getElementsByTagName("uws:jobref");
-            assertEquals(propertiesFilename + " XML returned from GET of " + baseUrl + " contained uws:jobref elements", 0, list.getLength());
+//            NodeList list = root.getElementsByTagName("uws:jobref");
+//            assertEquals(propertiesFilename + " XML returned from GET of " + baseUrl + " contained uws:jobref elements", 0, list.getLength());
         }
     }
     
