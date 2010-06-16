@@ -69,6 +69,9 @@
 
 package ca.nrc.cadc.vos;
 
+import ca.nrc.cadc.vos.Node;
+import ca.nrc.cadc.vos.View;
+
 /**
  * @author zhangsa
  *
