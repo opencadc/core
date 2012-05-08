@@ -41,14 +41,14 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 
-public class SSOCookieManagerImplTest
+public class SSOCookieManagerTest
 {
-    private SSOCookieManagerImpl testSubject;
+    private SSOCookieManager testSubject;
 
     @Test
     public void parseCookieValue() throws Exception
     {
-        setTestSubject(new SSOCookieManagerImpl(
+        setTestSubject(new SSOCookieManager(
                 "username=TESTUSER|sessionID=88|token=AAABBB"));
 
         assertEquals("Username should be TESTUSER", "TESTUSER",
@@ -61,12 +61,12 @@ public class SSOCookieManagerImplTest
     }
 
 
-    public SSOCookieManagerImpl getTestSubject()
+    public SSOCookieManager getTestSubject()
     {
         return testSubject;
     }
 
-    public void setTestSubject(final SSOCookieManagerImpl testSubject)
+    public void setTestSubject(final SSOCookieManager testSubject)
     {
         this.testSubject = testSubject;
     }
