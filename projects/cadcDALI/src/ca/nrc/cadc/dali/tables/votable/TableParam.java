@@ -69,55 +69,39 @@
 
 package ca.nrc.cadc.dali.tables.votable;
 
-import java.util.List;
-
 /**
  *
  * @author pdowler
  */
-public class TableField
+public class TableParam extends TableField
 {
-    protected String name;
-    protected String datatype;
+    private String value;
 
-    public String id;
-    public String ucd;
-    public String unit;
-    public String utype;
-    public String xtype;
-    public Integer arraysize;
-    public Boolean variableSize;
-    public String description;
-    public List<String> values;
+    protected TableParam() { }
 
-    protected TableField() { }
-
-    public TableField(String name, String datatype)
+    public TableParam(String name, String datatype, String value)
     {
-        this.name = name;
-        this.datatype = datatype;
+        super(name, datatype);
+        this.value = value;
     }
 
-    public String getDatatype()
+    public String getValue()
     {
-        return datatype;
-    }
-
-    public String getName()
-    {
-        return name;
+        return value;
     }
 
     @Override
     public String toString()
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("TableField[");
+        sb.append("TableParam[");
         sb.append(name);
         sb.append(",");
         sb.append(datatype);
+        sb.append(",");
+        sb.append(value);
         sb.append("]");
         return sb.toString();
     }
-    
+
 }
