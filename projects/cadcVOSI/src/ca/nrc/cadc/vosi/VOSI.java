@@ -82,6 +82,8 @@ package ca.nrc.cadc.vosi;
  */
 public class VOSI
 {
+    public static final String NS_PREFIX = "vosi";
+	
     public static final String XSI_NS_URI = "http://www.w3.org/2001/XMLSchema-instance";
     
     public static final String AVAILABILITY_NS_URI = "http://www.ivoa.net/xml/VOSIAvailability/v1.0";

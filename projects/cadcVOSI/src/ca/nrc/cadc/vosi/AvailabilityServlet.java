@@ -2,12 +2,8 @@ package ca.nrc.cadc.vosi;
 
 import ca.nrc.cadc.auth.AuthenticationUtil;
 import java.io.IOException;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.Principal;
 import java.security.PrivilegedExceptionAction;
 import javax.security.auth.Subject;
-import javax.security.auth.x500.X500Principal;
 import javax.servlet.ServletConfig;
 
 import javax.servlet.ServletException;
@@ -15,10 +11,10 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Logger;
+import org.jdom2.Document;
+import org.jdom2.output.Format;
+import org.jdom2.output.XMLOutputter;
 
-import org.jdom.Document;
-import org.jdom.output.Format;
-import org.jdom.output.XMLOutputter;
 
 /**
  * Servlet implementation class CapabilityServlet

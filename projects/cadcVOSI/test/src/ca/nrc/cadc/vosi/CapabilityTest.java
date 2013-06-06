@@ -70,7 +70,7 @@
 package ca.nrc.cadc.vosi;
 
 import ca.nrc.cadc.util.Log4jInit;
-import ca.nrc.cadc.xml.XmlUtil;
+import ca.nrc.cadc.vosi.avail.CheckWebService;
 
 import java.io.StringWriter;
 import java.io.Writer;
@@ -81,9 +81,9 @@ import java.util.Map;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import org.jdom.Document;
-import org.jdom.output.Format;
-import org.jdom.output.XMLOutputter;
+import org.jdom2.Document;
+import org.jdom2.output.Format;
+import org.jdom2.output.XMLOutputter;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -136,9 +136,14 @@ public class CapabilityTest
     public void setUp() throws Exception
     {
         schemaNSMap = new HashMap<String, String>();
-        schemaNSMap.put(schemaNSKey1, XmlUtil.getResourceUrlString(schemaResource1, CapabilityTest.class));
-        schemaNSMap.put(schemaNSKey2, XmlUtil.getResourceUrlString(schemaResource2, CapabilityTest.class));
-        schemaNSMap.put(schemaNSKey3, XmlUtil.getResourceUrlString(schemaResource3, CapabilityTest.class));
+        // TODO: After cadcUtil has been updated to use jdom2, please remove the following three statements
+        //       and uncomment the statements above them.
+        //schemaNSMap.put(schemaNSKey1, XmlUtil.getResourceUrlString(schemaResource1, CapabilityTest.class));
+        //schemaNSMap.put(schemaNSKey2, XmlUtil.getResourceUrlString(schemaResource2, CapabilityTest.class));
+        //schemaNSMap.put(schemaNSKey3, XmlUtil.getResourceUrlString(schemaResource3, CapabilityTest.class));
+        schemaNSMap.put(schemaNSKey1, CheckWebService.getResourceUrlString(schemaResource1, CapabilityTest.class));
+        schemaNSMap.put(schemaNSKey2, CheckWebService.getResourceUrlString(schemaResource2, CapabilityTest.class));
+        schemaNSMap.put(schemaNSKey3, CheckWebService.getResourceUrlString(schemaResource3, CapabilityTest.class));
     }
 
     /**
@@ -171,16 +176,18 @@ public class CapabilityTest
         xop.output(doc, stringWriter);
         String xmlString = stringWriter.toString();
         
-        XmlUtil.validateXml(xmlString, schemaNSMap);
+        // TODO: After cadcUtil has been updated to use jdom2, please remove the following statement
+        //       and uncomment the statement above it.
+        //XmlUtil.validateXml(xmlString, schemaNSMap);
+        CheckWebService.validateXml(xmlString, schemaNSMap);
 
         // these xpath tests are somewhat brittle as a change in the prefix in Capabilities.java
         // would require a change here
         // TODO: find the prefix by examining the xmlns attributes of the root element
-        TestUtil.assertXmlNode(doc, "/vosi:capabilities");
-        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability[@standardID='ivo://ivoa.net/std/VOSI#capability']");
-        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability[@standardID='ivo://ivoa.net/std/VOSI#availability']");
-        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability[@standardID='ivo://ivoa.net/std/Something']");
-        TestUtil.assertXmlNode(doc,
-                "/vosi:capabilities/capability/interface/accessURL[.='http://example.com/myApp/availability']");
+        TestUtil.assertXmlNode(doc, "/vosi:capabilities", VOSI.NS_PREFIX, VOSI.CAPABILITIES_NS_URI);
+        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability[@standardID='ivo://ivoa.net/std/VOSI#capability']", VOSI.NS_PREFIX, VOSI.CAPABILITIES_NS_URI);
+        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability[@standardID='ivo://ivoa.net/std/VOSI#availability']", VOSI.NS_PREFIX, VOSI.CAPABILITIES_NS_URI);
+        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability[@standardID='ivo://ivoa.net/std/Something']", VOSI.NS_PREFIX, VOSI.CAPABILITIES_NS_URI);
+        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability/interface/accessURL[.='http://example.com/myApp/availability']", VOSI.NS_PREFIX, VOSI.CAPABILITIES_NS_URI);
     }
 }
