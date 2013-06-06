@@ -69,9 +69,9 @@
 
 package ca.nrc.cadc.vosi;
 
-import ca.nrc.cadc.xml.XmlUtil;
+import ca.nrc.cadc.vosi.avail.CheckWebService;
 import org.apache.log4j.Logger;
-import org.jdom.Document;
+import org.jdom2.Document;
 import org.junit.Assert;
 
 /**
@@ -88,9 +88,12 @@ public class TestUtil
      * @param document
      * @param xpathString XPath to the node
      */
-    public static void assertXmlNode(Document document, String xpathString)
+    public static void assertXmlNode(Document document, String xpathString, String nsPrefix, String nsUri)
     {
-        Assert.assertTrue(XmlUtil.getXmlNodeCount(document, xpathString) == 1);
+    	// TODO: After cadcUtil has been updated to use jdom2, remove the following statement
+    	//       and uncomment the statement above it.
+        //Assert.assertTrue(XmlUtil.getXmlNodeCount(document, xpathString, nsPrefix, nsUri) == 1);
+        Assert.assertTrue(CheckWebService.getXmlNodeCount(document, xpathString, nsPrefix, nsUri) == 1);
     }
 
     /**
@@ -99,8 +102,11 @@ public class TestUtil
      * @param document
      * @param xpathString
      */
-    public static void assertNoXmlNode(Document document, String xpathString)
+    public static void assertNoXmlNode(Document document, String xpathString, String nsPrefix, String nsUri)
     {
-        Assert.assertTrue(XmlUtil.getXmlNodeCount(document, xpathString) == 0);
+    	// TODO: After cadcUtil has been updated to use jdom2, remove the following statement
+    	//       and uncomment the statement above it.
+        //Assert.assertTrue(XmlUtil.getXmlNodeCount(document, xpathString, nsPrefix, nsUri) == 0);
+        Assert.assertTrue(CheckWebService.getXmlNodeCount(document, xpathString, nsPrefix, nsUri) == 0);
     }
 }

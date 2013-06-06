@@ -82,9 +82,9 @@ import junit.framework.Assert;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.jdom.Document;
-import org.jdom.output.Format;
-import org.jdom.output.XMLOutputter;
+import org.jdom2.Document;
+import org.jdom2.output.Format;
+import org.jdom2.output.XMLOutputter;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -93,7 +93,7 @@ import org.junit.Test;
 
 import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.util.Log4jInit;
-import ca.nrc.cadc.xml.XmlUtil;
+import ca.nrc.cadc.vosi.avail.CheckWebService;
 import java.text.DateFormat;
 
 /**
@@ -134,7 +134,10 @@ public class AvailabilityTest
     @Before
     public void setUp() throws Exception
     {
-        this.schemaMap.put( VOSI.AVAILABILITY_NS_URI, XmlUtil.getResourceUrlString(VOSI.AVAILABILITY_SCHEMA, AvailabilityTest.class));
+    	// TODO: After cadcUtil has been updated to use jdom2, please remove the following statement
+    	//       and uncomment the statement above it.
+        //this.schemaMap.put( VOSI.AVAILABILITY_NS_URI, XmlUtil.getResourceUrlString(VOSI.AVAILABILITY_SCHEMA, AvailabilityTest.class));
+        this.schemaMap.put( VOSI.AVAILABILITY_NS_URI, CheckWebService.getResourceUrlString(VOSI.AVAILABILITY_SCHEMA, AvailabilityTest.class));
     }
 
     /**
@@ -167,14 +170,16 @@ public class AvailabilityTest
         xop.output(doc, stringWriter);
         String xmlString = stringWriter.toString();
         
-        XmlUtil.validateXml(xmlString, schemaMap);
-
-        TestUtil.assertXmlNode(doc, "/vosi:availability");
-        TestUtil.assertXmlNode(doc, "/vosi:availability/vosi:available");
-        TestUtil.assertXmlNode(doc, "/vosi:availability/vosi:upSince");
-        TestUtil.assertXmlNode(doc, "/vosi:availability/vosi:downAt");
-        TestUtil.assertXmlNode(doc, "/vosi:availability/vosi:backAt");
-        TestUtil.assertXmlNode(doc, "/vosi:availability/vosi:note");
+        // TODO: After cadcUtil has been updated to use jdom2, please remove the following statement
+        //       and uncomment the statement above it.
+        //XmlUtil.validateXml(xmlString, schemaMap);
+        CheckWebService.validateXml(xmlString, schemaMap);
+        TestUtil.assertXmlNode(doc, "/vosi:availability", VOSI.NS_PREFIX, VOSI.AVAILABILITY_NS_URI);
+        TestUtil.assertXmlNode(doc, "/vosi:availability/vosi:available", VOSI.NS_PREFIX, VOSI.AVAILABILITY_NS_URI);
+        TestUtil.assertXmlNode(doc, "/vosi:availability/vosi:upSince", VOSI.NS_PREFIX, VOSI.AVAILABILITY_NS_URI);
+        TestUtil.assertXmlNode(doc, "/vosi:availability/vosi:downAt", VOSI.NS_PREFIX, VOSI.AVAILABILITY_NS_URI);
+        TestUtil.assertXmlNode(doc, "/vosi:availability/vosi:backAt", VOSI.NS_PREFIX, VOSI.AVAILABILITY_NS_URI);
+        TestUtil.assertXmlNode(doc, "/vosi:availability/vosi:note", VOSI.NS_PREFIX, VOSI.AVAILABILITY_NS_URI);
 
     }
 
@@ -190,14 +195,17 @@ public class AvailabilityTest
         xop.output(doc, stringWriter);
         String xmlString = stringWriter.toString();
 
-        XmlUtil.validateXml(xmlString, schemaMap);
+        // TODO: After cadcUtil has been updated to use jdom2, please remove the following statement
+        //       and uncomment the statement above it.
+        //XmlUtil.validateXml(xmlString, schemaMap);
+        CheckWebService.validateXml(xmlString, schemaMap);
         
-        TestUtil.assertXmlNode(doc, "/vosi:availability");
-        TestUtil.assertXmlNode(doc, "/vosi:availability/vosi:available[.='false']");
-        TestUtil.assertNoXmlNode(doc, "/vosi:availability/vosi:upSince");
-        TestUtil.assertNoXmlNode(doc, "/vosi:availability/vosi:downAt");
-        TestUtil.assertNoXmlNode(doc, "/vosi:availability/vosi:backAt");
-        TestUtil.assertNoXmlNode(doc, "/vosi:availability/vosi:note");
+        TestUtil.assertXmlNode(doc, "/vosi:availability", VOSI.NS_PREFIX, VOSI.AVAILABILITY_NS_URI);
+        TestUtil.assertXmlNode(doc, "/vosi:availability/vosi:available[.='false']", VOSI.NS_PREFIX, VOSI.AVAILABILITY_NS_URI);
+        TestUtil.assertNoXmlNode(doc, "/vosi:availability/vosi:upSince", VOSI.NS_PREFIX, VOSI.AVAILABILITY_NS_URI);
+        TestUtil.assertNoXmlNode(doc, "/vosi:availability/vosi:downAt", VOSI.NS_PREFIX, VOSI.AVAILABILITY_NS_URI);
+        TestUtil.assertNoXmlNode(doc, "/vosi:availability/vosi:backAt", VOSI.NS_PREFIX, VOSI.AVAILABILITY_NS_URI);
+        TestUtil.assertNoXmlNode(doc, "/vosi:availability/vosi:note", VOSI.NS_PREFIX, VOSI.AVAILABILITY_NS_URI);
     }
     
     @Test
