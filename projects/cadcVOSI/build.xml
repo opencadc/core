@@ -126,7 +126,7 @@
     <property name="testingJars" value="${build.cadcTAP}:${ext.junit}:${ext.xerces}:${ext.jaxen.core}:${ext.jaxen.jdom}:${ext.saxpath}:${ext.postgres}:${ext.commonsLog}" />
 
     <!-- Run the test suite -->
-    <target name="test" depends="compile-test">
+    <target name="test" depends="compile-test, resources">
         <echo message="Running test" />
 
         <!-- Run the junit test suite -->
