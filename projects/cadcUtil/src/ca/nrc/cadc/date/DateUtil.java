@@ -88,23 +88,38 @@ import java.util.TimeZone;
  */
 public class DateUtil
 {
+    /**
+     * Pseudo-ISO8601 datetime format with milliseconds. This is nice for display
+     * as it leaves a space between the date and time parts.
+     */
     public static final String ISO_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
+    /**
+     * Pseudo-ISO8601 datetime format with milliseconds and explicit timezone. 
+     * This is nice for display as it leaves a space between the date and time parts.
+     */
     public static final String ISO_DATE_FORMAT_TZ = "yyyy-MM-dd HH:mm:ss.SSSZ";
     
+    /**
+     * IVOA standard datetime format string with milliseconds. Apparently the IVOA 
+     * went rogue (with respect to ISO8601) by mandating UTC only and then dropping 
+     * the Z timezone descriptor from the format string.
+     */
     public static final String IVOA_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS";
+    //public static final String IVOA_DATE_FORMAT_Z = ISO8601_DATE_FORMAT_MSZ;
+    
+    /**
+     * ISO8601 UTC datetime format without milliseconds.
+     */
+    public static final String ISO8601_DATE_FORMAT_Z = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+    
+    /**
+     * ISO8601 UTC datetime format with milliseconds.
+     */
+    public static final String ISO8601_DATE_FORMAT_MSZ = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
 
     public static final TimeZone UTC = TimeZone.getTimeZone("UTC");
     
     public static final TimeZone LOCAL = TimeZone.getDefault();
-
-    /**
-     * A pre-configured IVOA formatter (ISO8601+UTC).
-     *
-     */
-    //public static DateFormat ivoaDateFormat = getDateFormat(IVOA_DATE_FORMAT, UTC);
-
-    private static HashMap<String, DateFormat> formats =
-            new HashMap<String, DateFormat>();
 
     /**
      * Create a new DateFormat object with the specified format and timezone.
@@ -120,8 +135,17 @@ public class DateUtil
     public static DateFormat getDateFormat(String format, TimeZone tz)
     {
         if (format == null)
-            format = ISO_DATE_FORMAT;
+            format = ISO_DATE_FORMAT; // best display format
 
+        if (format.equals(IVOA_DATE_FORMAT)
+            || format.equals(ISO8601_DATE_FORMAT_Z) 
+            || format.equals(ISO8601_DATE_FORMAT_MSZ) )
+        {
+            if (tz == null)
+                tz = UTC;
+            else if ( !UTC.equals(tz) )
+                throw new IllegalArgumentException("Cannot use format " + format + " with non-UTC timezone");
+        }
         SimpleDateFormat ret = new SimpleDateFormat(format);
         ret.setLenient(false);
         if (tz != null)
@@ -129,110 +153,18 @@ public class DateUtil
         return ret;
     }
 
-    /**
-     * Get a shared DateFormat object with the specified format and timezone.
-     * If the format is null it defaults to ISO format (without required TZ).
-     * If the time zone is null it defaults to local (default) time zone.
-     * </p><p>
-     * WARNING: The underlying SimpleDateFormat instance is NOT thread safe.
-     *
-     * @param format
-     * @param tz
-     * @return
-     * @deprecated not thread safe, will be removed
-     */
-    public static synchronized DateFormat getSharedDateFormat(String format, TimeZone tz)
-    {
-        if (format == null)
-            format = ISO_DATE_FORMAT;
-        if (tz == null)
-            tz = LOCAL;
-
-        DateFormat fmt = null;
-        String key = format.hashCode() + "/" + tz.hashCode();
-
-        Object obj = formats.get(key);
-        if (obj != null)
-        {
-            fmt = (DateFormat) obj;
-        }
-        else
-        {
-            fmt = getDateFormat(format, tz);
-            formats.put(key, fmt);
-        }
-
-        return fmt;
-    }
-
-    /**
-     * Convert the argument date string to a Date using the default format
-     * and TimeZone.
-     *
-     * @param s representation of the date
-     * @return a Date
-     * @throws java.text.ParseException   If the String is unparseable.
-     * @deprecated not thread safe, will be removed
-     */
-    public static Date toDate(String s)
-            throws ParseException
-    {
-        return toDate(s, null, null);
-    }
-
-    /**
-     * Convert the argument date string to a Date using the supplied format and
-     * default (LOCAL) TimeZone.
-     *
-     * @see java.text.SimpleDateFormat for format specification
-     * @param s string representation of the date
-     * @param format format string to use (null: default)
-     * @return the Date
-     * @throws java.text.ParseException  If the String is unparseable.
-     * @deprecated not thread safe, will be removed
-     */
-    public static Date toDate(String s, String format)
-            throws ParseException
-    {
-        return toDate(s, format, null);
-    }
-
-    /**
-     * Convert the argument date string to a Date using the supplied format and
-     * TimeZone.
-     *
-     * If initial parsing fails, this method will try to append a
-     * time string (0:0:0) and parse, which will work if only a date is supplied.
-     * If that also fails, the original ParseException is thrown.
-     * </p><p>
-     * NOTE: Formatters created are kept and re-used in future calls to this
-     * method. THIS IS NOT THREAD SAFE. Use getDateFormat(...) if you need to be
-     * thread safe.
-     *
-     * @param s string representation of the date
-     * @param format format string to use (null: default)
-     * @param tz timezone to assume (null: default)
-     * @return the Date
-     * @throws java.text.ParseException  If the String is unparseable.
-     * @deprecated not thread safe, will be removed
-     */
-    public static Date toDate(String s, String format, TimeZone tz)
-            throws ParseException
-    {
-        DateFormat fmt = getSharedDateFormat(format, tz);
-        return flexToDate(s, fmt);
-    }
+    
 
     /**
      * Sloppy parsing. This method makes several attempts to parse the supplied
      * date string before giving up. if the initial parse fails, it tries to append
-     * 0 milliseconds to then time, then a time of 0:0:0, then 0:0:0.0, and the it
+     * 0 milliseconds to the time, then a time of 0:0:0, then 0:0:0.0, and the it
      * tries setting the DateFormat to lenient.
      *
      * @param s string representation of the date
      * @param fmt the DateFormat to use
      * @return the Date
-     * @throws java.text.ParseException   If the String is unparseable.
+     * @throws java.text.ParseException the argument cannot be parsed after all attempts
      */
     public static Date flexToDate(String s, DateFormat fmt)
             throws ParseException
@@ -265,6 +197,13 @@ public class DateUtil
         // missing time?
         try
         {
+            return fmt.parse(s + "T0:0:0.0");
+        }
+        catch (ParseException ignore) { }
+        
+        catch (NumberFormatException ignore) { }
+        try
+        {
             return fmt.parse(s + " 0:0:0.0");
         }
         catch (ParseException ignore) { }
@@ -273,35 +212,6 @@ public class DateUtil
         if (orig != null)
             throw orig;
         throw new ParseException("failed to parse '" + s + "': " + origN, 0);
-    }
-
-    /**
-     * Convert the given Date using the supplied format. The assumed time zone
-     * is local.
-     *
-     * @param d
-     * @param format
-     * @return Formatted Date in String format.
-     * @deprecated
-     */
-    public static String toString(Date d, String format)
-    {
-        return toString(d, format, LOCAL);
-    }
-
-    /**
-     * Convert the given Date using the supplied format in the specified timezone.
-     *
-     * @param d
-     * @param format
-     * @param tz
-     * @return Formatted Date in String format.
-     * @deprecated not thread safe, will be removed
-     */
-    public static String toString(Date d, String format, TimeZone tz)
-    {
-        DateFormat fmt = getSharedDateFormat(format, tz);
-        return fmt.format(d);
     }
 
     /**
