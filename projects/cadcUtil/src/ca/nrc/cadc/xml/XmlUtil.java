@@ -115,43 +115,6 @@ public class XmlUtil
         return parser.build(new StringReader(xml));
     }
     
-    /**
-     * WARNING: This method is not thread-safe!!!
-     * @deprecated makes assumptions about format and time zone that are not true for every XML usage
-     * @param date
-     * @return
-     */
-    public static String dateToString(Date date)
-    {
-        String rtn = null;
-        if (date != null)
-            rtn = DateUtil.toString(date, DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
-        return rtn;
-    }
-
-    /**
-     * @deprecated uses another deprecated method and cannot be fixed
-     * @param ele
-     * @param date
-     * @param allowNil
-     */
-    public static void addElementContent(Element ele, Date date, boolean allowNil)
-    {
-        if (date == null)
-        {
-            if (allowNil)
-            {
-                ele.setAttribute("nil", "true", XSI_NS);
-            } else
-            {
-                throw new IllegalArgumentException("Trying to add null date value to an Element not accepting Nil");
-            }
-        } else
-        {
-            ele.addContent(dateToString(date));
-        }
-    }
-
     public static Document validateXml(String xml, String schemaNSKey, String schemaResourceFileName)
         throws IOException, JDOMException
     {

@@ -70,15 +70,25 @@
 package ca.nrc.cadc.vosi.avail;
 
 import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.MissingResourceException;
 
 import org.apache.log4j.Logger;
-import org.jdom.Document;
-import org.jdom.Element;
-import org.jdom.JDOMException;
-import org.jdom.xpath.XPath;
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.JDOMException;
+import org.jdom2.Namespace;
+import org.jdom2.filter.Filters;
+import org.jdom2.input.SAXBuilder;
+import org.jdom2.xpath.XPathBuilder;
+import org.jdom2.xpath.XPathExpression;
+import org.jdom2.xpath.XPathFactory;
 
 import ca.nrc.cadc.vosi.VOSI;
 import ca.nrc.cadc.vosi.util.WebGet;
@@ -103,7 +113,10 @@ public class CheckWebService implements CheckResource
     public CheckWebService(String url)
     {
         wsURL = url;
-        this.schemaMap.put( VOSI.AVAILABILITY_NS_URI, XmlUtil.getResourceUrlString(VOSI.AVAILABILITY_SCHEMA, CheckWebService.class));
+        // TODO: After cadcUtil has been updated to use jdom2, please remove the following statement
+        //       and uncomment the statement above it.
+        //this.schemaMap.put( VOSI.AVAILABILITY_NS_URI, XmlUtil.getResourceUrlString(VOSI.AVAILABILITY_SCHEMA, CheckWebService.class));
+        this.schemaMap.put( VOSI.AVAILABILITY_NS_URI, getResourceUrlString(VOSI.AVAILABILITY_SCHEMA, CheckWebService.class));
     }
 
     /* (non-Javadoc)
@@ -132,17 +145,20 @@ public class CheckWebService implements CheckResource
             throw new CheckException("service not responding: " + wsURL, e);
         }
     }
-
+    
     void checkReturnedXml(String strXml)
         throws CheckException
     {
         Document doc = null;
         String xpathStr;
-        XPath xpath;
 
         try
         {
-            doc = XmlUtil.validateXml(strXml, schemaMap);
+        	// TODO: After cadcUtil has been updated to use jdom2, please remove the
+        	//       following statement and uncomment the statement above it.
+        	//       Also please see the TODO below.
+            //doc = XmlUtil.validateXml(strXml, schemaMap);
+        	doc = validateXml(strXml, schemaMap);
             //get namespace and/or prefix from Document, then create xpath based on the prefix
             String nsp = doc.getRootElement().getNamespacePrefix(); //Namespace Prefix
             if (nsp != null && nsp.length() > 0)
@@ -150,8 +166,11 @@ public class CheckWebService implements CheckResource
             else
                 nsp = "";
             xpathStr = "/" + nsp + "availability/" + nsp + "available";
-            xpath = XPath.newInstance(xpathStr);
-            Element eleAvail = (Element) xpath.selectSingleNode(doc);
+            XPathBuilder<Element> builder = new XPathBuilder<Element>(xpathStr,Filters.element());
+            Namespace ns = Namespace.getNamespace(VOSI.NS_PREFIX, VOSI.AVAILABILITY_NS_URI);
+            builder.setNamespace(ns);
+            XPathExpression<Element> xpath = builder.compileWith(XPathFactory.instance());
+            Element eleAvail = xpath.evaluateFirst(doc);
             log.debug(eleAvail);
             String textAvail = eleAvail.getText();
 
@@ -162,8 +181,10 @@ public class CheckWebService implements CheckResource
             if ( !textAvail.equalsIgnoreCase("true") )
             {
                 xpathStr = "/" + nsp + "availability/" + nsp + "note";
-                xpath = XPath.newInstance(xpathStr);
-                Element eleNotes = (Element) xpath.selectSingleNode(doc);
+                builder = new XPathBuilder<Element>(xpathStr,Filters.element());
+                builder.setNamespace(ns);
+                xpath = builder.compileWith(XPathFactory.instance());
+                Element eleNotes = xpath.evaluateFirst(doc);;
                 String textNotes = eleNotes.getText();
                 throw new CheckException("service " + wsURL + " is not available, reported reason: " + textNotes, null);
             }
@@ -178,4 +199,109 @@ public class CheckWebService implements CheckResource
             throw new CheckException(wsURL + " output is invalid", e);
         }
     }
+    
+    // TODO: All codes from here on should be removed after cadcUtil has been 
+    //       updated to use jdom2. These codes were added because we wanted to
+    //       update cadcVOSI to use jdom2 but did not want to update cadcUtil
+    //       and there was an issue with using XPATH in jdom2.
+    public static final String PARSER = "org.apache.xerces.parsers.SAXParser";
+    private static final String GRAMMAR_POOL = "org.apache.xerces.parsers.XMLGrammarCachingConfiguration";
+
+    public static Document validateXml(String xml, String schemaNSKey, String schemaResourceFileName)
+        throws IOException, JDOMException
+    {
+        Map<String, String> map = new HashMap<String, String>();
+        map.put(schemaNSKey, getResourceUrlString(schemaResourceFileName, XmlUtil.class));
+        return validateXml(xml, map);
+    }
+
+    public static Document validateXml(String xml, Map<String, String> schemaMap)
+        throws IOException, JDOMException
+    {
+        log.debug("validateXml:\n" + xml);
+        return validateXml(new StringReader(xml), schemaMap);
+    }
+
+    @SuppressWarnings("deprecation")
+	public static SAXBuilder createBuilder(Map<String, String> schemaMap)
+    {
+        boolean schemaVal = (schemaMap != null);
+        String schemaResource;
+        String space = " ";
+        StringBuilder sbSchemaLocations = new StringBuilder();
+        if (schemaVal) 
+        {
+            log.debug("schemaMap.size(): " + schemaMap.size());
+            for (String schemaNSKey : schemaMap.keySet())
+            {
+                schemaResource = (String) schemaMap.get(schemaNSKey);
+                sbSchemaLocations.append(schemaNSKey).append(space).append(schemaResource).append(space);
+            }
+            // enable xerces grammar caching
+            System.setProperty("org.apache.xerces.xni.parser.XMLParserConfiguration", GRAMMAR_POOL);
+        }
+
+        SAXBuilder builder;
+        builder = new SAXBuilder(PARSER, schemaVal);
+        if (schemaVal)
+        {
+            builder.setFeature("http://xml.org/sax/features/validation", true);
+            builder.setFeature("http://apache.org/xml/features/validation/schema", true);
+            if (schemaMap.size() > 0)
+                builder.setProperty("http://apache.org/xml/properties/schema/external-schemaLocation",
+                    sbSchemaLocations.toString());
+        }
+        return builder;
+    }
+
+    public static Document validateXml(Reader reader, Map<String, String> schemaMap) throws IOException, JDOMException
+    {
+        SAXBuilder builder = createBuilder(schemaMap);
+        return builder.build(reader);
+    }
+
+    /**
+     * count how many nodes are represented by the xpath
+     * 
+     * @param doc
+     * @param xpathStr
+     * @param nsPrefix namespace prefix, null or empty String value means no namespace
+     * @param nsUri    namespace URI
+     * @return
+     */
+    public static int getXmlNodeCount(Document doc, String xpathStr, String nsPrefix, String nsUri)
+    {
+        int rtn = 0;
+        XPathBuilder<Element> builder = new XPathBuilder<Element>(xpathStr, Filters.element());
+        if (nsPrefix != null && !nsPrefix.isEmpty())
+        {
+            Namespace ns = Namespace.getNamespace(nsPrefix, nsUri);
+            builder.setNamespace(ns);
+        }
+        XPathExpression<Element> xpath = builder.compileWith(XPathFactory.instance());
+        List<Element> rs = xpath.evaluate(doc);
+        rtn = rs.size();
+        return rtn;
+    }
+
+    /**
+     * Get an URL to a schema file. This implementation finds the scheam file using the ClassLoader
+     * that loaded the argument class; this works best if the schema is in the same jar file as
+     * the class.
+     * 
+     * @param resourceFileName
+     * @param runningClass 
+     * @return
+     */
+    public static String getResourceUrlString(String resourceFileName, Class runningClass)
+    {
+        String rtn = null;
+        URL url = runningClass.getClassLoader().getResource(resourceFileName);
+        if (url == null)
+            throw new MissingResourceException("Resource not found: " + resourceFileName, runningClass.getName(), resourceFileName);
+        rtn = url.toString();
+        return rtn;
+    }
+
+   
 }

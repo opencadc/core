@@ -69,7 +69,6 @@
 
 package ca.nrc.cadc.vosi.avail;
 
-import static org.junit.Assert.*;
 import junit.framework.Assert;
 
 import org.apache.log4j.Level;
@@ -81,7 +80,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import ca.nrc.cadc.util.Log4jInit;
-import ca.nrc.cadc.vosi.CapabilityTest;
 
 /**
  * @author zhangsa
@@ -148,7 +146,7 @@ public class CheckWebServiceTest
     @Test
     public void testCheckReturnedXmlDiffPrefixGood()
     {
-        String strXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><vos:availability xmlns:vos=\"http://www.ivoa.net/xml/VOSIAvailability/v1.0\"><vos:available>true</vos:available></vos:availability>";
+        String strXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><vosi:availability xmlns:vosi=\"http://www.ivoa.net/xml/VOSIAvailability/v1.0\"><vosi:available>true</vosi:available></vosi:availability>";
         CheckWebService cws = new CheckWebService("test");
         try
         {
