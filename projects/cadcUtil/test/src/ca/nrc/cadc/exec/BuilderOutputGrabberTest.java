@@ -120,13 +120,13 @@ public class BuilderOutputGrabberTest
     @Test
     public void captureOutputSucceedsFile()
     {
-        File file = new File("test/");
+        File file = new File("build/tmp");
         BuilderOutputGrabber bog = new BuilderOutputGrabber();
         String[] cmd = {"/bin/bash", "-c", "date -d \"2011-01-01 01:01:01\" +%s >> date_output"};
         bog.captureOutput(cmd, null, file);
         assertEquals("", bog.getErrorOutput());
         assertEquals("", bog.getOutput());
-        File outputFile = new File("test/date_output");
+        File outputFile = new File(file, "date_output");
         assertTrue(outputFile.exists());
     }
 
