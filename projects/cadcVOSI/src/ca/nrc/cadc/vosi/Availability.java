@@ -73,9 +73,10 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.Date;
 
-import org.jdom.Document;
-import org.jdom.Element;
-import org.jdom.Namespace;
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.Namespace;
+
 
 import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.vosi.util.Util;
