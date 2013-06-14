@@ -70,7 +70,7 @@ public class ArrayUtil
      * @param array     The array to check.
      * @return          True if it is empty, False otherwise.
      */
-    public static <O> boolean isEmpty(final O... array)
+    public static <O> boolean isEmpty(final O[] array)
     {
         return (array == null) || (array.length == 0);
     }
@@ -81,7 +81,7 @@ public class ArrayUtil
      * @param array     The array to check.
      * @return          True if it is empty, False otherwise.
      */
-    public static boolean isEmpty(final char... array)
+    public static boolean isEmpty(final char[] array)
     {
         return (array == null) || (array.length == 0);
     }
@@ -92,7 +92,7 @@ public class ArrayUtil
      * @param array     The array to check.
      * @return          True if it is empty, False otherwise.
      */
-    public static boolean isEmpty(final int... array)
+    public static boolean isEmpty(final int[] array)
     {
         return (array == null) || (array.length == 0);
     }
@@ -103,7 +103,7 @@ public class ArrayUtil
      * @param array     The array to check.
      * @return          True if it is empty, False otherwise.
      */
-    public static boolean isEmpty(final byte... array)
+    public static boolean isEmpty(final byte[] array)
     {
         return (array == null) || (array.length == 0);
     }
