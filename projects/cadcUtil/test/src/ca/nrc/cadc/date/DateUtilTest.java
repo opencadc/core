@@ -144,9 +144,6 @@ public class DateUtilTest
             df = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, TimeZone.getTimeZone("UTC"));
             Assert.assertEquals(DateUtil.UTC, df.getTimeZone());
             
-            df = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, null);
-            Assert.assertTrue(DateUtil.UTC == df.getTimeZone());
-            
             df = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
             Assert.assertTrue(DateUtil.UTC == df.getTimeZone());
             
@@ -167,6 +164,23 @@ public class DateUtilTest
                 String s2 = df.format(d);
                 Assert.assertEquals(ivoaDateStr, s2);
             }
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+    
+    @Test
+    public void testIso8601Local()
+        throws Exception
+    {
+        try
+        {
+            DateFormat df = DateUtil.getDateFormat(DateUtil.ISO8601_DATE_FORMAT_LOCAL, DateUtil.LOCAL);
+            
+            DateFormat df2 = DateUtil.getDateFormat(DateUtil.ISO8601_DATE_FORMAT_MSLOCAL, DateUtil.LOCAL);
         }
         catch(Exception unexpected)
         {

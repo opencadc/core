@@ -105,7 +105,7 @@ public class DateUtil
      * the Z timezone descriptor from the format string.
      */
     public static final String IVOA_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS";
-    //public static final String IVOA_DATE_FORMAT_Z = ISO8601_DATE_FORMAT_MSZ;
+    //public static final String IVOA_DATE_FORMAT = ISO8601_DATE_FORMAT_MSZ;
     
     /**
      * ISO8601 UTC datetime format without milliseconds.
@@ -116,6 +116,16 @@ public class DateUtil
      * ISO8601 UTC datetime format with milliseconds.
      */
     public static final String ISO8601_DATE_FORMAT_MSZ = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
+    
+    /**
+     * ISO8601 local datetime format without milliseconds.
+     */
+    public static final String ISO8601_DATE_FORMAT_LOCAL = "yyyy-MM-dd'T'HH:mm:ss";
+    
+    /**
+     * ISO8601 local datetime format with milliseconds.
+     */
+    public static final String ISO8601_DATE_FORMAT_MSLOCAL = "yyyy-MM-dd'T'HH:mm:ss.SSS";
 
     public static final TimeZone UTC = TimeZone.getTimeZone("UTC");
     
@@ -124,7 +134,9 @@ public class DateUtil
     /**
      * Create a new DateFormat object with the specified format and timezone.
      * If the format is null it defaults to ISO format (without required TZ).
-     * If the time zone is null it defaults to local (default) time zone.
+     * If the time zone is null it defaults to UTC for ISO8601_DATE_FORMAT_Z,
+     * ISO8601_DATE_FORMAT_MSZ, and IVOA_DATE_FORMAT and must be UTC for the
+     * first two of these.
      * </p><p>
      * WARNING: The underlying SimpleDateFormat instance is NOT thread safe.
      *
@@ -136,16 +148,25 @@ public class DateUtil
     {
         if (format == null)
             format = ISO_DATE_FORMAT; // best display format
-
-        if (format.equals(IVOA_DATE_FORMAT)
-            || format.equals(ISO8601_DATE_FORMAT_Z) 
-            || format.equals(ISO8601_DATE_FORMAT_MSZ) )
+        
+        if ( format.equals(ISO8601_DATE_FORMAT_Z) || format.equals(ISO8601_DATE_FORMAT_MSZ) )
         {
             if (tz == null)
                 tz = UTC;
             else if ( !UTC.equals(tz) )
                 throw new IllegalArgumentException("Cannot use format " + format + " with non-UTC timezone");
         }
+        // NOTE: since the IVOA_DATE_FORMAT is identical to ISO8601_DATE_FORMAT_MSLOCAL we cannot enforce the correct
+        // timezone
+        //else if ( format.equals(ISO8601_DATE_FORMAT_LOCAL) || format.equals(ISO8601_DATE_FORMAT_MSLOCAL) )
+        //{
+        //    if (tz == null)
+        //        tz = LOCAL;
+        //    else if ( !LOCAL.equals(tz) )
+        //        throw new IllegalArgumentException("Cannot use format " + format + " with non-LOCAL timezone");
+        //}
+        
+        
         SimpleDateFormat ret = new SimpleDateFormat(format);
         ret.setLenient(false);
         if (tz != null)
