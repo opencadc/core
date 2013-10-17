@@ -2,6 +2,9 @@
 
 package ca.nrc.cadc.util;
 
+import java.util.Arrays;
+
+
 /**
  * @version $Version$
  * @author pdowler
@@ -62,6 +65,20 @@ public class ArrayUtil
         }
 
         return -1;
+    }
+
+    /**
+     * Obtain whether the given array contains the element.
+     *
+     * @param element       The element to check.
+     * @param array         The array to search.
+     * @param <O>           The type of the array/element.
+     * @return              True if it is contained, false otherwise.
+     */
+    public static <O> boolean contains(final O element, final O[] array)
+    {
+        return !(isEmpty(array) || (element == null))
+               && Arrays.asList(array).contains(element);
     }
 
     /**
