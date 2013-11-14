@@ -31,17 +31,18 @@ package ca.nrc.cadc.util;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
+
 public class PropertiesReaderTest
 {
 
-    private static final Logger log = Logger.getLogger(PropertiesReaderTest.class);
+    private static final Logger log = Logger
+            .getLogger(PropertiesReaderTest.class);
 
     static
     {
@@ -49,9 +50,9 @@ public class PropertiesReaderTest
     }
 
     private static final String TEST_PROPERTIES =
-        "prop1 = value1\n" +
-        "prop2 = value2a\n" +
-        "prop2 = value2b";
+            "prop1 = value1\n" +
+            "prop2 = value2a\n" +
+            "prop2 = value2b";
 
     private class TestInputStream extends InputStream
     {
@@ -122,28 +123,40 @@ public class PropertiesReaderTest
     @Test
     public void testResilientProperties() throws Exception
     {
-        ByteArrayInputStream inOne = new ByteArrayInputStream(TEST_PROPERTIES.getBytes("UTF-8"));
+        ByteArrayInputStream inOne = new ByteArrayInputStream(
+                TEST_PROPERTIES.getBytes("UTF-8"));
         ByteArrayInputStream inTwo = new ByteArrayInputStream("".getBytes());
         TestInputStream in = new TestInputStream(inOne, inTwo, 3);
-        URL url = new URL("file:///tmp/abc.txt");
 
-        // get the properties from inOne
-        PropertiesReader propReader = new PropertiesReader(url);
-        propReader.setInputStream(in);
-        List<String> prop1 = propReader.getPropertyValues("prop1");
-        Assert.assertEquals("missing prop 1, value 1", "value1", prop1.get(0));
-        List<String> prop2 = propReader.getPropertyValues("prop2");
-        Assert.assertEquals("missing prop 2, value a", "value2a", prop2.get(0));
-        Assert.assertEquals("missing prop 2, value b", "value2b", prop2.get(1));
+        try
+        {
+            // get the properties from inOne
+            PropertiesReader propReader = new PropertiesReader(in);
+            List<String> prop1 = propReader.getPropertyValues("prop1");
+            Assert.assertEquals("missing prop 1, value 1", "value1",
+                                prop1.get(0));
+            List<String> prop2 = propReader.getPropertyValues("prop2");
+            Assert.assertEquals("missing prop 2, value a", "value2a",
+                                prop2.get(0));
+            Assert.assertEquals("missing prop 2, value b", "value2b",
+                                prop2.get(1));
 
-        // get the properties from inTwo (should be saved from first config)
-        prop1 = propReader.getPropertyValues("prop1");
-        Assert.assertEquals("missing prop 1, value 1", "value1", prop1.get(0));
-        prop2 = propReader.getPropertyValues("prop2");
-        Assert.assertEquals("missing prop 2, value a", "value2a", prop2.get(0));
-        Assert.assertEquals("missing prop 2, value b", "value2b", prop2.get(1));
+            // get the properties from inTwo (should be saved from first config)
+            prop1 = propReader.getPropertyValues("prop1");
+            Assert.assertEquals("missing prop 1, value 1", "value1",
+                                prop1.get(0));
+            prop2 = propReader.getPropertyValues("prop2");
+            Assert.assertEquals("missing prop 2, value a", "value2a",
+                                prop2.get(0));
+            Assert.assertEquals("missing prop 2, value b", "value2b",
+                                prop2.get(1));
 
-        String prop3 = propReader.getFirstPropertyValue("prop2");
-        Assert.assertEquals("missing prop 2, value a", "value2a", prop3);
+            String prop3 = propReader.getFirstPropertyValue("prop2");
+            Assert.assertEquals("missing prop 2, value a", "value2a", prop3);
+        }
+        finally
+        {
+            in.close();
+        }
     }
 }

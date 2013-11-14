@@ -30,7 +30,6 @@ package ca.nrc.cadc.util;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -53,7 +52,6 @@ public class PropertiesReader
 
     private static final Logger log = Logger.getLogger(PropertiesReader.class);
 
-    private URL config;
     private InputStream inputStream;
 
     // Holder for the last known readable set of properties
@@ -62,13 +60,13 @@ public class PropertiesReader
     /**
      * Constructor..
      *
-     * @param config URL pointing to the property configuration.
+     * @param inputStream InputStream to read the property configuration.
      */
-    public PropertiesReader(URL config)
+    public PropertiesReader(InputStream inputStream)
     {
-        if (config == null)
-            throw new IllegalArgumentException("Provided config is null.");
-        this.config = config;
+        if (inputStream == null)
+            throw new IllegalArgumentException("Provided inputStream is null.");
+        this.inputStream = inputStream;
     }
 
     /**
@@ -83,44 +81,26 @@ public class PropertiesReader
         if (key == null)
             throw new IllegalArgumentException("Provided key is null.");
 
-        InputStream in = null;
-        try
-        {
-            MultiValuedProperties properties = new MultiValuedProperties();
-            in = get();
-            properties.load(in);
+        MultiValuedProperties properties = new MultiValuedProperties();
+        properties.load(this.inputStream);
 
-            if ((properties.keySet() == null) || (properties.keySet().size() == 0))
-            {
-                if (lastKnownGoodProperties == null)
-                {
-                    log.error("No property resource available at: " + config);
-                    return null;
-                }
-                log.warn("Properties missing at: " + config + ". Using earlier vesion.");
-                properties = lastKnownGoodProperties;
-            }
-            else
-            {
-                lastKnownGoodProperties = properties;
-            }
-
-            return properties.getProperty(key);
-        }
-        finally
+        if ((properties.keySet() == null) || (properties.keySet().size() == 0))
         {
-            if (in != null)
+            if (lastKnownGoodProperties == null)
             {
-                try
-                {
-                    in.close();
-                }
-                catch (IOException e)
-                {
-                    log.warn("Failed to close input stream for: " + config);
-                }
+                log.error("No property resource available from inputStream.");
+                return null;
             }
+            log.warn(
+                    "Properties missing at inputStream. Using earlier version.");
+            properties = lastKnownGoodProperties;
         }
+        else
+        {
+            lastKnownGoodProperties = properties;
+        }
+
+        return properties.getProperty(key);
     }
 
     /**
@@ -136,20 +116,6 @@ public class PropertiesReader
         if (values != null && values.size() > 0)
             return values.get(0);
         return null;
-    }
-
-    public void setInputStream(InputStream inputStream)
-    {
-        this.inputStream = inputStream;
-    }
-
-    private InputStream get() throws IOException
-    {
-        if(this.inputStream == null)
-        {
-            return config.openStream();
-        }
-        return this.inputStream;
     }
 
 }
