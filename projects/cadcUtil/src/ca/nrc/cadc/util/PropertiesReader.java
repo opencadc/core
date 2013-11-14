@@ -54,6 +54,7 @@ public class PropertiesReader
     private static final Logger log = Logger.getLogger(PropertiesReader.class);
 
     private URL config;
+    private InputStream inputStream;
 
     // Holder for the last known readable set of properties
     private static MultiValuedProperties lastKnownGoodProperties = null;
@@ -86,10 +87,10 @@ public class PropertiesReader
         try
         {
             MultiValuedProperties properties = new MultiValuedProperties();
-            in = config.openStream();
+            in = get();
             properties.load(in);
 
-            if (properties.keySet() == null)
+            if ((properties.keySet() == null) || (properties.keySet().size() == 0))
             {
                 if (lastKnownGoodProperties == null)
                 {
@@ -135,6 +136,20 @@ public class PropertiesReader
         if (values != null && values.size() > 0)
             return values.get(0);
         return null;
+    }
+
+    public void setInputStream(InputStream inputStream)
+    {
+        this.inputStream = inputStream;
+    }
+
+    private InputStream get() throws IOException
+    {
+        if(this.inputStream == null)
+        {
+            return config.openStream();
+        }
+        return this.inputStream;
     }
 
 }

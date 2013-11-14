@@ -31,12 +31,10 @@ package ca.nrc.cadc.util;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.List;
 
 import org.apache.log4j.Logger;
-import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -127,28 +125,25 @@ public class PropertiesReaderTest
         ByteArrayInputStream inOne = new ByteArrayInputStream(TEST_PROPERTIES.getBytes("UTF-8"));
         ByteArrayInputStream inTwo = new ByteArrayInputStream("".getBytes());
         TestInputStream in = new TestInputStream(inOne, inTwo, 3);
-
-        Method openStreamMethod = URL.class.getMethod("openStream");;
-        URL url = EasyMock.createMock(URL.class, new Method[] {openStreamMethod});
-        url.openStream();
-        EasyMock.expectLastCall().andReturn(in).times(2);
-        EasyMock.replay(url);
+        URL url = new URL("file:///tmp/abc.txt");
 
         // get the properties from inOne
         PropertiesReader propReader = new PropertiesReader(url);
+        propReader.setInputStream(in);
         List<String> prop1 = propReader.getPropertyValues("prop1");
         Assert.assertEquals("missing prop 1, value 1", "value1", prop1.get(0));
         List<String> prop2 = propReader.getPropertyValues("prop2");
-        Assert.assertEquals("missing prop 2, value 1", "value2a", prop2.get(0));
-        Assert.assertEquals("missing prop 2, value 1", "value2b", prop2.get(1));
+        Assert.assertEquals("missing prop 2, value a", "value2a", prop2.get(0));
+        Assert.assertEquals("missing prop 2, value b", "value2b", prop2.get(1));
 
         // get the properties from inTwo (should be saved from first config)
         prop1 = propReader.getPropertyValues("prop1");
         Assert.assertEquals("missing prop 1, value 1", "value1", prop1.get(0));
         prop2 = propReader.getPropertyValues("prop2");
-        Assert.assertEquals("missing prop 2, value 1", "value2a", prop2.get(0));
-        Assert.assertEquals("missing prop 2, value 1", "value2b", prop2.get(1));
+        Assert.assertEquals("missing prop 2, value a", "value2a", prop2.get(0));
+        Assert.assertEquals("missing prop 2, value b", "value2b", prop2.get(1));
 
-        EasyMock.verify(url);
+        String prop3 = propReader.getFirstPropertyValue("prop2");
+        Assert.assertEquals("missing prop 2, value a", "value2a", prop3);
     }
 }
