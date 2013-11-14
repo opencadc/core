@@ -69,6 +69,8 @@
 
 package ca.nrc.cadc.auth;
 
+import ca.nrc.cadc.date.DateUtil;
+import ca.nrc.cadc.net.NetUtil;
 import java.lang.reflect.Constructor;
 import java.security.AccessControlContext;
 import java.security.AccessController;
@@ -80,23 +82,16 @@ import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.text.DateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
 import javax.servlet.http.HttpServletRequest;
-
-import ca.nrc.cadc.util.ArrayUtil;
 import org.apache.log4j.Logger;
-
-import ca.nrc.cadc.date.DateUtil;
-import ca.nrc.cadc.net.NetUtil;
 
 /**
  * Security utility.
@@ -245,7 +240,7 @@ public class AuthenticationUtil
     /**
      * Create a subject with the specified certificate chain and private key.
      * 
-     * @param certs a non-null and non-empty certficate chain
+     * @param certs a non-null and non-empty certificate chain
      * @param key optional private key
      * @return a Subject
      */
@@ -254,16 +249,7 @@ public class AuthenticationUtil
         final X509CertificateChain chain =
                 new X509CertificateChain(certs, key);
 
-        Set<Principal> principals = new HashSet<Principal>();
-        Set<Object> publicCred = new HashSet<Object>();
-        Set<Object> privateCred = new HashSet<Object>();
-
-        principals.add(chain.getPrincipal());
-        publicCred.add(chain);
-
-        Subject subject =  new Subject(false, principals, publicCred, privateCred);
-        return subject; // this method for client apps only
-        //return augmentSubject(subject);
+        return getSubject(chain);
     }
 
     /**
@@ -330,8 +316,7 @@ public class AuthenticationUtil
         }
 
         Subject subject = new Subject(false, principals, publicCred, privateCred);
-
-        return augmentSubject(subject);
+        return subject; // this method for client apps only: no augment
     }
 
     // Encode a Subject in the format:
@@ -628,19 +613,14 @@ public class AuthenticationUtil
         // check validity
         if (subject != null)
         {
-            Set<X509CertificateChain> certs = subject
-                    .getPublicCredentials(X509CertificateChain.class);
-            if (certs.size() == 0)
+            Set<X509CertificateChain> certs = subject.getPublicCredentials(X509CertificateChain.class);
+            if (certs.isEmpty())
             {
                 // subject without certs means something went wrong above
-                throw new CertificateException(
-                        "No certificates associated with the subject");
+                throw new CertificateException("No certificates associated with the subject");
             }
-            DateFormat df = DateUtil.getDateFormat(
-                    DateUtil.ISO_DATE_FORMAT, DateUtil.LOCAL);
-            X509CertificateChain chain = certs.iterator().next(); // the
-                                                                    // first
-                                                                    // one
+            DateFormat df = DateUtil.getDateFormat(DateUtil.ISO_DATE_FORMAT, DateUtil.LOCAL);
+            X509CertificateChain chain = certs.iterator().next();
             Date start = null;
             Date end = null;
             for (X509Certificate c : chain.getChain())
@@ -650,22 +630,19 @@ public class AuthenticationUtil
                     start = c.getNotBefore();
                     end = c.getNotAfter();
                     c.checkValidity();
-
                 }
                 catch (CertificateExpiredException exp)
                 {
                     // improve the message
                     String msg = "certificate has expired (valid from "
-                            + df.format(start) + " to " + df.format(end)
-                            + ")";
+                            + df.format(start) + " to " + df.format(end) + ")";
                     throw new CertificateExpiredException(msg);
                 }
                 catch (CertificateNotYetValidException exp)
                 {
                     // improve the message
                     String msg = "certificate not yet valid (valid from "
-                            + df.format(start) + " to " + df.format(end)
-                            + ")";
+                            + df.format(start) + " to " + df.format(end) + ")";
                     throw new CertificateNotYetValidException(msg);
                 }
             }
