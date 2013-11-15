@@ -28,12 +28,10 @@
 
 package ca.nrc.cadc.util;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -41,97 +39,32 @@ import org.junit.Test;
 public class PropertiesReaderTest
 {
 
-    private static final Logger log = Logger
-            .getLogger(PropertiesReaderTest.class);
+    private static final String TEST_PROPERTIES =
+            "prop1 = value1\n" +
+            "prop2 = value2a\n" +
+            "prop2 = value2b";
 
     static
     {
         Log4jInit.setLevel("ca.nrc.cadc", org.apache.log4j.Level.INFO);
     }
 
-    private static final String TEST_PROPERTIES =
-            "prop1 = value1\n" +
-            "prop2 = value2a\n" +
-            "prop2 = value2b";
-
-    private class TestInputStream extends InputStream
-    {
-
-        private InputStream one;
-        private InputStream two;
-        private int switchNum;
-        private int count = 0;
-
-        public TestInputStream(InputStream one, InputStream two, int switchNum)
-        {
-            this.one = one;
-            this.two = two;
-            this.switchNum = switchNum;
-        }
-
-        @Override
-        public int read() throws IOException
-        {
-            count++;
-            if (count <= switchNum)
-            {
-                log.debug("Reading from in one");
-                return one.read();
-            }
-            else
-            {
-                log.debug("Reading from in two");
-                return two.read();
-            }
-
-        }
-
-        @Override
-        public int read(byte[] b) throws IOException
-        {
-            count++;
-            if (count <= switchNum)
-            {
-                log.debug("Reading from in one");
-                return one.read(b);
-            }
-            else
-            {
-                log.debug("Reading from in two");
-                return two.read(b);
-            }
-        }
-
-        @Override
-        public int read(byte[] b, int off, int len) throws IOException
-        {
-            count++;
-            if (count <= switchNum)
-            {
-                log.debug("Reading from in one");
-                return one.read(b, off, len);
-            }
-            else
-            {
-                log.debug("Reading from in two");
-                return two.read(b, off, len);
-            }
-        }
-
-    }
-
     @Test
     public void testResilientProperties() throws Exception
     {
-        ByteArrayInputStream inOne = new ByteArrayInputStream(
-                TEST_PROPERTIES.getBytes("UTF-8"));
-        ByteArrayInputStream inTwo = new ByteArrayInputStream("".getBytes());
-        TestInputStream in = new TestInputStream(inOne, inTwo, 3);
 
+        File propFile = new File("test.properties");
         try
         {
+            if (!propFile.exists())
+                propFile.createNewFile();
+
+            FileOutputStream out = new FileOutputStream(propFile);
+            out.write(TEST_PROPERTIES.getBytes("UTF-8"));
+            out.close();
+
             // get the properties from inOne
-            PropertiesReader propReader = new PropertiesReader(in);
+            PropertiesReader propReader = new PropertiesReader("test.properties");
             List<String> prop1 = propReader.getPropertyValues("prop1");
             Assert.assertEquals("missing prop 1, value 1", "value1",
                                 prop1.get(0));
@@ -140,6 +73,10 @@ public class PropertiesReaderTest
                                 prop2.get(0));
             Assert.assertEquals("missing prop 2, value b", "value2b",
                                 prop2.get(1));
+
+            // delete the test properties file and ensure the properties are
+            // still available
+            propFile.delete();
 
             // get the properties from inTwo (should be saved from first config)
             prop1 = propReader.getPropertyValues("prop1");
@@ -156,7 +93,9 @@ public class PropertiesReaderTest
         }
         finally
         {
-            in.close();
+            // cleanup
+            if (propFile.exists())
+                propFile.delete();
         }
     }
 }

@@ -28,9 +28,13 @@
 
 package ca.nrc.cadc.util;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 
@@ -52,21 +56,26 @@ public class PropertiesReader
 
     private static final Logger log = Logger.getLogger(PropertiesReader.class);
 
-    private InputStream inputStream;
+    private File propertiesFile;
 
     // Holder for the last known readable set of properties
-    private static MultiValuedProperties lastKnownGoodProperties = null;
+    private static Map<String, MultiValuedProperties> cachedProperties =
+        new ConcurrentHashMap<String, MultiValuedProperties>();
 
     /**
-     * Constructor..
+     * Constructor.
      *
      * @param inputStream InputStream to read the property configuration.
      */
-    public PropertiesReader(InputStream inputStream)
+    public PropertiesReader(String filePath)
     {
-        if (inputStream == null)
-            throw new IllegalArgumentException("Provided inputStream is null.");
-        this.inputStream = inputStream;
+        if (filePath == null)
+            throw new IllegalArgumentException("filePath cannot be null.");
+
+        propertiesFile = new File(filePath);
+
+        if (!propertiesFile.exists() || !propertiesFile.isFile())
+            throw new IllegalArgumentException("no file at " + filePath);
     }
 
     /**
@@ -74,30 +83,41 @@ public class PropertiesReader
      *
      * @param key The key to lookup.
      * @return The property values or null if it is not set or is missing.
-     * @throws IOException
      */
-    public List<String> getPropertyValues(String key) throws IOException
+    public List<String> getPropertyValues(String key)
     {
         if (key == null)
             throw new IllegalArgumentException("Provided key is null.");
 
-        MultiValuedProperties properties = new MultiValuedProperties();
-        properties.load(this.inputStream);
+        String path = propertiesFile.getPath();
 
-        if ((properties.keySet() == null) || (properties.keySet().size() == 0))
+        MultiValuedProperties properties = null;
+        try
         {
-            if (lastKnownGoodProperties == null)
+            InputStream in = new FileInputStream(propertiesFile);
+            properties = new MultiValuedProperties();
+            properties.load(in);
+        }
+        catch (IOException e)
+        {
+            // File could not be opened
+            properties = null;
+        }
+
+        if (properties == null || properties.keySet() == null || properties.keySet().size() == 0)
+        {
+            MultiValuedProperties cachedVersion = cachedProperties.get(path);
+            if (cachedVersion == null)
             {
-                log.error("No property resource available from inputStream.");
+                log.error("No property resource available at " + path);
                 return null;
             }
-            log.warn(
-                    "Properties missing at inputStream. Using earlier version.");
-            properties = lastKnownGoodProperties;
+            log.warn("Properties missing at " + path + " Using earlier version.");
+            properties = cachedVersion;
         }
         else
         {
-            lastKnownGoodProperties = properties;
+            cachedProperties.put(path, properties);
         }
 
         return properties.getProperty(key);
@@ -108,9 +128,8 @@ public class PropertiesReader
      *
      * @param key The key to lookup.
      * @return The first property value or null if it is not set or is missing.
-     * @throws IOException
      */
-    public String getFirstPropertyValue(String key) throws IOException
+    public String getFirstPropertyValue(String key)
     {
         List<String> values = getPropertyValues(key);
         if (values != null && values.size() > 0)
