@@ -69,6 +69,8 @@
 
 package ca.nrc.cadc.auth;
 
+import ca.nrc.cadc.date.DateUtil;
+import ca.nrc.cadc.net.NetUtil;
 import java.lang.reflect.Constructor;
 import java.security.AccessControlContext;
 import java.security.AccessController;
@@ -80,23 +82,16 @@ import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.text.DateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
 import javax.servlet.http.HttpServletRequest;
-
-import ca.nrc.cadc.util.ArrayUtil;
 import org.apache.log4j.Logger;
-
-import ca.nrc.cadc.date.DateUtil;
-import ca.nrc.cadc.net.NetUtil;
 
 /**
  * Security utility.
@@ -146,11 +141,26 @@ public class AuthenticationUtil
     }
 
     /**
-     * Create a Subject from the given X509 Certificate Chain, and the given
-     * Principal Extractor.  The Chain exists to provide Public Credentials.
+     * Create a Subject using the given PrincipalExtractor. An implementation of the
+     * PrincipalExtractor interface is used to extract the authentication information
+     * from the incoming request. An implementation for plain servlet environment is provided
+     * here and a Restlet implementation is currently included in the cadcUWS library.
+     * </p><p>
+     * This method tries to detect the use of a proxy certificate and add the Principal
+     * representing the real identity of the user by comparing the subject and issuer fields
+     * of the certificate and using the issuer principal when the certificate is self-signed.
+     * If the user has connected anonymously, the returned Subject will have no
+     * principals and no credentials, but should be safe to use with Subject.doAs(...).
+     * </p><p>
+     * This method will also try to load an implementation of the Authenticator interface
+     * and use it to process the Subject before return. By default, it will try to load a
+     * class named <code>ca.nrc.cadc.auth.AuthenticatorImpl</code>. Applications may override
+     * this default class name by setting the <em>ca.nrc.cadc.auth.Authenticator</em> system
+     * property to the class name of their implementation. Note that the default implementation
+     * class does not exist in this library  so implementors can provide that exact class and
+     * then not need the system property.
+     * </p>
      *
-     * @param chain                 The X509 Certificate Chain for public
-     *                              credentials.
      * @param principalExtractor    The PrincipalExtractor to provide
      *                              Principals.
      * @return                      A new Subject.
@@ -187,11 +197,55 @@ public class AuthenticationUtil
        return getSubject(new ServletPrincipalExtractor(request));
     }
     
+   
     /**
+     * Create a subject with the specified certificate chain and private key. 
+     * This method constructs an X509CertificateChain and then calls 
+     * getSubject(X509CertificateChain).
+     * 
+     * @param certs a non-null and non-empty certificate chain
+     * @param key optional private key
+     * @return a Subject
+     */
+    public static Subject getSubject(X509Certificate[] certs, PrivateKey key)
+    {
+        final X509CertificateChain chain = new X509CertificateChain(certs, key);
+        return getSubject(chain);
+    }
+
+    /**
+     * Create a subject from the specified certificate chain. This method is
+     * intended for use by applications that load a certificate and key pair
+     * (probably from a file).
+     *
+     * @param chain                 The X509Certificate chain of certificates,
+     *                              if any.
+     * @return                      An augmented Subject.
+     */
+    public static Subject getSubject(X509CertificateChain chain)
+    {
+        Set<Principal> principals = new HashSet<Principal>();
+        Set<Object> publicCred = new HashSet<Object>();
+        Set privateCred = new HashSet();
+
+        // SSL authentication
+        if (chain != null)
+        {
+            principals.add(chain.getX500Principal());
+            publicCred.add(chain);
+            // note: we just leave the PrivateKey in the chain (eg public) rather
+            // than extracting and putting it into the privateCred set... TBD
+        }
+
+        Subject subject = new Subject(false, principals, publicCred, privateCred);
+        return subject; // this method for client apps only: no augment
+    }
+    
+     /**
      * Create a complete Subject with principal(s) and credentials (X509Certificate).
      * This method tries to detect the use of a proxy certificate and add the Principal
      * representing the real identity of the user by comparing the subject and issuer fields
-     * of the certficicate and using the issuer principal when the certificate is self-signed.
+     * of the certificate and using the issuer principal when the certificate is self-signed.
      * If the user has connected anonymously, the returned Subject will have no
      * principals and no credentials, but should be safe to use with Subject.doAs(...).
      * </p><p>
@@ -203,7 +257,7 @@ public class AuthenticationUtil
      * class does not exist in this library  so implementors can provide that exact class and
      * then not need the system property.
      * </p><p>
-     * To get the collection of certficates in the servlet environment:
+     * To get the collection of certificates in the servlet environment:
      * <pre>
      *   X509Certificate[] ca =
      *       (X509Certificate[]) request.getAttribute("javax.servlet.request.X509Certificate");
@@ -243,30 +297,6 @@ public class AuthenticationUtil
     }
 
     /**
-     * Create a subject with the specified certificate chain and private key.
-     * 
-     * @param certs a non-null and non-empty certficate chain
-     * @param key optional private key
-     * @return a Subject
-     */
-    public static Subject getSubject(X509Certificate[] certs, PrivateKey key)
-    {
-        final X509CertificateChain chain =
-                new X509CertificateChain(certs, key);
-
-        Set<Principal> principals = new HashSet<Principal>();
-        Set<Object> publicCred = new HashSet<Object>();
-        Set<Object> privateCred = new HashSet<Object>();
-
-        principals.add(chain.getPrincipal());
-        publicCred.add(chain);
-
-        Subject subject =  new Subject(false, principals, publicCred, privateCred);
-        return subject; // this method for client apps only
-        //return augmentSubject(subject);
-    }
-
-    /**
      * Create a subject from the specified user name and certficate chain.
      * 
      *
@@ -290,35 +320,6 @@ public class AuthenticationUtil
             // user logged in. Create corresponding Principal
             principals.add(new HttpPrincipal(remoteUser));
         }
-
-        // SSL authentication
-        if (chain != null)
-        {
-            principals.add(chain.getX500Principal());
-            publicCred.add(chain);
-            // note: we just leave the PrivateKey in the chain (eg public) rather
-            // than extracting and putting it into the privateCred set... TBD
-        }
-
-        Subject subject = new Subject(false, principals, publicCred, privateCred);
-
-        return augmentSubject(subject);
-    }
-
-    /**
-     * Create a subject from the specified certficate chain. This method is
-     * intended for use by applications that load a certificate and key pair
-     * (probably from a file).
-     *
-     * @param chain                 The X509Certificate chain of certificates,
-     *                              if any.
-     * @return                      An augmented Subject.
-     */
-    public static Subject getSubject(X509CertificateChain chain)
-    {
-        Set<Principal> principals = new HashSet<Principal>();
-        Set<Object> publicCred = new HashSet<Object>();
-        Set privateCred = new HashSet();
 
         // SSL authentication
         if (chain != null)
@@ -628,19 +629,14 @@ public class AuthenticationUtil
         // check validity
         if (subject != null)
         {
-            Set<X509CertificateChain> certs = subject
-                    .getPublicCredentials(X509CertificateChain.class);
-            if (certs.size() == 0)
+            Set<X509CertificateChain> certs = subject.getPublicCredentials(X509CertificateChain.class);
+            if (certs.isEmpty())
             {
                 // subject without certs means something went wrong above
-                throw new CertificateException(
-                        "No certificates associated with the subject");
+                throw new CertificateException("No certificates associated with the subject");
             }
-            DateFormat df = DateUtil.getDateFormat(
-                    DateUtil.ISO_DATE_FORMAT, DateUtil.LOCAL);
-            X509CertificateChain chain = certs.iterator().next(); // the
-                                                                    // first
-                                                                    // one
+            DateFormat df = DateUtil.getDateFormat(DateUtil.ISO_DATE_FORMAT, DateUtil.LOCAL);
+            X509CertificateChain chain = certs.iterator().next();
             Date start = null;
             Date end = null;
             for (X509Certificate c : chain.getChain())
@@ -650,22 +646,19 @@ public class AuthenticationUtil
                     start = c.getNotBefore();
                     end = c.getNotAfter();
                     c.checkValidity();
-
                 }
                 catch (CertificateExpiredException exp)
                 {
                     // improve the message
                     String msg = "certificate has expired (valid from "
-                            + df.format(start) + " to " + df.format(end)
-                            + ")";
+                            + df.format(start) + " to " + df.format(end) + ")";
                     throw new CertificateExpiredException(msg);
                 }
                 catch (CertificateNotYetValidException exp)
                 {
                     // improve the message
                     String msg = "certificate not yet valid (valid from "
-                            + df.format(start) + " to " + df.format(end)
-                            + ")";
+                            + df.format(start) + " to " + df.format(end) + ")";
                     throw new CertificateNotYetValidException(msg);
                 }
             }
