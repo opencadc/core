@@ -8,7 +8,7 @@
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
  *  All rights reserved                  Tous droits réservés
- *                                       
+ *
  *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
  *  expressed, implied, or               énoncée, implicite ou légale,
  *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
  *  software without specific prior      de ce logiciel sans autorisation
  *  written permission.                  préalable et particulière
  *                                       par écrit.
- *                                       
+ *
  *  This file is part of the             Ce fichier fait partie du projet
  *  OpenCADC project.                    OpenCADC.
- *                                       
+ *
  *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
  *  you can redistribute it and/or       vous pouvez le redistribuer ou le
  *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
  *  either version 3 of the              : soit la version 3 de cette
  *  License, or (at your option)         licence, soit (à votre gré)
  *  any later version.                   toute version ultérieure.
- *                                       
+ *
  *  OpenCADC is distributed in the       OpenCADC est distribué
  *  hope that it will be useful,         dans l’espoir qu’il vous
  *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
  *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
  *  General Public License for           Générale Publique GNU Affero
  *  more details.                        pour plus de détails.
- *                                       
+ *
  *  You should have received             Vous devriez avoir reçu une
  *  a copy of the GNU Affero             copie de la Licence Générale
  *  General Public License along         Publique GNU Affero avec
@@ -95,19 +95,19 @@ import org.apache.log4j.Logger;
 
 /**
  * Security utility.
- * 
+ *
  * @version $Version$
  * @author adriand
  */
 public class AuthenticationUtil
 {
-    
+
     // Mandatory support list of RDN descriptors according to RFC 4512.
     private static final String[] ORDERED_RDN_KEYS = new String[]
         {"DC", "CN", "OU", "O", "STREET", "L", "ST", "C", "UID"};
 
     private static final String DEFAULT_AUTH = Authenticator.class.getName() + "Impl";
-    
+
     private static Logger log = Logger.getLogger(AuthenticationUtil.class);
 
     private static Authenticator getAuthenticator()
@@ -169,7 +169,7 @@ public class AuthenticationUtil
     {
         if (principalExtractor == null)
             throw new IllegalArgumentException("principalExtractor cannot be null");
-        
+
         final Set<Object> publicCred = new HashSet<Object>();
         final Set<Object> privateCred = new HashSet<Object>();
 
@@ -196,13 +196,13 @@ public class AuthenticationUtil
     {
        return getSubject(new ServletPrincipalExtractor(request));
     }
-    
-   
+
+
     /**
-     * Create a subject with the specified certificate chain and private key. 
-     * This method constructs an X509CertificateChain and then calls 
+     * Create a subject with the specified certificate chain and private key.
+     * This method constructs an X509CertificateChain and then calls
      * getSubject(X509CertificateChain).
-     * 
+     *
      * @param certs a non-null and non-empty certificate chain
      * @param key optional private key
      * @return a Subject
@@ -240,7 +240,7 @@ public class AuthenticationUtil
         Subject subject = new Subject(false, principals, publicCred, privateCred);
         return subject; // this method for client apps only: no augment
     }
-    
+
      /**
      * Create a complete Subject with principal(s) and credentials (X509Certificate).
      * This method tries to detect the use of a proxy certificate and add the Principal
@@ -269,7 +269,7 @@ public class AuthenticationUtil
      * <pre>
      *   Request request = getRequest();
      *   Map<String, Object> requestAttributes = request.getAttributes();
-     *   Collection<X509Certificate> certs = 
+     *   Collection<X509Certificate> certs =
      *       (Collection<X509Certificate>) requestAttributes.get("org.restlet.https.clientCertificates");
      * </pre>
      *
@@ -298,7 +298,7 @@ public class AuthenticationUtil
 
     /**
      * Create a subject from the specified user name and certficate chain.
-     * 
+     *
      *
      *
      * @param remoteUser            The HTTP Authenticated user, if any.
@@ -422,17 +422,17 @@ public class AuthenticationUtil
     /**
      * Given two principal objects, return true if they represent
      * the same identity.
-     * 
+     *
      * The equality is defined by each principal type through the
-     * equal method, with the exception of X500Principals: if the 
+     * equal method, with the exception of X500Principals: if the
      * principals are instances of X500Principal, the
      * cannonical form of their names are compared.
-     * 
+     *
      * Two null principals are considered equal.
-     * 
+     *
      * @param p1 Principal object 1.
      * @param p2 Principal object 2.
-     * 
+     *
      * @return True if they are equal, false otherwise.
      */
     public static boolean equals(Principal p1, Principal p2)
@@ -463,7 +463,7 @@ public class AuthenticationUtil
 
     /**
      * Perform extended canonization operation on a distinguished name.
-     * 
+     *
      * This method will convert the DN to a format that:
      * <ul>
      * <li>Is all lower case.</li>
@@ -474,9 +474,9 @@ public class AuthenticationUtil
      * <li>If other RDNs exist in that are not in ORDERED_RDN_KEYS, an
      *     IllegalArgumentException is thrown.
      * </ul>
-     * 
+     *
      * Please see RFC#4514 for more inforamation.
-     * 
+     *
      * @param dnSrc
      * @return An extended canonized dn
      */
@@ -486,12 +486,12 @@ public class AuthenticationUtil
         {
             throw new IllegalArgumentException("Null DN provided.");
         }
-        
+
         log.debug("canonizeDistinguishedName: canonizing: " + dnSrc);
-        
+
         // convert the entire DN to upper case
         String original = dnSrc.toUpperCase();
-        
+
         // get a count of the number of RDN based on the number of
         // non-escaped equal signs.  use this count to compare the
         // results at the end
@@ -514,7 +514,7 @@ public class AuthenticationUtil
             }
             equalsIndex = original.indexOf("=", equalsIndex + 1);
         }
-        
+
         // Identify and collect the RDN (relative distinguished names).
         List<String> rdns = new ArrayList<String>();
         for (String rdnKey : ORDERED_RDN_KEYS)
@@ -536,38 +536,38 @@ public class AuthenticationUtil
                         }
                     }
                 }
-                
+
                 // check if this was the last RDN
                 if (endIndex == -1)
                 {
                     endIndex = original.length();
                 }
-                
+
                 String rdn = original.substring(startIndex, endIndex);
-                
+
                 // remove any trailing spaces
                 rdn = rdn.trim();
-                
+
                 // Remove the last character of the RDN if it is a comma or a forward
                 // slash
                 if (rdn.endsWith(",") || rdn.endsWith("/"))
                 {
                     rdn = rdn.substring(0, rdn.length() - 1);
                 }
-                
+
                 rdns.add(rdn);
-                
+
                 startIndex = original.indexOf(rdnKey.toUpperCase() + "=", endIndex);
             }
         }
-        
+
         // ensure we have the right number of RDNs
         if (rdns.size() != rdnCount)
         {
             throw new IllegalArgumentException(
                     "Unexpected number of RDNs in DN.  At least one RDN is unrecognized.");
         }
-        
+
         // put the RDNs back together separated by commas for a new DN
         StringBuilder newDN = new StringBuilder();
         List<String> rdnValues = null;
@@ -599,7 +599,7 @@ public class AuthenticationUtil
 
     /**
      * Object the X500Principal from a Subject.
-     * 
+     *
      * @param subject
      * @return X500 Principal
      */
@@ -613,7 +613,7 @@ public class AuthenticationUtil
         }
         return x500Principal;
     }
-    
+
     /**
      * This method checks the validity of X509Certificates associated with
      * a subject.
@@ -669,4 +669,15 @@ public class AuthenticationUtil
         }
     }
 
+    /**
+     * Convenience method for often recurring task.
+     *
+     * @return      Current Subject, or null if none.
+     */
+    public static Subject getCurrentSubject()
+    {
+        final AccessControlContext accessControlContext =
+                AccessController.getContext();
+        return Subject.getSubject(accessControlContext);
+    }
 }

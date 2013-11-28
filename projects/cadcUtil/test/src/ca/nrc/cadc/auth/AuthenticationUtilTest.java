@@ -74,6 +74,7 @@ import org.apache.log4j.Logger;
 
 import java.security.Principal;
 import javax.security.auth.x500.X500Principal;
+import java.security.PrivilegedAction;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import javax.security.auth.Subject;
@@ -481,6 +482,32 @@ public class AuthenticationUtilTest
         {
             log.debug("testGetSubjectFromHttpServletRequest_X500Principal - DONE");
         }
+    }
+
+    @Test
+    public void getCurrentSubject() throws Exception
+    {
+        final Subject subject = new Subject();
+        final HttpPrincipal principal = new HttpPrincipal("CADCtest");
+
+        subject.getPrincipals().add(principal);
+
+        Subject.doAs(subject, new PrivilegedAction<Void>()
+        {
+            @Override
+            public Void run()
+            {
+                final Subject currentSubject =
+                        AuthenticationUtil.getCurrentSubject();
+
+                assertEquals("Wrong Subject found.", "CADCtest",
+                             currentSubject.getPrincipals(
+                                     HttpPrincipal.class).toArray(
+                                     new HttpPrincipal[1])[0].getName());
+
+                return null;
+            }
+        });
     }
 
     @Test
