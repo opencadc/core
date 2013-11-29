@@ -83,6 +83,8 @@ import javax.servlet.http.HttpServletRequest;
 
 import static org.junit.Assert.*;
 import static org.easymock.EasyMock.*;
+import static org.junit.Assert.assertEquals;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -90,6 +92,7 @@ import ca.nrc.cadc.util.Log4jInit;
 import java.security.PrivateKey;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Map;
 
 
 /**
@@ -607,5 +610,36 @@ public class AuthenticationUtilTest
         {
             log.debug("testGetSubject_Deprecated - DONE");
         }
+    }
+
+    @Test
+    public void groupByPrincipalType() throws Exception
+    {
+        final Subject subject = new Subject();
+        final HttpPrincipal p1 = new HttpPrincipal("CADCtest");
+        final HttpPrincipal p2 = new HttpPrincipal("USER1");
+        final X500Principal p4 =
+                new X500Principal("cn=cadctest_636,ou=cadc,o=hia,c=ca");
+
+        subject.getPrincipals().add(p1);
+        subject.getPrincipals().add(p2);
+        subject.getPrincipals().add(p4);
+
+        Subject.doAs(subject, new PrivilegedAction<Void>()
+        {
+            @Override
+            public Void run()
+            {
+                final Map<Class<Principal>, Collection<String>> groups =
+                        AuthenticationUtil.groupPrincipalsByType();
+
+                assertEquals("Should have two HttpPrincipals.", 2,
+                             groups.get(HttpPrincipal.class).size());
+                assertEquals("Should have one X500Principals.", 1,
+                             groups.get(X500Principal.class).size());
+
+                return null;
+            }
+        });
     }
 }
