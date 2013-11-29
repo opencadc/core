@@ -104,7 +104,7 @@ import java.util.Map;
 public class AuthenticationUtilTest
 {
     
-    private static Logger log = Logger.getLogger(SSLUtilTest.class);
+    private static Logger log = Logger.getLogger(AuthenticationUtilTest.class);
     
     @BeforeClass
     public static void beforeClass()
