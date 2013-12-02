@@ -93,6 +93,9 @@
 	<target name="classpath">
 	        <echo message="${jars}" />
 	</target>
+        <target name="test-classpath">
+                <echo message="${testingJars}" />
+        </target>
 
 	<!-- compile java source code -->
 	<target name="compile" depends="init">
@@ -123,6 +126,31 @@
                         includeantruntime="false">
                                 <src path="test/src" />
                 </javac>
+        </target>
+        
+        <target name="setup-test">
+            <echo message="*** OpenCADC default setup-test target ***"/>
+        </target>
+        
+         <target name="test" depends="compile, compile-test, setup-test">
+             <echo message="*** OpenCADC default test target ***"/>
+             <junit printsummary="yes" haltonfailure="true" fork="yes">
+               <classpath>
+                 <pathelement path="${build}/class"/>
+                 <pathelement path="${build}/test/class"/>
+                 <pathelement path="test/config"/>
+                 <pathelement path="${jars}:${testingJars}"/>
+               </classpath>
+               <batchtest>
+                 <fileset dir="${build}/test/class">
+                   <include name="**/*Test.class"/>
+                   <exclude name="**/integration/*.class"/> <!-- integration tests -->
+                   <exclude name="**/*$*.class"/> <!-- inner classes -->
+                   <exclude name="**/*IntTest.class"/> <!-- deprecated: alt naming of integration tests -->
+                 </fileset>
+               </batchtest>
+               <formatter type="plain" usefile="false"/>
+             </junit>
         </target>
 
 	<target name="javadoc_check">
