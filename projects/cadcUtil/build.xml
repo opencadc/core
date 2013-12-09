@@ -222,7 +222,7 @@
     </target>
     
     <!-- Integration Tests (requires a local cadcTestServlet war file to be deployed) -->
-    <target name="int-test" depends="compile-test, setup-test">
+    <target name="post-test" depends="compile-test, setup-test">
         <junit printsummary="yes" haltonfailure="yes" fork="yes">
             <classpath>
                 <pathelement path="${build}/class"/>

@@ -141,12 +141,21 @@
                  <pathelement path="test/config"/>
                  <pathelement path="${jars}:${testingJars}"/>
                </classpath>
+               <!-- this is needed so caom2 code can load the JNI wcslib -->
+               <sysproperty key="java.library.path" value="${env.RPS}/lib.${env.T}" />
+               <syspropertyset>
+                   <propertyref prefix="ca.nrc.cadc." />
+               </syspropertyset>
                <batchtest>
                  <fileset dir="${build}/test/class">
                    <include name="**/*Test.class"/>
-                   <exclude name="**/integration/*.class"/> <!-- integration tests -->
-                   <exclude name="**/*$*.class"/> <!-- inner classes -->
-                   <exclude name="**/*IntTest.class"/> <!-- deprecated: alt naming of integration tests -->
+                   <!-- exclude class structure used in test setup -->
+                   <exclude name="**/Abstract*Test.class"/> 
+                   <exclude name="**/*$*.class"/>
+                   <!-- integration tests in various forms -->
+                   <exclude name="**/integration/*.class"/>
+                   <exclude name="**/*IntTest.class"/>
+                   <exclude name="**/*IntegrationTest.class"/>
                  </fileset>
                </batchtest>
                <formatter type="plain" usefile="false"/>
