@@ -67,7 +67,7 @@
  ************************************************************************
  */
 
-package ca.nrc.cadc.net;
+package ca.nrc.cadc.net.integration;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -93,6 +93,9 @@ import org.junit.Test;
 import ca.nrc.cadc.auth.RunnableAction;
 import ca.nrc.cadc.auth.SSLUtil;
 import ca.nrc.cadc.auth.SSOCookieCredential;
+import ca.nrc.cadc.net.HttpDownload;
+import ca.nrc.cadc.net.HttpTransfer;
+import ca.nrc.cadc.net.InputStreamWrapper;
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
 
