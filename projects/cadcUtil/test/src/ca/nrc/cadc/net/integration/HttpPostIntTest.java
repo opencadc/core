@@ -67,7 +67,7 @@
  ************************************************************************
  */
 
-package ca.nrc.cadc.net;
+package ca.nrc.cadc.net.integration;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -87,6 +87,8 @@ import org.junit.Test;
 
 import ca.nrc.cadc.auth.BasicX509TrustManager;
 import ca.nrc.cadc.auth.SSLUtil;
+import ca.nrc.cadc.net.HttpPost;
+import ca.nrc.cadc.net.NetUtil;
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
 

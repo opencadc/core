@@ -102,10 +102,16 @@
     <!-- JAR files needed to run the test suite -->
     <property name="testingJars" value="${build}/class:${jars}:${ext.lib}/junit.jar:${ext.lib}/xerces.jar:${ext.dev}/easymock.jar:${ext.dev}/cglib.jar:${ext.dev}/objenesis.jar:${ext.dev}/asm.jar" />
 
-    <!-- Run the test suite -->
-    <target name="test" depends="util-test,xml-test,auth-test,net-test,io-test,exec-test" />
+    <target name="setup-test">
+        <copy file="test/src/resources/MultiSchemeHandler.properties" todir="${build}/test/class"/>
+        <copy file="test/src/resources/foo.xsd" todir="${build}/test/class"/>
+        <copy file="test/src/resources/bar.xsd" todir="${build}/test/class"/>
+        <copy overwrite="true" file="${env.CADC_PREFIX}/etc/proxy.crt" tofile="${build}/test/class/proxy.crt" />
+        <copy overwrite="true" file="${env.CADC_PREFIX}/etc/proxy.key" tofile="${build}/test/class/proxy.key" />
+        <copy overwrite="true" file="${env.CADC_PREFIX}/etc/proxy.pem" tofile="${build}/test/class/proxy.pem" />
+    </target>
 
-    <target name="util-test" depends="compile-test">
+    <target name="util-test" depends="compile-test, setup-test">
         <junit printsummary="yes" haltonfailure="yes" fork="yes">
             <classpath>
                 <pathelement path="${build}/class"/>
@@ -118,15 +124,12 @@
             <test name="ca.nrc.cadc.net.NetUtilTest"/>
             <test name="ca.nrc.cadc.util.Log4jInitTest" />
             <test name="ca.nrc.cadc.util.ThrowableUtilTest" />
-        	<test name="ca.nrc.cadc.util.PropertiesReaderTest" />
+            <test name="ca.nrc.cadc.util.PropertiesReaderTest" />
             <formatter type="plain" usefile="false"/>
         </junit>
     </target>
     
-    <target name="net-test" depends="compile-test">
-        <copy file="test/src/resources/MultiSchemeHandler.properties" todir="${build}/test/class"/>
-        <copy overwrite="true" file="${env.A}/test-certificates/x509_CADCAuthtest1.crt" tofile="${build}/test/class/proxy.crt" />
-        <copy overwrite="true" file="${env.A}/test-certificates/x509_CADCAuthtest1.key" tofile="${build}/test/class/proxy.key" />
+    <target name="net-test" depends="compile-test, setup-test">
         <junit printsummary="yes" haltonfailure="yes" fork="yes">
             <classpath>
                 <pathelement path="${build}/class"/>
@@ -146,10 +149,7 @@
         </junit>
     </target>
 
-    <target name="auth-test" depends="compile-test">
-        <copy overwrite="true" file="${env.A}/test-certificates/x509_CADCAuthtest1.crt" tofile="${build}/test/class/proxy.crt" />
-        <copy overwrite="true" file="${env.A}/test-certificates/x509_CADCAuthtest1.key" tofile="${build}/test/class/proxy.key" />
-        <copy overwrite="true" file="${env.A}/test-certificates/x509_CADCAuthtest1.pem" tofile="${build}/test/class/proxy.pem" />
+    <target name="auth-test" depends="compile-test, setup-test">
         <junit printsummary="yes" haltonfailure="yes" fork="yes">
             <classpath>
                 <pathelement path="${build}/class"/>
@@ -166,10 +166,7 @@
         </junit>
     </target>
 
-    <target name="xml-test" depends="compile-test">
-        <copy file="test/src/resources/foo.xsd" todir="${build}/test/class"/>
-        <copy file="test/src/resources/bar.xsd" todir="${build}/test/class"/>
-
+    <target name="xml-test" depends="compile-test, setup-test">
         <junit printsummary="yes" haltonfailure="yes" fork="yes">
             <classpath>
                 <pathelement path="${build}/class"/>
@@ -182,7 +179,7 @@
         </junit>
     </target>
     
-    <target name="io-test" depends="compile-test">
+    <target name="io-test" depends="compile-test, setup-test">
         <junit printsummary="yes" haltonfailure="yes" fork="yes">
             <classpath>
                 <pathelement path="${build}/class"/>
@@ -198,7 +195,7 @@
         </junit>
     </target>
     
-    <target name="exec-test" depends="compile-test">
+    <target name="exec-test" depends="compile-test, setup-test">
         <junit printsummary="yes" haltonfailure="yes" fork="yes">
             <classpath>
                 <pathelement path="${build}/class"/>
@@ -211,7 +208,7 @@
         </junit>
     </target>
     
-    <target name="date-test" depends="compile-test">
+    <target name="date-test" depends="compile-test, setup-test">
         <junit printsummary="yes" haltonfailure="yes" fork="yes">
             <classpath>
                 <pathelement path="${build}/class"/>
@@ -225,7 +222,7 @@
     </target>
     
     <!-- Integration Tests (requires a local cadcTestServlet war file to be deployed) -->
-    <target name="int-test" depends="compile-test">
+    <target name="post-test" depends="compile-test, setup-test">
         <junit printsummary="yes" haltonfailure="yes" fork="yes">
             <classpath>
                 <pathelement path="${build}/class"/>
