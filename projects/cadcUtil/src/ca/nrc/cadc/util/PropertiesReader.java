@@ -79,16 +79,12 @@ public class PropertiesReader
     }
 
     /**
-     * Given the key, return the values of the property.
+     * Get all the properties
      *
-     * @param key The key to lookup.
-     * @return The property values or null if it is not set or is missing.
+     * @return MultiValuedProperties
      */
-    public List<String> getPropertyValues(String key)
+    public MultiValuedProperties getAllProperties()
     {
-        if (key == null)
-            throw new IllegalArgumentException("Provided key is null.");
-
         String path = propertiesFile.getPath();
 
         MultiValuedProperties properties = null;
@@ -119,6 +115,22 @@ public class PropertiesReader
         {
             cachedProperties.put(path, properties);
         }
+
+        return properties;
+    }
+
+    /**
+     * Given the key, return the values of the property.
+     *
+     * @param key The key to lookup.
+     * @return The property values or null if it is not set or is missing.
+     */
+    public List<String> getPropertyValues(String key)
+    {
+        if (key == null)
+            throw new IllegalArgumentException("Provided key is null.");
+
+        MultiValuedProperties properties = getAllProperties();
 
         return properties.getProperty(key);
     }
