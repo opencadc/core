@@ -67,4 +67,22 @@ public class ArrayUtilTest
                      ArrayUtil.matches("Nm", new String[] {null, "um", "nm"},
                                        true));
     }
+
+    @Test
+    public void contains() throws Exception
+    {
+        assertFalse("Should not contain.",
+                    ArrayUtil.contains("1", new String[]{}));
+
+        assertFalse("Should not contain.",
+                    ArrayUtil.contains(null, new String[]{"1"}));
+
+        assertFalse("Should not contain.", ArrayUtil.contains("1", null));
+
+        assertFalse("Should not contain.",
+                    ArrayUtil.contains("2", new String[]{"1"}));
+
+        assertTrue("Should contain",
+                   ArrayUtil.contains("1", new String[]{"1", "5"}));
+    }
 }
