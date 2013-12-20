@@ -56,6 +56,10 @@ public class PropertiesReader
 
     private static final Logger log = Logger.getLogger(PropertiesReader.class);
 
+    private static final String DEFAULT_CONFIG_DIR = System.getProperty("user.home") + "/config/";
+    private static final String CONFIG_DIR_SYSTEM_PROPERTY = PropertiesReader.class.getName() + ".dir";
+
+
     private File propertiesFile;
 
     // Holder for the last known readable set of properties
@@ -65,17 +69,30 @@ public class PropertiesReader
     /**
      * Constructor.
      *
-     * @param inputStream InputStream to read the property configuration.
+     * The properties file, specified by 'fileName' will be read from one of two places:
+     *
+     * 1) If the system property ca.nrc.cadc.util.PropertiesReader.dir is set, it will use the
+     *    value of this property as the directory.
+     * 2) Otherwise, the file will be read from ${user.home}/config/
+     *
+     * @param fileName The file in which to read.
      */
-    public PropertiesReader(String filePath)
+    public PropertiesReader(String fileName)
     {
-        if (filePath == null)
-            throw new IllegalArgumentException("filePath cannot be null.");
+        if (fileName == null)
+            throw new IllegalArgumentException("fileName cannot be null.");
 
-        propertiesFile = new File(filePath);
+        String configDir = DEFAULT_CONFIG_DIR;
+        if (System.getProperty(CONFIG_DIR_SYSTEM_PROPERTY) != null)
+            configDir = System.getProperty(CONFIG_DIR_SYSTEM_PROPERTY);
+
+        if (!configDir.endsWith("/"))
+            configDir = configDir + "/";
+
+        propertiesFile = new File(configDir + fileName);
 
         if (!propertiesFile.exists() || !propertiesFile.isFile())
-            throw new IllegalArgumentException("no file at " + filePath);
+            throw new IllegalArgumentException("no file at " + configDir + fileName);
     }
 
     /**

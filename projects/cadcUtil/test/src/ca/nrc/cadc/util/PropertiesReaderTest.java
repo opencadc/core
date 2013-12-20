@@ -56,6 +56,7 @@ public class PropertiesReaderTest
         File propFile = new File("test.properties");
         try
         {
+            System.setProperty(PropertiesReader.class.getName() + ".dir", "./");
             if (!propFile.exists())
                 propFile.createNewFile();
 
@@ -93,6 +94,7 @@ public class PropertiesReaderTest
         }
         finally
         {
+            System.setProperty(PropertiesReader.class.getName() + ".dir", "");
             // cleanup
             if (propFile.exists())
                 propFile.delete();
