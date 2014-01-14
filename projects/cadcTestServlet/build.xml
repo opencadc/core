@@ -95,7 +95,7 @@
     <!-- JAR files to be included in classpath and war file -->
     <property name="log4j"              value="${ext.lib}/log4j.jar" />
     <property name="servlet-api"        value="${ext.lib}/servlet-api.jar" />
-	<property name="cadcLog"            value="${lib}/cadcLog.jar" />
+    <property name="cadcLog"            value="${lib}/cadcLog.jar" />
 
     <property name="jars" value="${log4j}:${servlet-api}" />
 
@@ -112,7 +112,7 @@
         <war warfile="${build}/webapps/${webapp}.war" webxml="src/xml/web.xml" update="no">
             <lib file="${build}/tmp/${project}.jar" />
             <lib file="${log4j}" />
-        	<lib file="${cadcLog}" />
+            <lib file="${cadcLog}" />
         </war>
     </target>
 
@@ -123,18 +123,6 @@
     <!-- Directory used to deploy the WAR file -->
     <property name="deployDir" value="/data/test/webapps" />
 
-    <!-- compile the test classes -->
+    <target name="install"/>
 
-    <target name="test">
-        <echo message="Running test suite..." />
-        <junit printsummary="yes" haltonfailure="yes" fork="yes">
-            <classpath>
-                <pathelement path="${build}/test/class" />
-                <pathelement path="${build}/class" />
-                <pathelement path="${jars}:${testingJars}" />
-            </classpath>
-            <formatter type="plain" usefile="false" />
-        </junit>
-    </target>
-    
 </project>
