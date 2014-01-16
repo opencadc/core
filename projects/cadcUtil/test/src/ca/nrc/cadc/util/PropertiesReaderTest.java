@@ -64,7 +64,7 @@ public class PropertiesReaderTest
             out.write(TEST_PROPERTIES.getBytes("UTF-8"));
             out.close();
 
-            // get the properties from inOne
+            // get the properties
             PropertiesReader propReader = new PropertiesReader("test.properties");
             List<String> prop1 = propReader.getPropertyValues("prop1");
             Assert.assertEquals("missing prop 1, value 1", "value1",
@@ -91,6 +91,31 @@ public class PropertiesReaderTest
 
             String prop3 = propReader.getFirstPropertyValue("prop2");
             Assert.assertEquals("missing prop 2, value a", "value2a", prop3);
+        }
+        finally
+        {
+            System.setProperty(PropertiesReader.class.getName() + ".dir", "");
+            // cleanup
+            if (propFile.exists())
+                propFile.delete();
+        }
+    }
+
+    @Test
+    public void testAllowEmptyPropertiesFile() throws Exception
+    {
+
+        File propFile = new File("test.properties");
+        try
+        {
+            System.setProperty(PropertiesReader.class.getName() + ".dir", "./");
+            if (!propFile.exists())
+                propFile.createNewFile();
+
+            // get the properties
+            PropertiesReader propReader = new PropertiesReader("test.properties");
+            List<String> prop1 = propReader.getPropertyValues("prop1");
+            Assert.assertNull("should have been null", prop1);
         }
         finally
         {
