@@ -69,6 +69,7 @@
 
 package ca.nrc.cadc.profiler;
 
+import ca.nrc.cadc.log.WebServiceLogInfoTest;
 import ca.nrc.cadc.util.Log4jInit;
 import java.io.IOException;
 import java.io.LineNumberReader;
@@ -88,8 +89,6 @@ import org.junit.Test;
 public class ProfilerTest 
 {
     private static Logger log = Logger.getLogger(ProfilerTest.class);
-    
-    
     
     public ProfilerTest()
     {
