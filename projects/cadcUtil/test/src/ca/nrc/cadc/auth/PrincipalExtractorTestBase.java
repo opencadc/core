@@ -33,7 +33,7 @@
  */
 package ca.nrc.cadc.auth;
 
-public abstract class PrincipalExtractorTest<P extends PrincipalExtractor>
+public abstract class PrincipalExtractorTestBase<P extends PrincipalExtractor>
 {
     private P testSubject;
 

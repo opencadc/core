@@ -67,11 +67,15 @@
  ************************************************************************
  */
 
-package ca.nrc.cadc.net;
+package ca.nrc.cadc.net.integration;
 
 import ca.nrc.cadc.auth.BasicX509TrustManager;
 import ca.nrc.cadc.auth.RunnableAction;
 import ca.nrc.cadc.auth.SSLUtil;
+import ca.nrc.cadc.net.HttpDownload;
+import ca.nrc.cadc.net.HttpTransfer;
+import ca.nrc.cadc.net.HttpUpload;
+import ca.nrc.cadc.net.OutputStreamWrapper;
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
 import java.io.File;
