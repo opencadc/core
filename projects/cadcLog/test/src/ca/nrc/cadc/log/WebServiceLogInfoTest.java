@@ -69,14 +69,22 @@
 package ca.nrc.cadc.log;
 
 import ca.nrc.cadc.auth.HttpPrincipal;
+import ca.nrc.cadc.util.Log4jInit;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
 import junit.framework.Assert;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.junit.Test;
 
 public class WebServiceLogInfoTest
 {
+    private static final Logger log = Logger.getLogger(WebServiceLogInfoTest.class);
+    static
+    {
+        Log4jInit.setLevel("ca.nrc.cadc.log", Level.INFO);
+    }
     
     @Test
     public void testMinimalContentServlet()
@@ -90,7 +98,9 @@ public class WebServiceLogInfoTest
         
         WebServiceLogInfo logInfo = new ServletLogInfo(request);
         String start = logInfo.start();
+        log.info("testMinimalContentServlet: " + start);
         String end = logInfo.end();
+        log.info("testMinimalContentServlet: " + end);
         Assert.assertEquals("Wrong start", "START: {\"method\":\"GET\",\"path\":\"/path/of/request\",\"from\":\"192.168.0.0\"}", start);
         Assert.assertEquals("Wrong end", "END: {\"method\":\"GET\",\"path\":\"/path/of/request\",\"success\":true,\"from\":\"192.168.0.0\"}", end);
         
@@ -109,6 +119,7 @@ public class WebServiceLogInfoTest
         
         WebServiceLogInfo logInfo = new ServletLogInfo(request);
         String start = logInfo.start();
+        log.info("testMaximalContentServlet: " + start);
         Assert.assertEquals("Wrong start", "START: {\"method\":\"GET\",\"path\":\"/path/of/request\",\"from\":\"192.168.0.0\"}", start);
         logInfo.setSuccess(false);
         logInfo.setSubject(createSubject("the user"));
@@ -116,6 +127,7 @@ public class WebServiceLogInfoTest
         logInfo.setBytes(10L);
         logInfo.setMessage("the message");
         String end = logInfo.end();
+        log.info("testMaximalContentServlet: " + end);
         Assert.assertEquals("Wrong end", "END: {\"method\":\"GET\",\"path\":\"/path/of/request\",\"success\":false,\"user\":\"the user\",\"from\":\"192.168.0.0\",\"time\":1234,\"bytes\":10,\"message\":\"the message\"}", end);
         EasyMock.verify(request);
     }

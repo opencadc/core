@@ -69,9 +69,6 @@
 
 package ca.nrc.cadc.profiler;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.annotations.Expose;
 import org.apache.log4j.Logger;
 
 /**
@@ -90,35 +87,19 @@ public class Profiler
 {
     private static final Logger log = Logger.getLogger(Profiler.class);
     
-    private Gson gson;
     private long nanos;
     long numOps = 0L;
     
-    @Expose
     protected String caller;
     
-    @Expose
     protected String op;
     
-    @Expose
     protected long time;
     
     public Profiler(Class caller)
     {
         this.caller = caller.getSimpleName();
         this.nanos = System.nanoTime();
-    }
-    
-    private void lazyInit()
-    {
-        if (gson == null)
-        {
-            // init json output only when info-level logging is already on, 
-            // therefore only profile complete sequence of calls with a profiler
-            GsonBuilder builder = new GsonBuilder().excludeFieldsWithoutExposeAnnotation();
-            builder.disableHtmlEscaping();
-            this.gson = builder.create();
-        }
     }
     
     /**
@@ -138,8 +119,19 @@ public class Profiler
         
         if (log.isInfoEnabled())
         {
-            lazyInit();
-            log.info(gson.toJson(this, this.getClass()));
+            StringBuilder sb = new StringBuilder();
+            sb.append("{").append("\"caller\"");
+            sb.append(":");
+            sb.append("\"").append(caller).append("\"");
+            sb.append(",").append("\"op\"");
+            sb.append(":");
+            sb.append("\"").append(op).append("\"");
+            sb.append(",");
+            sb.append(",").append("\"time\"");
+            sb.append(":");
+            sb.append(Long.toString(time));
+            sb.append("}");
+            log.info(sb.toString());
         }
 
         this.time = 0;

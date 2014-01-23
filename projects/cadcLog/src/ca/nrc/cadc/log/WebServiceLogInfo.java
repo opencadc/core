@@ -77,60 +77,45 @@ import javax.security.auth.Subject;
 
 import ca.nrc.cadc.auth.HttpPrincipal;
 import ca.nrc.cadc.util.StringUtil;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.annotations.Expose;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import org.apache.log4j.Logger;
 
 /**
  * Class to be used by web services to log at INFO level the start and
- * end messages for each request.
+ * end messages for each request. All non-private, non-static, non-transient
+ * fields are logged in a simple JSON string.
  * 
  * @author majorb
  *
  */
 public abstract class WebServiceLogInfo
 {
+    private static final Logger log = Logger.getLogger(WebServiceLogInfo.class);
     
     private static final String ANONYMOUS_USER = "anonUser";
     
-    Gson gson;
+    private boolean userSuccess = true;
     
-    @Expose
     protected String method;
     
-    @Expose
     protected String path;
-    
-    protected boolean userSuccess = true;
-    
-    @Expose
+
     protected Boolean success;
     
-    @Expose
     protected String user;
     
-    @Expose
     protected String from;
     
-    @Expose
     protected Long time;
     
-    @Expose
     protected Long bytes;
     
-    @Expose
     protected String message;
     
-    @Expose
     protected String jobID;
     
-    protected WebServiceLogInfo()
-    {
-        GsonBuilder builder = new GsonBuilder().excludeFieldsWithoutExposeAnnotation();
-        builder.disableHtmlEscaping();
-        gson = builder.create();
-    }
+    protected WebServiceLogInfo() { }
     
     /**
      * Generates the log.info message for the start of the request.
@@ -138,7 +123,7 @@ public abstract class WebServiceLogInfo
      */
     public String start()
     {
-        return "START: " + gson.toJson(this, this.getClass());
+        return "START: " + doit();
     }
     
     /**
@@ -148,9 +133,58 @@ public abstract class WebServiceLogInfo
     public String end()
     {
         this.success = userSuccess;
-        return "END: " + gson.toJson(this, this.getClass());
+        return "END: " + doit();
     }
-
+    
+    String doit()
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+        populate(sb, this.getClass());
+        sb.append("}");
+        return sb.toString();
+    }
+    
+    private void populate(StringBuilder sb, Class c)
+    {
+        for (Field f : c.getDeclaredFields())
+        {
+            log.debug("found field: " + f.getName());
+            int m = f.getModifiers();
+            boolean inc = true;
+            inc = inc && !Modifier.isStatic(m);
+            inc = inc && !Modifier.isPrivate(m);
+            inc = inc && !Modifier.isTransient(m);
+            if (inc)
+            {
+                try
+                {
+                    Object o = f.get(this);
+                    log.debug(f.getName() + " = " + o);
+                    if (o != null)
+                    {
+                        if (sb.length() > 1) // more than just the opening {
+                            sb.append(",");
+                        sb.append("\"").append(f.getName()).append("\"");
+                        sb.append(":");
+                        if (o instanceof String)
+                            sb.append("\"").append(o.toString()).append("\"");
+                        else
+                            sb.append(o.toString());
+                    }
+                }
+                catch(IllegalAccessException ex)
+                {
+                    log.error("BUG: failed to get value for " + f.getName(), ex);
+                }
+            }
+        }
+        Class sc = c.getSuperclass();
+        if (WebServiceLogInfo.class.isAssignableFrom(sc) )
+            populate(sb, sc);
+    }
+    
+    
     /**
      * Set the success/fail boolean.
      * @param success

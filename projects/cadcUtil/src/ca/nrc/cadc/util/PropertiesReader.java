@@ -117,12 +117,12 @@ public class PropertiesReader
             properties = null;
         }
 
-        if (properties == null || properties.keySet() == null || properties.keySet().size() == 0)
+        if (properties == null)
         {
             MultiValuedProperties cachedVersion = cachedProperties.get(path);
             if (cachedVersion == null)
             {
-                log.error("No property resource available at " + path);
+                log.warn("No property resource available at " + path);
                 return null;
             }
             log.warn("Properties missing at " + path + " Using earlier version.");
@@ -148,8 +148,10 @@ public class PropertiesReader
             throw new IllegalArgumentException("Provided key is null.");
 
         MultiValuedProperties properties = getAllProperties();
+        if (properties != null)
+            return properties.getProperty(key);
 
-        return properties.getProperty(key);
+        return null;
     }
 
     /**
