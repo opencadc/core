@@ -111,13 +111,14 @@ public class AuthenticationUtil
     private static Authenticator getAuthenticator()
     {
         String cname = System.getProperty(Authenticator.class.getName());
+        Class c = null;
         if (cname == null)
         {
             cname = DEFAULT_AUTH;
         }
         try
         {
-            Class c = Class.forName(cname);
+            c = Class.forName(cname);
             Object o = c.newInstance();
             Authenticator ret = (Authenticator) o;
             log.debug("Authenticator: " + cname);
@@ -125,10 +126,11 @@ public class AuthenticationUtil
         }
         catch (Throwable t)
         {
-            if (!DEFAULT_AUTH.equals(cname))
+            if (!DEFAULT_AUTH.equals(cname) || c != null)
             {
-                log.error("failed to load Authenticator: " + cname);
+                log.error("failed to load Authenticator: " + cname, t);
             }
+            log.debug("failed to load Authenticator: " + cname, t);
         }
         log.debug("Authenticator: null");
         return null;
