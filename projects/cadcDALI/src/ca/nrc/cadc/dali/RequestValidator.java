@@ -72,6 +72,7 @@ package ca.nrc.cadc.dali;
 import ca.nrc.cadc.uws.Parameter;
 import ca.nrc.cadc.uws.ParameterUtil;
 import java.util.List;
+import org.apache.log4j.Logger;
 
 /**
  * Request Validator.
@@ -79,44 +80,53 @@ import java.util.List;
  */
 public class RequestValidator
 {
-    // Allowed values for REQUEST and VERSION parameters.
-    private static final String REQUEST = "doQuery";
-    private static final String VERSION = "1.0";
-
+    private static final Logger log = Logger.getLogger(RequestValidator.class);
+    
+    private String request;
+    private String version;
+    
+    private void clear()
+    {
+        this.request = null;
+        this.version = null;
+    }
+    
     public void validate(List<Parameter> paramList)
     {
+        clear();
         if (paramList == null || paramList.isEmpty())
         {
-            throw new IllegalStateException("Missing required parameter: REQUEST");
+            throw new IllegalArgumentException("Missing required parameter: REQUEST");
         }
 
         //  REQUEST
-        String request = ParameterUtil.findParameterValue("REQUEST", paramList);
-        if (request == null || request.trim().isEmpty())
+        String req = ParameterUtil.findParameterValue("REQUEST", paramList);
+        if (req == null || req.trim().isEmpty())
         {
-            throw new IllegalStateException("Missing required parameter: REQUEST");
+            throw new IllegalArgumentException("REQUEST parameter missing required value");
         }
-        if (!request.equals(REQUEST))
-        {
-            throw new IllegalArgumentException("Unknown REQUEST value: " + request);
-        }
+        this.request = req.trim();
+        log.debug("REQUEST: " + request);
 
         //  VERSION
-        String version = ParameterUtil.findParameterValue("VERSION", paramList);
-        if (version != null && !version.trim().isEmpty() && !version.equals(VERSION))
+        String ver = ParameterUtil.findParameterValue("VERSION", paramList);
+        if (ver != null)
         {
-            throw new IllegalArgumentException("Unsupported TAP version: " + version);
+            if (ver.isEmpty())
+                throw new IllegalArgumentException("VERSION parameter specified without a value");
+            this.version = ver.trim();
         }
+        log.debug("VERSION: " + version);
     }
 
     public String getRequest()
     {
-        return REQUEST;
+        return request;
     }
 
     public String getVersion()
     {
-        return VERSION;
+        return version;
     }
 
 }

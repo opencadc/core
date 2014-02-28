@@ -106,9 +106,12 @@ public class VOTableReader
     protected static final String GRAMMAR_POOL = "org.apache.xerces.parsers.XMLGrammarCachingConfiguration";
     protected static final String VOTABLE_11_SCHEMA = "VOTable-v1.1.xsd";
     protected static final String VOTABLE_12_SCHEMA = "VOTable-v1.2.xsd";
+    protected static final String VOTABLE_13_SCHEMA = "VOTable-v1.3.xsd";
     
     private static final String votable11SchemaUrl;
     private static final String votable12SchemaUrl;
+    private static final String votable13SchemaUrl;
+    
     static
     {
         votable11SchemaUrl = getSchemaURL(VOTABLE_11_SCHEMA);
@@ -116,6 +119,9 @@ public class VOTableReader
 
         votable12SchemaUrl = getSchemaURL(VOTABLE_12_SCHEMA);
         log.debug("votable12SchemaUrl: " + votable12SchemaUrl);
+        
+        votable13SchemaUrl = getSchemaURL(VOTABLE_13_SCHEMA);
+        log.debug("votable13SchemaUrl: " + votable13SchemaUrl);
     }
 
     static String getSchemaURL(String name)
@@ -150,6 +156,7 @@ public class VOTableReader
             schemaMap = new HashMap<String, String>();
             schemaMap.put(ca.nrc.cadc.dali.tables.votable.VOTableWriter.VOTABLE_11_NS_URI, votable11SchemaUrl);
             schemaMap.put(ca.nrc.cadc.dali.tables.votable.VOTableWriter.VOTABLE_12_NS_URI, votable12SchemaUrl);
+            schemaMap.put(ca.nrc.cadc.dali.tables.votable.VOTableWriter.VOTABLE_13_NS_URI, votable13SchemaUrl);
             log.debug("schema validation enabled");
         }
         else
