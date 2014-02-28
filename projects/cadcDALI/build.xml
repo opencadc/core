@@ -121,7 +121,7 @@
     <property name="testingJars"        value="${cadcDALI}:${junit}:${xerces}" />
 
     <!-- Run the test suite -->
-    <target name="test" depends="tables-tests, util-tests, stc-tests" />
+    <target name="setup-test" depends="build" />
 
     <target name="tables-tests" depends="compile,compile-test">
         <junit printsummary="yes" haltonfailure="yes" fork="yes">

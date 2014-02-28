@@ -91,7 +91,10 @@ import ca.nrc.cadc.uws.util.IterableContent;
 import ca.nrc.cadc.uws.util.MaxIterations;
 
 /**
- *
+ * Basic VOTable reader. This class currently supports a subset of VOTable (tabledata
+ * only) and always writes with the VOTable-1.2 namespace. TODO: complete support and
+ * allow caller to specify the target namespace.
+ * 
  * @author pdowler
  */
 public class VOTableWriter implements TableWriter<VOTable>
@@ -109,6 +112,7 @@ public class VOTableWriter implements TableWriter<VOTable>
     // Uri to the VOTable schema.
     public static final String VOTABLE_11_NS_URI = "http://www.ivoa.net/xml/VOTable/v1.1";
     public static final String VOTABLE_12_NS_URI = "http://www.ivoa.net/xml/VOTable/v1.2";
+    public static final String VOTABLE_13_NS_URI = "http://www.ivoa.net/xml/VOTable/v1.3";
 
     private boolean binaryTable;
 
@@ -150,7 +154,7 @@ public class VOTableWriter implements TableWriter<VOTable>
     {
         return "xml";
     }
-
+    
     /**
      * Write the VOTable to the specified OutputStream.
      *
