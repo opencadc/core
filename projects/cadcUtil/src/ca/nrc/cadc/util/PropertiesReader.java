@@ -61,6 +61,7 @@ public class PropertiesReader
 
 
     private File propertiesFile;
+    private String filepath;
 
     // Holder for the last known readable set of properties
     private static Map<String, MultiValuedProperties> cachedProperties =
@@ -77,9 +78,9 @@ public class PropertiesReader
      *
      * @param fileName The file in which to read.
      */
-    public PropertiesReader(String fileName)
+    public PropertiesReader(String filename)
     {
-        if (fileName == null)
+        if (filename == null)
             throw new IllegalArgumentException("fileName cannot be null.");
 
         String configDir = DEFAULT_CONFIG_DIR;
@@ -89,10 +90,14 @@ public class PropertiesReader
         if (!configDir.endsWith("/"))
             configDir = configDir + "/";
 
-        propertiesFile = new File(configDir + fileName);
+        this.filepath = configDir + filename;
+        propertiesFile = new File(filepath);
 
         if (!propertiesFile.exists() || !propertiesFile.isFile())
-            throw new IllegalArgumentException("no file at " + configDir + fileName);
+        {
+            log.warn("File at " + filepath + " does not exist.");
+            propertiesFile = null;
+        }
     }
 
     /**
@@ -102,35 +107,37 @@ public class PropertiesReader
      */
     public MultiValuedProperties getAllProperties()
     {
-        String path = propertiesFile.getPath();
-
         MultiValuedProperties properties = null;
-        try
+        if (propertiesFile != null)
         {
-            InputStream in = new FileInputStream(propertiesFile);
-            properties = new MultiValuedProperties();
-            properties.load(in);
-        }
-        catch (IOException e)
-        {
-            // File could not be opened
-            properties = null;
+            try
+            {
+                InputStream in = new FileInputStream(propertiesFile);
+                properties = new MultiValuedProperties();
+                properties.load(in);
+            }
+            catch (IOException e)
+            {
+                // File could not be opened
+                properties = null;
+            }
         }
 
         if (properties == null)
         {
-            MultiValuedProperties cachedVersion = cachedProperties.get(path);
+            log.warn("No file resource available at " + filepath);
+            MultiValuedProperties cachedVersion = cachedProperties.get(filepath);
             if (cachedVersion == null)
             {
-                log.warn("No property resource available at " + path);
+                log.warn("No cached resource available at " + filepath);
                 return null;
             }
-            log.warn("Properties missing at " + path + " Using earlier version.");
+            log.warn("Properties missing at " + filepath + " Using earlier version.");
             properties = cachedVersion;
         }
         else
         {
-            cachedProperties.put(path, properties);
+            cachedProperties.put(filepath, properties);
         }
 
         return properties;
