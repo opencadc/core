@@ -69,56 +69,61 @@
 
 package ca.nrc.cadc.dali.tables.votable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  *
  * @author pdowler
  */
-public class TableField
+public class VOTableResource
 {
-    protected String name;
-    protected String datatype;
+    private String type;
+    
+    private String name;
+    private List<Info> infos = new ArrayList<Info>();
+    private List<TableParam> params = new ArrayList<TableParam>();
+    //private List<Group> groups = new ArrayList<Group>();
+    
+    private VOTableData table;
 
-    public String id;
-    public String ucd;
-    public String unit;
-    public String utype;
-    public String xtype;
-    public Integer arraysize;
-    public Boolean variableSize;
-    public String description;
-    public String ref;
-    public List<String> values;
-
-    protected TableField() { }
-
-    public TableField(String name, String datatype)
+    public VOTableResource(String type)
     {
-        this.name = name;
-        this.datatype = datatype;
+        this.type = type;
+    }
+    
+    public String getType()
+    {
+        return type;
+    }
+    
+    public List<Info> getInfos()
+    {
+        return infos;
     }
 
-    public String getDatatype()
+    public List<TableParam> getParams()
     {
-        return datatype;
+        return params;
     }
-
+    
     public String getName()
     {
         return name;
     }
 
-    @Override
-    public String toString()
+    public void setName(String name)
     {
-        StringBuilder sb = new StringBuilder();
-        sb.append("TableField[");
-        sb.append(name);
-        sb.append(",");
-        sb.append(datatype);
-        sb.append("]");
-        return sb.toString();
+        this.name = name;
     }
-    
+
+    public VOTableData getTable()
+    {
+        return table;
+    }
+
+    public void setTable(VOTableData table)
+    {
+        this.table = table;
+    }
 }

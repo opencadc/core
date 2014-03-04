@@ -72,7 +72,6 @@ package ca.nrc.cadc.dali.tables.votable;
 import ca.nrc.cadc.dali.tables.TableData;
 import ca.nrc.cadc.dali.util.Format;
 import ca.nrc.cadc.dali.util.FormatFactory;
-import ca.nrc.cadc.xml.XmlUtil;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -173,7 +172,7 @@ public class VOTableReader
      * @return a VOTable object.
      * @throws IOException if unable to read the VOTable.
      */
-    public VOTable read(String xml)
+    public VOTableDocument read(String xml)
         throws IOException
     {
         Reader reader = new StringReader(xml);
@@ -187,7 +186,7 @@ public class VOTableReader
      * @return a VOTable object.
      * @throws IOException is problem reading the InputStream.
      */
-    public VOTable read(InputStream istream)
+    public VOTableDocument read(InputStream istream)
         throws IOException
     {
         Reader reader = new BufferedReader(new InputStreamReader(istream, "UTF-8"));
@@ -201,7 +200,7 @@ public class VOTableReader
      * @return a VOTable object.
      * @throws IOException if problem reading from the reader.
      */
-    public VOTable read(Reader reader)
+    public VOTableDocument read(Reader reader)
         throws IOException
     {
         // Parse the input document.
@@ -216,7 +215,7 @@ public class VOTableReader
         }
         
         // Returned VOTable object.
-        VOTable votable = new VOTable();
+        VOTableDocument votable = new VOTableDocument();
         
         // Document root element.
         Element root = document.getRootElement();
@@ -225,32 +224,49 @@ public class VOTableReader
         Namespace namespace = root.getNamespace();
         log.debug("Namespace: " + namespace);
         
-        // RESOURCE element.
-        Element resource = root.getChild("RESOURCE", namespace);
-        if (resource != null)
+        // RESOURCE elements
+        List<Element> resources = root.getChildren("RESOURCE", namespace);
+        for (Element resource : resources)
         {
+            Attribute typeAttr = resource.getAttribute("type");
+            VOTableResource votResource = new VOTableResource(typeAttr.getValue());
+            votable.getResources().add(votResource);
+            
             // Get the RESOURCE name attribute.
-            Attribute resourceName = resource.getAttribute("name");
-            if (resourceName != null)
-            {
-                votable.setResourceName(resourceName.getValue());
-            }
+            Attribute nameAttr = resource.getAttribute("name");
+            if (nameAttr != null)
+                votResource.setName(nameAttr.getValue());
 
-            // INFO element.
+            // INFO elements
             List<Element> infos = resource.getChildren("INFO", namespace);
-            votable.getInfos().addAll(getInfos(infos, namespace));
+            log.debug("found resource.info: " + infos.size());
+            votResource.getInfos().addAll(getInfos(infos, namespace));
+            
+            // PARAM elements
+            List<Element> params = resource.getChildren("PARAM", namespace);
+            log.debug("found resource.param: " + params.size());
+            votResource.getParams().addAll(getParams(params, namespace));
             
             // TABLE element.
             Element table = resource.getChild("TABLE", namespace);
             if (table != null)
             {
-                // PARAM elements.
-                List<Element> params = table.getChildren("PARAM", namespace);
-                votable.getParams().addAll(getParams(params, namespace));
+                VOTableData vot = new VOTableData();
+                votResource.setTable(vot);
+                
+                List<Element> tinfos = table.getChildren("INFO", namespace);
+                log.debug("found resource.table.info: " + tinfos.size());
+                vot.getInfos().addAll(getInfos(tinfos, namespace));
+                
+                // PARAM elements
+                List<Element> tparams = table.getChildren("PARAM", namespace);
+                log.debug("found resource.table.param: " + tparams.size());
+                vot.getParams().addAll(getParams(tparams, namespace));
 
                 // FIELD elements.
-                List<Element> fields = table.getChildren("FIELD", namespace);
-                votable.getColumns().addAll(getFields(fields, namespace));
+                List<Element> tfields = table.getChildren("FIELD", namespace);
+                log.debug("found resource.table.field: " + tfields.size());
+                vot.getFields().addAll(getFields(tfields, namespace));
 
                 // DATA element.
                 Element data = table.getChild("DATA", namespace);
@@ -258,7 +274,7 @@ public class VOTableReader
                 {
                     // TABLEDATA element.
                     Element tableData = data.getChild("TABLEDATA", namespace);
-                    votable.setTableData(getTableData(tableData, namespace, votable.getColumns()));
+                    vot.setTableData(getTableData(tableData, namespace, vot.getFields()));
                 }
             }
         }

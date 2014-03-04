@@ -68,24 +68,6 @@
 */
 package ca.nrc.cadc.dali.tables.votable;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.StringWriter;
-import java.text.DateFormat;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import ca.nrc.cadc.dali.tables.TableData;
 import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.stc.Circle;
@@ -96,6 +78,16 @@ import ca.nrc.cadc.stc.ReferencePosition;
 import ca.nrc.cadc.stc.Region;
 import ca.nrc.cadc.stc.STC;
 import ca.nrc.cadc.util.Log4jInit;
+import java.io.StringWriter;
+import java.text.DateFormat;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  *
@@ -113,7 +105,7 @@ public class VOTableReaderWriterTest
     @BeforeClass
     public static void setUpClass() throws Exception
     {
-        Log4jInit.setLevel("ca.nrc.cadc", Level.INFO);
+        Log4jInit.setLevel("ca.nrc.cadc.dali.tables", Level.INFO);
         dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
     }
 
@@ -126,29 +118,38 @@ public class VOTableReaderWriterTest
             String resourceName = "VOTable resource name";
 
             // Build a VOTable.
-            VOTable expected = new VOTable();
-            expected.setResourceName(resourceName);
+            VOTableDocument expected = new VOTableDocument();
+            
+            VOTableResource vr = new VOTableResource("meta");
+            expected.getResources().add(vr);
+            vr.getParams().addAll(getMetaParams());
+            
+            vr = new VOTableResource("results");
+            expected.getResources().add(vr);
+            vr.setName(resourceName);
+            VOTableData vot = new VOTableData();
+            vr.setTable(vot);
 
             // Add INFO's.
-            expected.getInfos().addAll(getTestInfos());
+            vot.getInfos().addAll(getTestInfos());
 
             // Add TableFields.
-            expected.getParams().addAll(getTestParams());
-            expected.getColumns().addAll(getTestFields());
+            vot.getParams().addAll(getTestParams());
+            vot.getFields().addAll(getTestFields());
 
             // Add TableData.
-            expected.setTableData(new TestTableData());
+            vot.setTableData(new TestTableData());
 
             // Write VOTable to xml.
             StringWriter sw = new StringWriter();
             VOTableWriter writer = new VOTableWriter();
             writer.write(expected, sw);
             String xml = sw.toString();
-            log.debug("Expected XML: \n\n" + xml);
+            log.debug("XML: \n\n" + xml);
 
             // Read in xml to VOTable with schema validation.
             VOTableReader reader = new VOTableReader();
-            VOTable actual = reader.read(xml);
+            VOTableDocument actual = reader.read(xml);
             
             log.debug("Expected:\n\n" + expected);
             log.debug("Actual:\n\n" + actual);
@@ -161,7 +162,7 @@ public class VOTableReaderWriterTest
         catch(Exception unexpected)
         {
             log.error("unexpected exception", unexpected);
-            fail("unexpected exception: " + unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
         }
     }
     
@@ -174,18 +175,23 @@ public class VOTableReaderWriterTest
             String resourceName = "VOTable resource name";
 
             // Build a VOTable.
-            VOTable expected = new VOTable();
-            expected.setResourceName(resourceName);
+            VOTableDocument expected = new VOTableDocument();
+            VOTableResource vr = new VOTableResource("results");
+            expected.getResources().add(vr);
+            vr.setName(resourceName);
 
+            VOTableData vot = new VOTableData();
+            vr.setTable(vot);
+            
             // Add INFO's.
-            expected.getInfos().addAll(getTestInfos());
+            vot.getInfos().addAll(getTestInfos());
 
             // Add TableFields.
-            expected.getParams().addAll(getTestParams());
-            expected.getColumns().addAll(getTestFields());
+            vot.getParams().addAll(getTestParams());
+            vot.getFields().addAll(getTestFields());
 
             // Add TableData.
-            expected.setTableData(new TestTableData());
+            vot.setTableData(new TestTableData());
 
             // Write VOTable to xml.
             StringWriter sw = new StringWriter();
@@ -196,7 +202,7 @@ public class VOTableReaderWriterTest
 
             // Read in xml to VOTable with schema validation.
             VOTableReader reader = new VOTableReader();
-            VOTable actual = reader.read(xml);
+            VOTableDocument actual = reader.read(xml);
             
             log.debug("Expected:\n\n" + expected);
             log.debug("Actual:\n\n" + actual);
@@ -209,7 +215,7 @@ public class VOTableReaderWriterTest
         catch(Exception unexpected)
         {
             log.error("unexpected exception", unexpected);
-            fail("unexpected exception: " + unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
@@ -218,100 +224,56 @@ public class VOTableReaderWriterTest
      * Test might be a bit dodgy since it's assuming the VOTable
      * elements will be written and read in the same order.
      */
-    public void compareVOTable(VOTable expected, VOTable actual, Long actualMax)
+    public void compareVOTable(VOTableDocument expected, VOTableDocument actual, Long actualMax)
     {
-        assertNotNull(expected);
-        assertNotNull(actual);
+        Assert.assertNotNull(expected);
+        Assert.assertNotNull(actual);
 
+        Assert.assertEquals(expected.getResources().size(), actual.getResources().size());
+        
+        for (int i=0; i<expected.getResources().size(); i++)
+        {
+            compareVOTableResource(expected.getResources().get(i), actual.getResources().get(i), actualMax);
+        }
+    }
+    
+    public void compareVOTableResource(VOTableResource expected, VOTableResource actual, Long actualMax)
+    {
         // RESOURCE name
-        assertEquals(expected.getResourceName(), actual.getResourceName());
+        Assert.assertEquals(expected.getName(), actual.getName());
 
-        // INFO
-        assertNotNull(expected.getInfos());
-        assertNotNull(actual.getInfos());
-        List<Info> expectedInfos = expected.getInfos();
-        List<Info> actualInfos = actual.getInfos();
-        assertEquals(expectedInfos.size(), actualInfos.size());
-        for (int i = 0; i < expectedInfos.size(); i++)
-        {
-            Info expectedInfo = expectedInfos.get(i);
-            Info actualInfo = actualInfos.get(i);
-            assertNotNull(expectedInfo);
-            assertNotNull(actualInfo);
-            assertEquals(expectedInfo.getName(), actualInfo.getName());
-            assertEquals(expectedInfo.getValue(), actualInfo.getValue());
-        }
+        compareInfos(expected.getInfos(), actual.getInfos());
 
-        // PARAM
-        assertNotNull(expected.getParams());
-        assertNotNull(actual.getParams());
-        List<TableParam> expectedParams = expected.getParams();
-        List<TableParam> actualParams = actual.getParams();
-        assertEquals(expectedParams.size(), actualParams.size());
-        for (int i = 0; i < expectedParams.size(); i++)
-        {
-            TableParam expectedParam = expectedParams.get(i);
-            TableParam actualParam = actualParams.get(i);
-            assertNotNull(expectedParam);
-            assertNotNull(actualParam);
-            assertEquals(expectedParam.getName(), actualParam.getName());
-            assertEquals(expectedParam.getDatatype(), expectedParam.getDatatype());
-            assertEquals(expectedParam.getValue(), expectedParam.getValue());
-            assertEquals(expectedParam.id, actualParam.id);
-            assertEquals(expectedParam.ucd, actualParam.ucd);
-            assertEquals(expectedParam.unit, actualParam.unit);
-            assertEquals(expectedParam.utype, actualParam.utype);
-            assertEquals(expectedParam.xtype, actualParam.xtype);
-            assertEquals(expectedParam.arraysize, actualParam.arraysize);
-            assertEquals(expectedParam.variableSize, actualParam.variableSize);
-            assertEquals(expectedParam.description, actualParam.description);
-            List<String> expectedValues = expectedParam.values;
-            List<String> actualValues = actualParam.values;
-            if (expectedValues == null)
-            {
-                assertNull(actualValues);
-                continue;
-            }
-            assertEquals(expectedValues.size(), actualValues.size());
-            for (int j = 0; j < expectedValues.size(); j++)
-            {
-                assertEquals(expectedValues.get(j), actualValues.get(j));
-            }
-        }
+        compareParams(expected.getParams(), actual.getParams());
 
-        // FIELD
-        assertNotNull(expected.getColumns());
-        assertNotNull(actual.getColumns());
-        List<TableField> expectedFields = expected.getColumns();
-        List<TableField> actualFields = actual.getColumns();
-        assertEquals(expectedFields.size(), actualFields.size());
-        for (int i = 0; i < expectedFields.size(); i++)
+        compareTables(expected.getTable(), actual.getTable(), actualMax);
+        
+        
+    }
+    
+    public void compareTables(VOTableData expected, VOTableData actual, Long actualMax)
+    {
+        if (expected != null)
+            Assert.assertNotNull(actual);
+        else
         {
-            TableField expectedField = expectedFields.get(i);
-            TableField actualField = actualFields.get(i);
-            assertNotNull(expectedField);
-            assertNotNull(actualField);
-            assertEquals(expectedField.getName(), actualField.getName());
-            assertEquals(expectedField.getDatatype(), expectedField.getDatatype());
-            assertEquals(expectedField.id, actualField.id);
-            assertEquals(expectedField.ucd, actualField.ucd);
-            assertEquals(expectedField.unit, actualField.unit);
-            assertEquals(expectedField.utype, actualField.utype);
-            assertEquals(expectedField.xtype, actualField.xtype);
-            assertEquals(expectedField.arraysize, actualField.arraysize);
-            assertEquals(expectedField.variableSize, actualField.variableSize);
-            assertEquals(expectedField.description, actualField.description);
+            Assert.assertNull(actual);
+            return;
         }
         
+        compareInfos(expected.getInfos(), actual.getInfos());
+        compareParams(expected.getParams(), actual.getParams());
+        compareFields(expected.getFields(), actual.getFields());
+        
         // TABLEDATA
-        assertNotNull(expected.getTableData());
-        assertNotNull(actual.getTableData());
+        Assert.assertNotNull(expected.getTableData());
+        Assert.assertNotNull(actual.getTableData());
         TableData expectedTableData = expected.getTableData();
         TableData actualTableData = actual.getTableData();
         Iterator<List<Object>> expectedIter = expectedTableData.iterator();
         Iterator<List<Object>> actualIter = actualTableData.iterator();
-        assertNotNull(expectedIter);
-        assertNotNull(actualIter);
+        Assert.assertNotNull(expectedIter);
+        Assert.assertNotNull(actualIter);
         Long iteratorCount = 0L;
         while (expectedIter.hasNext())
         {
@@ -322,15 +284,15 @@ public class VOTableReaderWriterTest
             
             if (actualMax != null && iteratorCount >= actualMax)
             {
-                assertTrue("Should have reached max.", !actualIter.hasNext());
+                Assert.assertTrue("Should have reached max.", !actualIter.hasNext());
             }
             else
             {
                 iteratorCount++;
             
-                assertTrue("Missing " + expectedList, actualIter.hasNext());
+                Assert.assertTrue("Missing " + expectedList, actualIter.hasNext());
                 List<Object> actualList = actualIter.next();
-                assertEquals(expectedList.size(), actualList.size());
+                Assert.assertEquals(expectedList.size(), actualList.size());
                 for (int i = 0; i < expectedList.size(); i++)
                 {
                     Object expectedObject = expectedList.get(i);
@@ -364,26 +326,103 @@ public class VOTableReaderWriterTest
                     {
                         Position expectedPosition = (Position) expectedObject;
                         Position actaulPosition = (Position) actualObject;
-                        assertEquals(STC.format(expectedPosition), STC.format(actaulPosition));
+                         Assert.assertEquals(STC.format(expectedPosition), STC.format(actaulPosition));
                     }
                     else if (expectedObject instanceof Region && actualObject instanceof Region)
                     {
                         Region expectedRegion = (Region) expectedObject;
                         Region actualRegion = (Region) actualObject;
-                        assertEquals(STC.format(expectedRegion), STC.format(actualRegion));
+                         Assert.assertEquals(STC.format(expectedRegion), STC.format(actualRegion));
                     }
                     else
                     {
-                        assertEquals(expectedObject, actualObject);
+                         Assert.assertEquals(expectedObject, actualObject);
                     }
                 }
             }
         }
         
         if (actualMax != null)
-            assertEquals("wrong number of iterations", actualMax, iteratorCount);
+            Assert.assertEquals("wrong number of iterations", actualMax, iteratorCount);
     }
 
+    public void compareInfos(List<Info>  expected, List<Info> actual)
+    {
+        // INFO
+        Assert.assertNotNull(expected);
+        Assert.assertNotNull(actual);
+        Assert.assertEquals(expected.size(), actual.size());
+        for (int i = 0; i < expected.size(); i++)
+        {
+            Info expectedInfo = expected.get(i);
+            Info actualInfo = actual.get(i);
+            Assert.assertNotNull(expectedInfo);
+            Assert.assertNotNull(actualInfo);
+            Assert.assertEquals(expectedInfo.getName(), actualInfo.getName());
+            Assert.assertEquals(expectedInfo.getValue(), actualInfo.getValue());
+        }
+    }
+    public void compareParams(List<TableParam>  expected, List<TableParam> actual)
+    {
+        // PARAM
+        Assert.assertNotNull(expected);
+        Assert.assertNotNull(actual);
+        Assert.assertEquals(expected.size(), actual.size());
+        for (int i = 0; i < expected.size(); i++)
+        {
+            TableParam expectedParam = expected.get(i);
+            TableParam actualParam = actual.get(i);
+            Assert.assertNotNull(expectedParam);
+            Assert.assertNotNull(actualParam);
+            Assert.assertEquals(expectedParam.getName(), actualParam.getName());
+            Assert.assertEquals(expectedParam.getDatatype(), expectedParam.getDatatype());
+            Assert.assertEquals(expectedParam.getValue(), expectedParam.getValue());
+            Assert.assertEquals(expectedParam.id, actualParam.id);
+            Assert.assertEquals(expectedParam.ucd, actualParam.ucd);
+            Assert.assertEquals(expectedParam.unit, actualParam.unit);
+            Assert.assertEquals(expectedParam.utype, actualParam.utype);
+            Assert.assertEquals(expectedParam.xtype, actualParam.xtype);
+            Assert.assertEquals(expectedParam.arraysize, actualParam.arraysize);
+            Assert.assertEquals(expectedParam.variableSize, actualParam.variableSize);
+            Assert.assertEquals(expectedParam.description, actualParam.description);
+            List<String> expectedValues = expectedParam.values;
+            List<String> actualValues = actualParam.values;
+            if (expectedValues == null)
+            {
+                Assert.assertNull(actualValues);
+                continue;
+            }
+            Assert.assertEquals(expectedValues.size(), actualValues.size());
+            for (int j = 0; j < expectedValues.size(); j++)
+            {
+                Assert.assertEquals(expectedValues.get(j), actualValues.get(j));
+            }
+        }
+    }
+    public void compareFields(List<TableField>  expected, List<TableField> actual)
+    {
+        // FIELD
+        Assert.assertNotNull(expected);
+        Assert.assertNotNull(actual);
+        Assert.assertEquals(expected.size(), actual.size());
+        for (int i = 0; i < expected.size(); i++)
+        {
+            TableField expectedField = expected.get(i);
+            TableField actualField = actual.get(i);
+            Assert.assertNotNull(expectedField);
+            Assert.assertNotNull(actualField);
+            Assert.assertEquals(expectedField.getName(), actualField.getName());
+            Assert.assertEquals(expectedField.getDatatype(), expectedField.getDatatype());
+            Assert.assertEquals(expectedField.id, actualField.id);
+            Assert.assertEquals(expectedField.ucd, actualField.ucd);
+            Assert.assertEquals(expectedField.unit, actualField.unit);
+            Assert.assertEquals(expectedField.utype, actualField.utype);
+            Assert.assertEquals(expectedField.xtype, actualField.xtype);
+            Assert.assertEquals(expectedField.arraysize, actualField.arraysize);
+            Assert.assertEquals(expectedField.variableSize, actualField.variableSize);
+            Assert.assertEquals(expectedField.description, actualField.description);
+        }
+    }
     protected List<Info> getTestInfos()
     {
         List<Info> infos = new ArrayList<Info>();
@@ -397,6 +436,17 @@ public class VOTableReaderWriterTest
         return infos;
     }
 
+    protected List<TableParam> getMetaParams()
+    {
+        List<TableParam> params = new ArrayList<TableParam>();
+        params.add(new TableParam("standardID", "char", "ivo://ivoa.net/std/DataLink/1.0"));
+        params.add(new TableParam("resourceIdentifier", "char", "ivo://cadc.nrc.ca/datalink"));
+        params.add(new TableParam("accessURL", "char", "http://www.cadc.hia.nrc.gc.ca/caom2ops/datalink"));
+        TableParam servParam = new TableParam("ID", "char", "");
+        servParam.ref = "someID";
+        params.add(servParam);
+        return params;
+    }
     protected List<TableParam> getTestParams()
     {
         List<TableParam> params = new ArrayList<TableParam>();
@@ -624,6 +674,17 @@ public class VOTableReaderWriterTest
         regionColumn.description = "region column";
         fields.add(regionColumn);
 
+        TableField idColumn = new TableField("id column", "char");
+        idColumn.id = "someID";
+        idColumn.ucd = "idColumn.ucd";
+        idColumn.unit = "idColumn.unit";
+        idColumn.utype = "idColumn.utype";
+        idColumn.xtype = "adql:REGION";
+        idColumn.arraysize = null;
+        idColumn.variableSize = true;
+        idColumn.description = "id column";
+        fields.add(idColumn);
+        
         return fields;
     }
     

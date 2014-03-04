@@ -69,56 +69,45 @@
 
 package ca.nrc.cadc.dali.tables.votable;
 
+import ca.nrc.cadc.dali.tables.TableData;
+import ca.nrc.cadc.dali.tables.TableModel;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  *
  * @author pdowler
  */
-public class TableField
+public class VOTableData  implements TableModel
 {
-    protected String name;
-    protected String datatype;
+    private List<Info> infos = new ArrayList<Info>();
+    private List<TableParam> params = new ArrayList<TableParam>();
+    private List<TableField> fields = new ArrayList<TableField>();
 
-    public String id;
-    public String ucd;
-    public String unit;
-    public String utype;
-    public String xtype;
-    public Integer arraysize;
-    public Boolean variableSize;
-    public String description;
-    public String ref;
-    public List<String> values;
-
-    protected TableField() { }
-
-    public TableField(String name, String datatype)
-    {
-        this.name = name;
-        this.datatype = datatype;
-    }
-
-    public String getDatatype()
-    {
-        return datatype;
-    }
-
-    public String getName()
-    {
-        return name;
-    }
-
-    @Override
-    public String toString()
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.append("TableField[");
-        sb.append(name);
-        sb.append(",");
-        sb.append(datatype);
-        sb.append("]");
-        return sb.toString();
-    }
+    private TableData tableData;
     
+    public List<Info> getInfos()
+    {
+        return infos;
+    }
+
+    public List<TableParam> getParams()
+    {
+        return params;
+    }
+
+    public List<TableField> getFields()
+    {
+        return fields;
+    }
+
+    public TableData getTableData()
+    {
+        return tableData;
+    }
+
+    public void setTableData(TableData tableData)
+    {
+        this.tableData = tableData;
+    }
 }

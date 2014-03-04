@@ -69,56 +69,22 @@
 
 package ca.nrc.cadc.dali.tables.votable;
 
+import ca.nrc.cadc.dali.tables.TableData;
+import ca.nrc.cadc.dali.tables.TableModel;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
  * @author pdowler
  */
-public class TableField
+public class VOTableDocument
 {
-    protected String name;
-    protected String datatype;
-
-    public String id;
-    public String ucd;
-    public String unit;
-    public String utype;
-    public String xtype;
-    public Integer arraysize;
-    public Boolean variableSize;
-    public String description;
-    public String ref;
-    public List<String> values;
-
-    protected TableField() { }
-
-    public TableField(String name, String datatype)
-    {
-        this.name = name;
-        this.datatype = datatype;
-    }
-
-    public String getDatatype()
-    {
-        return datatype;
-    }
-
-    public String getName()
-    {
-        return name;
-    }
-
-    @Override
-    public String toString()
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.append("TableField[");
-        sb.append(name);
-        sb.append(",");
-        sb.append(datatype);
-        sb.append("]");
-        return sb.toString();
-    }
+    private List<VOTableResource> resources = new ArrayList<VOTableResource>();
     
+    public VOTableDocument() { }
+
+    public List<VOTableResource> getResources()
+    {
+        return resources;
+    }
 }
