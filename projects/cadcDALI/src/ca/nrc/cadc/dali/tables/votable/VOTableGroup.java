@@ -69,39 +69,38 @@
 
 package ca.nrc.cadc.dali.tables.votable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  *
  * @author pdowler
  */
-public class TableParam extends TableField
+public class VOTableGroup 
 {
-    private String value;
-
-    protected TableParam() { }
-
-    public TableParam(String name, String datatype, String value)
+    private String name;
+    private List<VOTableParam> params = new ArrayList<VOTableParam>();
+    private List<VOTableGroup> groups = new ArrayList<VOTableGroup>();
+    
+    public String id;
+    
+    public VOTableGroup(String name)
     {
-        super(name, datatype);
-        this.value = value;
+        this.name = name;
     }
 
-    public String getValue()
+    public String getName()
     {
-        return value;
+        return name;
     }
 
-    @Override
-    public String toString()
+    public List<VOTableParam> getParams()
     {
-        StringBuilder sb = new StringBuilder();
-        sb.append("TableParam[");
-        sb.append(name);
-        sb.append(",");
-        sb.append(datatype);
-        sb.append(",");
-        sb.append(value);
-        sb.append("]");
-        return sb.toString();
+        return params;
     }
 
+    public List<VOTableGroup> getGroups()
+    {
+        return groups;
+    }
 }

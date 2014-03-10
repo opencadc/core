@@ -69,8 +69,6 @@
 
 package ca.nrc.cadc.dali.tables.votable;
 
-import ca.nrc.cadc.dali.tables.TableData;
-import ca.nrc.cadc.dali.tables.TableModel;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -86,5 +84,30 @@ public class VOTableDocument
     public List<VOTableResource> getResources()
     {
         return resources;
+    }
+    
+    public VOTableResource getResourceByType(String type)
+    {
+        for (VOTableResource r : resources)
+        {
+            if (r.getType().equals(type))
+                return r;
+        }
+        return null;
+    }
+     
+    public VOTableResource getResourceByID(String id)
+    {
+        throw new UnsupportedOperationException();
+    }
+    
+    public VOTableGroup getGroupByID(String id)
+    {
+        throw new UnsupportedOperationException();
+    }
+    
+    public VOTableField getFieldByID(String id)
+    {
+        throw new UnsupportedOperationException();
     }
 }

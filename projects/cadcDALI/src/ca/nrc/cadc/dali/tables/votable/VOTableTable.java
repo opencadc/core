@@ -70,7 +70,7 @@
 package ca.nrc.cadc.dali.tables.votable;
 
 import ca.nrc.cadc.dali.tables.TableData;
-import ca.nrc.cadc.dali.tables.TableModel;
+import ca.nrc.cadc.dali.util.Format;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -78,25 +78,27 @@ import java.util.List;
  *
  * @author pdowler
  */
-public class VOTableData  implements TableModel
+public class VOTableTable 
 {
-    private List<Info> infos = new ArrayList<Info>();
-    private List<TableParam> params = new ArrayList<TableParam>();
-    private List<TableField> fields = new ArrayList<TableField>();
+    private List<VOTableInfo> infos = new ArrayList<VOTableInfo>();
+    private List<VOTableParam> params = new ArrayList<VOTableParam>();
+    private List<VOTableField> fields = new ArrayList<VOTableField>();
 
     private TableData tableData;
     
-    public List<Info> getInfos()
+    public VOTableTable() { }
+
+    public List<VOTableInfo> getInfos()
     {
         return infos;
     }
 
-    public List<TableParam> getParams()
+    public List<VOTableParam> getParams()
     {
         return params;
     }
 
-    public List<TableField> getFields()
+    public List<VOTableField> getFields()
     {
         return fields;
     }

@@ -81,11 +81,11 @@ public class VOTableResource
     private String type;
     
     private String name;
-    private List<Info> infos = new ArrayList<Info>();
-    private List<TableParam> params = new ArrayList<TableParam>();
-    //private List<Group> groups = new ArrayList<Group>();
+    private List<VOTableInfo> infos = new ArrayList<VOTableInfo>();
+    private List<VOTableParam> params = new ArrayList<VOTableParam>();
+    private List<VOTableGroup> groups = new ArrayList<VOTableGroup>();
     
-    private VOTableData table;
+    private VOTableTable table;
 
     public VOTableResource(String type)
     {
@@ -97,14 +97,19 @@ public class VOTableResource
         return type;
     }
     
-    public List<Info> getInfos()
+    public List<VOTableInfo> getInfos()
     {
         return infos;
     }
 
-    public List<TableParam> getParams()
+    public List<VOTableParam> getParams()
     {
         return params;
+    }
+
+    public List<VOTableGroup> getGroups()
+    {
+        return groups;
     }
     
     public String getName()
@@ -117,12 +122,12 @@ public class VOTableResource
         this.name = name;
     }
 
-    public VOTableData getTable()
+    public VOTableTable getTable()
     {
         return table;
     }
 
-    public void setTable(VOTableData table)
+    public void setTable(VOTableTable table)
     {
         this.table = table;
     }

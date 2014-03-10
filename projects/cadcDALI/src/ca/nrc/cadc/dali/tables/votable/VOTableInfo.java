@@ -73,12 +73,12 @@ package ca.nrc.cadc.dali.tables.votable;
  *
  * @author pdowler
  */
-public class Info 
+public class VOTableInfo 
 {
     private String name;
     private String value;
 
-    public Info(String name, String value)
+    public VOTableInfo(String name, String value)
     {
         if (name == null)
         {

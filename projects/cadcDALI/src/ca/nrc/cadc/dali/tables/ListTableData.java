@@ -66,36 +66,33 @@
 *
 ************************************************************************
 */
-package ca.nrc.cadc.dali.tables.votable;
+package ca.nrc.cadc.dali.tables;
 
-import ca.nrc.cadc.dali.tables.TableData;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 /**
- * Class implements the TableData interface using an ArrayList.
+ * Class implements the TableData interface using an ArrayList. This class can be used to
+ * easily implement a reader and store the table data in memory.
  * 
  * @author jburke
  */
-public class ArrayListTableData implements TableData
+public class ListTableData implements TableData
 {
-    protected ArrayList<List<Object>> list;
+    protected List<List<Object>> list = new ArrayList<List<Object>>();
 
     /**
      * Default constructor.
      */
-    public ArrayListTableData()
-    {
-        this.list = new ArrayList<List<Object>>();
-    }
+    public ListTableData() { }
 
     /**
      * Get the ArrayList of List objects.
      *
      * @return ArrayList of List objects.
      */
-    public ArrayList<List<Object>> getArrayList()
+    public List<List<Object>> getArrayList()
     {
         return this.list;
     }

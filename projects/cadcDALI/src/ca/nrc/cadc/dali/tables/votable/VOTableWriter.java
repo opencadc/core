@@ -69,6 +69,12 @@
 
 package ca.nrc.cadc.dali.tables.votable;
 
+import ca.nrc.cadc.dali.tables.TableWriter;
+import ca.nrc.cadc.dali.util.Format;
+import ca.nrc.cadc.dali.util.FormatFactory;
+import ca.nrc.cadc.uws.util.ContentConverter;
+import ca.nrc.cadc.uws.util.IterableContent;
+import ca.nrc.cadc.uws.util.MaxIterations;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -76,19 +82,11 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.Iterator;
 import java.util.List;
-
 import org.apache.log4j.Logger;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.Namespace;
 import org.jdom2.output.XMLOutputter;
-
-import ca.nrc.cadc.dali.tables.TableWriter;
-import ca.nrc.cadc.dali.util.Format;
-import ca.nrc.cadc.dali.util.FormatFactory;
-import ca.nrc.cadc.uws.util.ContentConverter;
-import ca.nrc.cadc.uws.util.IterableContent;
-import ca.nrc.cadc.uws.util.MaxIterations;
 
 /**
  * Basic VOTable reader. This class currently supports a subset of VOTable (tabledata
@@ -114,6 +112,8 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
     public static final String VOTABLE_12_NS_URI = "http://www.ivoa.net/xml/VOTable/v1.2";
     public static final String VOTABLE_13_NS_URI = "http://www.ivoa.net/xml/VOTable/v1.3";
 
+    private FormatFactory formatFactory;
+    
     private boolean binaryTable;
 
     /**
@@ -153,6 +153,11 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
     public String getExtension()
     {
         return "xml";
+    }
+    
+    public void setFormatFactory(FormatFactory formatFactory)
+    {
+        this.formatFactory = formatFactory;
     }
     
     /**
@@ -211,6 +216,21 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
     public void write(VOTableDocument votable, Writer writer, Long maxrec)
         throws IOException
     {
+        try
+        {
+            if (formatFactory == null)
+                this.formatFactory = new FormatFactory();
+            writeImpl(votable, writer, maxrec);
+        }
+        finally
+        {
+            
+        }
+    }
+    
+    protected void writeImpl(VOTableDocument votable, Writer writer, Long maxrec)
+        throws IOException
+    {
         log.debug("write, maxrec=" + maxrec);
         
         // VOTable document and root element.
@@ -225,12 +245,13 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
             root.addContent(resource);
             
             resource.setAttribute("type", votResource.getType());
+        
             log.debug("wrote resource.type: " + votResource.getType());
             if (votResource.getName() != null)
                 resource.setAttribute("name", votResource.getName());
 
             // Create the INFO element and add to the RESOURCE element.
-            for (Info in : votResource.getInfos())
+            for (VOTableInfo in : votResource.getInfos())
             {
                 Element info = new Element("INFO", namespace);
                 info.setAttribute("name", in.getName());
@@ -238,24 +259,28 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
                 resource.addContent(info);
             }
             log.debug("wrote resource.info: " + votResource.getInfos().size());
-            
-             // Add the metadata elements.
-            for (TableParam param : votResource.getParams())
+
+            for (VOTableParam param : votResource.getParams())
             {
                 resource.addContent(new ParamElement(param, namespace));
             }
             log.debug("wrote resource.param: " + votResource.getParams().size());
-            
+
+            for (VOTableGroup vg : votResource.getGroups())
+            {
+                resource.addContent(new GroupElement(vg, namespace));
+            }
+
             if (votResource.getTable() != null)
             {
-                VOTableData vot = votResource.getTable();
-                
+                VOTableTable vot = votResource.getTable();
+
                 // Create the TABLE element and add to the RESOURCE element.
                 Element table = new Element("TABLE", namespace);
                 resource.addContent(table);
-                
+
                 // Create the INFO element and add to the RESOURCE element.
-                for (Info in : vot.getInfos())
+                for (VOTableInfo in : vot.getInfos())
                 {
                     Element info = new Element("INFO", namespace);
                     info.setAttribute("name", in.getName());
@@ -265,12 +290,12 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
                 log.debug("wrote resource.table.info: " + vot.getInfos().size());
 
                 // Add the metadata elements.
-                for (TableParam param : vot.getParams())
+                for (VOTableParam param : vot.getParams())
                 {
                     table.addContent(new ParamElement(param, namespace));
                 }
                 log.debug("wrote resource.table.param: " + vot.getParams().size());
-                for (TableField field : vot.getFields())
+                for (VOTableField field : vot.getFields())
                 {
                     table.addContent(new FieldElement(field, namespace));
                 }
@@ -282,16 +307,22 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
                     Element data = new Element("DATA", namespace);
                     table.addContent(data);
 
-                    // setup content interator
+                    
+                    log.debug("setup content interator: maxrec=" + maxrec);
+                    Element trailer = new Element("INFO", namespace);
+                    trailer.setAttribute("name", "QUERY_STATUS");
+                    trailer.setAttribute("value", "OK");
+                    resource.addContent(trailer);
+                    
                     try
                     {
-                        Iterator<List<Object>> it = vot.getTableData().iterator();
+                        Iterator<List<Object>> rowIter = vot.getTableData().iterator();
 
-                        TabledataContentConverter elementConverter = new TabledataContentConverter(namespace);
-                        TabledataMaxIterations maxIterations = new TabledataMaxIterations(maxrec, resource, namespace);
+                        TabledataContentConverter elementConverter = new TabledataContentConverter(vot.getFields(), namespace);
+                        TabledataMaxIterations maxIterations = new TabledataMaxIterations(maxrec, trailer, namespace);
 
                         IterableContent<Element, List<Object>> tabledata =
-                                new IterableContent<Element, List<Object>>("TABLEDATA", namespace, it, elementConverter, maxIterations);
+                                new IterableContent<Element, List<Object>>("TABLEDATA", namespace, rowIter, elementConverter, maxIterations);
 
                         data.addContent(tabledata);
                     }
@@ -306,6 +337,8 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
                     }
                 }
             }
+
+            
         }
 
         // Write out the VOTABLE.
@@ -392,21 +425,23 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
         }
         return sb.toString();
     }
+
+   
     
     private class TabledataMaxIterations implements MaxIterations
     {
         
         private long maxRec;
-        private Element resource;
+        private Element info;
         private Namespace namespace;
         
-        TabledataMaxIterations(Long maxRec, Element resource, Namespace namespace)
+        TabledataMaxIterations(Long maxRec, Element info, Namespace namespace)
         {
             if (maxRec == null)
                 this.maxRec = Long.MAX_VALUE;
             else
                 this.maxRec = maxRec;
-            this.resource = resource;
+            this.info = info;
             this.namespace = namespace;
         }
 
@@ -419,43 +454,41 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
         @Override
         public void maxIterationsReached()
         {
-            // If maxRec reached, write overflow INFO.
-            Element info = new Element("INFO", namespace);
-            info.setAttribute("name", "QUERY_STATUS");
+            log.debug("TabledataMaxIterations.maxIterationsReached: " + maxRec);
+            log.debug("modifying: " + info);
             info.setAttribute("value", "OVERFLOW");
-            resource.addContent(info);
         }
         
     }
     
     private class TabledataContentConverter implements ContentConverter<Element, List<Object>>
     {
-        
+        private List<VOTableField> fields;
         private Namespace namespace;
         
-        TabledataContentConverter(Namespace namespace)
+        TabledataContentConverter(List<VOTableField> fields, Namespace namespace)
         {
+            this.fields = fields;
             this.namespace = namespace;
         }
 
         @Override
-        public Element convert(List<Object> columns)
+        public Element convert(List<Object> row)
         {            
+            if (row.size() != fields.size() )
+                throw new IllegalStateException("cannot write row: " + fields.size() + " metadata fields, " + row.size() + " data columns");
+            
             // TR element.
             Element tr = new Element("TR", namespace);
 
             // TD elements.
-            for (int i = 0; i < columns.size(); i++)
+            for (int i = 0; i < row.size(); i++)
             {
-                Object column = columns.get(i);
-                Class c = null;
-                if (column != null)
-                {
-                    c = column.getClass();
-                }
-                Format format = FormatFactory.getFormat(c);
+                Object o = row.get(i);
+                VOTableField tf = fields.get(i);
+                Format fmt = formatFactory.getFormat(tf);
                 Element td = new Element("TD", namespace);
-                td.setText(format.format(column));
+                td.setText(fmt.format(o));
                 tr.addContent(td);
             }
             

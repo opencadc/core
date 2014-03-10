@@ -69,39 +69,49 @@
 
 package ca.nrc.cadc.dali.tables.votable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
+ * VOTable-specific extension of TableColumn. This adds the XML ID/IDREF attributes
+ * and a list of string values as permitted by the VOTable schema.
+ * 
  * @author pdowler
  */
-public class TableField
+public class VOTableField
 {
-    protected String name;
-    protected String datatype;
-
-    public String id;
+    private String name;
+    private String datatype;
+    
+    protected Integer arraysize;
+    protected boolean variableSize;    
+    
     public String ucd;
     public String unit;
     public String utype;
     public String xtype;
-    public Integer arraysize;
-    public Boolean variableSize;
     public String description;
+    
+    // TODO: add precision support and use it to configure numeric format objects
+    
+    public String id;
     public String ref;
-    public List<String> values;
+    
+    private List<String> values = new ArrayList<String>();
 
-    protected TableField() { }
+    protected VOTableField() { }
 
-    public TableField(String name, String datatype)
+    public VOTableField(String name, String datatype)
+    {
+        this(name, datatype, null, false);
+    }
+
+    public VOTableField(String name, String datatype, Integer arraysize, boolean variableSize)
     {
         this.name = name;
         this.datatype = datatype;
-    }
-
-    public String getDatatype()
-    {
-        return datatype;
+        this.arraysize = arraysize;
+        this.variableSize = variableSize;
     }
 
     public String getName()
@@ -109,16 +119,52 @@ public class TableField
         return name;
     }
 
+    public String getDatatype()
+    {
+        return datatype;
+    }
+
+    public Integer getArraysize()
+    {
+        return arraysize;
+    }
+
+    public boolean isVariableSize()
+    {
+        return variableSize;
+    }
+    
+    
+    
+    public List<String> getValues()
+    {
+        return values;
+    }
+
+    public void setArraysize(Integer arraysize)
+    {
+        this.arraysize = arraysize;
+    }
+
+    public void setVariableSize(boolean variableSize)
+    {
+        this.variableSize = variableSize;
+    }
+    
     @Override
     public String toString()
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("TableField[");
-        sb.append(name);
-        sb.append(",");
-        sb.append(datatype);
+        sb.append(this.getClass().getSimpleName()).append("[");
+        sb.append(name).append(",");
+        sb.append(datatype).append(",");
+        if (arraysize != null)
+        {
+            sb.append(arraysize);
+            if (variableSize)
+                sb.append("*");
+        }
         sb.append("]");
         return sb.toString();
     }
-    
 }
