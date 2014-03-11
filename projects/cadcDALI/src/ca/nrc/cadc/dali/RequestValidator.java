@@ -69,13 +69,16 @@
 
 package ca.nrc.cadc.dali;
 
+import ca.nrc.cadc.util.CaseInsensitiveStringComparator;
 import ca.nrc.cadc.uws.Parameter;
 import ca.nrc.cadc.uws.ParameterUtil;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import org.apache.log4j.Logger;
 
 /**
- * Request Validator.
+ * Request Validator. This class extracts and validates the REQUEST and VERSION parameters.
  *
  */
 public class RequestValidator
@@ -84,12 +87,24 @@ public class RequestValidator
     
     private String request;
     private String version;
+    private Set<String> values = new TreeSet<String>(new CaseInsensitiveStringComparator());
     
+    public RequestValidator(List<String> requestValues) 
+    { 
+        this.values.addAll(requestValues);
+    }
+
     private void clear()
     {
         this.request = null;
         this.version = null;
     }
+
+    public Set<String> getAllowedValues()
+    {
+        return values;
+    }
+    
     
     public void validate(List<Parameter> paramList)
     {
@@ -106,6 +121,8 @@ public class RequestValidator
             throw new IllegalArgumentException("REQUEST parameter missing required value");
         }
         this.request = req.trim();
+        if ( !values.contains(request))
+            throw new IllegalArgumentException("illegal REQUEST value: " + request);
         log.debug("REQUEST: " + request);
 
         //  VERSION

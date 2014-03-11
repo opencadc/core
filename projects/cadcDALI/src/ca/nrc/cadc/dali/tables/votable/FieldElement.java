@@ -81,7 +81,7 @@ public class FieldElement extends Element
      * @param field
      * @param namespace 
      */
-    public FieldElement(TableField field, Namespace namespace)
+    public FieldElement(VOTableField field, Namespace namespace)
     {
         this("FIELD", field, namespace);
     }
@@ -94,13 +94,13 @@ public class FieldElement extends Element
      * @param field
      * @param namespace
      */
-    protected FieldElement(String elementName, TableField field, Namespace namespace)
+    protected FieldElement(String elementName, VOTableField field, Namespace namespace)
     {
         super(elementName, namespace);
         init(field);
     }
 
-    private void init(TableField field)
+    private void init(VOTableField field)
     {
         if (field != null)
         {
@@ -111,9 +111,10 @@ public class FieldElement extends Element
             setFieldAttribute("unit", field.unit);
             setFieldAttribute("utype", field.utype);
             setFieldAttribute("xtype", field.xtype);
-            setArraysize(field.arraysize, field.variableSize);
+            setFieldAttribute("ref", field.ref);
+            setArraysize(field.getArraysize(), field.isVariableSize());
             setDescription(field.description, namespace);
-            setValues(field.values, namespace);
+            setValues(field.getValues(), namespace);
         }
     }
 
@@ -157,11 +158,11 @@ public class FieldElement extends Element
      * @param arraysize
      * @param variableSize
      */
-    protected void setArraysize(Integer arraysize, Boolean variableSize)
+    protected void setArraysize(Integer arraysize, boolean variableSize)
     {
         if (arraysize != null)
         {
-            if (variableSize != null && variableSize)
+            if (variableSize)
             {
                 setFieldAttribute("arraysize", arraysize.toString() + "*");
             }
@@ -170,7 +171,7 @@ public class FieldElement extends Element
                 setFieldAttribute("arraysize", arraysize.toString());
             }
         }
-        else if (variableSize != null)
+        else if (variableSize)
         {
             setFieldAttribute("arraysize", "*");
         }

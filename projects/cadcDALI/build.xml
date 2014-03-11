@@ -93,11 +93,11 @@
     <property name="cadc"           value="${cadcUtil}:${cadcUWS}" />
 
     <property name="jdom2"          value="${ext.lib}/jdom2.jar" />
+    <property name="jcsv"          value="${ext.lib}/javacsv.jar" />
     <property name="log4j"          value="${ext.lib}/log4j.jar" />
-    <property name="extlib"         value="${jdom2}:${log4j}" />
+    <property name="extlib"         value="${jdom2}:${jcsv}:${log4j}" />
 
     <property name="jars"           value="${cadc}:${extlib}" />
-    <property name="runtimeJars"    value="${jars}:${jdom2}" />
 
     <target name="build" depends="compile,xsd">
         <jar jarfile="${build}/lib/${project}.jar"
@@ -123,24 +123,25 @@
     <!-- Run the test suite -->
     <target name="setup-test" depends="build" />
 
-    <target name="tables-tests" depends="compile,compile-test">
+    <target name="writer-test" depends="setup-test,compile-test">
         <junit printsummary="yes" haltonfailure="yes" fork="yes">
             <classpath>
                 <pathelement path="${build}/class"/>
                 <pathelement path="${build}/test/class"/>
-                <pathelement path="${runtimeJars}:${testingJars}"/>
+                <pathelement path="${jars}:${testingJars}"/>
             </classpath>
             <formatter type="plain" usefile="false"/>
             <test name="ca.nrc.cadc.dali.tables.votable.VOTableReaderWriterTest"/>
+            <test name="ca.nrc.cadc.dali.tables.ascii.AsciiTableWriterTest"/>
         </junit>
     </target>
 
-    <target name="util-tests" depends="compile,compile-test">
+    <target name="util-test" depends="setup-test,compile-test">
         <junit printsummary="yes" haltonfailure="yes" fork="yes">
             <classpath>
                 <pathelement path="${build}/class"/>
                 <pathelement path="${build}/test/class"/>
-                <pathelement path="${runtimeJars}:${testingJars}"/>
+                <pathelement path="${jars}:${testingJars}"/>
             </classpath>
             <formatter type="plain" usefile="false"/>
             <test name="ca.nrc.cadc.dali.util.BooleanFormatTest"/>
@@ -166,13 +167,13 @@
         </junit>
     </target>
 
-    <target name="stc-tests" depends="compile,compile-test">
+    <target name="stc-test" depends="setup-test,compile-test">
         <junit printsummary="yes" haltonfailure="yes" fork="yes">
             <classpath>
                 <pathelement path="${resources.dir}"/>
                 <pathelement path="${build}/class"/>
                 <pathelement path="${build}/test/class"/>
-                <pathelement path="${runtimeJars}:${testingJars}"/>
+                <pathelement path="${jars}:${testingJars}"/>
             </classpath>
             <formatter type="plain" usefile="false"/>
             <test name="ca.nrc.cadc.stc.RegionTest"/>

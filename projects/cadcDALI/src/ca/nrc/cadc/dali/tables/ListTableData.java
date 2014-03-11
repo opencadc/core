@@ -66,58 +66,45 @@
 *
 ************************************************************************
 */
+package ca.nrc.cadc.dali.tables;
 
-package ca.nrc.cadc.dali.tables.votable;
-
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
- *
- * @author pdowler
+ * Class implements the TableData interface using an ArrayList. This class can be used to
+ * easily implement a reader and store the table data in memory.
+ * 
+ * @author jburke
  */
-public class TableField
+public class ListTableData implements TableData
 {
-    protected String name;
-    protected String datatype;
+    protected List<List<Object>> list = new ArrayList<List<Object>>();
 
-    public String id;
-    public String ucd;
-    public String unit;
-    public String utype;
-    public String xtype;
-    public Integer arraysize;
-    public Boolean variableSize;
-    public String description;
-    public List<String> values;
+    /**
+     * Default constructor.
+     */
+    public ListTableData() { }
 
-    protected TableField() { }
-
-    public TableField(String name, String datatype)
+    /**
+     * Get the ArrayList of List objects.
+     *
+     * @return ArrayList of List objects.
+     */
+    public List<List<Object>> getArrayList()
     {
-        this.name = name;
-        this.datatype = datatype;
+        return this.list;
     }
 
-    public String getDatatype()
+    /**
+     * Get an iterator to the ArrayList.
+     *
+     * @return iterator to the ArrayList.
+     */
+    public Iterator<List<Object>> iterator()
     {
-        return datatype;
+        return list.iterator();
     }
 
-    public String getName()
-    {
-        return name;
-    }
-
-    @Override
-    public String toString()
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.append("TableField[");
-        sb.append(name);
-        sb.append(",");
-        sb.append(datatype);
-        sb.append("]");
-        return sb.toString();
-    }
-    
 }

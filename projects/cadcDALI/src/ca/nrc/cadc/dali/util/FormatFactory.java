@@ -68,7 +68,7 @@
  */
 package ca.nrc.cadc.dali.util;
 
-import ca.nrc.cadc.dali.tables.votable.TableField;
+import ca.nrc.cadc.dali.tables.votable.VOTableField;
 import ca.nrc.cadc.stc.Box;
 import ca.nrc.cadc.stc.Circle;
 import ca.nrc.cadc.stc.Intersection;
@@ -88,73 +88,14 @@ import java.util.Map;
  * 
  * @author jburke
  */
-public abstract class FormatFactory
+public class FormatFactory
 {
-    // Maps Class to the appropriate Format.
-    private static final Map<Class, Format> formats;
-    static
-    {
-        formats = new HashMap<Class, Format>();
-        formats.put(Boolean.class, new BooleanFormat());
-        formats.put(byte[].class, new ByteArrayFormat());
-        formats.put(Byte.class, new ByteFormat());
-        formats.put(double[].class, new DoubleArrayFormat());
-        formats.put(Double.class, new DoubleFormat());
-        formats.put(float[].class, new FloatArrayFormat());
-        formats.put(Float.class, new FloatFormat());
-        formats.put(int[].class, new IntArrayFormat());
-        formats.put(Integer.class, new IntegerFormat());
-        formats.put(long[].class, new LongArrayFormat());
-        formats.put(Long.class, new LongFormat());
-        formats.put(short[].class, new ShortArrayFormat());
-        formats.put(Short.class, new ShortFormat());
-        formats.put(String.class, new StringFormat());
-        formats.put(Date.class, new UTCTimestampFormat());
-        formats.put(URI.class, new URIFormat());
-        formats.put(URL.class, new URLFormat());
-        formats.put(Box.class, new RegionFormat());
-        formats.put(Circle.class, new RegionFormat());
-        formats.put(Intersection.class, new RegionFormat());
-        formats.put(Not.class, new RegionFormat());
-        formats.put(Polygon.class, new RegionFormat());
-        formats.put(Union.class, new RegionFormat());
-        formats.put(Position.class, new PointFormat());
-    }
-
-    private static class DefaultFormat implements Format<Object>
-    {
-        public String format(Object t)
-        {
-            if (t == null)
-                return "";
-            return t.toString();
-        }
-
-        public Object parse(String s)
-        {
-            return s;
-        }
-    }
-    
-    /**
-     *
-     * @param c
-     * @return
-     */
-    public static Format getFormat(Class c)
-    {
-        Format format = formats.get(c);
-        if (format == null)
-            format = new DefaultFormat();
-        return format;
-    }
-
     /**
      * 
      * @param field
      * @return
      */
-    public static Format getFormat(TableField field)
+    public Format getFormat(VOTableField field)
     {
         String datatype = field.getDatatype();
         
@@ -271,16 +212,14 @@ public abstract class FormatFactory
                     }
                 }
             }
-            return new StringFormat();
         }
-
-        throw new UnsupportedOperationException(datatype + " datatype not supported for column " + field.getName());
+        
+        return new DefaultFormat();
     }
 
-    private static boolean isArray(TableField field)
+    private static boolean isArray(VOTableField field)
     {
-        return field.arraysize != null && field.arraysize > 1 ||
-               field.variableSize != null && field.variableSize;
+        return (field.getArraysize() != null && field.getArraysize() > 1) || field.isVariableSize();
     }
 
 }

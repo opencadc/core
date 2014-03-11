@@ -83,7 +83,7 @@ public class ParamElement extends FieldElement
      * @param param
      * @param namespace
      */
-    public ParamElement(TableParam param, Namespace namespace)
+    public ParamElement(VOTableParam param, Namespace namespace)
     {
         super("PARAM", param, namespace);
         if (param != null)
