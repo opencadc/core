@@ -71,6 +71,7 @@ package ca.nrc.cadc.dali;
 import ca.nrc.cadc.util.Log4jInit;
 import ca.nrc.cadc.uws.Parameter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -85,7 +86,7 @@ public class RequestValidatorTest
     {
         Log4jInit.setLevel("ca.nrc.cadc.dali", Level.INFO);
     }
-    RequestValidator validator = new RequestValidator();
+    RequestValidator validator = new RequestValidator( Arrays.asList("dothing1", "doThing2"));
 
     @Test
     public void testNullParamList()
@@ -126,14 +127,35 @@ public class RequestValidatorTest
     }
     
     @Test
+    public void testInvalidRequest()
+    {
+        try
+        {
+            List<Parameter> paramList = new ArrayList<Parameter>();
+            paramList.add(new Parameter("REQUEST", "doInvalid"));
+            validator.validate(paramList);
+            Assert.fail("expected IllegalArgumentException");
+        }
+        catch (IllegalArgumentException expected)
+        {
+            log.debug("expected exception: " + expected);
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+    
+    @Test
     public void testMinimalParams()
     {
         try
         {
             List<Parameter> paramList = new ArrayList<Parameter>();
-            paramList.add(new Parameter("REQUEST", "doSomething"));
+            paramList.add(new Parameter("REQUEST", "dothing1"));
             validator.validate(paramList);
-            Assert.assertEquals("doSomething", validator.getRequest());
+            Assert.assertEquals("dothing1", validator.getRequest());
         }
         catch(Exception unexpected)
         {
@@ -148,10 +170,10 @@ public class RequestValidatorTest
         try
         {
             List<Parameter> paramList = new ArrayList<Parameter>();
-            paramList.add(new Parameter("REQUEST", "doSomething"));
+            paramList.add(new Parameter("REQUEST", "dothing2"));
             paramList.add(new Parameter("VERSION", "1.7"));
             validator.validate(paramList);
-            Assert.assertEquals("doSomething", validator.getRequest());
+            Assert.assertEquals("dothing2", validator.getRequest());
             Assert.assertEquals("1.7", validator.getVersion());
         }
         catch(Exception unexpected)
@@ -167,17 +189,17 @@ public class RequestValidatorTest
         try
         {
             List<Parameter> paramList = new ArrayList<Parameter>();
-            paramList.add(new Parameter("request", "doSomething"));
+            paramList.add(new Parameter("request", "dothing1"));
             paramList.add(new Parameter("version", "1.7"));
             validator.validate(paramList);
-            Assert.assertEquals("doSomething", validator.getRequest());
+            Assert.assertEquals("dothing1", validator.getRequest());
             Assert.assertEquals("1.7", validator.getVersion());
             
             paramList = new ArrayList<Parameter>();
-            paramList.add(new Parameter("rEqUeSt", "doSomething"));
+            paramList.add(new Parameter("rEqUeSt", "dothing1"));
             paramList.add(new Parameter("VeRsIoN", "1.7"));
             validator.validate(paramList);
-            Assert.assertEquals("doSomething", validator.getRequest());
+            Assert.assertEquals("dothing1", validator.getRequest());
             Assert.assertEquals("1.7", validator.getVersion());
         }
         catch(Exception unexpected)

@@ -69,57 +69,102 @@
 
 package ca.nrc.cadc.dali.tables.votable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- *
+ * VOTable-specific extension of TableColumn. This adds the XML ID/IDREF attributes
+ * and a list of string values as permitted by the VOTable schema.
+ * 
  * @author pdowler
  */
-public class Info 
+public class VOTableField
 {
     private String name;
-    private String value;
+    private String datatype;
+    
+    protected Integer arraysize;
+    protected boolean variableSize;    
+    
+    public String ucd;
+    public String unit;
+    public String utype;
+    public String xtype;
+    public String description;
+    
+    // TODO: add precision support and use it to configure numeric format objects
+    
+    public String id;
+    public String ref;
+    
+    private List<String> values = new ArrayList<String>();
 
-    public Info(String name, String value)
+    protected VOTableField() { }
+
+    public VOTableField(String name, String datatype)
     {
-        if (name == null)
-        {
-            throw new IllegalArgumentException("name cannot be null");
-        }
-        if (value == null)
-        {
-            throw new IllegalArgumentException("value cannot be null");
-        }
-        this.name = name.trim();
-        this.value = value.trim();
-        if (this.name.isEmpty())
-        {
-            throw new IllegalArgumentException("name has no content");
-        }
-        if (this.value.isEmpty())
-        {
-            throw new IllegalArgumentException("value has no content");
-        }
+        this(name, datatype, null, false);
+    }
+
+    public VOTableField(String name, String datatype, Integer arraysize, boolean variableSize)
+    {
+        this.name = name;
+        this.datatype = datatype;
+        this.arraysize = arraysize;
+        this.variableSize = variableSize;
     }
 
     public String getName()
     {
         return name;
     }
-    
-    public String getValue()
+
+    public String getDatatype()
     {
-        return value;
+        return datatype;
     }
 
+    public Integer getArraysize()
+    {
+        return arraysize;
+    }
+
+    public boolean isVariableSize()
+    {
+        return variableSize;
+    }
+    
+    
+    
+    public List<String> getValues()
+    {
+        return values;
+    }
+
+    public void setArraysize(Integer arraysize)
+    {
+        this.arraysize = arraysize;
+    }
+
+    public void setVariableSize(boolean variableSize)
+    {
+        this.variableSize = variableSize;
+    }
+    
     @Override
     public String toString()
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("Info[");
-        sb.append(name);
-        sb.append(",");
-        sb.append(value);
+        sb.append(this.getClass().getSimpleName()).append("[");
+        sb.append(name).append(",");
+        sb.append(datatype).append(",");
+        if (arraysize != null)
+        {
+            sb.append(arraysize);
+            if (variableSize)
+                sb.append("*");
+        }
         sb.append("]");
         return sb.toString();
     }
-    
 }

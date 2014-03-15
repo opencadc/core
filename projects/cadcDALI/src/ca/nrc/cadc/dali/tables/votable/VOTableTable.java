@@ -66,48 +66,50 @@
 *
 ************************************************************************
 */
+
 package ca.nrc.cadc.dali.tables.votable;
 
 import ca.nrc.cadc.dali.tables.TableData;
+import ca.nrc.cadc.dali.util.Format;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
- * Class implements the TableData interface using an ArrayList.
- * 
- * @author jburke
+ *
+ * @author pdowler
  */
-public class ArrayListTableData implements TableData
+public class VOTableTable 
 {
-    protected ArrayList<List<Object>> list;
+    private List<VOTableInfo> infos = new ArrayList<VOTableInfo>();
+    private List<VOTableParam> params = new ArrayList<VOTableParam>();
+    private List<VOTableField> fields = new ArrayList<VOTableField>();
 
-    /**
-     * Default constructor.
-     */
-    public ArrayListTableData()
+    private TableData tableData;
+    
+    public VOTableTable() { }
+
+    public List<VOTableInfo> getInfos()
     {
-        this.list = new ArrayList<List<Object>>();
+        return infos;
     }
 
-    /**
-     * Get the ArrayList of List objects.
-     *
-     * @return ArrayList of List objects.
-     */
-    public ArrayList<List<Object>> getArrayList()
+    public List<VOTableParam> getParams()
     {
-        return this.list;
+        return params;
     }
 
-    /**
-     * Get an iterator to the ArrayList.
-     *
-     * @return iterator to the ArrayList.
-     */
-    public Iterator<List<Object>> iterator()
+    public List<VOTableField> getFields()
     {
-        return list.iterator();
+        return fields;
     }
 
+    public TableData getTableData()
+    {
+        return tableData;
+    }
+
+    public void setTableData(TableData tableData)
+    {
+        this.tableData = tableData;
+    }
 }
