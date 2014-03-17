@@ -8,7 +8,7 @@
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -74,13 +74,13 @@ import javax.servlet.http.HttpServletRequest;
 /**
  * Class to be used by web services to log at INFO level the start and
  * end messages for each request from a HttpServlet web service
- * 
+ *
  * @author majorb
  *
  */
 public class ServletLogInfo extends WebServiceLogInfo
 {
-    
+
     /**
      * Servlet request constructor that automatically
      * determines the path.
@@ -90,7 +90,12 @@ public class ServletLogInfo extends WebServiceLogInfo
     {
         this(request, request.getPathInfo());
     }
-    
+
+    public ServletLogInfo(HttpServletRequest request, boolean pathIsJobID)
+    {
+        this(request, request.getPathInfo(), true);
+    }
+
     /**
      * Servlet request constructor that takes a path
      * override parameter.
@@ -99,10 +104,45 @@ public class ServletLogInfo extends WebServiceLogInfo
      */
     public ServletLogInfo(HttpServletRequest request, String path)
     {
+        this(request, path, false);
+    }
+
+    public ServletLogInfo(HttpServletRequest request, String path, String jobID)
+    {
+        this(request, path, false);
+        this.jobID = jobID;
+    }
+
+    public ServletLogInfo(HttpServletRequest request, String path, boolean pathIsJobID)
+    {
         super();
         this.method = request.getMethod().toUpperCase();
         this.from = request.getRemoteAddr();
-        this.path = path;
+        if (pathIsJobID)
+        {
+            this.jobID = parseJobID(path);
+        }
+        else
+        {
+            this.path = path;
+        }
+    }
+
+    private String parseJobID(String path)
+    {
+        if (path != null)
+        {
+            if (path.startsWith("/"))
+            {
+                path = path.substring(1);
+            }
+            if (path.endsWith("/"))
+            {
+                path = path.substring(0, path.length() - 1);
+            }
+            return path;
+        }
+        return null;
     }
 
 }
