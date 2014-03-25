@@ -126,7 +126,6 @@ public class Profiler
             sb.append(",").append("\"op\"");
             sb.append(":");
             sb.append("\"").append(op).append("\"");
-            sb.append(",");
             sb.append(",").append("\"time\"");
             sb.append(":");
             sb.append(Long.toString(time));

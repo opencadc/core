@@ -8,7 +8,7 @@
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -68,15 +68,18 @@
 */
 package ca.nrc.cadc.log;
 
-import ca.nrc.cadc.auth.HttpPrincipal;
-import ca.nrc.cadc.util.Log4jInit;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
+
 import junit.framework.Assert;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.junit.Test;
+
+import ca.nrc.cadc.auth.HttpPrincipal;
+import ca.nrc.cadc.util.Log4jInit;
 
 public class WebServiceLogInfoTest
 {
@@ -85,7 +88,7 @@ public class WebServiceLogInfoTest
     {
         Log4jInit.setLevel("ca.nrc.cadc.log", Level.INFO);
     }
-    
+
     @Test
     public void testMinimalContentServlet()
     {
@@ -93,9 +96,9 @@ public class WebServiceLogInfoTest
         EasyMock.expect(request.getMethod()).andReturn("Get").once();
         EasyMock.expect(request.getPathInfo()).andReturn("/path/of/request").once();
         EasyMock.expect(request.getRemoteAddr()).andReturn("192.168.0.0").once();
-        
+
         EasyMock.replay(request);
-        
+
         WebServiceLogInfo logInfo = new ServletLogInfo(request);
         String start = logInfo.start();
         log.info("testMinimalContentServlet: " + start);
@@ -103,10 +106,10 @@ public class WebServiceLogInfoTest
         log.info("testMinimalContentServlet: " + end);
         Assert.assertEquals("Wrong start", "START: {\"method\":\"GET\",\"path\":\"/path/of/request\",\"from\":\"192.168.0.0\"}", start);
         Assert.assertEquals("Wrong end", "END: {\"method\":\"GET\",\"path\":\"/path/of/request\",\"success\":true,\"from\":\"192.168.0.0\"}", end);
-        
+
         EasyMock.verify(request);
     }
-    
+
     @Test
     public void testMaximalContentServlet()
     {
@@ -114,9 +117,9 @@ public class WebServiceLogInfoTest
         EasyMock.expect(request.getMethod()).andReturn("Get").once();
         EasyMock.expect(request.getPathInfo()).andReturn("/path/of/request").once();
         EasyMock.expect(request.getRemoteAddr()).andReturn("192.168.0.0").once();
-        
+
         EasyMock.replay(request);
-        
+
         WebServiceLogInfo logInfo = new ServletLogInfo(request);
         String start = logInfo.start();
         log.info("testMaximalContentServlet: " + start);
@@ -131,7 +134,32 @@ public class WebServiceLogInfoTest
         Assert.assertEquals("Wrong end", "END: {\"method\":\"GET\",\"path\":\"/path/of/request\",\"success\":false,\"user\":\"the user\",\"from\":\"192.168.0.0\",\"time\":1234,\"bytes\":10,\"message\":\"the message\"}", end);
         EasyMock.verify(request);
     }
-    
+
+    @Test
+    public void testPathIsJobID()
+    {
+        HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
+        EasyMock.expect(request.getMethod()).andReturn("Get").once();
+        EasyMock.expect(request.getPathInfo()).andReturn("/theJobID").once();
+        EasyMock.expect(request.getRemoteAddr()).andReturn("192.168.0.0").once();
+
+        EasyMock.replay(request);
+
+        WebServiceLogInfo logInfo = new ServletLogInfo(request, true);
+        String start = logInfo.start();
+        log.info("testPathIsJobID: " + start);
+        Assert.assertEquals("Wrong start", "START: {\"method\":\"GET\",\"from\":\"192.168.0.0\",\"jobID\":\"theJobID\"}", start);
+        logInfo.setSuccess(false);
+        logInfo.setSubject(createSubject("the user"));
+        logInfo.setElapsedTime(1234L);
+        logInfo.setBytes(10L);
+        logInfo.setMessage("the message");
+        String end = logInfo.end();
+        log.info("testPathIsJobID: " + end);
+        Assert.assertEquals("Wrong end", "END: {\"method\":\"GET\",\"success\":false,\"user\":\"the user\",\"from\":\"192.168.0.0\",\"time\":1234,\"bytes\":10,\"message\":\"the message\",\"jobID\":\"theJobID\"}", end);
+        EasyMock.verify(request);
+    }
+
     private Subject createSubject(String userid)
     {
         Subject s = new Subject();
