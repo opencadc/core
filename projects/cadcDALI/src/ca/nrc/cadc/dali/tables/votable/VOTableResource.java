@@ -79,24 +79,35 @@ import java.util.List;
 public class VOTableResource
 {
     private String type;
-    
+    private String ID;
+
     private String name;
     private List<VOTableInfo> infos = new ArrayList<VOTableInfo>();
     private List<VOTableParam> params = new ArrayList<VOTableParam>();
     private List<VOTableGroup> groups = new ArrayList<VOTableGroup>();
-    
+
     private VOTableTable table;
 
     public VOTableResource(String type)
     {
         this.type = type;
     }
-    
+
     public String getType()
     {
         return type;
     }
-    
+
+    public String getID()
+    {
+        return ID;
+    }
+
+    public void setID(String ID)
+    {
+        this.ID = ID;
+    }
+
     public List<VOTableInfo> getInfos()
     {
         return infos;
@@ -111,7 +122,7 @@ public class VOTableResource
     {
         return groups;
     }
-    
+
     public String getName()
     {
         return name;

@@ -69,10 +69,6 @@
 
 package ca.nrc.cadc.dali.tables.votable;
 
-import ca.nrc.cadc.dali.tables.ListTableData;
-import ca.nrc.cadc.dali.tables.TableData;
-import ca.nrc.cadc.dali.util.Format;
-import ca.nrc.cadc.dali.util.FormatFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -85,6 +81,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.MissingResourceException;
+
 import org.apache.log4j.Logger;
 import org.jdom2.Attribute;
 import org.jdom2.Document;
@@ -94,26 +91,31 @@ import org.jdom2.Namespace;
 import org.jdom2.input.SAXBuilder;
 import org.jdom2.input.sax.XMLReaderSAX2Factory;
 
+import ca.nrc.cadc.dali.tables.ListTableData;
+import ca.nrc.cadc.dali.tables.TableData;
+import ca.nrc.cadc.dali.util.Format;
+import ca.nrc.cadc.dali.util.FormatFactory;
+
 /**
  *
  * @author pdowler
  */
-public class VOTableReader 
+public class VOTableReader
 {
     private static final Logger log = Logger.getLogger(VOTableReader.class);
-    
+
     protected static final String PARSER = "org.apache.xerces.parsers.SAXParser";
     protected static final String GRAMMAR_POOL = "org.apache.xerces.parsers.XMLGrammarCachingConfiguration";
     protected static final String VOTABLE_11_SCHEMA = "VOTable-v1.1.xsd";
     protected static final String VOTABLE_12_SCHEMA = "VOTable-v1.2.xsd";
     protected static final String VOTABLE_13_SCHEMA = "VOTable-v1.3.xsd";
-    
+
     private static final String votable11SchemaUrl;
     private static final String votable12SchemaUrl;
     private static final String votable13SchemaUrl;
-    
+
     private FormatFactory formatFactory;
-    
+
     static
     {
         votable11SchemaUrl = getSchemaURL(VOTABLE_11_SCHEMA);
@@ -121,7 +123,7 @@ public class VOTableReader
 
         votable12SchemaUrl = getSchemaURL(VOTABLE_12_SCHEMA);
         log.debug("votable12SchemaUrl: " + votable12SchemaUrl);
-        
+
         votable13SchemaUrl = getSchemaURL(VOTABLE_13_SCHEMA);
         log.debug("votable13SchemaUrl: " + votable13SchemaUrl);
     }
@@ -219,34 +221,34 @@ public class VOTableReader
         }
         finally
         {
-            
+
         }
     }
-    
+
     protected VOTableDocument readImpl(Reader reader)
         throws IOException
     {
         // Parse the input document.
         Document document;
         try
-        {   
+        {
             document = docBuilder.build(reader);
         }
         catch (JDOMException e)
         {
             throw new IOException("Unable to parse " + e.getMessage());
         }
-        
+
         // Returned VOTable object.
         VOTableDocument votable = new VOTableDocument();
-        
+
         // Document root element.
         Element root = document.getRootElement();
-        
+
         // Namespace for the root element.
         Namespace namespace = root.getNamespace();
         log.debug("Namespace: " + namespace);
-        
+
         // RESOURCE elements
         List<Element> resources = root.getChildren("RESOURCE", namespace);
         for (Element resource : resources)
@@ -254,38 +256,43 @@ public class VOTableReader
             Attribute typeAttr = resource.getAttribute("type");
             VOTableResource votResource = new VOTableResource(typeAttr.getValue());
             votable.getResources().add(votResource);
-            
+
             // Get the RESOURCE name attribute.
             Attribute nameAttr = resource.getAttribute("name");
             if (nameAttr != null)
                 votResource.setName(nameAttr.getValue());
 
+            // GET the RESOURCE ID attribute
+            Attribute idAttr = resource.getAttribute("ID");
+            if (idAttr != null)
+                votResource.setID(idAttr.getValue());
+
             // INFO elements
             List<Element> infos = resource.getChildren("INFO", namespace);
             log.debug("found resource.info: " + infos.size());
             votResource.getInfos().addAll(getInfos(infos, namespace));
-            
+
             // PARAM elements
             List<Element> params = resource.getChildren("PARAM", namespace);
             log.debug("found resource.param: " + params.size());
             votResource.getParams().addAll(getParams(params, namespace));
-            
+
             // GROUP elements
             List<Element> groups = resource.getChildren("GROUP", namespace);
             log.debug("found resource.group: " + groups.size());
             votResource.getGroups().addAll(getGroups(groups, namespace));
-            
+
             // TABLE element.
             Element table = resource.getChild("TABLE", namespace);
             if (table != null)
             {
                 VOTableTable vot = new VOTableTable();
                 votResource.setTable(vot);
-                
+
                 List<Element> tinfos = table.getChildren("INFO", namespace);
                 log.debug("found resource.table.info: " + tinfos.size());
                 vot.getInfos().addAll(getInfos(tinfos, namespace));
-                
+
                 // PARAM elements
                 List<Element> tparams = table.getChildren("PARAM", namespace);
                 log.debug("found resource.table.param: " + tparams.size());
@@ -331,7 +338,7 @@ public class VOTableReader
         }
         return infos;
     }
-    
+
     /**
      * Builds a List of Info objects from a List of INFO Elements.
      *
@@ -346,17 +353,17 @@ public class VOTableReader
         {
             String name = element.getAttributeValue("name");
             VOTableGroup vg = new VOTableGroup(name);
-            
+
             // PARAM elements
             List<Element> params = element.getChildren("PARAM", namespace);
             log.debug("found group.param: " + params.size());
             vg.getParams().addAll(getParams(params, namespace));
-            
+
             // GROUP elements
             List<Element> groups = element.getChildren("GROUP", namespace);
             log.debug("found group.group: " + groups.size());
             vg.getGroups().addAll(getGroups(groups, namespace));
-            
+
             ret.add(vg);
         }
         return ret;
@@ -387,7 +394,7 @@ public class VOTableReader
         }
         return params;
     }
-    
+
     /**
      * Build a List of TableField objects from a List of FIELD Elements.
      *
@@ -427,6 +434,7 @@ public class VOTableReader
         tableField.unit = element.getAttributeValue("unit");
         tableField.utype = element.getAttributeValue("utype");
         tableField.xtype = element.getAttributeValue("xtype");
+        tableField.ref = element.getAttributeValue("ref");
 
         String arraysize = element.getAttributeValue("arraysize");
         if (arraysize != null)
@@ -468,7 +476,7 @@ public class VOTableReader
             }
         }
     }
-    
+
     /**
      * Build a List that contains the TableData rows.
      *
@@ -519,7 +527,7 @@ public class VOTableReader
             log.debug("schemaMap.size(): " + schemaMap.size());
             for (String schemaNSKey : schemaMap.keySet())
             {
-                schemaResource = (String) schemaMap.get(schemaNSKey);
+                schemaResource = schemaMap.get(schemaNSKey);
                 sbSchemaLocations.append(schemaNSKey).append(space).append(schemaResource).append(space);
             }
             // enable xerces grammar caching
