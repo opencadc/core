@@ -265,7 +265,7 @@ public class VOTableReader
             // GET the RESOURCE ID attribute
             Attribute idAttr = resource.getAttribute("ID");
             if (idAttr != null)
-                votResource.setID(idAttr.getValue());
+                votResource.id = idAttr.getValue();
 
             // INFO elements
             List<Element> infos = resource.getChildren("INFO", namespace);

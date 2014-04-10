@@ -79,7 +79,6 @@ import java.util.List;
 public class VOTableResource
 {
     private String type;
-    private String ID;
 
     private String name;
     private List<VOTableInfo> infos = new ArrayList<VOTableInfo>();
@@ -87,6 +86,8 @@ public class VOTableResource
     private List<VOTableGroup> groups = new ArrayList<VOTableGroup>();
 
     private VOTableTable table;
+
+    public String id;
 
     public VOTableResource(String type)
     {
@@ -96,16 +97,6 @@ public class VOTableResource
     public String getType()
     {
         return type;
-    }
-
-    public String getID()
-    {
-        return ID;
-    }
-
-    public void setID(String ID)
-    {
-        this.ID = ID;
     }
 
     public List<VOTableInfo> getInfos()

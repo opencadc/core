@@ -256,8 +256,8 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
             resource.setAttribute("type", votResource.getType());
             log.debug("wrote resource.type: " + votResource.getType());
 
-            if (votResource.getID() != null)
-                resource.setAttribute("ID", votResource.getID());
+            if (votResource.id != null)
+                resource.setAttribute("ID", votResource.id);
 
             if (votResource.getName() != null)
                 resource.setAttribute("name", votResource.getName());
