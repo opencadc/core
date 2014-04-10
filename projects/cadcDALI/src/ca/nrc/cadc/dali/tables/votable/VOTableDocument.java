@@ -100,7 +100,7 @@ public class VOTableDocument
     {
         for (VOTableResource r : resources)
         {
-            if (r.getID() != null && r.getID().equals(id))
+            if (r.id != null && r.id.equals(id))
                 return r;
         }
         return null;
