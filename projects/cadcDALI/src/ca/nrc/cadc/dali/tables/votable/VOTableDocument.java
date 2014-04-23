@@ -78,14 +78,14 @@ import java.util.List;
 public class VOTableDocument
 {
     private List<VOTableResource> resources = new ArrayList<VOTableResource>();
-    
+
     public VOTableDocument() { }
 
     public List<VOTableResource> getResources()
     {
         return resources;
     }
-    
+
     public VOTableResource getResourceByType(String type)
     {
         for (VOTableResource r : resources)
@@ -95,17 +95,22 @@ public class VOTableDocument
         }
         return null;
     }
-     
+
     public VOTableResource getResourceByID(String id)
     {
-        throw new UnsupportedOperationException();
+        for (VOTableResource r : resources)
+        {
+            if (r.id != null && r.id.equals(id))
+                return r;
+        }
+        return null;
     }
-    
+
     public VOTableGroup getGroupByID(String id)
     {
         throw new UnsupportedOperationException();
     }
-    
+
     public VOTableField getFieldByID(String id)
     {
         throw new UnsupportedOperationException();

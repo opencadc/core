@@ -69,12 +69,6 @@
 
 package ca.nrc.cadc.dali.tables.votable;
 
-import ca.nrc.cadc.dali.tables.TableWriter;
-import ca.nrc.cadc.dali.util.Format;
-import ca.nrc.cadc.dali.util.FormatFactory;
-import ca.nrc.cadc.uws.util.ContentConverter;
-import ca.nrc.cadc.uws.util.IterableContent;
-import ca.nrc.cadc.uws.util.MaxIterations;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -82,17 +76,25 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.Iterator;
 import java.util.List;
+
 import org.apache.log4j.Logger;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.Namespace;
 import org.jdom2.output.XMLOutputter;
 
+import ca.nrc.cadc.dali.tables.TableWriter;
+import ca.nrc.cadc.dali.util.Format;
+import ca.nrc.cadc.dali.util.FormatFactory;
+import ca.nrc.cadc.uws.util.ContentConverter;
+import ca.nrc.cadc.uws.util.IterableContent;
+import ca.nrc.cadc.uws.util.MaxIterations;
+
 /**
  * Basic VOTable reader. This class currently supports a subset of VOTable (tabledata
  * only) and always writes with the VOTable-1.2 namespace. TODO: complete support and
  * allow caller to specify the target namespace.
- * 
+ *
  * @author pdowler
  */
 public class VOTableWriter implements TableWriter<VOTableDocument>
@@ -100,7 +102,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
     private static final Logger log = Logger.getLogger(VOTableWriter.class);
 
     public static final String CONTENT_TYPE = "application/x-votable+xml";
-    
+
     // VOTable Version number.
     public static final String VOTABLE_VERSION  = "1.2";
 
@@ -113,7 +115,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
     public static final String VOTABLE_13_NS_URI = "http://www.ivoa.net/xml/VOTable/v1.3";
 
     private FormatFactory formatFactory;
-    
+
     private boolean binaryTable;
 
     /**
@@ -130,7 +132,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
      *
      * @param binaryTable
      */
-    public VOTableWriter(boolean binaryTable) 
+    public VOTableWriter(boolean binaryTable)
     {
         this.binaryTable = binaryTable;
     }
@@ -140,6 +142,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
      *
      * @return  VOTable Content-Type.
      */
+    @Override
     public String getContentType()
     {
         return CONTENT_TYPE;
@@ -150,16 +153,18 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
      *
      * @return VOTable extension.
      */
+    @Override
     public String getExtension()
     {
         return "xml";
     }
-    
+
+    @Override
     public void setFormatFactory(FormatFactory formatFactory)
     {
         this.formatFactory = formatFactory;
     }
-    
+
     /**
      * Write the VOTable to the specified OutputStream.
      *
@@ -167,6 +172,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
      * @param ostream OutputStream to write to.
      * @throws IOException if problem writing to OutputStream.
      */
+    @Override
     public void write(VOTableDocument votable, OutputStream ostream)
         throws IOException
     {
@@ -183,6 +189,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
      * @param maxRec maximum number of rows to write.
      * @throws IOException if problem writing to OutputStream.
      */
+    @Override
     public void write(VOTableDocument votable, OutputStream ostream, Long maxrec)
         throws IOException
     {
@@ -197,6 +204,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
      * @param writer Writer to write to.
      * @throws IOException if problem writing to the writer.
      */
+    @Override
     public void write(VOTableDocument votable, Writer writer)
         throws IOException
     {
@@ -213,6 +221,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
      * @param maxRec maximum number of rows to write.
      * @throws IOException if problem writing to the writer.
      */
+    @Override
     public void write(VOTableDocument votable, Writer writer, Long maxrec)
         throws IOException
     {
@@ -224,29 +233,32 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
         }
         finally
         {
-            
+
         }
     }
-    
+
     protected void writeImpl(VOTableDocument votable, Writer writer, Long maxrec)
         throws IOException
     {
         log.debug("write, maxrec=" + maxrec);
-        
+
         // VOTable document and root element.
         Document document = createDocument();
         Element root = document.getRootElement();
         Namespace namespace = root.getNamespace();
-        
+
         for (VOTableResource votResource : votable.getResources())
         {
             // Create the RESOURCE element and add to the VOTABLE element.
             Element resource = new Element("RESOURCE", namespace);
             root.addContent(resource);
-            
+
             resource.setAttribute("type", votResource.getType());
-        
             log.debug("wrote resource.type: " + votResource.getType());
+
+            if (votResource.id != null)
+                resource.setAttribute("ID", votResource.id);
+
             if (votResource.getName() != null)
                 resource.setAttribute("name", votResource.getName());
 
@@ -307,13 +319,13 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
                     Element data = new Element("DATA", namespace);
                     table.addContent(data);
 
-                    
+
                     log.debug("setup content interator: maxrec=" + maxrec);
                     Element trailer = new Element("INFO", namespace);
                     trailer.setAttribute("name", "QUERY_STATUS");
                     trailer.setAttribute("value", "OK");
                     resource.addContent(trailer);
-                    
+
                     try
                     {
                         Iterator<List<Object>> rowIter = vot.getTableData().iterator();
@@ -338,7 +350,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
                 }
             }
 
-            
+
         }
 
         // Write out the VOTABLE.
@@ -395,10 +407,10 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
         Element votable = new Element("VOTABLE", vot);
         votable.setAttribute("version", VOTABLE_VERSION);
         votable.addNamespaceDeclaration(xsi);
-        
+
         Document document = new Document();
         document.addContent(votable);
-        
+
         return document;
     }
 
@@ -426,15 +438,15 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
         return sb.toString();
     }
 
-   
-    
+
+
     private class TabledataMaxIterations implements MaxIterations
     {
-        
+
         private long maxRec;
         private Element info;
         private Namespace namespace;
-        
+
         TabledataMaxIterations(Long maxRec, Element info, Namespace namespace)
         {
             if (maxRec == null)
@@ -458,14 +470,14 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
             log.debug("modifying: " + info);
             info.setAttribute("value", "OVERFLOW");
         }
-        
+
     }
-    
+
     private class TabledataContentConverter implements ContentConverter<Element, List<Object>>
     {
         private List<VOTableField> fields;
         private Namespace namespace;
-        
+
         TabledataContentConverter(List<VOTableField> fields, Namespace namespace)
         {
             this.fields = fields;
@@ -474,10 +486,10 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
 
         @Override
         public Element convert(List<Object> row)
-        {            
+        {
             if (row.size() != fields.size() )
                 throw new IllegalStateException("cannot write row: " + fields.size() + " metadata fields, " + row.size() + " data columns");
-            
+
             // TR element.
             Element tr = new Element("TR", namespace);
 
@@ -491,11 +503,11 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
                 td.setText(fmt.format(o));
                 tr.addContent(td);
             }
-            
+
             return tr;
-            
+
         }
-        
+
     }
 
 }
