@@ -94,4 +94,23 @@ public enum Regions
         return false;
     }
 
+    /**
+     * Return the regions object based on the string parameter.  The check
+     * is case insensitive.
+     *
+     * @param regions The regions to lookup.
+     * @return The matching regions.
+     */
+    public static Regions toValue(String s)
+    {
+        for (Regions v : values())
+        {
+            if (v.toString().equalsIgnoreCase(s))
+            {
+                return v;
+            }
+        }
+        throw new IllegalArgumentException("No regions named " + s);
+    }
+
 }

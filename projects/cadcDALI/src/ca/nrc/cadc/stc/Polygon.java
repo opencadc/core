@@ -85,10 +85,10 @@ public class Polygon extends Region
 
     /**
      * Construct a Polygon with the given coordinate descriptions
-     * and coordinate pairs. It is expected that the List of CoordPairs 
+     * and coordinate pairs. It is expected that the List of CoordPairs
      * <code>ca.nrc.cadc.stc.CoordPair</code> will contain at least three
      * Coordinate Pairs.
-     * 
+     *
      * @param frame the frame describing the Polygon. Allowed values for frame are
      *              from <code>ca.nrc.cadc.stc.Frame</code>.
      * @param refpos the reference position describing the Polygon. Allowed values
@@ -108,10 +108,10 @@ public class Polygon extends Region
 
     /**
      * Create a Polygon from a Box object.
-     * 
+     *
      * @param box
      */
-    public Polygon getPolygon(Box box)
+    public static Polygon getPolygon(Box box)
     {
         double x  = box.getCoordPair().getX();
         double y = box.getCoordPair().getY();
@@ -120,7 +120,7 @@ public class Polygon extends Region
 
         double hwTop = hw / Math.cos(Math.toRadians(y+hh));
         double hwBottom = hw / Math.cos(Math.toRadians(y-hh));
-        
+
         CoordPair corner;
         List<CoordPair> corners = new ArrayList<CoordPair>(4);
         corner = new CoordPair(x - hwBottom, y - hh);
@@ -131,10 +131,8 @@ public class Polygon extends Region
         corners.add(corner);
         corner = new CoordPair(x + hwBottom, y - hh);
         corners.add(corner);
-        
-        this.coordPairs = corners;
 
-        return new Polygon(null, null, null, coordPairs);
+        return new Polygon(null, null, null, corners);
     }
 
     /**

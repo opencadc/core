@@ -70,7 +70,7 @@ package ca.nrc.cadc.stc;
 
 /**
  * Class to represent a STC-S Position.
- * 
+ *
  */
 public class Position extends Region
 {
