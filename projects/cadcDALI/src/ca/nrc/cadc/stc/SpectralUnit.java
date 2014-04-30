@@ -70,7 +70,7 @@ package ca.nrc.cadc.stc;
 
 /**
  * Allowed values for unit in a STC-S SpectralInterval.
- * 
+ *
  */
 public enum SpectralUnit
 {
@@ -100,12 +100,12 @@ public enum SpectralUnit
     {
         for (SpectralUnit v : values())
         {
-            if (v.value.equals(s))
+            if (v.toString().equalsIgnoreCase(s))
             {
                 return v;
             }
         }
-        throw new IllegalArgumentException("invalid value: " + s);
+        throw new IllegalArgumentException("No spectral unit named " + s);
     }
 
     /**
@@ -132,5 +132,5 @@ public enum SpectralUnit
         }
         return false;
     }
-    
+
 }

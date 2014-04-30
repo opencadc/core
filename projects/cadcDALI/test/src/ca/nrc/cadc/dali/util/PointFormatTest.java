@@ -69,12 +69,16 @@
 
 package ca.nrc.cadc.dali.util;
 
-import ca.nrc.cadc.stc.Position;
-import ca.nrc.cadc.util.Log4jInit;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Test;
-import static org.junit.Assert.*;
+
+import ca.nrc.cadc.stc.Position;
+import ca.nrc.cadc.util.Log4jInit;
 
 /**
  *
@@ -106,7 +110,7 @@ public class PointFormatTest
             Position result = format.parse(expected);
             String actual = format.format(result);
 
-            assertEquals(expected, actual);
+            assertEquals(expected.toUpperCase(), actual.toUpperCase());
 
             log.info("testValue passed");
         }

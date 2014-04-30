@@ -74,6 +74,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -117,13 +118,19 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
     private FormatFactory formatFactory;
 
     private boolean binaryTable;
+    private String mimeType;
 
     /**
      * Default constructor.
      */
     public VOTableWriter()
     {
-        this(false);
+        this(false, null);
+    }
+
+    public VOTableWriter(String mimeType)
+    {
+        this(false, mimeType);
     }
 
     /**
@@ -132,9 +139,10 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
      *
      * @param binaryTable
      */
-    public VOTableWriter(boolean binaryTable)
+    public VOTableWriter(boolean binaryTable, String mimeType)
     {
         this.binaryTable = binaryTable;
+        this.mimeType = mimeType;
     }
 
     /**
@@ -145,7 +153,10 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
     @Override
     public String getContentType()
     {
-        return CONTENT_TYPE;
+        if (mimeType == null)
+            return CONTENT_TYPE;
+
+        return mimeType;
     }
 
     /**
@@ -331,7 +342,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
                         Iterator<List<Object>> rowIter = vot.getTableData().iterator();
 
                         TabledataContentConverter elementConverter = new TabledataContentConverter(vot.getFields(), namespace);
-                        TabledataMaxIterations maxIterations = new TabledataMaxIterations(maxrec, trailer, namespace);
+                        TabledataMaxIterations maxIterations = new TabledataMaxIterations(maxrec, trailer);
 
                         IterableContent<Element, List<Object>> tabledata =
                                 new IterableContent<Element, List<Object>>("TABLEDATA", namespace, rowIter, elementConverter, maxIterations);
@@ -438,23 +449,19 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
         return sb.toString();
     }
 
-
-
     private class TabledataMaxIterations implements MaxIterations
     {
 
         private long maxRec;
         private Element info;
-        private Namespace namespace;
 
-        TabledataMaxIterations(Long maxRec, Element info, Namespace namespace)
+        TabledataMaxIterations(Long maxRec, Element info)
         {
             if (maxRec == null)
                 this.maxRec = Long.MAX_VALUE;
             else
                 this.maxRec = maxRec;
             this.info = info;
-            this.namespace = namespace;
         }
 
         @Override
@@ -477,18 +484,33 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
     {
         private List<VOTableField> fields;
         private Namespace namespace;
+        private List<Format<Object>> formats;
 
         TabledataContentConverter(List<VOTableField> fields, Namespace namespace)
         {
             this.fields = fields;
             this.namespace = namespace;
+
+            // initialize the list of associated formats
+            this.formats = new ArrayList<Format<Object>>(fields.size());
+
+            for (VOTableField field : fields)
+            {
+                Format<Object> format = null;
+                if (field.getFormat() == null)
+                    format = formatFactory.getFormat(field);
+                else
+                    format = field.getFormat();
+                formats.add(format);
+            }
         }
 
         @Override
         public Element convert(List<Object> row)
         {
             if (row.size() != fields.size() )
-                throw new IllegalStateException("cannot write row: " + fields.size() + " metadata fields, " + row.size() + " data columns");
+                throw new IllegalStateException("cannot write row: " + fields.size()
+                        + " metadata fields, " + row.size() + " data columns");
 
             // TR element.
             Element tr = new Element("TR", namespace);
@@ -497,8 +519,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
             for (int i = 0; i < row.size(); i++)
             {
                 Object o = row.get(i);
-                VOTableField tf = fields.get(i);
-                Format fmt = formatFactory.getFormat(tf);
+                Format<Object> fmt = formats.get(i);
                 Element td = new Element("TD", namespace);
                 td.setText(fmt.format(o));
                 tr.addContent(td);
