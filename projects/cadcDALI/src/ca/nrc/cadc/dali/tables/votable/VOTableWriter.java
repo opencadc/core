@@ -342,7 +342,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
                         Iterator<List<Object>> rowIter = vot.getTableData().iterator();
 
                         TabledataContentConverter elementConverter = new TabledataContentConverter(vot.getFields(), namespace);
-                        TabledataMaxIterations maxIterations = new TabledataMaxIterations(maxrec, trailer, namespace);
+                        TabledataMaxIterations maxIterations = new TabledataMaxIterations(maxrec, trailer);
 
                         IterableContent<Element, List<Object>> tabledata =
                                 new IterableContent<Element, List<Object>>("TABLEDATA", namespace, rowIter, elementConverter, maxIterations);
@@ -449,23 +449,19 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
         return sb.toString();
     }
 
-
-
     private class TabledataMaxIterations implements MaxIterations
     {
 
         private long maxRec;
         private Element info;
-        private Namespace namespace;
 
-        TabledataMaxIterations(Long maxRec, Element info, Namespace namespace)
+        TabledataMaxIterations(Long maxRec, Element info)
         {
             if (maxRec == null)
                 this.maxRec = Long.MAX_VALUE;
             else
                 this.maxRec = maxRec;
             this.info = info;
-            this.namespace = namespace;
         }
 
         @Override
@@ -513,7 +509,8 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
         public Element convert(List<Object> row)
         {
             if (row.size() != fields.size() )
-                throw new IllegalStateException("cannot write row: " + fields.size() + " metadata fields, " + row.size() + " data columns");
+                throw new IllegalStateException("cannot write row: " + fields.size()
+                        + " metadata fields, " + row.size() + " data columns");
 
             // TR element.
             Element tr = new Element("TR", namespace);
