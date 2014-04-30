@@ -95,4 +95,23 @@ public enum ReferencePosition
         return false;
     }
 
+    /**
+     * Return the referencePosition object based on the string parameter.  The check
+     * is case insensitive.
+     *
+     * @param referencePosition The referencePosition to lookup.
+     * @return The matching referencePosition.
+     */
+    public static ReferencePosition toValue(String s)
+    {
+        for (ReferencePosition v : values())
+        {
+            if (v.toString().equalsIgnoreCase(s))
+            {
+                return v;
+            }
+        }
+        throw new IllegalArgumentException("No referencePosition named " + s);
+    }
+
 }

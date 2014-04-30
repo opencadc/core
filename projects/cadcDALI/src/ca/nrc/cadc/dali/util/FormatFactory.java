@@ -69,36 +69,24 @@
 package ca.nrc.cadc.dali.util;
 
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
-import ca.nrc.cadc.stc.Box;
-import ca.nrc.cadc.stc.Circle;
-import ca.nrc.cadc.stc.Intersection;
-import ca.nrc.cadc.stc.Not;
-import ca.nrc.cadc.stc.Polygon;
-import ca.nrc.cadc.stc.Position;
-import ca.nrc.cadc.stc.Union;
-import java.net.URI;
-import java.net.URL;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * This factory class implements the mapping of datatypes to VOTable according
  * to the DALI-1.0 specification.
- * 
+ *
  * @author jburke
  */
 public class FormatFactory
 {
     /**
-     * 
+     *
      * @param field
      * @return
      */
     public Format getFormat(VOTableField field)
     {
         String datatype = field.getDatatype();
-        
+
         if (datatype.equalsIgnoreCase("boolean"))
         {
             return new BooleanFormat();
@@ -213,7 +201,7 @@ public class FormatFactory
                 }
             }
         }
-        
+
         return new DefaultFormat();
     }
 

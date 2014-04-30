@@ -93,5 +93,24 @@ public enum Frame
         return false;
     }
 
+    /**
+     * Return the frame object based on the string parameter.  The check
+     * is case insensitive.
+     *
+     * @param frame The frame to lookup.
+     * @return The matching frame.
+     */
+    public static Frame toValue(String s)
+    {
+        for (Frame v : values())
+        {
+            if (v.toString().equalsIgnoreCase(s))
+            {
+                return v;
+            }
+        }
+        throw new IllegalArgumentException("No frame named " + s);
+    }
+
 }
 
