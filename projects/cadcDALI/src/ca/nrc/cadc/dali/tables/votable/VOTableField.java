@@ -72,46 +72,55 @@ package ca.nrc.cadc.dali.tables.votable;
 import java.util.ArrayList;
 import java.util.List;
 
+import ca.nrc.cadc.dali.util.Format;
+
 /**
  * VOTable-specific extension of TableColumn. This adds the XML ID/IDREF attributes
  * and a list of string values as permitted by the VOTable schema.
- * 
+ *
  * @author pdowler
  */
 public class VOTableField
 {
     private String name;
     private String datatype;
-    
+
     protected Integer arraysize;
-    protected boolean variableSize;    
-    
+    protected boolean variableSize;
+    protected Format<Object> format;
+
     public String ucd;
     public String unit;
     public String utype;
     public String xtype;
     public String description;
-    
+
     // TODO: add precision support and use it to configure numeric format objects
-    
+
     public String id;
     public String ref;
-    
+
     private List<String> values = new ArrayList<String>();
 
     protected VOTableField() { }
 
     public VOTableField(String name, String datatype)
     {
-        this(name, datatype, null, false);
+        this(name, datatype, null);
     }
 
-    public VOTableField(String name, String datatype, Integer arraysize, boolean variableSize)
+    public VOTableField(String name, String datatype, Format<Object> format)
+    {
+        this(name, datatype, null, false, format);
+    }
+
+    public VOTableField(String name, String datatype, Integer arraysize, boolean variableSize, Format<Object> format)
     {
         this.name = name;
         this.datatype = datatype;
         this.arraysize = arraysize;
         this.variableSize = variableSize;
+        this.format = format;
     }
 
     public String getName()
@@ -129,13 +138,18 @@ public class VOTableField
         return arraysize;
     }
 
+    public Format<Object> getFormat()
+    {
+        return format;
+    }
+
     public boolean isVariableSize()
     {
         return variableSize;
     }
-    
-    
-    
+
+
+
     public List<String> getValues()
     {
         return values;
@@ -150,7 +164,12 @@ public class VOTableField
     {
         this.variableSize = variableSize;
     }
-    
+
+    public void setFormat(Format<Object> format)
+    {
+        this.format = format;
+    }
+
     @Override
     public String toString()
     {

@@ -71,7 +71,7 @@ package ca.nrc.cadc.stc;
 
 /**
  * Abstract base class for a STC-S Region.
- * 
+ *
  */
 public abstract class Region
 {

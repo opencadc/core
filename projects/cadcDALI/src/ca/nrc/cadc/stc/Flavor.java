@@ -92,5 +92,24 @@ public enum Flavor
         }
         return false;
     }
-    
+
+    /**
+     * Return the flavor object based on the string parameter.  The check
+     * is case insensitive.
+     *
+     * @param flavor The flavor to lookup.
+     * @return The matching flavor.
+     */
+    public static Flavor toValue(String s)
+    {
+        for (Flavor v : values())
+        {
+            if (v.toString().equalsIgnoreCase(s))
+            {
+                return v;
+            }
+        }
+        throw new IllegalArgumentException("No flavor named " + s);
+    }
+
 }
