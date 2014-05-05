@@ -87,6 +87,9 @@ public class FormatFactory
     {
         String datatype = field.getDatatype();
 
+        if (datatype == null)
+            return new DefaultFormat();
+
         if (datatype.equalsIgnoreCase("boolean"))
         {
             return new BooleanFormat();
