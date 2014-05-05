@@ -110,7 +110,7 @@ public class AsciiTableWriterTest
     public void testContentType()
     {
         TableWriter<VOTableDocument> writer = new AsciiTableWriter(AsciiTableWriter.ContentType.CSV);
-        Assert.assertEquals("text/csv", writer.getContentType());
+        Assert.assertEquals("text/csv; header=present", writer.getContentType());
     }
 
     @Test
@@ -272,7 +272,8 @@ public class AsciiTableWriterTest
             {
                 numRows++;
             }
-            Assert.assertEquals(3, numRows);
+            // 3 rows plus 1 header row
+            Assert.assertEquals(3 + 1, numRows);
 
         }
         catch(Exception unexpected)
