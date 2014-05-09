@@ -69,6 +69,17 @@
 
 package ca.nrc.cadc.dali.tables.ascii;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+import org.apache.log4j.Logger;
+
 import ca.nrc.cadc.dali.tables.TableData;
 import ca.nrc.cadc.dali.tables.TableWriter;
 import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
@@ -78,28 +89,21 @@ import ca.nrc.cadc.dali.tables.votable.VOTableTable;
 import ca.nrc.cadc.dali.util.DefaultFormat;
 import ca.nrc.cadc.dali.util.Format;
 import ca.nrc.cadc.dali.util.FormatFactory;
+
 import com.csvreader.CsvWriter;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.util.Iterator;
-import java.util.List;
-import org.apache.log4j.Logger;
 
 /**
  * Write a table document in ascii format (CSV or TSV). This writer can tolerate a
  * table structure with no field metadata (e.g. no TableField objects describing the
- * columns of the table) as long as the DefaultFormat can write the objects out. 
- * 
+ * columns of the table) as long as the DefaultFormat can write the objects out.
+ *
  * @see ca.nrc.cadc.dali.util.DefaultFormat
  * @author pdowler
  */
 public class AsciiTableWriter implements TableWriter<VOTableDocument>
 {
     private static final Logger log = Logger.getLogger(AsciiTableWriter.class);
-    
+
     // ASCII character set.
     public static final String US_ASCII = "US-ASCII";
 
@@ -108,22 +112,22 @@ public class AsciiTableWriter implements TableWriter<VOTableDocument>
 
     // TSV format delimiter.
     public static final char TSV_DELI = '\t';
-    
+
     // Maximum number of rows to write.
     protected int maxRows;
     private char delimeter;
     private ContentType contentType;
-    
+
     private FormatFactory formatFactory;
-    
-    
+
+
     public static enum ContentType
     {
-        CSV("text/csv"), 
+        CSV("text/csv; header=present"),
         TSV("text/tab-separated-values");
-        
+
         private String value;
-        
+
         private ContentType(String s) { this.value = s; }
 
         public String getValue()
@@ -131,9 +135,9 @@ public class AsciiTableWriter implements TableWriter<VOTableDocument>
             return value;
         }
     }
-    
-    
-    
+
+
+
     public AsciiTableWriter(ContentType fmt)
     {
         this.contentType = fmt;
@@ -143,41 +147,48 @@ public class AsciiTableWriter implements TableWriter<VOTableDocument>
             this.delimeter = TSV_DELI;
     }
 
+    @Override
     public String getExtension()
     {
         return "txt";
     }
 
+    @Override
     public String getContentType()
     {
         return contentType.getValue();
     }
 
+    @Override
     public void setFormatFactory(FormatFactory formatFactory)
     {
         this.formatFactory = formatFactory;
     }
-    
-    public void write(VOTableDocument vot, OutputStream out) 
+
+    @Override
+    public void write(VOTableDocument vot, OutputStream out)
         throws IOException
     {
         write(vot, out, null);
     }
-    
-    public void write(VOTableDocument vot, OutputStream out, Long maxrec) 
+
+    @Override
+    public void write(VOTableDocument vot, OutputStream out, Long maxrec)
         throws IOException
     {
         Writer writer = new BufferedWriter(new OutputStreamWriter(out, US_ASCII));
         write(vot, writer, maxrec);
     }
 
-    public void write(VOTableDocument vot, Writer out) 
+    @Override
+    public void write(VOTableDocument vot, Writer out)
         throws IOException
     {
         write(vot, out, null);
     }
-    
-    public void write(VOTableDocument votable, Writer writer, Long maxrec) 
+
+    @Override
+    public void write(VOTableDocument votable, Writer writer, Long maxrec)
         throws IOException
     {
         try
@@ -188,10 +199,10 @@ public class AsciiTableWriter implements TableWriter<VOTableDocument>
         }
         finally
         {
-            
+
         }
     }
-    
+
     protected void writeImpl(VOTableDocument votable, Writer out, Long maxrec)
         throws IOException
     {
@@ -200,11 +211,30 @@ public class AsciiTableWriter implements TableWriter<VOTableDocument>
         VOTableTable vt = vr.getTable();
         TableData td = vt.getTableData();
         List<VOTableField> fields = vt.getFields();
-        Format dfmt = new DefaultFormat();
-        
+
+        // initialize the list of associated formats
+        List<Format<Object>> formats = new ArrayList<Format<Object>>();
+        if (fields != null && !fields.isEmpty())
+        {
+            for (VOTableField field : fields)
+            {
+                Format<Object> format = null;
+                if (field.getFormat() == null)
+                    format = formatFactory.getFormat(field);
+                else
+                    format = field.getFormat();
+                formats.add(format);
+            }
+        }
+
         CsvWriter writer = new CsvWriter(out, delimeter);
         try
         {
+            // Add the metadata elements.
+            for (VOTableField field : fields)
+                writer.write(field.getName());
+            writer.endRecord();
+
             // TODO: header comment?
             long numRows = 0L;
             boolean ok = true;
@@ -217,11 +247,10 @@ public class AsciiTableWriter implements TableWriter<VOTableDocument>
                 for (int i=0; i<row.size(); i++)
                 {
                     Object o = row.get(i);
-                    Format fmt = dfmt;
-                    if (fields != null && !fields.isEmpty())
+                    Format<Object> fmt = new DefaultFormat();
+                    if (!fields.isEmpty())
                     {
-                        VOTableField tf = fields.get(i);
-                        fmt = formatFactory.getFormat(tf);
+                        fmt = formats.get(i);
                     }
                     writer.write( fmt.format(o) );
                 }
@@ -229,7 +258,7 @@ public class AsciiTableWriter implements TableWriter<VOTableDocument>
                 numRows++;
                 if (maxrec != null && numRows == maxrec.longValue())
                     ok = false;
-                    
+
                 writer.flush();
             }
         }
@@ -243,6 +272,6 @@ public class AsciiTableWriter implements TableWriter<VOTableDocument>
         }
     }
 
-    
-    
+
+
 }
