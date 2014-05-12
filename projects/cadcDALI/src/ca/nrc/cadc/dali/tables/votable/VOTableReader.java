@@ -257,6 +257,11 @@ public class VOTableReader
             VOTableResource votResource = new VOTableResource(typeAttr.getValue());
             votable.getResources().add(votResource);
 
+            // Get the RESOURCE utype attribute.
+            Attribute utypeAttr = resource.getAttribute("utype");
+            if (utypeAttr != null)
+                votResource.utype = utypeAttr.getValue();
+            
             // Get the RESOURCE name attribute.
             Attribute nameAttr = resource.getAttribute("name");
             if (nameAttr != null)

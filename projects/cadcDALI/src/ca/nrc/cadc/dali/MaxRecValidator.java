@@ -137,19 +137,22 @@ public class MaxRecValidator
      * Checks the parameter List for a parameter named MAXREC.
      * <p>
      * If the MAXREC parameter is found, attempts to parse and return the value
-     * of MAXREC as an int. If the parsing fails, or if the value of MAXREC is
+     * of MAXREC as an integer. If the parsing fails, or if the value of MAXREC is
      * negative, an IllegalArgumentException is thrown.
      * <p>
      * If the MAXREC parameter is not found in the List of parameters,
-     * the default value of {@link Integer.MAX_VALUE} is returned.
+     * a null signifying no limit is returned.
      * <p>
      *
      *
      * @param paramList List of TAP parameters.
-     * @return int value of MAXREC.
+     * @return Integer value of MAXREC or null for no limit
      */
     public Integer validate(List<Parameter> paramList)
     {
+        if (paramList == null)
+            throw new IllegalArgumentException("null paramList (probably a bug)");
+        
         String value = ParameterUtil.findParameterValue("MAXREC", paramList);
 
         if (value == null || value.trim().length() == 0)
