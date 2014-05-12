@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2014.                            (c) 2014.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,120 +62,143 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 4 $
+*  $Revision: 5 $
 *
 ************************************************************************
 */
 
 package ca.nrc.cadc.dali;
 
-import ca.nrc.cadc.uws.Job;
+import ca.nrc.cadc.util.Log4jInit;
 import ca.nrc.cadc.uws.Parameter;
-import ca.nrc.cadc.uws.ParameterUtil;
+import java.util.ArrayList;
 import java.util.List;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
- * This class checks for a TAP parameter named MAXREC, and returns a validated
- * or default value. Implementors can/should subclass this with a class named
- * <code>ca.nrc.cadc.tap.impl.MaxRecValidatorImpl</code> to set the default and
- * maximum allowed values for their service. The values set here are null, which
- * means no limit.
- * 
- * @author jburke
+ *
+ * @author pdowler
  */
-public class MaxRecValidator
+public class MaxRecValidatorTest 
 {
-    private static Logger log = Logger.getLogger(MaxRecValidator.class);
+    private static final Logger log = Logger.getLogger(MaxRecValidatorTest.class);
 
-    /**
-     * The default value when MAXREC is not specified. May be null for unlimited.
-     */
-    protected Integer defaultValue;
-
-    /**
-     * The maximum allowed value. May be null for unlimited.
-     */
-    protected Integer maxValue;
-
-    /**
-     * The UWS Job. This may be used by subclasses to dynamically determine
-     * the limit in the validate method.
-     */
-    protected Job job;
-
-    /**
-     * This gets set to true if the job is running in synchronous mode. In
-     * sync mode, the QueryRunner streams the output and thus consumes a finite
-     * amount of memory and no storage space.
-     */
-    protected boolean sync;
-
-    public MaxRecValidator() { }
-
-    public void setDefaultValue(Integer defaultValue)
+    static
     {
-        this.defaultValue = defaultValue;
+        Log4jInit.setLevel("ca.nrc.cadc.dali", Level.INFO);
     }
-
-    public void setMaxValue(Integer maxValue)
+    
+    @Test
+    public void testNullParamList()
     {
-        this.maxValue = maxValue;
-    }
-
-    public void setJob(Job job)
-    {
-        this.job = job;
-    }
-
-    public void setSynchronousMode(boolean sync)
-    {
-        this.sync = sync;
-    }
-
-    /**
-     * Checks the parameter List for a parameter named MAXREC.
-     * <p>
-     * If the MAXREC parameter is found, attempts to parse and return the value
-     * of MAXREC as an integer. If the parsing fails, or if the value of MAXREC is
-     * negative, an IllegalArgumentException is thrown.
-     * <p>
-     * If the MAXREC parameter is not found in the List of parameters,
-     * a null signifying no limit is returned.
-     * <p>
-     *
-     *
-     * @param paramList List of TAP parameters.
-     * @return Integer value of MAXREC or null for no limit
-     */
-    public Integer validate(List<Parameter> paramList)
-    {
-        if (paramList == null)
-            throw new IllegalArgumentException("null paramList (probably a bug)");
-        
-        String value = ParameterUtil.findParameterValue("MAXREC", paramList);
-
-        if (value == null || value.trim().length() == 0)
-        {
-            return defaultValue;
-        }
-
+        MaxRecValidator validator = new MaxRecValidator();
         try
         {
-            Integer ret = new Integer(value);
-            if (ret < 0)
-            {
-                throw new IllegalArgumentException("Invalid MAXREC: " + value);
-            }
-            if (maxValue != null && maxValue < ret)
-            {
-                return maxValue;
-            }
-            return ret;
+            validator.validate(null);
+            Assert.fail("expected IllegalArgumentException");
         }
-        catch (NumberFormatException nfe)
+        catch (IllegalArgumentException expected)
         {
-            throw new IllegalArgumentException("Invalid MAXREC: " + value);
+            log.debug("expected exception: " + expected);
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+    
+    @Test
+    public void testInvalidInput()
+    {
+        MaxRecValidator validator = new MaxRecValidator();
+        List<Parameter> params = new ArrayList<Parameter>();
+        
+        try
+        {
+            params.add(new Parameter("MAXREC", "x100"));
+            validator.validate(params);
+            Assert.fail("expected IllegalArgumentException");
+        }
+        catch (IllegalArgumentException expected)
+        {
+            log.debug("expected exception: " + expected);
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+
+        params.clear();
+        try
+        {
+            params.add(new Parameter("MAXREC", "-100"));
+            validator.validate(params);
+            Assert.fail("expected IllegalArgumentException");
+        }
+        catch (IllegalArgumentException expected)
+        {
+            log.debug("expected exception: " + expected);
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+    
+    @Test
+    public void testNoLimits()
+    {
+        MaxRecValidator validator = new MaxRecValidator();
+        List<Parameter> params = new ArrayList<Parameter>();
+        
+        try
+        {
+            Integer val = validator.validate(params);
+            Assert.assertNull(val);
+            
+            params.add(new Parameter("MAXREC", "100"));
+            val = validator.validate(params);
+            Assert.assertEquals(new Integer(100), val);
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+    
+    @Test
+    public void testDefaultLimit()
+    {
+        MaxRecValidator validator = new MaxRecValidator();
+        validator.setDefaultValue(new Integer(1000));
+        validator.setMaxValue(new Integer(5000));
+        List<Parameter> params = new ArrayList<Parameter>();
+        
+        try
+        {
+            Integer val = validator.validate(params);
+            Assert.assertEquals(new Integer(1000), val); // default
+            
+            params.add(new Parameter("MAXREC", "100"));
+            val = validator.validate(params);
+            Assert.assertEquals(new Integer(100), val);
+            
+            params.clear();
+            params.add(new Parameter("MAXREC", "6000"));
+            val = validator.validate(params);
+            Assert.assertEquals(new Integer(5000), val); // limit
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
         }
     }
 }
