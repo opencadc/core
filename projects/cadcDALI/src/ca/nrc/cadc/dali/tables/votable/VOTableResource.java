@@ -87,6 +87,7 @@ public class VOTableResource
 
     private VOTableTable table;
 
+    public String utype;
     public String id;
 
     public VOTableResource(String type)

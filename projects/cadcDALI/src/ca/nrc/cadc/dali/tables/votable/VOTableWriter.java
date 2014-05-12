@@ -272,6 +272,9 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
 
             if (votResource.getName() != null)
                 resource.setAttribute("name", votResource.getName());
+            
+            if (votResource.utype != null)
+                resource.setAttribute("utype", votResource.utype);
 
             // Create the INFO element and add to the RESOURCE element.
             for (VOTableInfo in : votResource.getInfos())
