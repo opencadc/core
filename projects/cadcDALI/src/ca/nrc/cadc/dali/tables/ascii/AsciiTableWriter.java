@@ -123,7 +123,7 @@ public class AsciiTableWriter implements TableWriter<VOTableDocument>
 
     public static enum ContentType
     {
-        CSV("text/csv"),
+        CSV("text/csv; header=present"),
         TSV("text/tab-separated-values");
 
         private String value;
@@ -230,6 +230,11 @@ public class AsciiTableWriter implements TableWriter<VOTableDocument>
         CsvWriter writer = new CsvWriter(out, delimeter);
         try
         {
+            // Add the metadata elements.
+            for (VOTableField field : fields)
+                writer.write(field.getName());
+            writer.endRecord();
+
             // TODO: header comment?
             long numRows = 0L;
             boolean ok = true;
