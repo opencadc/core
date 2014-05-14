@@ -112,6 +112,7 @@ public class FieldElement extends Element
             setFieldAttribute("utype", field.utype);
             setFieldAttribute("xtype", field.xtype);
             setFieldAttribute("ref", field.ref);
+            setFieldAttribute("ID", field.id);
             setArraysize(field.getArraysize(), field.isVariableSize());
             setDescription(field.description, namespace);
             setValues(field.getValues(), namespace);

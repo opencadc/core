@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2014.                            (c) 2014.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -67,48 +67,138 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.dali.tables.votable;
+package ca.nrc.cadc.dali;
 
-import ca.nrc.cadc.dali.tables.TableData;
+import ca.nrc.cadc.util.Log4jInit;
+import ca.nrc.cadc.uws.Parameter;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  *
  * @author pdowler
  */
-public class VOTableTable 
+public class MaxRecValidatorTest 
 {
-    private List<VOTableInfo> infos = new ArrayList<VOTableInfo>();
-    private List<VOTableParam> params = new ArrayList<VOTableParam>();
-    private List<VOTableField> fields = new ArrayList<VOTableField>();
+    private static final Logger log = Logger.getLogger(MaxRecValidatorTest.class);
 
-    private TableData tableData;
+    static
+    {
+        Log4jInit.setLevel("ca.nrc.cadc.dali", Level.INFO);
+    }
     
-    public VOTableTable() { }
-
-    public List<VOTableInfo> getInfos()
+    @Test
+    public void testNullParamList()
     {
-        return infos;
+        MaxRecValidator validator = new MaxRecValidator();
+        try
+        {
+            validator.validate(null);
+            Assert.fail("expected IllegalArgumentException");
+        }
+        catch (IllegalArgumentException expected)
+        {
+            log.debug("expected exception: " + expected);
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
     }
-
-    public List<VOTableParam> getParams()
+    
+    @Test
+    public void testInvalidInput()
     {
-        return params;
+        MaxRecValidator validator = new MaxRecValidator();
+        List<Parameter> params = new ArrayList<Parameter>();
+        
+        try
+        {
+            params.add(new Parameter("MAXREC", "x100"));
+            validator.validate(params);
+            Assert.fail("expected IllegalArgumentException");
+        }
+        catch (IllegalArgumentException expected)
+        {
+            log.debug("expected exception: " + expected);
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+
+        params.clear();
+        try
+        {
+            params.add(new Parameter("MAXREC", "-100"));
+            validator.validate(params);
+            Assert.fail("expected IllegalArgumentException");
+        }
+        catch (IllegalArgumentException expected)
+        {
+            log.debug("expected exception: " + expected);
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
     }
-
-    public List<VOTableField> getFields()
+    
+    @Test
+    public void testNoLimits()
     {
-        return fields;
+        MaxRecValidator validator = new MaxRecValidator();
+        List<Parameter> params = new ArrayList<Parameter>();
+        
+        try
+        {
+            Integer val = validator.validate(params);
+            Assert.assertNull(val);
+            
+            params.add(new Parameter("MAXREC", "100"));
+            val = validator.validate(params);
+            Assert.assertEquals(new Integer(100), val);
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
     }
-
-    public TableData getTableData()
+    
+    @Test
+    public void testDefaultLimit()
     {
-        return tableData;
-    }
-
-    public void setTableData(TableData tableData)
-    {
-        this.tableData = tableData;
+        MaxRecValidator validator = new MaxRecValidator();
+        validator.setDefaultValue(new Integer(1000));
+        validator.setMaxValue(new Integer(5000));
+        List<Parameter> params = new ArrayList<Parameter>();
+        
+        try
+        {
+            Integer val = validator.validate(params);
+            Assert.assertEquals(new Integer(1000), val); // default
+            
+            params.add(new Parameter("MAXREC", "100"));
+            val = validator.validate(params);
+            Assert.assertEquals(new Integer(100), val);
+            
+            params.clear();
+            params.add(new Parameter("MAXREC", "6000"));
+            val = validator.validate(params);
+            Assert.assertEquals(new Integer(5000), val); // limit
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
     }
 }
