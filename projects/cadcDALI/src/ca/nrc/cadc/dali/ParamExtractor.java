@@ -67,48 +67,58 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.dali.tables.votable;
+package ca.nrc.cadc.dali;
 
-import ca.nrc.cadc.dali.tables.TableData;
+import ca.nrc.cadc.util.CaseInsensitiveStringComparator;
+import ca.nrc.cadc.uws.Parameter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import org.apache.log4j.Logger;
 
 /**
- *
+ * Extract a list of query parameter-value pairs from a UWS job parameter list. This
+ * implementation assumes parameter names are not case sensitive and ignores unknown 
+ * parameter names.
+ * 
  * @author pdowler
  */
-public class VOTableTable 
+public class ParamExtractor 
 {
-    private List<VOTableInfo> infos = new ArrayList<VOTableInfo>();
-    private List<VOTableParam> params = new ArrayList<VOTableParam>();
-    private List<VOTableField> fields = new ArrayList<VOTableField>();
-
-    private TableData tableData;
+    private static final Logger log = Logger.getLogger(ParamExtractor.class);
     
-    public VOTableTable() { }
-
-    public List<VOTableInfo> getInfos()
+    private Set<String> names = new TreeSet<String>(new CaseInsensitiveStringComparator());
+    
+    public ParamExtractor(List<String> paramNames)
     {
-        return infos;
+        this.names.addAll(paramNames);
     }
-
-    public List<VOTableParam> getParams()
+    
+    /**
+     * Get a map of parameter name to 
+     * @param paramList
+     * @return 
+     */
+    public Map<String,List<String>> getParameters(List<Parameter> paramList)
     {
-        return params;
-    }
-
-    public List<VOTableField> getFields()
-    {
-        return fields;
-    }
-
-    public TableData getTableData()
-    {
-        return tableData;
-    }
-
-    public void setTableData(TableData tableData)
-    {
-        this.tableData = tableData;
+        Map<String,List<String>> ret = new TreeMap<String,List<String>>(new CaseInsensitiveStringComparator());
+        for (Parameter p : paramList)
+        {
+            if ( names.contains(p.getName()))
+            {
+                String pname = p.getName();
+                List<String> values = ret.get(pname);
+                if (values == null)
+                {
+                    values = new ArrayList<String>();
+                    ret.put(pname, values);
+                }
+                values.add(p.getValue());
+            }
+        }
+        return ret;
     }
 }
