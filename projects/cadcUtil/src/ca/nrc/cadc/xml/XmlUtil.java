@@ -70,27 +70,28 @@
 package ca.nrc.cadc.xml;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.MissingResourceException;
-
 import org.apache.log4j.Logger;
-import org.jdom.Document;
-import org.jdom.Element;
-import org.jdom.JDOMException;
-import org.jdom.Namespace;
-import org.jdom.input.SAXBuilder;
-import org.jdom.xpath.XPath;
-
-import ca.nrc.cadc.date.DateUtil;
-import java.io.Reader;
+import org.jdom2.DefaultJDOMFactory;
+import org.jdom2.Document;
+import org.jdom2.JDOMException;
+import org.jdom2.JDOMFactory;
+import org.jdom2.Namespace;
+import org.jdom2.input.SAXBuilder;
+import org.jdom2.input.sax.DefaultSAXHandlerFactory;
+import org.jdom2.input.sax.SAXHandlerFactory;
+import org.jdom2.input.sax.XMLReaderJDOMFactory;
+import org.jdom2.input.sax.XMLReaderSAX2Factory;
 
 /**
- * @author zhangsa
+ * XmlUtil  class for use with JDOM-2.
+ * @author pdowler
  *
  */
 public class XmlUtil
@@ -100,38 +101,121 @@ public class XmlUtil
     private static final String GRAMMAR_POOL = "org.apache.xerces.parsers.XMLGrammarCachingConfiguration";
     public static final Namespace XSI_NS = Namespace.getNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance");
 
+    /**
+     * Deprecated convenience method.
+     * 
+     * @param reader
+     * @return
+     * @throws JDOMException
+     * @throws IOException 
+     * @deprecated 
+     */
+    public static Document validateXML(Reader reader)
+        throws JDOMException, IOException
+    {
+        return buildDocument(reader, null);
+    }
     
     /**
-     * Build a XML Document from string, without schema validation
+     * Deprecated convenience method.
+     * 
+     * @param reader
+     * @param schemaMap
+     * @return
+     * @throws JDOMException
+     * @throws IOException 
+     * @deprecated 
+     */
+    public static Document validateXML(Reader reader, Map<String, String> schemaMap)
+        throws JDOMException, IOException
+    {
+        return buildDocument(reader, schemaMap);
+    }
+    
+    /**
+     * Convenience: build an XML Document from string without schema validation.
      * 
      * @param xml
-     * @return
+     * @return document
      * @throws IOException 
      * @throws JDOMException 
      */
-    public static Document buildDocument(String xml) throws JDOMException, IOException
+    public static Document buildDocument(String xml) 
+        throws JDOMException, IOException
     {
-        SAXBuilder parser = new SAXBuilder(PARSER, false);
-        return parser.build(new StringReader(xml));
+        return buildDocument(new StringReader(xml));
     }
     
-    public static Document validateXml(String xml, String schemaNSKey, String schemaResourceFileName)
+    /**
+     * Convenience: build an XML document with schema validation against a single
+     * schema.
+     * 
+     * @param xml
+     * @param schemaNamespace
+     * @param schemaResourceFileName
+     * @return document
+     * @throws IOException
+     * @throws JDOMException 
+     */
+    public static Document buildDocument(String xml, String schemaNamespace, String schemaResourceFileName)
         throws IOException, JDOMException
     {
+        if (schemaNamespace == null || schemaResourceFileName == null)
+            throw new IllegalArgumentException("schemaNamespace and schemaResourceFileName cannot be null");
+            
         Map<String, String> map = new HashMap<String, String>();
-        map.put(schemaNSKey, getResourceUrlString(schemaResourceFileName, XmlUtil.class));
-        return validateXml(xml, map);
+        map.put(schemaNamespace, getResourceUrlString(schemaResourceFileName, XmlUtil.class));
+        return buildDocument(new StringReader(xml), map);
     }
 
-    public static Document validateXml(String xml, Map<String, String> schemaMap)
+    
+    /**
+     * Convenience: build an XML Document without schema validation.
+     * 
+     * @param reader
+     * @return document
+     * @throws IOException 
+     * @throws JDOMException 
+     */
+    public static Document buildDocument(Reader reader) 
+        throws JDOMException, IOException
+    {
+        return buildDocument(reader, null);
+    }
+
+    /**
+     * Build an XML document with schema validation. The schemaMap argument contains 
+     * pairs of namespace:location (for each required schema). The normal practice in
+     * OpenCADC libraries is to store schema files inside the jar files of the code
+     * that calls this utility and to use the getResourceUrlString method to find 
+     * the URL at runtime.
+     * 
+     * @param reader
+     * @param schemaMap namespace:location map, null for no validation
+     * @return document
+     * @throws IOException
+     * @throws JDOMException 
+     */
+    public static Document buildDocument(Reader reader, Map<String, String> schemaMap)
         throws IOException, JDOMException
     {
-        log.debug("validateXml:\n" + xml);
-        return validateXml(new StringReader(xml), schemaMap);
+        SAXBuilder sb = createBuilder(schemaMap);
+        return sb.build(reader);
     }
 
+    /**
+     * Create an XML Document builder using a SAX parser.
+     * 
+     * @param schemaMap
+     * @return document
+     */
     public static SAXBuilder createBuilder(Map<String, String> schemaMap)
     {
+        boolean validate = (schemaMap != null && !schemaMap.isEmpty());
+        XMLReaderJDOMFactory rf = new XMLReaderSAX2Factory(validate, PARSER);
+        SAXHandlerFactory sh = new DefaultSAXHandlerFactory();
+        JDOMFactory jf = new DefaultJDOMFactory();
+        
         boolean schemaVal = (schemaMap != null);
         String schemaResource;
         String space = " ";
@@ -148,8 +232,7 @@ public class XmlUtil
             System.setProperty("org.apache.xerces.xni.parser.XMLParserConfiguration", GRAMMAR_POOL);
         }
 
-        SAXBuilder builder;
-        builder = new SAXBuilder(PARSER, schemaVal);
+        SAXBuilder builder = new SAXBuilder(rf, sh, jf);
         if (schemaVal)
         {
             builder.setFeature("http://xml.org/sax/features/validation", true);
@@ -161,39 +244,9 @@ public class XmlUtil
         return builder;
     }
 
-    public static Document validateXml(Reader reader, Map<String, String> schemaMap) throws IOException, JDOMException
-    {
-        SAXBuilder builder = createBuilder(schemaMap);
-        return builder.build(reader);
-    }
-
     /**
-     * count how many nodes are represented by the xpath
-     * 
-     * @param doc
-     * @param xpathStr
-     * @return
-     */
-    public static int getXmlNodeCount(Document doc, String xpathStr)
-    {
-        int rtn = 0;
-        XPath xpath;
-        try
-        {
-            xpath = XPath.newInstance(xpathStr);
-            List<?> rs = xpath.selectNodes(doc);
-            rtn = rs.size();
-        } catch (JDOMException e)
-        {
-            e.printStackTrace();
-        }
-        return rtn;
-    }
-
-    /**
-     * Get an URL to a schema file. This implementation finds the scheam file using the ClassLoader
-     * that loaded the argument class; this works best if the schema is in the same jar file as
-     * the class.
+     * Get an URL to a schema file. This implementation finds the schema file using the ClassLoader
+     * that loaded the argument class.
      * 
      * @param resourceFileName
      * @param runningClass 

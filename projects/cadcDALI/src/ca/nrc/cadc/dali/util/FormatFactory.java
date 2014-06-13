@@ -69,6 +69,7 @@
 package ca.nrc.cadc.dali.util;
 
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
+import org.apache.log4j.Logger;
 
 /**
  * This factory class implements the mapping of datatypes to VOTable according
@@ -78,6 +79,8 @@ import ca.nrc.cadc.dali.tables.votable.VOTableField;
  */
 public class FormatFactory
 {
+    private static final Logger log = Logger.getLogger(FormatFactory.class);
+    
     /**
      *
      * @param field
@@ -86,104 +89,104 @@ public class FormatFactory
     public Format getFormat(VOTableField field)
     {
         String datatype = field.getDatatype();
+        Format ret = new DefaultFormat();
 
         if (datatype == null)
-            return new DefaultFormat();
-
-        if (datatype.equalsIgnoreCase("boolean"))
+            ret = new DefaultFormat();
+        else if (datatype.equalsIgnoreCase("boolean"))
         {
-            return new BooleanFormat();
+            ret = new BooleanFormat();
         }
-        if (datatype.equalsIgnoreCase("bit"))
-        {
-            if (isArray(field))
-            {
-                return new ByteArrayFormat();
-            }
-            else
-            {
-                return new ByteFormat();
-            }
-        }
-        if (datatype.equalsIgnoreCase("unsignedByte"))
+        else if (datatype.equalsIgnoreCase("bit"))
         {
             if (isArray(field))
             {
-                return new ByteArrayFormat();
+                ret = new ByteArrayFormat();
             }
             else
             {
-                return new ByteFormat();
+                ret = new ByteFormat();
             }
         }
-        if (datatype.equalsIgnoreCase("short"))
+        else if (datatype.equalsIgnoreCase("unsignedByte"))
         {
             if (isArray(field))
             {
-                return new ShortArrayFormat();
+                ret = new ByteArrayFormat();
             }
             else
             {
-                return new ShortFormat();
+                ret = new ByteFormat();
             }
         }
-        if (datatype.equalsIgnoreCase("int"))
+        else if (datatype.equalsIgnoreCase("short"))
         {
             if (isArray(field))
             {
-                return new IntArrayFormat();
+                ret = new ShortArrayFormat();
             }
             else
             {
-                return new IntegerFormat();
+                ret = new ShortFormat();
             }
         }
-        if (datatype.equalsIgnoreCase("long"))
+        else if (datatype.equalsIgnoreCase("int"))
         {
             if (isArray(field))
             {
-                return new LongArrayFormat();
+                ret = new IntArrayFormat();
             }
             else
             {
-                return new LongFormat();
+                ret = new IntegerFormat();
             }
         }
-        if (datatype.equalsIgnoreCase("unicodeChar"))
-        {
-            return new StringFormat();
-        }
-        if (datatype.equalsIgnoreCase("float"))
+        else if (datatype.equalsIgnoreCase("long"))
         {
             if (isArray(field))
             {
-                return new FloatArrayFormat();
+                ret = new LongArrayFormat();
             }
             else
             {
-                return new FloatFormat();
+                ret = new LongFormat();
             }
         }
-        if (datatype.equalsIgnoreCase("double"))
+        else if (datatype.equalsIgnoreCase("unicodeChar"))
+        {
+            ret = new StringFormat();
+        }
+        else if (datatype.equalsIgnoreCase("float"))
         {
             if (isArray(field))
             {
-                return new DoubleArrayFormat();
+                ret = new FloatArrayFormat();
             }
             else
             {
-                return new DoubleFormat();
+                ret = new FloatFormat();
             }
         }
-        if (datatype.equalsIgnoreCase("floatComplex"))
+        else if (datatype.equalsIgnoreCase("double"))
+        {
+            if (isArray(field))
+            {
+                ret = new DoubleArrayFormat();
+            }
+            else
+            {
+                ret = new DoubleFormat();
+            }
+        }
+        else if (datatype.equalsIgnoreCase("floatComplex"))
         {
             throw new UnsupportedOperationException("floatComplex datatype not supported for column " + field.getName());
         }
-        if (datatype.equalsIgnoreCase("doubleComplex"))
+        else if (datatype.equalsIgnoreCase("doubleComplex"))
         {
             throw new UnsupportedOperationException("doubleComplex datatype not supported for column " + field.getName());
         }
-        if (datatype.equalsIgnoreCase("char"))
+        else if (datatype.equalsIgnoreCase("char"))
         {
             if (isArray(field))
             {
@@ -191,21 +194,21 @@ public class FormatFactory
                 {
                     if (field.xtype.equalsIgnoreCase("adql:timestamp"))
                     {
-                        return new UTCTimestampFormat();
+                        ret = new UTCTimestampFormat();
                     }
                     if (field.xtype.equalsIgnoreCase("adql:point"))
                     {
-                        return new PointFormat();
+                        ret = new PointFormat();
                     }
                     if (field.xtype.equalsIgnoreCase("adql:region"))
                     {
-                        return new RegionFormat();
+                        ret = new RegionFormat();
                     }
                 }
             }
         }
-
-        return new DefaultFormat();
+        log.debug(field + " formatter: " +  ret.getClass().getName());
+        return ret;
     }
 
     private static boolean isArray(VOTableField field)
