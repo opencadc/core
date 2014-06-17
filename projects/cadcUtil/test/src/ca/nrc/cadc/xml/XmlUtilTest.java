@@ -90,13 +90,11 @@ public class XmlUtilTest
         Log4jInit.setLevel("ca.nrc.cadc", org.apache.log4j.Level.INFO);
     }
 
-    String fooSchemaURL;
-    String barSchemaURL;
+    String fooSchema = "foo.xsd";
+    String barSchema = "bar.xsd";
 
     public XmlUtilTest() 
     {
-        fooSchemaURL = XmlUtil.getResourceUrlString("foo.xsd", XmlUtilTest.class);
-        barSchemaURL = XmlUtil.getResourceUrlString("bar.xsd", XmlUtilTest.class);
     }
 
     @Test
@@ -111,14 +109,14 @@ public class XmlUtilTest
             xml.append("         xmlns:foons=\"http://localhost/foo.xsd\">");
             xml.append("</foons:foo>");
 
-            XmlUtil.buildDocument(xml.toString(), "http://localhost/foo.xsd", fooSchemaURL);
+            XmlUtil.buildDocument(xml.toString(), "http://localhost/foo.xsd", fooSchema);
         }
-        catch (Throwable t)
+        catch (Exception unexpected)
         {
-            log.error(t);
-            fail(t.getMessage());
+            log.error("unexpected exception", unexpected);
+            fail("unexpected exception: " + unexpected);
         }
-            log.debug("testValidXml_ValidParser passed.");
+        log.debug("testValidXml_ValidParser passed.");
     }
 
     @Test
@@ -135,15 +133,15 @@ public class XmlUtilTest
 
             try
             {
-                XmlUtil.buildDocument(xml.toString(), "http://localhost/foo.xsd", fooSchemaURL);
+                XmlUtil.buildDocument(xml.toString(), "http://localhost/foo.xsd", fooSchema);
                 fail("JDOM parsing exception should have been thrown");
             }
             catch (JDOMException ignore) {}
         }
-        catch (Throwable t)
+        catch (Exception unexpected)
         {
-            log.error(t);
-            fail(t.getMessage());
+            log.error("unexpected exception", unexpected);
+            fail("unexpected exception: " + unexpected);
         }
         log.debug("testInvalidXml_ValidParser passed.");
     }
@@ -162,15 +160,15 @@ public class XmlUtilTest
 
             try
             {
-                XmlUtil.buildDocument(xml.toString(), "http://localhost/foo.xsd", fooSchemaURL);
+                XmlUtil.buildDocument(xml.toString(), "http://localhost/foo.xsd", fooSchema);
                 fail("JDOM parsing exception should have been thrown");
             }
             catch (JDOMException ignore) {}
         }
-        catch (Throwable t)
+        catch (Exception unexpected)
         {
-            log.error(t);
-            fail(t.getMessage());
+            log.error("unexpected exception", unexpected);
+            fail("unexpected exception: " + unexpected);
         }
         log.debug("testValidXml_InvalidParser passed.");
     }
@@ -197,10 +195,10 @@ public class XmlUtilTest
             }
             catch (JDOMException ignore) {}
         }
-        catch (Throwable t)
+        catch (Exception unexpected)
         {
-            log.error(t);
-            fail(t.getMessage());
+            log.error("unexpected exception", unexpected);
+            fail("unexpected exception: " + unexpected);
         }
         log.debug("testValidXml_NoSchemaLocation passed.");
     }
@@ -228,10 +226,10 @@ public class XmlUtilTest
                 fail("unexpected exception: " + ex);
             }
         }
-        catch (Throwable t)
+        catch (Exception unexpected)
         {
-            log.error("test failure", t);
-            fail(t.getMessage());
+            log.error("unexpected exception", unexpected);
+            fail("unexpected exception: " + unexpected);
         }
     }
 }

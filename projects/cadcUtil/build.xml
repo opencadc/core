@@ -175,7 +175,6 @@
             </classpath>
 
             <test name="ca.nrc.cadc.xml.XmlUtilTest"/>
-            <test name="ca.nrc.cadc.xml.XmlUtil2Test"/>
             <formatter type="plain" usefile="false"/>
         </junit>
     </target>
