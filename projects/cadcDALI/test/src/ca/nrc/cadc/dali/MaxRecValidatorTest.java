@@ -70,9 +70,8 @@
 package ca.nrc.cadc.dali;
 
 import ca.nrc.cadc.util.Log4jInit;
+import ca.nrc.cadc.uws.Job;
 import ca.nrc.cadc.uws.Parameter;
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -91,13 +90,20 @@ public class MaxRecValidatorTest
         Log4jInit.setLevel("ca.nrc.cadc.dali", Level.INFO);
     }
     
+    Job job = new Job() 
+    {
+        @Override
+        public String getID() { return "abcdefg"; }
+    };
+            
     @Test
-    public void testNullParamList()
+    public void testNullJob()
     {
         MaxRecValidator validator = new MaxRecValidator();
+
         try
         {
-            validator.validate(null);
+            validator.validate();
             Assert.fail("expected IllegalArgumentException");
         }
         catch (IllegalArgumentException expected)
@@ -115,12 +121,11 @@ public class MaxRecValidatorTest
     public void testInvalidInput()
     {
         MaxRecValidator validator = new MaxRecValidator();
-        List<Parameter> params = new ArrayList<Parameter>();
-        
+        validator.setJob(job);
         try
         {
-            params.add(new Parameter("MAXREC", "x100"));
-            validator.validate(params);
+            job.getParameterList().add(new Parameter("MAXREC", "x100"));
+            validator.validate();
             Assert.fail("expected IllegalArgumentException");
         }
         catch (IllegalArgumentException expected)
@@ -133,11 +138,11 @@ public class MaxRecValidatorTest
             Assert.fail("unexpected exception: " + unexpected);
         }
 
-        params.clear();
+        job.getParameterList().clear();
         try
         {
-            params.add(new Parameter("MAXREC", "-100"));
-            validator.validate(params);
+            job.getParameterList().add(new Parameter("MAXREC", "-100"));
+            validator.validate();
             Assert.fail("expected IllegalArgumentException");
         }
         catch (IllegalArgumentException expected)
@@ -155,15 +160,15 @@ public class MaxRecValidatorTest
     public void testNoLimits()
     {
         MaxRecValidator validator = new MaxRecValidator();
-        List<Parameter> params = new ArrayList<Parameter>();
+        validator.setJob(job);
         
         try
         {
-            Integer val = validator.validate(params);
+            Integer val = validator.validate();
             Assert.assertNull(val);
             
-            params.add(new Parameter("MAXREC", "100"));
-            val = validator.validate(params);
+            job.getParameterList().add(new Parameter("MAXREC", "100"));
+            val = validator.validate();
             Assert.assertEquals(new Integer(100), val);
         }
         catch(Exception unexpected)
@@ -177,22 +182,23 @@ public class MaxRecValidatorTest
     public void testDefaultLimit()
     {
         MaxRecValidator validator = new MaxRecValidator();
+        validator.setJob(job);
         validator.setDefaultValue(new Integer(1000));
         validator.setMaxValue(new Integer(5000));
-        List<Parameter> params = new ArrayList<Parameter>();
+        
         
         try
         {
-            Integer val = validator.validate(params);
+            Integer val = validator.validate();
             Assert.assertEquals(new Integer(1000), val); // default
             
-            params.add(new Parameter("MAXREC", "100"));
-            val = validator.validate(params);
+            job.getParameterList().add(new Parameter("MAXREC", "100"));
+            val = validator.validate();
             Assert.assertEquals(new Integer(100), val);
             
-            params.clear();
-            params.add(new Parameter("MAXREC", "6000"));
-            val = validator.validate(params);
+            job.getParameterList().clear();
+            job.getParameterList().add(new Parameter("MAXREC", "6000"));
+            val = validator.validate();
             Assert.assertEquals(new Integer(5000), val); // limit
         }
         catch(Exception unexpected)

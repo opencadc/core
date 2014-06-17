@@ -69,14 +69,14 @@
 
 package ca.nrc.cadc.xml;
 
-import org.jdom.JDOMException;
+import ca.nrc.cadc.util.Log4jInit;
+import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
-import ca.nrc.cadc.util.Log4jInit;
-import java.io.File;
 import org.apache.log4j.Logger;
-import org.junit.Test;
+import org.jdom2.JDOMException;
 import static org.junit.Assert.*;
+import org.junit.Test;
 
 /**
  *
@@ -111,9 +111,7 @@ public class XmlUtilTest
             xml.append("         xmlns:foons=\"http://localhost/foo.xsd\">");
             xml.append("</foons:foo>");
 
-            Map<String, String> map = new HashMap<String, String>();
-            map.put("http://localhost/foo.xsd", fooSchemaURL);
-            XmlUtil.validateXml(xml.toString(), map);
+            XmlUtil.buildDocument(xml.toString(), "http://localhost/foo.xsd", fooSchemaURL);
         }
         catch (Throwable t)
         {
@@ -135,15 +133,12 @@ public class XmlUtilTest
             xml.append("         xmlns:foons=\"http://localhost/foo.xsd\">");
             xml.append("</foons:bar>");
 
-            Map<String, String> map = new HashMap<String, String>();
-            map.put("http://localhost/foo.xsd", fooSchemaURL);
-
             try
             {
-                XmlUtil.validateXml(xml.toString(), map);
+                XmlUtil.buildDocument(xml.toString(), "http://localhost/foo.xsd", fooSchemaURL);
                 fail("JDOM parsing exception should have been thrown");
             }
-            catch (JDOMException ifnore) {}
+            catch (JDOMException ignore) {}
         }
         catch (Throwable t)
         {
@@ -165,15 +160,12 @@ public class XmlUtilTest
             xml.append("         xmlns:foons=\"http://localhost/bar.xsd\">");
             xml.append("</foons:bar>");
 
-            Map<String, String> map = new HashMap<String, String>();
-            map.put("http://localhost/bar.xsd", fooSchemaURL);
-            
             try
             {
-                XmlUtil.validateXml(xml.toString(), map);
+                XmlUtil.buildDocument(xml.toString(), "http://localhost/foo.xsd", fooSchemaURL);
                 fail("JDOM parsing exception should have been thrown");
             }
-            catch (JDOMException ifnore) {}
+            catch (JDOMException ignore) {}
         }
         catch (Throwable t)
         {
@@ -197,14 +189,13 @@ public class XmlUtilTest
 
             // MUST pass in an empty map of validation is turned off
             Map<String, String> map = new HashMap<String, String>();
-            //map.put("http://localhost/bar.xsd", fooSchemaURL);
 
             try
             {
-                XmlUtil.validateXml(xml.toString(), map);
+                XmlUtil.buildDocument(new StringReader(xml.toString()), map);
                 fail("JDOM parsing exception should have been thrown");
             }
-            catch (JDOMException ifnore) {}
+            catch (JDOMException ignore) {}
         }
         catch (Throwable t)
         {
@@ -230,7 +221,7 @@ public class XmlUtilTest
             Map<String, String> map = null;
             try
             {
-                XmlUtil.validateXml(xml.toString(), map);
+                XmlUtil.buildDocument(xml.toString());
             }
             catch (JDOMException ex)
             {

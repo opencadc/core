@@ -88,7 +88,7 @@
 
     <property name="project" value="cadcUtil" />
 
-    <property name="jars" value="${ext.lib}/servlet-api.jar:${ext.lib}/log4j.jar:${ext.lib}/jdom.jar:${ext.lib}/spring.jar" />
+    <property name="jars" value="${ext.lib}/servlet-api.jar:${ext.lib}/log4j.jar:${ext.lib}/jdom2.jar:${ext.lib}/spring.jar" />
     <property name="resources.dir" value="test/resources/" />
   
     <target name="build" depends="compile">
@@ -175,6 +175,7 @@
             </classpath>
 
             <test name="ca.nrc.cadc.xml.XmlUtilTest"/>
+            <test name="ca.nrc.cadc.xml.XmlUtil2Test"/>
             <formatter type="plain" usefile="false"/>
         </junit>
     </target>
