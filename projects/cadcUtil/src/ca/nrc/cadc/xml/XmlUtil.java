@@ -70,11 +70,12 @@
 package ca.nrc.cadc.xml;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.MissingResourceException;
 import org.apache.log4j.Logger;
@@ -168,6 +169,19 @@ public class XmlUtil
         return buildDocument(new StringReader(xml), map);
     }
 
+    /**
+     * Convenience: build an XML Document without schema validation.
+     * 
+     * @param istream
+     * @return document
+     * @throws IOException 
+     * @throws JDOMException 
+     */
+    public static Document buildDocument(InputStream istream) 
+        throws JDOMException, IOException
+    {
+        return buildDocument(new InputStreamReader(istream), null);
+    }
     
     /**
      * Convenience: build an XML Document without schema validation.
@@ -183,6 +197,21 @@ public class XmlUtil
         return buildDocument(reader, null);
     }
 
+    /**
+     * Convenience: build an XML Document without schema validation.
+     * 
+     * @param istream
+     * @param schemaMap
+     * @return document
+     * @throws IOException 
+     * @throws JDOMException 
+     */
+    public static Document buildDocument(InputStream istream, Map<String, String> schemaMap) 
+        throws JDOMException, IOException
+    {
+        return buildDocument(new InputStreamReader(istream), schemaMap);
+    }
+    
     /**
      * Build an XML document with schema validation. The schemaMap argument contains 
      * pairs of namespace:location (for each required schema). The normal practice in
