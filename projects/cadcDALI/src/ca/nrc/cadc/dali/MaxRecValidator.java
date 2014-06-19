@@ -70,9 +70,7 @@
 package ca.nrc.cadc.dali;
 
 import ca.nrc.cadc.uws.Job;
-import ca.nrc.cadc.uws.Parameter;
 import ca.nrc.cadc.uws.ParameterUtil;
-import java.util.List;
 import org.apache.log4j.Logger;
 
 /**
@@ -134,7 +132,7 @@ public class MaxRecValidator
     }
 
     /**
-     * Checks the parameter List for a parameter named MAXREC.
+     * Checks the parameter list for a parameter named MAXREC.
      * <p>
      * If the MAXREC parameter is found, attempts to parse and return the value
      * of MAXREC as an integer. If the parsing fails, or if the value of MAXREC is
@@ -144,16 +142,14 @@ public class MaxRecValidator
      * a null signifying no limit is returned.
      * <p>
      *
-     *
-     * @param paramList List of TAP parameters.
      * @return Integer value of MAXREC or null for no limit
      */
-    public Integer validate(List<Parameter> paramList)
+    public Integer validate()
     {
-        if (paramList == null)
-            throw new IllegalArgumentException("null paramList (probably a bug)");
+        if (job == null)
+            throw new IllegalArgumentException("BUG: job cannot be null");
         
-        String value = ParameterUtil.findParameterValue("MAXREC", paramList);
+        String value = ParameterUtil.findParameterValue("MAXREC", job.getParameterList());
 
         if (value == null || value.trim().length() == 0)
         {

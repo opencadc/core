@@ -176,13 +176,13 @@ public class VOTableField
         StringBuilder sb = new StringBuilder();
         sb.append(this.getClass().getSimpleName()).append("[");
         sb.append(name).append(",");
-        sb.append(datatype).append(",");
+        sb.append(datatype);
         if (arraysize != null)
-        {
-            sb.append(arraysize);
-            if (variableSize)
-                sb.append("*");
-        }
+            sb.append(",").append(arraysize);
+        if (variableSize)
+            sb.append(",*");
+        if (xtype != null)
+            sb.append(",").append(xtype);
         sb.append("]");
         return sb.toString();
     }

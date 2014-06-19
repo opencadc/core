@@ -109,6 +109,7 @@ public abstract class HttpTransfer implements Runnable
     public static String DEFAULT_USER_AGENT;
     public static final String CADC_CONTENT_LENGTH_HEADER = "X-CADC-Content-Length";
     public static final String CADC_STREAM_HEADER = "X-CADC-Stream";
+    public static final String CADC_PARTIAL_READ_HEADER = "X-CADC-Partial-Read";
 
     public static final String SERVICE_RETRY = "Retry-After";
 
@@ -142,10 +143,10 @@ public abstract class HttpTransfer implements Runnable
         ALL(3);
 
         private int value;
-        
+
         private RetryReason(int val) { this.value = val; }
     }
-    
+
     /**
      * The maximum retry delay (128 seconds).
      */
@@ -158,7 +159,7 @@ public abstract class HttpTransfer implements Runnable
 
     protected int numRetries = 0;
     protected int curRetryDelay = 0; // scaled after each retry
-    
+
     protected int bufferSize = DEFAULT_BUFFER_SIZE;
     protected OverwriteChooser overwriteChooser;
     protected ProgressListener progressListener;
@@ -180,7 +181,7 @@ public abstract class HttpTransfer implements Runnable
     // state that observer(s) might be interested in
     public String eventID = null;
     public Throwable failure;
-    
+
     protected boolean followRedirects = false;
     protected URL redirectURL;
     protected int responseCode = -1;
@@ -193,8 +194,8 @@ public abstract class HttpTransfer implements Runnable
         String os = System.getProperty("os.name") + " " + System.getProperty("os.version");
         DEFAULT_USER_AGENT = "OpenCADC/" + HttpTransfer.class.getName() + "/" + jv + "/" + os;
     }
-    
-    protected HttpTransfer(boolean followRedirects) 
+
+    protected HttpTransfer(boolean followRedirects)
     {
         this.followRedirects = followRedirects;
         this.go = true;
@@ -233,14 +234,14 @@ public abstract class HttpTransfer implements Runnable
 
     /**
      * Set the current following redirects behaviour.
-     * 
-     * @param followRedirects 
+     *
+     * @param followRedirects
      */
     public void setFollowRedirects(boolean followRedirects)
     {
         this.followRedirects = followRedirects;
     }
-    
+
     /**
      * If the response resulted in a redirect that wasn't followed, it
      * can be retrieved here.
@@ -249,13 +250,13 @@ public abstract class HttpTransfer implements Runnable
     {
         return redirectURL;
     }
-    
-    
+
+
     /**
      * Enable retry (maxRetries > 0) and set the maximum number of times
      * to retry before failing. The default is to retry only when the server
      * says to do so (e.g. 503 + Retry-After).
-     * 
+     *
      * @param maxRetries
      */
     public void setMaxRetries(int maxRetries)
@@ -282,7 +283,7 @@ public abstract class HttpTransfer implements Runnable
         this.retryDelay = retryDelay;
         this.retryReason = reason;
     }
-    
+
     public URL getURL() { return remoteURL; }
 
     /**
@@ -307,9 +308,9 @@ public abstract class HttpTransfer implements Runnable
     {
         return bufferSize;
     }
-    
 
-    public void setUserAgent(String userAgent) 
+
+    public void setUserAgent(String userAgent)
     {
         this.userAgent = userAgent;
         if (userAgent == null)
@@ -320,7 +321,7 @@ public abstract class HttpTransfer implements Runnable
      * Set additional request headers. Do not set the same value twice by using this
      * method and the specific set methods (like setUserAgent, setContentType, etc) in this
      * class or subclasses.
-     * 
+     *
      * @param header
      * @param value
      */
@@ -349,12 +350,12 @@ public abstract class HttpTransfer implements Runnable
     {
         this.sslSocketFactory = sslSocketFactory;
     }
-    
+
     public SSLSocketFactory getSSLSocketFactory()
     {
         return this.sslSocketFactory;
     }
-    
+
     public void setOverwriteChooser(OverwriteChooser overwriteChooser) { this.overwriteChooser = overwriteChooser; }
 
     public void setProgressListener(ProgressListener listener)
@@ -380,8 +381,8 @@ public abstract class HttpTransfer implements Runnable
     }
 
     /**
-     * Get the ultimate (possibly after retries) HTTP response code. 
-     * 
+     * Get the ultimate (possibly after retries) HTTP response code.
+     *
      * @return HTTP response code or -1 if no HTTP call made
      */
     public int getResponseCode()
@@ -396,7 +397,7 @@ public abstract class HttpTransfer implements Runnable
      * @return the last failure, or null if successful
      */
     public Throwable getThrowable() { return failure; }
-    
+
     public void terminate()
     {
         this.fireEvents = false; // prevent run() and future calls to terminate from firing the CANCELLED event
@@ -427,7 +428,7 @@ public abstract class HttpTransfer implements Runnable
     {
         if (RetryReason.NONE.equals(retryReason))
             return;
-        
+
         boolean trans = false;
         int dt = 0;
 
@@ -452,7 +453,7 @@ public abstract class HttpTransfer implements Runnable
                 }
             }
         }
-        
+
         if (RetryReason.TRANSIENT.equals(retryReason))
         {
             switch(code)
@@ -539,7 +540,7 @@ public abstract class HttpTransfer implements Runnable
     {
         fireEvent(localFile, t);
     }
-    
+
     protected void fireEvent(File file, Throwable t)
     {
         if (fireEvents)
@@ -571,7 +572,7 @@ public abstract class HttpTransfer implements Runnable
     /**
      * Perform the IO loop. This method reads from the input and writes to the output using an
      * internal byte array of the specified size.
-     * 
+     *
      * @param istream
      * @param ostream
      * @param sz
@@ -617,13 +618,13 @@ public abstract class HttpTransfer implements Runnable
                 if (progressListener != null)
                     progressListener.update(nb, tot);
             }
-            
+
         }
     }
 
     /**
      * Perform the IO loop using the nio library.
-     * 
+     *
      * @param istream
      * @param ostream
      * @param sz
@@ -667,7 +668,7 @@ public abstract class HttpTransfer implements Runnable
             }
         }
     }
-    
+
     protected void setRequestSSOCookie(HttpURLConnection conn)
     {
         AccessControlContext acc = AccessController.getContext();

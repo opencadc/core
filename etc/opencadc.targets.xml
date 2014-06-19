@@ -161,6 +161,27 @@
                <formatter type="plain" usefile="false"/>
              </junit>
         </target>
+        
+        <!-- deployment target for sample webapps -->
+        <target name="test-deploy" depends="build">
+            <echo message="**** default test-deploy target copies ${warfile} to ${testDeployDir}"/>
+
+            <!-- Delete old WAR file -->
+            <delete verbose="true" file="${testDeployDir}/${warfile}"/>
+            <!-- Delete old delployed directory -->
+            <delete verbose="true" dir="${testDeployDir}/${project}" includeEmptyDirs="true"/>
+
+            <!-- Copy new WAR file to /data/test/webapps -->
+            <copy verbose="true" file="${build}/webapps/${warfile}" todir="${testDeployDir}"/>
+
+            <!-- wait for Tomcat to unpack the WAR file -->
+            <echo message="Waiting for Tomcat to unpack the WAR file..." />
+            <waitfor>
+                <available file="${testDeployDir}/${project}/WEB-INF/web.xml"/>
+            </waitfor>
+            <sleep seconds="2"/>
+            <echo message="Deployment to Tomcat complete" />
+        </target>
 
 	<target name="javadoc_check">
                 <condition property="docs.uptodate">
