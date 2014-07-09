@@ -105,51 +105,57 @@ public class HttpPrincipal implements Principal, Serializable
     }
     
 
-    /**
-     * Returns a hashcode for this principal. The hash code is defined to
-     * be the result of the following calculation:
-     * 
-     * <pre><code>
-     * hashCode = (this.getClass().getName() + getName()).hashCode();
-     * </code></pre>
-     * 
-     * @return a hashCode() for the <code>HttpPrincipal</code>
+    /* (non-Javadoc)
+     * @see java.lang.Object#hashCode()
      */
+    @Override
     public int hashCode()
     {
-        return (this.getClass().getName() + getName()).hashCode();
+        final int prime = 31;
+        int result = 1;
+        result = prime * result
+                + ((remoteUser == null) ? 0 : remoteUser.hashCode());
+        return result;
     }
 
-    /**
-     * Compares the specified Object with this Principal for equality.
-     * Returns true if the given object is also a
-     * <code>HttpPrincipal</code> and the two <code>HttpPrincipal</code>
-     * instances are equivalent. More formally two
-     * <code>HttpPrincipal</code> instances are equal if the values
-     * returned by <code>getName()</code> are equal.
-     * 
-     * @param other
-     *            the Object to compare to
-     * @return true if the Object passed in represents the same principal
-     *         as this one, false otherwise.
+
+    /* (non-Javadoc)
+     * @see java.lang.Object#equals(java.lang.Object)
      */
-    public boolean equals(Object other)
+    @Override
+    public boolean equals(Object obj)
     {
-
-        if (other == this)
+        if (this == obj)
+        {
             return true;
-
-        if (!(other instanceof HttpPrincipal))
+        }
+        if (obj == null)
         {
             return false;
         }
-        return this.hashCode() == other.hashCode();
+        if (!(obj instanceof HttpPrincipal))
+        {
+            return false;
+        }
+        HttpPrincipal other = (HttpPrincipal) obj;
+        if (remoteUser == null)
+        {
+            if (other.remoteUser != null)
+            {
+                return false;
+            }
+        }
+        else if (!remoteUser.equals(other.remoteUser))
+        {
+            return false;
+        }
+        return true;
     }
 
 
     public String toString()
     {
-        return getName();
+        return getClass().getSimpleName() + "[" + getName() + "]";
     }
 
 }
