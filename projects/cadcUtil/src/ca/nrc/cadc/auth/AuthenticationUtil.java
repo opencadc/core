@@ -69,9 +69,6 @@
 
 package ca.nrc.cadc.auth;
 
-import javax.security.auth.Subject;
-import javax.security.auth.x500.X500Principal;
-import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Constructor;
 import java.security.AccessControlContext;
 import java.security.AccessController;
@@ -82,7 +79,19 @@ import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.text.DateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.security.auth.Subject;
+import javax.security.auth.x500.X500Principal;
+import javax.servlet.http.HttpServletRequest;
 
 import org.apache.log4j.Logger;
 
@@ -738,5 +747,47 @@ public class AuthenticationUtil
         final AccessControlContext accessControlContext =
                 AccessController.getContext();
         return Subject.getSubject(accessControlContext);
+    }
+    
+    public static Principal createPrincipal(String userID, String idType)
+    {
+        if ("x500".equalsIgnoreCase(idType))
+        {
+            return new X500Principal(userID);
+        }
+        if ("http".equalsIgnoreCase(idType))
+        {
+            return new HttpPrincipal(userID);
+        }
+        if ("cadc".equalsIgnoreCase(idType))
+        {
+            try
+            {
+                Long name = new Long(userID);
+                return new NumericPrincipal(name);
+            }
+            catch (NumberFormatException e)
+            {
+                log.warn("CADCPrincipal is non-numeric: " + userID);
+            }
+        }
+        return null;
+    }
+    
+    public static String getPrincipalType(Principal userID)
+    {
+        if (userID instanceof X500Principal)
+        {
+            return "x500";
+        }
+        if (userID instanceof HttpPrincipal)
+        {
+            return "http";
+        }
+        if (userID instanceof NumericPrincipal)
+        {
+            return "cadc";
+        }
+        return null;
     }
 }
