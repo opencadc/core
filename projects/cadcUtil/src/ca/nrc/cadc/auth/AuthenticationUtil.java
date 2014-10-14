@@ -753,7 +753,8 @@ public class AuthenticationUtil
     {
         if ("x500".equalsIgnoreCase(idType))
         {
-            return new X500Principal(userID);
+            return new X500Principal(
+                    AuthenticationUtil.canonizeDistinguishedName(userID));
         }
         if ("http".equalsIgnoreCase(idType))
         {
