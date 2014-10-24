@@ -144,7 +144,7 @@ public class SSLUtil
     /**
      * Initialise the default SSL socket factory so that all HTTPS
      * connections use the provided key store to authenticate (when the
-     * server requies client authentication).
+     * server requires client authentication).
      * 
      * @see HttpsURLConnection#setDefaultSSLSocketFactory(javax.net.ssl.SSLSocketFactory)
      * @param certFile
@@ -157,6 +157,36 @@ public class SSLUtil
         SSLSocketFactory sf = getSocketFactory(certFile, keyFile);
         HttpsURLConnection.setDefaultSSLSocketFactory(sf);
     }
+    public static void initSSL(File pemFile)
+    {
+        try
+        {
+            X509CertificateChain chain = readPemCertificateAndKey(pemFile);
+            SSLSocketFactory sf = getSocketFactory(chain);
+            HttpsURLConnection.setDefaultSSLSocketFactory(sf);
+        }
+        catch (InvalidKeySpecException ex)
+        {
+            throw new RuntimeException("failed to read RSA private key from " + pemFile, ex);
+        }
+        catch (NoSuchAlgorithmException ex)
+        {
+            throw new RuntimeException("BUG: failed to create empty KeyStore", ex);
+        }
+        catch (FileNotFoundException ex)
+        {
+            throw new RuntimeException("failed to find certificate and/or key file " + pemFile, ex);
+        }
+        catch (IOException ex)
+        {
+            throw new RuntimeException("failed to read certificate file " + pemFile, ex);
+        }
+        catch (CertificateException ex)
+        {
+            throw new RuntimeException("failed to load certificate from file " + pemFile, ex);
+        }
+    }
+    
 
     /**
      * Initialise the default SSL socket factory so that all HTTPS
