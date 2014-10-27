@@ -107,6 +107,10 @@ import ca.nrc.cadc.net.NetUtil;
  */
 public class AuthenticationUtil
 {
+    
+    public static final String AUTH_TYPE_HTTP = "http";
+    public static final String AUTH_TYPE_X500 = "x500";
+    public static final String AUTH_TYPE_CADC = "cadc";
 
     // Mandatory support list of RDN descriptors according to RFC 4512.
     private static final String[] ORDERED_RDN_KEYS = new String[]
@@ -751,16 +755,16 @@ public class AuthenticationUtil
     
     public static Principal createPrincipal(String userID, String idType)
     {
-        if ("x500".equalsIgnoreCase(idType))
+        if (AUTH_TYPE_X500.equalsIgnoreCase(idType))
         {
             return new X500Principal(
                     AuthenticationUtil.canonizeDistinguishedName(userID));
         }
-        if ("http".equalsIgnoreCase(idType))
+        if (AUTH_TYPE_HTTP.equalsIgnoreCase(idType))
         {
             return new HttpPrincipal(userID);
         }
-        if ("cadc".equalsIgnoreCase(idType))
+        if (AUTH_TYPE_CADC.equalsIgnoreCase(idType))
         {
             try
             {
@@ -779,15 +783,15 @@ public class AuthenticationUtil
     {
         if (userID instanceof X500Principal)
         {
-            return "x500";
+            return AUTH_TYPE_X500;
         }
         if (userID instanceof HttpPrincipal)
         {
-            return "http";
+            return AUTH_TYPE_HTTP;
         }
         if (userID instanceof NumericPrincipal)
         {
-            return "cadc";
+            return AUTH_TYPE_CADC;
         }
         return null;
     }
