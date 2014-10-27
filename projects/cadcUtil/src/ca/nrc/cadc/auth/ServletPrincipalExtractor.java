@@ -120,17 +120,35 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
         Cookie[] cookies = getRequest().getCookies();
         if (cookies == null || ArrayUtil.isEmpty(cookies))
             return;
-        
+        CookiePrincipal ssoCookie = null;
+        CookiePrincipal delegCookie = null;
         for (Cookie cookie : cookies)
         {
             SSOCookieManager ssoCookieManager = new SSOCookieManager();
-            if (SSOCookieManager.DEFAULT_SSO_COOKIE_NAME.equals(cookie.getName()))
+            if (SSOCookieManager.DEFAULT_SSO_COOKIE_NAME.equals(cookie.getName()) &&
+                    (ssoCookie == null))
             {
                 try
                 {
                     CookiePrincipal cp = ssoCookieManager.createPrincipal(cookie);
                     principals.add(cp);
-                    return; // only pick up one SSO cookie
+                    
+                }
+                catch(Exception oops)
+                {
+                    log.error("failed to create CookiePrincipal: " + cookie.getValue(), oops);
+                }
+            }
+            else if (SSOCookieManager.DELEGATION_COOKIE_NAME.equals(cookie.getName()) &&
+                    (delegCookie == null))
+            {
+                try
+                {
+                    CookiePrincipal cp = ssoCookieManager.createPrincipal(cookie);
+                    principals.add(cp);
+                    // extract the user and create corresponding HttpPrincipal
+                    DelegationToken dt = DelegationToken.parseText(cp.getSessionId(), true);
+                    principals.add(dt.getUser());
                 }
                 catch(Exception oops)
                 {
@@ -171,23 +189,25 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
     }
 
     /**
-     * Read in the pertinent cookie for this authentication.
+     * Read in the pertinent cookies for this authentication.
      *
      * @return              Cookie, if present, or null if not.
      */
-    protected Cookie getCookie()
+    protected Set<Cookie> getCookies()
     {
         final Cookie[] cookies = getRequest().getCookies();
+        Set<Cookie> result = new HashSet<Cookie>();
         if (!ArrayUtil.isEmpty(cookies))
         {
             for (final Cookie cookie : cookies)
             {
-                if (SSOCookieManager.DEFAULT_SSO_COOKIE_NAME.equals(cookie.getName()))
+                if (SSOCookieManager.DEFAULT_SSO_COOKIE_NAME.equals(cookie.getName()) ||
+                        SSOCookieManager.DELEGATION_COOKIE_NAME.equals(cookie.getName()))
                 {
-                    return cookie;
+                    result.add(cookie);
                 }
             }
         }
-        return null;
+        return result;
     }
 }
