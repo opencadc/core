@@ -205,6 +205,41 @@ public class SSLUtil
         KeyStore ts = null;
         return getSocketFactory(ks, ts);
     }
+    
+    /**
+     * Initialise the default SSL socket factory so that all HTTPS
+     * connections use the provided key store to authenticate (when the
+     * server requies client authentication).
+     * 
+     * @param pemFile
+     *            proxy certificate
+     * @return configured SSL socket factory
+     */
+    public static SSLSocketFactory getSocketFactory(File pemFile)
+    {
+        X509CertificateChain chain;
+        try
+        {
+            chain = readPemCertificateAndKey(pemFile);
+        }
+        catch (InvalidKeySpecException ex)
+        {
+            throw new RuntimeException("failed to read RSA private key from " + pemFile, ex);
+        }
+        catch (NoSuchAlgorithmException ex)
+        {
+            throw new RuntimeException("BUG: failed to create empty KeyStore", ex);
+        }
+        catch (IOException ex)
+        {
+            throw new RuntimeException("failed to read certificate file " + pemFile, ex);
+        }
+        catch (CertificateException ex)
+        {
+            throw new RuntimeException("failed to load certificate from file " + pemFile, ex);
+        }
+        return getSocketFactory(chain);
+    }
 
     /**
      * Create an SSLSocketfactory from the credentials in the specified
