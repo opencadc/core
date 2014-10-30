@@ -33,16 +33,20 @@
  */
 package ca.nrc.cadc.auth;
 
-import ca.nrc.cadc.util.ArrayUtil;
-import ca.nrc.cadc.util.StringUtil;
+import java.net.URLDecoder;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+
 import org.apache.log4j.Logger;
+
+import ca.nrc.cadc.util.ArrayUtil;
+import ca.nrc.cadc.util.StringUtil;
 
 
 /**
@@ -147,7 +151,11 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
                     CookiePrincipal cp = ssoCookieManager.createPrincipal(cookie);
                     principals.add(cp);
                     // extract the user and create corresponding HttpPrincipal
-                    DelegationToken dt = DelegationToken.parseText(cp.getSessionId(), true);
+                    String payload = 
+                            URLDecoder.decode(cookie.getValue(), "UTF-8");
+                    log.debug("Delegation cookie payload: " + payload);
+                    DelegationToken dt = DelegationToken.parseText(
+                            payload, true);
                     principals.add(dt.getUser());
                 }
                 catch(Exception oops)

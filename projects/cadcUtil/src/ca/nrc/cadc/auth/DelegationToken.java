@@ -47,6 +47,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.util.Base64;
 import ca.nrc.cadc.util.SignatureUtil;
 
@@ -73,8 +74,6 @@ public class DelegationToken implements Serializable
     public static final int DEFAULT_DURATION = 48;
     public static final String FIELD_DELIM = "&";
     public static final String VALUE_DELIM = "=";
-
-    public static final String DATE_FORMAT = "MM/dd/yyyy KK:mm:ss a Z";
     
     
     /**
@@ -113,8 +112,7 @@ public class DelegationToken implements Serializable
             throw new IllegalArgumentException("Timestamp required");
         }
         // supported resolution for timestamp is seconds so get rid of milliseconds.
-        this.timestamp = new Date(timestamp.getTime() - 
-                (timestamp.getTime() % 1000));
+        this.timestamp = timestamp;
         if (duration > 0)
         {
             this.duration = duration;
@@ -140,7 +138,7 @@ public class DelegationToken implements Serializable
         sb.append(FIELD_DELIM);
         sb.append("timestamp");
         sb.append(VALUE_DELIM);
-        sb.append(new SimpleDateFormat(DATE_FORMAT).format(timestamp));
+        sb.append(timestamp.getTime());
         sb.append(FIELD_DELIM);
         sb.append("duration");
         sb.append(VALUE_DELIM);
@@ -201,7 +199,7 @@ public class DelegationToken implements Serializable
             }
             if (key.equalsIgnoreCase("timestamp"))
             {
-                timestamp = new SimpleDateFormat(DATE_FORMAT).parse(value);
+                timestamp = new Date(Long.valueOf(value));
             }
             if (key.equalsIgnoreCase("scope"))
             {
@@ -265,5 +263,19 @@ public class DelegationToken implements Serializable
         return scope;
     }
 
+    public String toString()
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append("DelegationToken(user=");
+        sb.append(getUser());
+        sb.append(",scope=");
+        sb.append(getScope());
+        sb.append(",timestamp=");
+        sb.append(getTimestamp());
+        sb.append(",duration=");
+        sb.append(getDuration());
+        sb.append(")");
+        return sb.toString();
+    }
 
 }
