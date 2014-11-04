@@ -43,6 +43,7 @@ import javax.servlet.http.Cookie;
 public class SSOCookieManager
 {
     public final static String DEFAULT_SSO_COOKIE_NAME = "CADC_SSO";
+    public final static String DELEGATION_COOKIE_NAME = "CADC_DELEG";
 
     public SSOCookieManager() { }
 
@@ -69,6 +70,13 @@ public class SSOCookieManager
         }
         else
         {
+            //TODO this manager needs to be changed to produce a cookie 
+            // credentials with a proper name so we can distinguish
+            // amongst different types of cookies...
+            if (cookie.getName().equalsIgnoreCase(DELEGATION_COOKIE_NAME))
+            {
+                sessionIDBuilder.append(DELEGATION_COOKIE_NAME + "-");
+            }
             sessionIDBuilder.append(value);
 //            if (value.startsWith("sessionID="))
 //            {
@@ -80,7 +88,7 @@ public class SSOCookieManager
 //                        "Cannot parse SSO cookie with value:" + value);
 //            }
         }
-
+        
         return new CookiePrincipal(sessionIDBuilder.toString());
     }
 }
