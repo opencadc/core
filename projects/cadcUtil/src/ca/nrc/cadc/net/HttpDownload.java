@@ -664,12 +664,13 @@ public class HttpDownload extends HttpTransfer
 
         String location = conn.getHeaderField("Location");
         if ((code == HttpURLConnection.HTTP_SEE_OTHER
-            || code == HttpURLConnection.HTTP_MOVED_TEMP) 
+            || code == HttpURLConnection.HTTP_MOVED_TEMP
+            || code == HttpURLConnection.HTTP_MOVED_PERM) 
             && location != null)
         {
             this.redirectURL = new URL(location);
         }
-        else if (code != HttpURLConnection.HTTP_OK)
+        else if (code > 303) // 300 has body to be read, 301-303 handled above
         {
             String msg = "(" + code + ") " + conn.getResponseMessage();
             String body = NetUtil.getErrorBody(conn);

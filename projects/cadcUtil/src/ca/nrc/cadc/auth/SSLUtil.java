@@ -231,7 +231,12 @@ public class SSLUtil
                 }
             }
         }
-        if (chain == null) return null;
+        if (chain == null)
+        {
+            KeyStore ks = null;
+            KeyStore ts = null;
+            return getSocketFactory(ks, ts);
+        }
         return getSocketFactory(chain);
     }
 
@@ -358,7 +363,7 @@ public class SSLUtil
      * Extracts all the certificates from the argument, decodes them
      * from base64 to byte[] and concatenates all the certificates 
      * preserving the order.
-     * @param certBuf bufer containing certificates
+     * @param certBuf buffer containing certificates
      * @return decoded certificate chain
      * @throws IOException
      */
