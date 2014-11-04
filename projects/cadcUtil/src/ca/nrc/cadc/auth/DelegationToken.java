@@ -66,7 +66,7 @@ public class DelegationToken implements Serializable
 {
     private static final long serialVersionUID = 20141025143750l;
 
-    private Principal user; // identity of the user
+    private HttpPrincipal user; // identity of the user
     private Date timestamp; // time of the delegation (UTC)
     private int duration = DEFAULT_DURATION; // duration of delegation (h)
     private URI scope; // resources that are the object of the delegation
@@ -84,14 +84,14 @@ public class DelegationToken implements Serializable
      * @param scope - scope of the delegation, i.e. resource that it applies
      * to - optional
      */
-    public DelegationToken(final Principal user, int duration, final URI scope)
+    public DelegationToken(final HttpPrincipal user, int duration, final URI scope)
     {
         this(user, duration, scope, new Date());
     }
     
     
 
-    private DelegationToken(final Principal user, int duration, final URI scope, 
+    private DelegationToken(final HttpPrincipal user, int duration, final URI scope, 
             final Date timestamp)
     {
         if (user == null)
@@ -180,7 +180,7 @@ public class DelegationToken implements Serializable
             ParseException
     {
         String[] fields = text.split(FIELD_DELIM);
-        Principal userid = null;
+        HttpPrincipal userid = null;
         Date timestamp = null;
         int duration = -1;
         URI scope = null;
@@ -240,7 +240,7 @@ public class DelegationToken implements Serializable
 
     }
     
-    public Principal getUser()
+    public HttpPrincipal getUser()
     {
         return user;
     }

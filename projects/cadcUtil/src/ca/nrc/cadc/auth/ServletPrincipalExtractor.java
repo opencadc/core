@@ -124,45 +124,11 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
         Cookie[] cookies = getRequest().getCookies();
         if (cookies == null || ArrayUtil.isEmpty(cookies))
             return;
-        CookiePrincipal ssoCookie = null;
-        CookiePrincipal delegCookie = null;
         for (Cookie cookie : cookies)
         {
             SSOCookieManager ssoCookieManager = new SSOCookieManager();
-            if (SSOCookieManager.DEFAULT_SSO_COOKIE_NAME.equals(cookie.getName()) &&
-                    (ssoCookie == null))
-            {
-                try
-                {
-                    CookiePrincipal cp = ssoCookieManager.createPrincipal(cookie);
-                    principals.add(cp);
-                    
-                }
-                catch(Exception oops)
-                {
-                    log.error("failed to create CookiePrincipal: " + cookie.getValue(), oops);
-                }
-            }
-            else if (SSOCookieManager.DELEGATION_COOKIE_NAME.equals(cookie.getName()) &&
-                    (delegCookie == null))
-            {
-                try
-                {
-                    CookiePrincipal cp = ssoCookieManager.createPrincipal(cookie);
-                    principals.add(cp);
-                    // extract the user and create corresponding HttpPrincipal
-                    String payload = 
-                            URLDecoder.decode(cookie.getValue(), "UTF-8");
-                    log.debug("Delegation cookie payload: " + payload);
-                    DelegationToken dt = DelegationToken.parseText(
-                            payload, true);
-                    principals.add(dt.getUser());
-                }
-                catch(Exception oops)
-                {
-                    log.error("failed to create CookiePrincipal: " + cookie.getValue(), oops);
-                }
-            }
+            CookiePrincipal cp = ssoCookieManager.createPrincipal(cookie);
+            principals.add(cp);                   
         }
     }
 
