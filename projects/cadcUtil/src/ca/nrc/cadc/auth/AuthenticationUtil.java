@@ -69,9 +69,6 @@
 
 package ca.nrc.cadc.auth;
 
-import javax.security.auth.Subject;
-import javax.security.auth.x500.X500Principal;
-import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Constructor;
 import java.security.AccessControlContext;
 import java.security.AccessController;
@@ -82,7 +79,19 @@ import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.text.DateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.security.auth.Subject;
+import javax.security.auth.x500.X500Principal;
+import javax.servlet.http.HttpServletRequest;
 
 import org.apache.log4j.Logger;
 
@@ -98,6 +107,10 @@ import ca.nrc.cadc.net.NetUtil;
  */
 public class AuthenticationUtil
 {
+    
+    public static final String AUTH_TYPE_HTTP = "http";
+    public static final String AUTH_TYPE_X500 = "x500";
+    public static final String AUTH_TYPE_CADC = "cadc";
 
     // Mandatory support list of RDN descriptors according to RFC 4512.
     private static final String[] ORDERED_RDN_KEYS = new String[]
@@ -738,5 +751,48 @@ public class AuthenticationUtil
         final AccessControlContext accessControlContext =
                 AccessController.getContext();
         return Subject.getSubject(accessControlContext);
+    }
+    
+    public static Principal createPrincipal(String userID, String idType)
+    {
+        if (AUTH_TYPE_X500.equalsIgnoreCase(idType))
+        {
+            return new X500Principal(
+                    AuthenticationUtil.canonizeDistinguishedName(userID));
+        }
+        if (AUTH_TYPE_HTTP.equalsIgnoreCase(idType))
+        {
+            return new HttpPrincipal(userID);
+        }
+        if (AUTH_TYPE_CADC.equalsIgnoreCase(idType))
+        {
+            try
+            {
+                Long name = new Long(userID);
+                return new NumericPrincipal(name);
+            }
+            catch (NumberFormatException e)
+            {
+                log.warn("CADCPrincipal is non-numeric: " + userID);
+            }
+        }
+        return null;
+    }
+    
+    public static String getPrincipalType(Principal userID)
+    {
+        if (userID instanceof X500Principal)
+        {
+            return AUTH_TYPE_X500;
+        }
+        if (userID instanceof HttpPrincipal)
+        {
+            return AUTH_TYPE_HTTP;
+        }
+        if (userID instanceof NumericPrincipal)
+        {
+            return AUTH_TYPE_CADC;
+        }
+        return null;
     }
 }

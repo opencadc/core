@@ -35,10 +35,14 @@ package ca.nrc.cadc.auth;
 
 
 
+import static org.junit.Assert.assertEquals;
+
+import java.net.URI;
+import java.util.Date;
+
 import javax.servlet.http.Cookie;
 
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 
 public class SSOCookieManagerTest
@@ -60,7 +64,6 @@ public class SSOCookieManagerTest
     @Test
     public void parseCookieValue() throws Exception
     {
-//        Cookie ck = new Cookie(SSOCookieManager.DEFAULT_SSO_COOKIE_NAME, "sessionID=AAABBB");
         Cookie ck = new Cookie(SSOCookieManager.DEFAULT_SSO_COOKIE_NAME,
                                "AAABBB");
 
@@ -69,5 +72,21 @@ public class SSOCookieManagerTest
         CookiePrincipal cp = cm.createPrincipal(ck);
 
         assertEquals("SessionId should be AAABBB", "AAABBB", cp.getSessionId());
+    }
+    
+    @Test
+    public void parseDelegCookieValue() throws Exception
+    {
+        HttpPrincipal user = new HttpPrincipal("auser");
+        URI scope = new URI("vos://cadc.nrc.ca~vospace/myspace");
+        DelegationToken dt = new DelegationToken(user, 10, scope, new Date());
+        Cookie ck = new Cookie(SSOCookieManager.DELEGATION_COOKIE_NAME,
+                               dt.format(false));
+
+        SSOCookieManager cm = new SSOCookieManager();
+        
+        CookiePrincipal cp = cm.createPrincipal(ck);
+
+        assertEquals("SessionId missmatch", dt.format(false), cp.getSessionId());
     }
 }

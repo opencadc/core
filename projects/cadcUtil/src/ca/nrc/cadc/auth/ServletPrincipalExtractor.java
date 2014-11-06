@@ -33,16 +33,20 @@
  */
 package ca.nrc.cadc.auth;
 
-import ca.nrc.cadc.util.ArrayUtil;
-import ca.nrc.cadc.util.StringUtil;
+import java.net.URLDecoder;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+
 import org.apache.log4j.Logger;
+
+import ca.nrc.cadc.util.ArrayUtil;
+import ca.nrc.cadc.util.StringUtil;
 
 
 /**
@@ -120,23 +124,11 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
         Cookie[] cookies = getRequest().getCookies();
         if (cookies == null || ArrayUtil.isEmpty(cookies))
             return;
-        
         for (Cookie cookie : cookies)
         {
             SSOCookieManager ssoCookieManager = new SSOCookieManager();
-            if (SSOCookieManager.DEFAULT_SSO_COOKIE_NAME.equals(cookie.getName()))
-            {
-                try
-                {
-                    CookiePrincipal cp = ssoCookieManager.createPrincipal(cookie);
-                    principals.add(cp);
-                    return; // only pick up one SSO cookie
-                }
-                catch(Exception oops)
-                {
-                    log.error("failed to create CookiePrincipal: " + cookie.getValue(), oops);
-                }
-            }
+            CookiePrincipal cp = ssoCookieManager.createPrincipal(cookie);
+            principals.add(cp);                   
         }
     }
 
@@ -171,23 +163,29 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
     }
 
     /**
-     * Read in the pertinent cookie for this authentication.
+     * Read in the pertinent cookies for this authentication.
      *
      * @return              Cookie, if present, or null if not.
      */
-    protected Cookie getCookie()
+    protected Set<Cookie> getCookies()
     {
         final Cookie[] cookies = getRequest().getCookies();
+        Set<Cookie> result = new HashSet<Cookie>();
         if (!ArrayUtil.isEmpty(cookies))
         {
             for (final Cookie cookie : cookies)
             {
-                if (SSOCookieManager.DEFAULT_SSO_COOKIE_NAME.equals(cookie.getName()))
+                if (SSOCookieManager.DELEGATION_COOKIE_NAME.equals(cookie.getName()))
                 {
-                    return cookie;
+                    
+                }
+                if (SSOCookieManager.DEFAULT_SSO_COOKIE_NAME.equals(cookie.getName()) ||
+                        SSOCookieManager.DELEGATION_COOKIE_NAME.equals(cookie.getName()))
+                {
+                    result.add(cookie);
                 }
             }
         }
-        return null;
+        return result;
     }
 }
