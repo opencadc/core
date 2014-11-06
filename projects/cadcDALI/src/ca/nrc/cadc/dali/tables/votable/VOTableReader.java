@@ -95,6 +95,7 @@ import ca.nrc.cadc.dali.tables.ListTableData;
 import ca.nrc.cadc.dali.tables.TableData;
 import ca.nrc.cadc.dali.util.Format;
 import ca.nrc.cadc.dali.util.FormatFactory;
+import ca.nrc.cadc.util.StringUtil;
 
 /**
  *
@@ -338,7 +339,12 @@ public class VOTableReader
             if (name != null && !name.trim().isEmpty() &&
                 value != null && !value.trim().isEmpty())
             {
-                infos.add(new VOTableInfo(name, value));
+                VOTableInfo i = new VOTableInfo(name, value);
+                String s = element.getText();
+                log.debug("INFO content: " + s);
+                if (StringUtil.hasText(s))
+                    i.content = s;
+                infos.add(i);
             }
         }
         return infos;
