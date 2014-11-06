@@ -49,7 +49,7 @@ import java.util.Date;
 
 import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.util.Base64;
-import ca.nrc.cadc.util.SignatureUtil;
+import ca.nrc.cadc.util.RsaSignatureGenerator;
 
 /**
  * Class that captures the information required to perform delegation (i.e.
@@ -68,10 +68,9 @@ public class DelegationToken implements Serializable
 
     private HttpPrincipal user; // identity of the user
     private Date timestamp; // time of the delegation (UTC)
-    private int duration = DEFAULT_DURATION; // duration of delegation (h)
+    private int duration; // duration of delegation (h)
     private URI scope; // resources that are the object of the delegation
     
-    public static final int DEFAULT_DURATION = 48;
     public static final String FIELD_DELIM = "&";
     public static final String VALUE_DELIM = "=";
     
@@ -84,38 +83,32 @@ public class DelegationToken implements Serializable
      * @param scope - scope of the delegation, i.e. resource that it applies
      * to - optional
      */
-    public DelegationToken(final HttpPrincipal user, int duration, final URI scope)
+    public DelegationToken(final HttpPrincipal user, int duration, 
+            final URI scope)
     {
         this(user, duration, scope, new Date());
     }
     
-    
-
-    private DelegationToken(final HttpPrincipal user, int duration, final URI scope, 
-            final Date timestamp)
+    private DelegationToken(final HttpPrincipal user, int duration, 
+            final URI scope, Date timestamp)
     {
         if (user == null)
         {
             throw new IllegalArgumentException("User identity required");
         }
-        if (user instanceof HttpPrincipal)
+        this.user = user;
+        if(timestamp == null)
         {
-            this.user = user;
+            throw new IllegalArgumentException("No timestamp");
         }
-        else
-        {
-            throw new 
-                IllegalArgumentException("Only Http user identities for now");
-        }
-        if (timestamp == null)
-        {
-            throw new IllegalArgumentException("Timestamp required");
-        }
-        // supported resolution for timestamp is seconds so get rid of milliseconds.
         this.timestamp = timestamp;
         if (duration > 0)
         {
             this.duration = duration;
+        }
+        else
+        {
+            throw new IllegalArgumentException("Negative duration: " + duration);
         }
         this.scope = scope;
     }
@@ -129,7 +122,7 @@ public class DelegationToken implements Serializable
      * @throws IOException 
      * @throws InvalidKeyException 
      */
-    public String toText(boolean signed) throws InvalidKeyException, IOException
+    public String format(boolean signed) throws InvalidKeyException, IOException
     {
         StringBuilder sb = new StringBuilder();
         sb.append("userid");
@@ -157,7 +150,7 @@ public class DelegationToken implements Serializable
             sb.append(FIELD_DELIM);
             sb.append("signature");
             sb.append(VALUE_DELIM);
-            SignatureUtil su = SignatureUtil.getInstance();
+            RsaSignatureGenerator su = new RsaSignatureGenerator();
             byte[] sig = 
                     su.sign(new ByteArrayInputStream(toSign.getBytes()));
             sb.append(new String(Base64.encode(sig)));
@@ -174,10 +167,11 @@ public class DelegationToken implements Serializable
      * @throws IOException 
      * @throws InvalidKeyException 
      * @throws ParseException 
+     * @throws InvalidDelegationTokenException - token cannot be validated
      */
-    public static DelegationToken parseText(final String text, boolean signed) 
+    public static DelegationToken parse(final String text, boolean signed) 
             throws URISyntaxException, InvalidKeyException, IOException, 
-            ParseException
+            ParseException, InvalidDelegationTokenException
     {
         String[] fields = text.split(FIELD_DELIM);
         HttpPrincipal userid = null;
@@ -221,23 +215,38 @@ public class DelegationToken implements Serializable
         if (signature != null)
         {
             // verify the result
-            SignatureUtil su = SignatureUtil.getInstance();
+            RsaSignatureGenerator su = new RsaSignatureGenerator();
             if (su.verify(new ByteArrayInputStream(
-                    result.toText(false).getBytes()), 
+                    result.format(false).getBytes()), 
                     Base64.decode(signature)))
             {
                 return result;
             }
             else
             {
-                return null;
+                throw new InvalidDelegationTokenException();
             }
         }
         else
         {
-            return null;
+            throw new InvalidDelegationTokenException();
         }
 
+    }
+    
+    /**
+     * checks whether the token is still valid
+     * @return true - valid token, false otherwise
+     */
+    public boolean validateExpiry()
+    {
+        Date now = new Date();
+        if ((now.getTime() - this.getTimestamp().getTime()) > 
+            (this.getDuration()*60*60*1000))
+        {
+            return false;
+        }
+        return true;
     }
     
     public HttpPrincipal getUser()

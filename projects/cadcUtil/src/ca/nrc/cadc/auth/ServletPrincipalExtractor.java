@@ -175,6 +175,10 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
         {
             for (final Cookie cookie : cookies)
             {
+                if (SSOCookieManager.DELEGATION_COOKIE_NAME.equals(cookie.getName()))
+                {
+                    
+                }
                 if (SSOCookieManager.DEFAULT_SSO_COOKIE_NAME.equals(cookie.getName()) ||
                         SSOCookieManager.DELEGATION_COOKIE_NAME.equals(cookie.getName()))
                 {

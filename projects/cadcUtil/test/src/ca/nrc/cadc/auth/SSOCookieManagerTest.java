@@ -80,12 +80,12 @@ public class SSOCookieManagerTest
         URI scope = new URI("vos://cadc.nrc.ca~vospace/myspace");
         DelegationToken dt = new DelegationToken(user, 10, scope);
         Cookie ck = new Cookie(SSOCookieManager.DELEGATION_COOKIE_NAME,
-                               dt.toText(false));
+                               dt.format(false));
 
         SSOCookieManager cm = new SSOCookieManager();
         
         CookiePrincipal cp = cm.createPrincipal(ck);
 
-        assertEquals("SessionId missmatch", dt.toText(false), cp.getSessionId());
+        assertEquals("SessionId missmatch", dt.format(false), cp.getSessionId());
     }
 }
