@@ -38,6 +38,7 @@ package ca.nrc.cadc.auth;
 import static org.junit.Assert.assertEquals;
 
 import java.net.URI;
+import java.util.Date;
 
 import javax.servlet.http.Cookie;
 
@@ -78,7 +79,7 @@ public class SSOCookieManagerTest
     {
         HttpPrincipal user = new HttpPrincipal("auser");
         URI scope = new URI("vos://cadc.nrc.ca~vospace/myspace");
-        DelegationToken dt = new DelegationToken(user, 10, scope);
+        DelegationToken dt = new DelegationToken(user, 10, scope, new Date());
         Cookie ck = new Cookie(SSOCookieManager.DELEGATION_COOKIE_NAME,
                                dt.format(false));
 

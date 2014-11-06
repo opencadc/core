@@ -55,7 +55,8 @@ import ca.nrc.cadc.util.RsaSignatureGenerator;
  * Class that captures the information required to perform delegation (i.e.
  * accessing resources on user's behalf). The required fields are:
  * - the user that delegates
- * - time of the delegation
+ * - start time of the delegation
+ * - duration
  * - scope of delegation
  * 
  * This class can serialize and de-serialize the information into a 
@@ -67,7 +68,7 @@ public class DelegationToken implements Serializable
     private static final long serialVersionUID = 20141025143750l;
 
     private HttpPrincipal user; // identity of the user
-    private Date timestamp; // time of the delegation (UTC)
+    private Date startTime; // start time of the delegation (UTC)
     private int duration; // duration of delegation (h)
     private URI scope; // resources that are the object of the delegation
     
@@ -82,26 +83,21 @@ public class DelegationToken implements Serializable
      * less then 0h.
      * @param scope - scope of the delegation, i.e. resource that it applies
      * to - optional
-     */
+     * @param startDate - the start date of this token (UTC)
+     */    
     public DelegationToken(final HttpPrincipal user, int duration, 
-            final URI scope)
-    {
-        this(user, duration, scope, new Date());
-    }
-    
-    private DelegationToken(final HttpPrincipal user, int duration, 
-            final URI scope, Date timestamp)
+            final URI scope, Date startTime)
     {
         if (user == null)
         {
             throw new IllegalArgumentException("User identity required");
         }
         this.user = user;
-        if(timestamp == null)
+        if(startTime == null)
         {
-            throw new IllegalArgumentException("No timestamp");
+            throw new IllegalArgumentException("No start time");
         }
-        this.timestamp = timestamp;
+        this.startTime = startTime;
         if (duration > 0)
         {
             this.duration = duration;
@@ -129,9 +125,9 @@ public class DelegationToken implements Serializable
         sb.append(VALUE_DELIM);
         sb.append(user.getName());
         sb.append(FIELD_DELIM);
-        sb.append("timestamp");
+        sb.append("starttime");
         sb.append(VALUE_DELIM);
-        sb.append(timestamp.getTime());
+        sb.append(startTime.getTime());
         sb.append(FIELD_DELIM);
         sb.append("duration");
         sb.append(VALUE_DELIM);
@@ -175,10 +171,12 @@ public class DelegationToken implements Serializable
     {
         String[] fields = text.split(FIELD_DELIM);
         HttpPrincipal userid = null;
-        Date timestamp = null;
+        Date starttime = null;
         int duration = -1;
         URI scope = null;
         String signature = null;
+        try
+        {
         for (String field : fields)
         {
             String key = field.substring(0, field.indexOf(VALUE_DELIM));
@@ -191,9 +189,9 @@ public class DelegationToken implements Serializable
             {
                 duration = Integer.valueOf(value);
             }
-            if (key.equalsIgnoreCase("timestamp"))
+            if (key.equalsIgnoreCase("starttime"))
             {
-                timestamp = new Date(Long.valueOf(value));
+                starttime = new Date(Long.valueOf(value));
             }
             if (key.equalsIgnoreCase("scope"))
             {
@@ -204,45 +202,77 @@ public class DelegationToken implements Serializable
                 signature = value;
             }              
         }
+        }
+        catch(Exception ex)
+        {
+            throw new InvalidDelegationTokenException("Cannot parse token", ex);
+        }
         
         DelegationToken result = 
-                new DelegationToken(userid, duration, scope, timestamp);
+                new DelegationToken(userid, duration, scope, starttime);
         if (!signed)
         {
-            return result;
+            if (result.isValid())
+            {
+                return result;
+            }
+            else
+            {
+                throw new 
+                InvalidDelegationTokenException("Expired token " + result);
+            }
         }
         
         if (signature != null)
         {
             // verify the result
             RsaSignatureGenerator su = new RsaSignatureGenerator();
-            if (su.verify(new ByteArrayInputStream(
-                    result.format(false).getBytes()), 
-                    Base64.decode(signature)))
+            boolean valid = false;
+            try
             {
-                return result;
+                valid = su.verify(new ByteArrayInputStream(result.format(false)
+                        .getBytes()), Base64.decode(signature));
             }
+            catch (Exception ex)
+            {
+                throw new 
+                InvalidDelegationTokenException("Cannot verify signature", ex);
+            }
+            if (valid)
+            {
+                if (result.isValid())
+                {
+                    return result;
+                } 
+                else
+                {
+                    throw new InvalidDelegationTokenException("Expired token "
+                            + result);
+                }
+            } 
             else
             {
-                throw new InvalidDelegationTokenException();
+                throw new InvalidDelegationTokenException(
+                        "Cannot verify signature");
             }
-        }
-        else
+        } else
         {
-            throw new InvalidDelegationTokenException();
+            throw new InvalidDelegationTokenException("Missing signature");
         }
 
     }
     
     /**
-     * checks whether the token is still valid
+     * checks whether the token is still valid. A token is valid if current
+     * time is greater then start time but less then start time plus duration.
      * @return true - valid token, false otherwise
      */
-    public boolean validateExpiry()
+    public boolean isValid()
     {
         Date now = new Date();
-        if ((now.getTime() - this.getTimestamp().getTime()) > 
-            (this.getDuration()*60*60*1000))
+        long durationMs = getDuration()*60*60*1000;
+        if ((now.getTime() < startTime.getTime()) ||
+                ((now.getTime() - this.getStartTime().getTime()) > durationMs))
         {
             return false;
         }
@@ -255,9 +285,9 @@ public class DelegationToken implements Serializable
     }
 
 
-    public Date getTimestamp()
+    public Date getStartTime()
     {
-        return timestamp;
+        return startTime;
     }
 
 
@@ -279,8 +309,8 @@ public class DelegationToken implements Serializable
         sb.append(getUser());
         sb.append(",scope=");
         sb.append(getScope());
-        sb.append(",timestamp=");
-        sb.append(getTimestamp());
+        sb.append(",startTime=");
+        sb.append(getStartTime());
         sb.append(",duration=");
         sb.append(getDuration());
         sb.append(")");
