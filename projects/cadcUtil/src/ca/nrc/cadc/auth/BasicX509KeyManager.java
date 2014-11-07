@@ -78,7 +78,7 @@ import javax.net.ssl.X509KeyManager;
 import org.apache.log4j.Logger;
 
 /**
- * Simple X509KeyManager implentation that delegates to the default X509KeyManager
+ * Simple X509KeyManager implementation that delegates to the default X509KeyManager
  * where possible but uses a pre-set alias to pick the certificate and private
  * key to use.
  */
@@ -92,8 +92,8 @@ public class BasicX509KeyManager implements X509KeyManager
     /**
      * Constructor.
      *
-     * @param km underlying KeyManager thsi class delegates to
-     * @param alias the alias of the X509 certficate we always use
+     * @param km underlying KeyManager this class delegates to
+     * @param alias the alias of the X509 certificate we always use
      */
     public BasicX509KeyManager(X509KeyManager km, String alias)
     {
