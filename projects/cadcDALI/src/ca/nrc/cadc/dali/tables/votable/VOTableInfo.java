@@ -77,6 +77,7 @@ public class VOTableInfo
 {
     private String name;
     private String value;
+    public String content;
 
     public VOTableInfo(String name, String value)
     {
