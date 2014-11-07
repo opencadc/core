@@ -75,6 +75,7 @@ package ca.nrc.cadc.net;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.*;
 
@@ -238,6 +239,39 @@ public class NetUtil
             if (out != null)
             {
                 out.close();
+            }
+            if (in != null)
+            {
+                in.close();
+            }
+        }
+    }
+    
+    public static void getErrorBody(HttpURLConnection conn, OutputStream dest)
+            throws IOException
+    {
+        // get the error message from the body
+        InputStream in = null;
+        try
+        {
+            in = conn.getErrorStream();
+            if (in != null)
+            {
+                byte[] buffer = new byte[ERROR_BUFFER_SIZE];
+                int bytesRead;
+
+                // read until finished
+                while ((bytesRead = in.read(buffer)) > 0)
+                {
+                    dest.write(buffer, 0, bytesRead);
+                }
+            }
+        }
+        finally
+        {
+            if (dest != null)
+            {
+                dest.close();
             }
             if (in != null)
             {
