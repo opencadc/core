@@ -47,6 +47,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.util.Date;
 import java.util.MissingResourceException;
+import org.apache.log4j.Level;
 
 import org.junit.Test;
 
@@ -55,7 +56,11 @@ import sun.misc.BASE64Encoder;
 
 public class RSASignatureGeneratorValidatorTest
 {
-
+    static
+    {
+        Log4jInit.setLevel("ca.nrc.cadc.util", Level.INFO);
+    }
+    
     @Test
     public void matches() throws Exception
     {

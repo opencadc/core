@@ -585,33 +585,6 @@ public class AuthenticationUtilTest
         }
     }
 
-    // NOTE: for deprecated methods we currently just verify that the methods are still there
-    
-    //@Test
-    public void testGetSubject_Deprecated()
-    {
-        try
-        {
-            String remoteUser = null;
-            Collection<X509Certificate> certs = null;
-            X509CertificateChain chain = null;
-
-            Subject s;
-
-            s = AuthenticationUtil.getSubject(remoteUser, certs);
-            s = AuthenticationUtil.getSubject(remoteUser, chain);
-        }
-        catch(Exception unexpected)
-        {
-            log.error("unexpected exception", unexpected);
-            fail("unexpected exception: " + unexpected);
-        }
-        finally
-        {
-            log.debug("testGetSubject_Deprecated - DONE");
-        }
-    }
-
     @Test
     public void groupByPrincipalType() throws Exception
     {

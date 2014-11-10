@@ -31,12 +31,10 @@
  ****  C A N A D I A N   A S T R O N O M Y   D A T A   C E N T R E  *****
  ************************************************************************
  */
-package ca.nrc.cadc.util;
+package ca.nrc.cadc.auth;
 
+import ca.nrc.cadc.util.Log4jInit;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.net.URI;
@@ -45,25 +43,59 @@ import java.util.Date;
 
 import org.junit.Test;
 
-import ca.nrc.cadc.auth.DelegationToken;
-import ca.nrc.cadc.auth.HttpPrincipal;
-import ca.nrc.cadc.auth.InvalidDelegationTokenException;
+import ca.nrc.cadc.util.RSASignatureGeneratorValidatorTest;
+import ca.nrc.cadc.util.RsaSignatureGenerator;
+import java.io.File;
+import java.io.FileWriter;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 public class DelegationTokenTest
 {
+    private static final Logger log = Logger.getLogger(DelegationTokenTest.class);
+    
+    static
+    {
+        Log4jInit.setLevel("ca.nrc.cadc.auth", Level.DEBUG);
+        Log4jInit.setLevel("ca.nrc.cadc.util", Level.DEBUG);
+    }
+    
+    public static class TestScopeValidator extends DelegationToken.ScopeValidator
+    {
 
+        @Override
+        public void verifyScope(URI scope, String requestURI) 
+            throws InvalidDelegationTokenException 
+        {
+            if ("foo:bar".equals(scope.toASCIIString()) )
+                return; // OK
+            super.verifyScope(scope, requestURI); // test default behaviour indirectly
+        }
+        
+    }
+    
     @Test
     public void matches() throws Exception
     {
         String keysDir = RSASignatureGeneratorValidatorTest.getCompleteKeysDirectoryName();
         RsaSignatureGenerator.genKeyPair(keysDir);
 
+        // configure the test scope validator
+        File config = new File(keysDir, "DelegationToken.properties");
+        FileWriter w = new FileWriter(config);
+        w.write(DelegationToken.class.getName() + ".scopeValidator = " + TestScopeValidator.class.getName());
+        w.write("\n");
+        w.flush();
+        w.close();
+        
         // round trip test without signature
+       
         HttpPrincipal userid = new HttpPrincipal("someuser");
-        URI scope = new URI("vos://cadc.nrc.ca~vospace/myspace");
+        URI scope = new URI("foo:bar");
         int duration = 10; // h
         DelegationToken expToken = new DelegationToken(userid, duration, 
                 scope, new Date());
+        /*
         DelegationToken actToken = DelegationToken.parse(
                 expToken.format(false), false);
         assertEquals("User id not the same", expToken.getUser(),
@@ -74,10 +106,15 @@ public class DelegationTokenTest
                 actToken.getStartTime());
         assertEquals("Scope not the same", expToken.getScope(),
                 actToken.getScope());
+        */
+        
+        DelegationToken actToken;
         
         // round trip test with signature
-        actToken = DelegationToken.parse(
-                expToken.format(true), true);
+        String token = DelegationToken.format(expToken);
+        log.debug("valid token: " + token);
+        actToken = DelegationToken.parse(token, null);
+        
         assertEquals("User id not the same", expToken.getUser(),
                 actToken.getUser());
         assertEquals("Duration not the same", expToken.getDuration(),
@@ -87,16 +124,21 @@ public class DelegationTokenTest
         assertEquals("Scope not the same", expToken.getScope(),
                 actToken.getScope());
         
-        // round trip with missing signature - no token
+        // invalid scope
         try
         {
-            actToken = DelegationToken.parse(
-                expToken.format(false), true);
+            DelegationToken wrongScope = new DelegationToken(userid, duration, 
+                new URI("bar:baz"), new Date());
+            DelegationToken.parse(DelegationToken.format(wrongScope), null);
             fail("Exception expected");
         }
-        catch(InvalidDelegationTokenException ignore){}
+        catch(InvalidDelegationTokenException expected) 
+        {
+            log.debug("caught expected exception: " + expected);
+        }
         
         // round trip with signature ignored
+        /*
         actToken = DelegationToken.parse(
                 expToken.format(true), false);
         assertEquals("User id not the same", expToken.getUser(),
@@ -178,31 +220,24 @@ public class DelegationTokenTest
         expToken = new DelegationToken(userid, duration, 
                 scope, new Date());
         assertTrue(expToken.isValid());
-        // move start date into the future
+        */
+        
         Calendar cal = Calendar.getInstance(); // creates calendar
-        cal.setTime(new Date()); // sets calendar time/date
-        cal.add(Calendar.HOUR_OF_DAY, duration); // adds duration hours
-        expToken = new DelegationToken(userid, duration, 
-                scope, cal.getTime());
-        assertFalse(expToken.isValid());
-        
-        // now remove more hours (move start date into the past so it is expired
-        cal.setTime(new Date()); // sets calendar time/date
-        cal.add(Calendar.HOUR_OF_DAY, (-2) * duration); // removes 2*duration
-        assertFalse(expToken.isValid());
-        
+
         // parse expired token
-        cal = Calendar.getInstance(); // creates calendar
         cal.setTime(new Date()); // sets calendar time/date
         cal.add(Calendar.HOUR_OF_DAY, duration*2); // removes duration hours
         try
         {
             expToken = new DelegationToken(userid, duration, 
                     scope, cal.getTime());
-            DelegationToken.parse(expToken.format(true), true);
+            DelegationToken.parse(DelegationToken.format(expToken), null);
             fail("Exception expected");
         }
-        catch(InvalidDelegationTokenException ignore){}
+        catch(InvalidDelegationTokenException expected) 
+        {
+            log.debug("caught expected exception: " + expected);
+        }
         
         
         cal = Calendar.getInstance(); // creates calendar
@@ -213,10 +248,13 @@ public class DelegationTokenTest
         {
             expToken = new DelegationToken(userid, duration, 
                     scope, cal.getTime());
-            DelegationToken.parse(expToken.format(true), true);
+            DelegationToken.parse(DelegationToken.format(expToken), null);
             fail("Exception expected");
         }
-        catch(InvalidDelegationTokenException ignore){}
+        catch(InvalidDelegationTokenException expected) 
+        {
+            log.debug("caught expected exception: " + expected);
+        }
         
         //invalidate signature field
         try
@@ -224,12 +262,16 @@ public class DelegationTokenTest
             expToken = new DelegationToken(userid, duration, 
                     scope, cal.getTime());
             
-            String token = expToken.format(true);
-            token.subSequence(0,  token.indexOf("signature") + 10);
-            DelegationToken.parse(token, true);
+            token = DelegationToken.format(expToken);
+            CharSequence subSequence = token.subSequence(0,  token.indexOf("signature") + 10);
+            DelegationToken.parse(subSequence.toString(), null);
             fail("Exception expected");
         }
-        catch(InvalidDelegationTokenException ignore){}
+        catch(InvalidDelegationTokenException expected) 
+        {
+            log.debug("caught expected exception: " + expected);
+        }
+        
         
         // tamper with one character in the signature
         try
@@ -237,7 +279,7 @@ public class DelegationTokenTest
             expToken = new DelegationToken(userid, duration, 
                     scope, cal.getTime());
             
-            String token = expToken.format(true);
+            token = DelegationToken.format(expToken);
             char toReplace = token.charAt(token.indexOf("signature") + 10);
             if (toReplace != 'A')
             {
@@ -247,10 +289,13 @@ public class DelegationTokenTest
             {
                 token.replace(token.charAt(token.indexOf("signature") + 20), 'B');
             }
-            DelegationToken.parse(token, true);
+            DelegationToken.parse(token, null);
             fail("Exception expected");
         }
-        catch(InvalidDelegationTokenException ignore){}
+        catch(InvalidDelegationTokenException expected) 
+        {
+            log.debug("caught expected exception: " + expected);
+        }
     }
 }
 

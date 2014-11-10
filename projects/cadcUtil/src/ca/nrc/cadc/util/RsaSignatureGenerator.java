@@ -131,7 +131,6 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier
     public static final String PRIV_KEY_START = "-----BEGIN PRIVATE KEY-----";
     public static final String PRIV_KEY_END = "-----END PRIVATE KEY-----";
 
-    
     /**
      * Simple constructor
      */
@@ -317,7 +316,8 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier
     }
     
     
-    protected static void genKeyPair(String directory) throws FileNotFoundException
+    public static void genKeyPair(String directory) 
+        throws FileNotFoundException
     {      
         // generate the certs
         KeyPairGenerator kpg;

@@ -175,6 +175,7 @@ public class RsaSignatureVerifier
                 }
             }
             
+            log.debug("read pub keys: " + keysFile);
             BufferedReader br = new BufferedReader(new 
                     FileReader(keysFile));
             try

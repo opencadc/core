@@ -54,9 +54,16 @@ public interface PrincipalExtractor
     Set<Principal> getPrincipals();
 
     /**
-     * Create and return a certficate chain from the request.
+     * Create and return a certificate chain from the request.
      * 
      * @return an X509CertficateChain or null if not authenticated via SSL
      */
     X509CertificateChain getCertificateChain();
+    
+    /**
+     * Create and return a DelegationToken from the request.
+     * 
+     * @return 
+     */
+    DelegationToken getDelegationToken();
 }

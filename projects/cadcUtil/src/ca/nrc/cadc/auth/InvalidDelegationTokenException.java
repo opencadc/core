@@ -36,12 +36,12 @@ package ca.nrc.cadc.auth;
 
 public class InvalidDelegationTokenException extends Exception
 {
-    InvalidDelegationTokenException(final String msg)
+    public InvalidDelegationTokenException(final String msg)
     {
         super(msg);
     }
     
-    InvalidDelegationTokenException(final String msg, Throwable cause)
+    public InvalidDelegationTokenException(final String msg, Throwable cause)
     {
         super(msg, cause);
     }
