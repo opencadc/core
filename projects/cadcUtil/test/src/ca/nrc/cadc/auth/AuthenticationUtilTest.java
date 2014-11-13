@@ -371,6 +371,7 @@ public class AuthenticationUtilTest
 
             expect(mockRequest.getRemoteUser()).andReturn(null).atLeastOnce();
             expect(mockRequest.getCookies()).andReturn(null).atLeastOnce();
+            expect(mockRequest.getHeader(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
             expect(mockRequest.getAttribute(
                     "javax.servlet.request.X509Certificate")).andReturn(null).atLeastOnce();
 
@@ -405,6 +406,7 @@ public class AuthenticationUtilTest
 
             expect(mockRequest.getRemoteUser()).andReturn("foo").atLeastOnce();
             expect(mockRequest.getCookies()).andReturn(null).atLeastOnce();
+            expect(mockRequest.getHeader(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
             expect(mockRequest.getAttribute(
                     "javax.servlet.request.X509Certificate")).andReturn(null).atLeastOnce();
 
@@ -454,7 +456,8 @@ public class AuthenticationUtilTest
             X509Certificate[] ca = new X509Certificate[] { mockCertificate };
 
             expect(mockRequest.getRemoteUser()).andReturn(null).atLeastOnce();
-            expect(mockRequest.getCookies()).andReturn(null).atLeastOnce();
+            expect(mockRequest.getCookies()).andReturn(null).atLeastOnce(); 
+            expect(mockRequest.getHeader(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
             expect(mockRequest.getAttribute(
                     "javax.servlet.request.X509Certificate")).andReturn(ca).atLeastOnce();
             expect(mockCertificate.getNotAfter()).andReturn(notAfterDate).once();
@@ -530,8 +533,9 @@ public class AuthenticationUtilTest
             final HttpServletRequest mockRequest =
                     createMock(HttpServletRequest.class);
 
-            expect(mockRequest.getRemoteUser()).andReturn(null).once();
-            expect(mockRequest.getCookies()).andReturn(cookies).once();
+            expect(mockRequest.getRemoteUser()).andReturn(null).atLeastOnce();
+            expect(mockRequest.getCookies()).andReturn(cookies).atLeastOnce();
+            expect(mockRequest.getHeader(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
             expect(mockRequest.getAttribute(
                     "javax.servlet.request.X509Certificate")).andReturn(null).atLeastOnce();
 

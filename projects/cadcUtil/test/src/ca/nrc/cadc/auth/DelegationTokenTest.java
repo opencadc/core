@@ -56,8 +56,8 @@ public class DelegationTokenTest
     
     static
     {
-        Log4jInit.setLevel("ca.nrc.cadc.auth", Level.DEBUG);
-        Log4jInit.setLevel("ca.nrc.cadc.util", Level.DEBUG);
+        Log4jInit.setLevel("ca.nrc.cadc.auth", Level.INFO);
+        Log4jInit.setLevel("ca.nrc.cadc.util", Level.INFO);
     }
     
     public static class TestScopeValidator extends DelegationToken.ScopeValidator

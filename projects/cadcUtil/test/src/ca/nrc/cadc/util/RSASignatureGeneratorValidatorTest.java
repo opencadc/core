@@ -51,9 +51,6 @@ import org.apache.log4j.Level;
 
 import org.junit.Test;
 
-import sun.misc.BASE64Encoder;
-
-
 public class RSASignatureGeneratorValidatorTest
 {
     static
@@ -155,13 +152,13 @@ public class RSASignatureGeneratorValidatorTest
         // run against a file with two public keys
         // generate a new public key
         RsaSignatureGenerator.genKeyPair(keysDirectory);
+        
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(
                 RsaSignatureGenerator.KEY_ALGORITHM);
         kpg.initialize(1024);
         KeyPair keyPair = kpg.genKeyPair();
-        BASE64Encoder encoder = new BASE64Encoder();
-        String base64PubKey = encoder.encode(keyPair.getPublic().getEncoded());
-        String base64PrivKey = encoder.encode(keyPair.getPrivate().getEncoded());
+        char[] base64PubKey = Base64.encode(keyPair.getPublic().getEncoded());
+        char[] base64PrivKey = Base64.encode(keyPair.getPrivate().getEncoded());
         PrintWriter outpub = new PrintWriter(new BufferedWriter(new FileWriter(pubKeyFileName, true)));
         outpub.println(RsaSignatureVerifier.PUB_KEY_START);
         outpub.println(base64PubKey);

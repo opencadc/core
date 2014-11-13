@@ -209,7 +209,7 @@ public class SSLUtil
     /**
      * Initialise the default SSL socket factory so that all HTTPS
      * connections use the provided key store to authenticate (when the
-     * server requies client authentication).
+     * server requires client authentication).
      * 
      * @param pemFile
      *            proxy certificate
@@ -267,31 +267,19 @@ public class SSLUtil
             }
         }
         if (chain == null)
-        {
-            KeyStore ks = null;
-            KeyStore ts = null;
-            return getSocketFactory(ks, ts);
-        }
+            return null;
         return getSocketFactory(chain);
     }
 
     public static SSLSocketFactory getSocketFactory(X509CertificateChain chain)
     {
-        KeyStore ks = null;
-        if (chain != null) ks = getKeyStore(chain.getChain(), chain.getPrivateKey());
         KeyStore ts = null;
+        KeyStore ks = null;
+        if (chain != null) 
+            ks = getKeyStore(chain.getChain(), chain.getPrivateKey());
         return getSocketFactory(ks, ts);
     }
 
-    public static SSLContext getSSLContext(X509CertificateChain chain)
-    {
-        if (chain == null) return null;
-        KeyStore ks = getKeyStore(chain.getChain(), chain.getPrivateKey());
-        KeyManagerFactory kmf = getKeyManagerFactory(ks);
-        TrustManagerFactory tmf = getTrustManagerFactory(null);
-        return getContext(kmf, tmf, ks);    
-    }
-    
     public static Subject createSubject(File certFile, File keyFile)
     {
         try
@@ -356,9 +344,6 @@ public class SSLUtil
         SSLSocketFactory sf = ctx.getSocketFactory();
         return sf;
     }
-
-    // not working due to Base64 decoding to byte array not producing
-    // valid DER format key
 
     static byte[] getPrivateKey(byte[] certBuf) throws IOException
     {
@@ -524,7 +509,7 @@ public class SSLUtil
         return pk;
     }
 
-    static KeyStore getKeyStore(Certificate[] chain, PrivateKey pk)
+    private static KeyStore getKeyStore(Certificate[] chain, PrivateKey pk)
     {
         try
         {
@@ -536,8 +521,9 @@ public class SSLUtil
             catch (Exception ignore)
             {
             }
-            @SuppressWarnings("unused") KeyStore.Entry ke = new KeyStore.PrivateKeyEntry(pk, chain);
+            //@SuppressWarnings("unused") KeyStore.Entry ke = new KeyStore.PrivateKeyEntry(pk, chain);
             ks.setKeyEntry(CERT_ALIAS, pk, THE_PASSWORD, chain);
+            log.debug("added certificate chain to keystore: " + CERT_ALIAS + "," + pk + "," + THE_PASSWORD + "," + chain);
             return ks;
         }
         catch (KeyStoreException ex)
@@ -554,7 +540,7 @@ public class SSLUtil
         }
     }
 
-    static KeyStore getKeyStore(File certFile, File keyFile)
+    private static KeyStore getKeyStore(File certFile, File keyFile)
     {
         try
         {
@@ -585,7 +571,7 @@ public class SSLUtil
     }
 
     // currently broken trying to parse the openssl-generated pkcs12 file
-    static KeyStore readPKCS12(File f)
+    private static KeyStore readPKCS12(File f)
     {
         InputStream istream = null;
         try
@@ -629,7 +615,7 @@ public class SSLUtil
         }
     }
 
-    static KeyManagerFactory getKeyManagerFactory(KeyStore keyStore)
+    private static KeyManagerFactory getKeyManagerFactory(KeyStore keyStore)
     {
         String da = KEYMANAGER_ALGORITHM;
         try
@@ -654,7 +640,7 @@ public class SSLUtil
         }
     }
 
-    static TrustManagerFactory getTrustManagerFactory(KeyStore trustStore)
+    private static TrustManagerFactory getTrustManagerFactory(KeyStore trustStore)
     {
         try
         {
@@ -676,7 +662,7 @@ public class SSLUtil
         }
     }
 
-    static SSLContext getContext(KeyManagerFactory kmf, TrustManagerFactory tmf, KeyStore ks)
+    private static SSLContext getContext(KeyManagerFactory kmf, TrustManagerFactory tmf, KeyStore ks)
     {
         try
         {
@@ -712,7 +698,8 @@ public class SSLUtil
     }
 
     @SuppressWarnings("unchecked")
-    static void printKeyStoreInfo(KeyStore keystore) throws KeyStoreException
+    private static void printKeyStoreInfo(KeyStore keystore) 
+        throws KeyStoreException
     {
         log.debug("Provider : " + keystore.getProvider().getName());
         log.debug("Type : " + keystore.getType());
@@ -736,7 +723,8 @@ public class SSLUtil
      * @throws IOException
      * @throws CertificateException
      */
-    public static X509CertificateChain readPemCertificateAndKey(File pemFile) throws InvalidKeySpecException, NoSuchAlgorithmException, IOException, CertificateException
+    public static X509CertificateChain readPemCertificateAndKey(File pemFile) 
+        throws InvalidKeySpecException, NoSuchAlgorithmException, IOException, CertificateException
     {
         byte[] data = FileUtil.readFile(pemFile);
         return readPemCertificateAndKey(data);
@@ -744,7 +732,7 @@ public class SSLUtil
 
     /**
      * Parses PEM encoded data that contains certificates and a key and 
-     * returns the corresponponding X509CertificateChain that can be used to
+     * returns the corresponding X509CertificateChain that can be used to
      * create an SSL socket. RSA is the only supporting encoding for the key.
      * 
      * @param data content encoded as PEM. 
@@ -754,7 +742,8 @@ public class SSLUtil
      * @throws IOException
      * @throws CertificateException
      */
-    public static X509CertificateChain readPemCertificateAndKey(byte[] data) throws InvalidKeySpecException, NoSuchAlgorithmException, IOException, CertificateException
+    public static X509CertificateChain readPemCertificateAndKey(byte[] data) 
+        throws InvalidKeySpecException, NoSuchAlgorithmException, IOException, CertificateException
     {
         // Currently only RSA keys are supported. If the need to support
         // other encoding algorithms arises in the future, then the
@@ -771,13 +760,11 @@ public class SSLUtil
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPrivateCrtKeySpec spec = parseKeySpec(key);
         PrivateKey pk = kf.generatePrivate(spec);
-        //log.debug("Private Key" + pk.toString());
 
         byte[] certificates = getCertificates(data);
         X509Certificate[] chain = readCertificateChain(certificates);
         
         return new X509CertificateChain(chain, pk);
-
     }
 
     /**
@@ -787,7 +774,8 @@ public class SSLUtil
      * @return RSAPrivateCrtKeySpec
      * @throws IOException
      */
-    public static RSAPrivateCrtKeySpec parseKeySpec(byte[] code) throws IOException
+    public static RSAPrivateCrtKeySpec parseKeySpec(byte[] code) 
+        throws IOException
     {
         DerParser parser = new DerParser(code);
         
@@ -823,7 +811,7 @@ public class SSLUtil
      * @param bytesPrivateKey
      * @return certificate chain and private key as a PEM encoded string
      */
-    public static String buildPEM(String certChainStr, byte[] bytesPrivateKey)
+    private static String buildPEM(String certChainStr, byte[] bytesPrivateKey)
     {
         if (certChainStr == null || bytesPrivateKey == null)
             throw new RuntimeException(
@@ -836,7 +824,7 @@ public class SSLUtil
             throw new RuntimeException(
                     "Cannot find END mark of certificate.");
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(X509CertificateChain.PRIVATE_KEY_BEGIN);
         sb.append(X509CertificateChain.NEW_LINE);
         sb.append(Base64.encodeLines64(bytesPrivateKey));
@@ -892,7 +880,7 @@ public class SSLUtil
      * @param subject Subject to check
      * @param date Date the certificate is verified against. If null,
      * the credentials are verified against current time.
-     * @throws CertificateExpired Subject has no associated certificate
+     * @throws CertificateException Subject has no associated certificate
      * credentials or there is a problem with the existing certificate.
      * @throws CertificateExpiredException Certificate is expired.
      * @throws CertificateNotYetValidException Certificate not valid yet.

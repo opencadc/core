@@ -107,6 +107,7 @@ import ca.nrc.cadc.net.NetUtil;
  */
 public class AuthenticationUtil
 {
+    public static final String AUTH_HEADER = "X-CADC-DelegationToken";
     
     public static final String AUTH_TYPE_HTTP = "http";
     public static final String AUTH_TYPE_X500 = "x500";

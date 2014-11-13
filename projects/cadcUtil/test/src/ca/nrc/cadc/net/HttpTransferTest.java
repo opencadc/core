@@ -71,12 +71,12 @@ package ca.nrc.cadc.net;
 
 import ca.nrc.cadc.auth.SSOCookieCredential;
 import ca.nrc.cadc.util.Log4jInit;
+import java.net.HttpURLConnection;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Test;
-import sun.net.www.protocol.http.HttpURLConnection;
 
 import javax.security.auth.Subject;
 import java.net.URL;

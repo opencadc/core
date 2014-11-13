@@ -110,11 +110,11 @@ import ca.nrc.cadc.util.Log4jInit;
 public class SSLUtilTest
 {
     private static Logger log = Logger.getLogger(SSLUtilTest.class);
-    private static String TEST_CERT_FN = "proxy.crt";
-    private static String TEST_KEY_FN = "proxy.key";
+    //private static String TEST_CERT_FN = "proxy.crt";
+    //private static String TEST_KEY_FN = "proxy.key";
     private static String TEST_PEM_FN = "proxy.pem";
-    private static File SSL_CERT;
-    private static File SSL_KEY;
+    //private static File SSL_CERT;
+    //private static File SSL_KEY;
     private static File SSL_PEM;
 
     private static final String KEY_512 =
@@ -180,8 +180,8 @@ public class SSLUtilTest
     public static void setUpBeforeClass() throws Exception
     {
         Log4jInit.setLevel("ca.nrc.cadc.auth", Level.INFO);
-        SSL_CERT = FileUtil.getFileFromResource(TEST_CERT_FN, SSLUtilTest.class);
-        SSL_KEY = FileUtil.getFileFromResource(TEST_KEY_FN, SSLUtilTest.class);
+        //SSL_CERT = FileUtil.getFileFromResource(TEST_CERT_FN, SSLUtilTest.class);
+        //SSL_KEY = FileUtil.getFileFromResource(TEST_KEY_FN, SSLUtilTest.class);
         SSL_PEM = FileUtil.getFileFromResource(TEST_PEM_FN, SSLUtilTest.class);
     }
 
@@ -209,6 +209,7 @@ public class SSLUtilTest
     {
     }
 
+    /*
     @Test
     public void testReadCert() throws Exception
     {
@@ -223,6 +224,7 @@ public class SSLUtilTest
             Assert.fail("unexpected exception: " + t);
         }
     }
+    */
     
     @Test
     public void testReadPem() throws Exception
@@ -231,39 +233,6 @@ public class SSLUtilTest
         {
             X509CertificateChain chain = SSLUtil.readPemCertificateAndKey(SSL_PEM);
             Assert.assertNotNull("Null chain", chain);
-        }
-        catch (Throwable t)
-        {
-            t.printStackTrace();
-            Assert.fail("unexpected exception: " + t);
-        }
-    }
-
-    //@Test
-    public void testGetKMF() throws Exception
-    {
-        try
-        {
-            KeyStore ks = SSLUtil.getKeyStore(SSL_CERT, SSL_KEY);
-            KeyManagerFactory kmf = SSLUtil.getKeyManagerFactory(ks);
-        }
-        catch (Throwable t)
-        {
-            t.printStackTrace();
-            Assert.fail("unexpected exception: " + t);
-        }
-    }
-
-    //@Test
-    public void testGetContext() throws Exception
-    {
-        try
-        {
-            KeyStore ks = SSLUtil.getKeyStore(SSL_CERT, SSL_KEY);
-            KeyStore ts = null;
-            KeyManagerFactory kmf = SSLUtil.getKeyManagerFactory(ks);
-            TrustManagerFactory tmf = SSLUtil.getTrustManagerFactory(ts);
-            SSLContext ctx = SSLUtil.getContext(kmf, tmf, ks);
         }
         catch (Throwable t)
         {
@@ -301,7 +270,7 @@ public class SSLUtilTest
         {
             SocketFactory sf;
 
-            sf = SSLUtil.getSocketFactory(SSL_CERT, SSL_KEY);
+            sf = SSLUtil.getSocketFactory(SSL_PEM);
             Assert.assertNotNull("SSLSocketFactory from cert/key file", sf);
         }
         catch (Throwable t)
@@ -316,7 +285,7 @@ public class SSLUtilTest
     {
         try
         {
-            SSLUtil.initSSL(SSL_CERT, SSL_KEY);
+            SSLUtil.initSSL(SSL_PEM);
         }
         catch (Throwable t)
         {
@@ -329,7 +298,7 @@ public class SSLUtilTest
     {
         HttpURLConnection.setFollowRedirects(false);
 
-        SSLSocketFactory sf = SSLUtil.getSocketFactory(SSL_CERT, SSL_KEY);
+        SSLSocketFactory sf = SSLUtil.getSocketFactory(SSL_PEM);
         URLConnection con = url.openConnection();
 
         log.debug("URLConnection type: " + con.getClass().getName());
@@ -471,7 +440,7 @@ public class SSLUtilTest
         }
         Assert.assertTrue("CertificateException expected", thrown);
         
-        subject = SSLUtil.createSubject(SSL_CERT, SSL_KEY);
+        subject = SSLUtil.createSubject(SSL_PEM);
         
         // subject with valid credentials
         SSLUtil.validateSubject(subject, null);

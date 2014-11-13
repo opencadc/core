@@ -62,10 +62,7 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
     private X509CertificateChain chain;
     private DelegationToken token;
 
-    /**
-     * Hidden no-arg constructor.
-     */
-    ServletPrincipalExtractor()
+    private ServletPrincipalExtractor()
     {
         this.request = null;
     }
@@ -84,8 +81,26 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
             chain = new X509CertificateChain(Arrays.asList(ca));
 
         // add user if they have a valid delegation token
-        // TODO: we could use any HTTP header to transmit this since it is not
-        //       intended for browser use, e.g. X-Auth-Token in Openstack
+        String tokenValue = request.getHeader(AuthenticationUtil.AUTH_HEADER);
+        if ( StringUtil.hasText(tokenValue) )
+        {
+            try
+            {
+                this.token = DelegationToken.parse(tokenValue, request.getRequestURI());
+            }
+            catch (InvalidDelegationTokenException ex) 
+            {
+                log.debug("invalid DelegationToken: " + tokenValue, ex);
+                throw new AccessControlException("invalid delegation token");
+            }
+            catch(RuntimeException ex)
+            {
+                log.debug("invalid DelegationToken: " + tokenValue, ex);
+                throw new AccessControlException("invalid delegation token");
+            }
+            finally { }
+        }
+        /*
         Cookie[] cookies = request.getCookies();
         if (cookies != null)
         {
@@ -99,13 +114,19 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
                     }
                     catch (InvalidDelegationTokenException ex) 
                     {
-                        log.debug("invalid DelegationToken: " + cookie.getValue());
+                        log.debug("invalid DelegationToken: " + cookie.getValue(), ex);
+                        throw new AccessControlException("invalid delegation token");
+                    }
+                    catch(RuntimeException ex)
+                    {
+                        log.debug("invalid DelegationToken: " + cookie.getValue(), ex);
                         throw new AccessControlException("invalid delegation token");
                     }
                     finally { }
                 }
             }
         }
+        */
     }
 
     /**
@@ -136,6 +157,8 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
     
     /**
      * Add known principals.
+     * 
+     * @param principals 
      */
     protected void addPrincipals(Set<Principal> principals)
     {
@@ -146,6 +169,8 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
 
     /**
      * Add the cookie principal, if it exists.
+     * 
+     * @param principals 
      */
     protected void addCookiePrincipal(Set<Principal> principals)
     {
@@ -166,6 +191,8 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
 
     /**
      * Add the HTTP Principal, if it exists.
+     * 
+     * @param principals 
      */
     protected void addHTTPPrincipal(Set<Principal> principals)
     {
@@ -180,6 +207,8 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
 
     /**
      * Add the X500 Principal, if it exists.
+     * 
+     * @param principals 
      */
     protected void addX500Principal(Set<Principal> principals)
     {

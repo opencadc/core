@@ -224,14 +224,12 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier
         catch (IOException e)
         {
             String msg = "Could not read keys";
-            log.error(msg);
             throw new RuntimeException(msg, e);
         }
         
         if (privKey == null)
         {
             String msg = "No valid private key found";
-            log.error(msg);
             throw new IllegalStateException(msg);
         }       
     }
