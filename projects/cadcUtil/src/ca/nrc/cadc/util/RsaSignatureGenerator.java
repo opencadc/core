@@ -131,7 +131,6 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier
     public static final String PRIV_KEY_START = "-----BEGIN PRIVATE KEY-----";
     public static final String PRIV_KEY_END = "-----END PRIVATE KEY-----";
 
-    
     /**
      * Simple constructor
      */
@@ -225,14 +224,12 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier
         catch (IOException e)
         {
             String msg = "Could not read keys";
-            log.error(msg);
             throw new RuntimeException(msg, e);
         }
         
         if (privKey == null)
         {
             String msg = "No valid private key found";
-            log.error(msg);
             throw new IllegalStateException(msg);
         }       
     }
@@ -317,7 +314,8 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier
     }
     
     
-    protected static void genKeyPair(String directory) throws FileNotFoundException
+    public static void genKeyPair(String directory) 
+        throws FileNotFoundException
     {      
         // generate the certs
         KeyPairGenerator kpg;

@@ -33,8 +33,6 @@
  */
 package ca.nrc.cadc.auth;
 
-import ca.nrc.cadc.util.ArrayUtil;
-import ca.nrc.cadc.util.StringUtil;
 import javax.servlet.http.Cookie;
 
 /**
@@ -43,7 +41,6 @@ import javax.servlet.http.Cookie;
 public class SSOCookieManager
 {
     public final static String DEFAULT_SSO_COOKIE_NAME = "CADC_SSO";
-    public final static String DELEGATION_COOKIE_NAME = "CADC_DELEG";
 
     public SSOCookieManager() { }
 
@@ -73,10 +70,6 @@ public class SSOCookieManager
             //TODO this manager needs to be changed to produce a cookie 
             // credentials with a proper name so we can distinguish
             // amongst different types of cookies...
-            if (cookie.getName().equalsIgnoreCase(DELEGATION_COOKIE_NAME))
-            {
-                sessionIDBuilder.append(DELEGATION_COOKIE_NAME + "-");
-            }
             sessionIDBuilder.append(value);
 //            if (value.startsWith("sessionID="))
 //            {

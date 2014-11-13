@@ -175,6 +175,7 @@ public class RsaSignatureVerifier
                 }
             }
             
+            log.debug("read pub keys: " + keysFile);
             BufferedReader br = new BufferedReader(new 
                     FileReader(keysFile));
             try
@@ -230,14 +231,12 @@ public class RsaSignatureVerifier
         catch (IOException e)
         {
             String msg = "Could not read keys";
-            log.error(msg);
             throw new RuntimeException(msg, e);
         }
         
-        if ( !privateKeyExpected && (pubKeys.size() == 0))
+        if ( !privateKeyExpected && pubKeys.isEmpty() )
         {
             String msg = "No valid public keys found";
-            log.error(msg);
             throw new IllegalStateException(msg);
         }       
     }

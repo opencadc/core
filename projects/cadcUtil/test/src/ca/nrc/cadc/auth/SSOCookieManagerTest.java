@@ -73,20 +73,4 @@ public class SSOCookieManagerTest
 
         assertEquals("SessionId should be AAABBB", "AAABBB", cp.getSessionId());
     }
-    
-    @Test
-    public void parseDelegCookieValue() throws Exception
-    {
-        HttpPrincipal user = new HttpPrincipal("auser");
-        URI scope = new URI("vos://cadc.nrc.ca~vospace/myspace");
-        DelegationToken dt = new DelegationToken(user, 10, scope, new Date());
-        Cookie ck = new Cookie(SSOCookieManager.DELEGATION_COOKIE_NAME,
-                               dt.format(false));
-
-        SSOCookieManager cm = new SSOCookieManager();
-        
-        CookiePrincipal cp = cm.createPrincipal(ck);
-
-        assertEquals("SessionId missmatch", dt.format(false), cp.getSessionId());
-    }
 }
