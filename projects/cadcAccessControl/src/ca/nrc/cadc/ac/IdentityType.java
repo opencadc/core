@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2009.                            (c) 2009.
+ *  (c) 2014.                            (c) 2014.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -66,97 +66,49 @@
  *
  ************************************************************************
  */
-
-package ca.nrc.cadc.auth;
-
-import java.net.Socket;
-import java.security.Principal;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
-import javax.net.ssl.X509KeyManager;
-
-import org.apache.log4j.Logger;
+package ca.nrc.cadc.ac;
 
 /**
- * Simple X509KeyManager implementation that delegates to the default X509KeyManager
- * where possible but uses a pre-set alias to pick the certificate and private
- * key to use.
+ *
+ * @author jburke
  */
-public class BasicX509KeyManager implements X509KeyManager
+public enum IdentityType
 {
-    private static Logger log = Logger.getLogger(BasicX509KeyManager.class);
-
-    private X509KeyManager keyManager;
-    private String alias;
+    X500("X500"),
+    OPENID("OpenID"),
+    USERNAME("HTTP"),
+    UID("UID");
     
-    /**
-     * Constructor.
-     *
-     * @param km underlying KeyManager this class delegates to
-     * @param alias the alias of the X509 certificate we always use
-     */
-    public BasicX509KeyManager(X509KeyManager km, String alias)
+    private final String value;
+
+    private IdentityType(String value)
     {
-        log.debug("BasicX509KeyManager");
-        this.keyManager = km;
-        this.alias = alias;
+        this.value = value;
     }
 
-    public String chooseClientAlias(String[] strings, Principal[] prncpls, Socket socket)
+    public static IdentityType toValue(String s)
     {
-        String ret = keyManager.chooseClientAlias(strings, prncpls, socket);
-        log.debug("chooseClientAlias: looking for alias by delegating... found " + ret);
-        // note sure if the above should work or not... probably not
-        if (ret == null)
-            ret = this.alias;
-        log.debug("chooseClientAlias: " + ret);
-        return ret;
+        for (IdentityType type : values())
+            if (type.value.equals(s))
+                return type;
+        throw new IllegalArgumentException("invalid value: " + s);
     }
 
-    public String chooseServerAlias(String string, Principal[] prncpls, Socket socket)
-    {
-        String ret =  keyManager.chooseServerAlias(string, prncpls, socket);
-        log.debug("chooseServerAlias: " + ret);
-        return ret;
+    public String getValue()
+    { 
+        return value;
     }
 
-    public X509Certificate[] getCertificateChain(String alias)
+    public int checksum()
     {
-        log.debug("getCertificateChain: " + alias);
-        X509Certificate[] ret = keyManager.getCertificateChain(alias);
-        if (ret != null)
-        {
-            log.debug("looking for certificate chain by delegating... found " + ret.length);
-            for (int i=0; i<ret.length; i++)
-                log.debug("getCertificateChain: " + ret[i].getSubjectDN());
-            return ret;
-        }
-        log.debug("looking for certificate chain by delegating... not found");
-        return null;
+        return value.hashCode();
     }
-
-    public String[] getClientAliases(String keyType, Principal[] prncpls)
+    
+    @Override
+    public String toString()
     {
-        log.debug("getClientAliases: " + keyType);
-        String[] ret = keyManager.getClientAliases(keyType, prncpls);
-        log.debug("getClientAliases found: " + ret.length);
-        return ret;
+        return this.getClass().getSimpleName() + "[" + value + "]";
     }
-
-    public PrivateKey getPrivateKey(String alias)
-    {
-        PrivateKey pk = keyManager.getPrivateKey(alias);
-        log.debug("getPrivateKey for " + alias + ": " + (pk != null)); // true or false
-        return pk;
-    }
-
-    public String[] getServerAliases(String keyType, Principal[] prncpls)
-    {
-        log.debug("getServerAliases: " + keyType);
-        String[] ret = keyManager.getServerAliases(keyType, prncpls);
-        log.debug("getServerAliases found: " + ret.length);
-        return ret;
-    }
-       
-
+    
 }
+

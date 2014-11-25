@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2009.                            (c) 2009.
+ *  (c) 2014.                            (c) 2014.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -66,97 +66,99 @@
  *
  ************************************************************************
  */
+package ca.nrc.cadc.ac;
 
-package ca.nrc.cadc.auth;
-
-import java.net.Socket;
-import java.security.Principal;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
-import javax.net.ssl.X509KeyManager;
-
+import ca.nrc.cadc.util.Log4jInit;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import static org.junit.Assert.*;
 
 /**
- * Simple X509KeyManager implementation that delegates to the default X509KeyManager
- * where possible but uses a pre-set alias to pick the certificate and private
- * key to use.
+ *
+ * @author jburke
  */
-public class BasicX509KeyManager implements X509KeyManager
+public class IdentityTypeTest
 {
-    private static Logger log = Logger.getLogger(BasicX509KeyManager.class);
-
-    private X509KeyManager keyManager;
-    private String alias;
+    private final static Logger log = Logger.getLogger(IdentityTypeTest.class);
     
+    @BeforeClass
+    public static void setUpClass()
+    {
+        Log4jInit.setLevel("ca.nrc.cadc.ac", Level.INFO);
+    }
     /**
-     * Constructor.
-     *
-     * @param km underlying KeyManager this class delegates to
-     * @param alias the alias of the X509 certificate we always use
+     * Test of values method, of class IdentityType.
      */
-    public BasicX509KeyManager(X509KeyManager km, String alias)
+    @Test
+    public void testValues()
     {
-        log.debug("BasicX509KeyManager");
-        this.keyManager = km;
-        this.alias = alias;
-    }
-
-    public String chooseClientAlias(String[] strings, Principal[] prncpls, Socket socket)
-    {
-        String ret = keyManager.chooseClientAlias(strings, prncpls, socket);
-        log.debug("chooseClientAlias: looking for alias by delegating... found " + ret);
-        // note sure if the above should work or not... probably not
-        if (ret == null)
-            ret = this.alias;
-        log.debug("chooseClientAlias: " + ret);
-        return ret;
-    }
-
-    public String chooseServerAlias(String string, Principal[] prncpls, Socket socket)
-    {
-        String ret =  keyManager.chooseServerAlias(string, prncpls, socket);
-        log.debug("chooseServerAlias: " + ret);
-        return ret;
-    }
-
-    public X509Certificate[] getCertificateChain(String alias)
-    {
-        log.debug("getCertificateChain: " + alias);
-        X509Certificate[] ret = keyManager.getCertificateChain(alias);
-        if (ret != null)
+        IdentityType[] expResult = new IdentityType[]
         {
-            log.debug("looking for certificate chain by delegating... found " + ret.length);
-            for (int i=0; i<ret.length; i++)
-                log.debug("getCertificateChain: " + ret[i].getSubjectDN());
-            return ret;
+            IdentityType.X500, IdentityType.OPENID, 
+            IdentityType.USERNAME, IdentityType.UID
+        };
+        IdentityType[] result = IdentityType.values();
+        assertArrayEquals(expResult, result);
+    }
+
+    /**
+     * Test of valueOf method, of class IdentityType.
+     */
+    @Test
+    public void testValueOf()
+    {
+        assertEquals(IdentityType.X500, IdentityType.valueOf("X500"));
+        assertEquals(IdentityType.OPENID, IdentityType.valueOf("OPENID"));
+        assertEquals(IdentityType.USERNAME, IdentityType.valueOf("USERNAME"));
+        assertEquals(IdentityType.UID, IdentityType.valueOf("UID"));
+    }
+
+    /**
+     * Test of toValue method, of class IdentityType.
+     */
+    @Test
+    public void testToValue()
+    {
+        try
+        {
+            IdentityType.toValue("foo");
+            fail("invalid value should throw IllegalArgumentException");
         }
-        log.debug("looking for certificate chain by delegating... not found");
-        return null;
+        catch (IllegalArgumentException ignore) {}
+        
+        assertEquals(IdentityType.X500, IdentityType.toValue("X500"));
+        assertEquals(IdentityType.OPENID, IdentityType.toValue("OpenID"));
+        assertEquals(IdentityType.USERNAME, IdentityType.toValue("HTTP"));
+        assertEquals(IdentityType.UID, IdentityType.toValue("UID"));
     }
 
-    public String[] getClientAliases(String keyType, Principal[] prncpls)
+    /**
+     * Test of getValue method, of class IdentityType.
+     */
+    @Test
+    public void testGetValue()
     {
-        log.debug("getClientAliases: " + keyType);
-        String[] ret = keyManager.getClientAliases(keyType, prncpls);
-        log.debug("getClientAliases found: " + ret.length);
-        return ret;
+        assertEquals("X500", IdentityType.X500.getValue());
+        assertEquals("OpenID", IdentityType.OPENID.getValue());
+        assertEquals("HTTP", IdentityType.USERNAME.getValue());
+        assertEquals("UID", IdentityType.UID.getValue());
     }
 
-    public PrivateKey getPrivateKey(String alias)
+    /**
+     * Test of checksum method, of class IdentityType.
+     */
+    @Test
+    public void testChecksum()
     {
-        PrivateKey pk = keyManager.getPrivateKey(alias);
-        log.debug("getPrivateKey for " + alias + ": " + (pk != null)); // true or false
-        return pk;
+        assertEquals("X500".hashCode(), IdentityType.X500.checksum());
+        assertEquals("OpenID".hashCode(), IdentityType.OPENID.checksum());
+        assertEquals("HTTP".hashCode(), IdentityType.USERNAME.checksum());
+        assertEquals("UID".hashCode(), IdentityType.UID.checksum());
     }
-
-    public String[] getServerAliases(String keyType, Principal[] prncpls)
-    {
-        log.debug("getServerAliases: " + keyType);
-        String[] ret = keyManager.getServerAliases(keyType, prncpls);
-        log.debug("getServerAliases found: " + ret.length);
-        return ret;
-    }
-       
-
+    
 }
