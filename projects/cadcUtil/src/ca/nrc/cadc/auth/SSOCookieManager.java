@@ -47,41 +47,6 @@ public class SSOCookieManager
     public CookiePrincipal createPrincipal(final Cookie cookie)
     {
         String value = cookie.getValue();
-        final String[] items = value.split("\\|");
-        final StringBuilder sessionIDBuilder = new StringBuilder();
-
-        if (items.length == 3)
-        {
-            // olds style cookies. All we are interested in is the token
-            // which has become the session id.
-            // this if case exists for backwards compatibility
-            // and it's to be removed when no old style cookies exist.
-            // adriand - 13/03/2013
-            for (final String item : items)
-            {
-                if (item.startsWith("token=")) 
-                {
-                    sessionIDBuilder.append(item.split("=")[1]);
-                }
-            }
-        }
-        else
-        {
-            //TODO this manager needs to be changed to produce a cookie 
-            // credentials with a proper name so we can distinguish
-            // amongst different types of cookies...
-            sessionIDBuilder.append(value);
-//            if (value.startsWith("sessionID="))
-//            {
-//                sessionIDBuilder.append(value.split("=")[1]);
-//            }
-//            else
-//            {
-//                throw new IllegalArgumentException(
-//                        "Cannot parse SSO cookie with value:" + value);
-//            }
-        }
-        
-        return new CookiePrincipal(sessionIDBuilder.toString());
+        return new CookiePrincipal(value);
     }
 }
