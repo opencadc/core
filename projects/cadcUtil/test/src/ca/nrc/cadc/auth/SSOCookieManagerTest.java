@@ -50,18 +50,6 @@ public class SSOCookieManagerTest
     private SSOCookieManager testSubject;
 
     @Test
-    public void parseOldCookieValue() throws Exception
-    {
-        Cookie ck = new Cookie(SSOCookieManager.DEFAULT_SSO_COOKIE_NAME, "username=TESTUSER|sessionID=88|token=AAABBB");
-        
-        SSOCookieManager cm = new SSOCookieManager();
-        
-        CookiePrincipal cp = cm.createPrincipal(ck);
-
-        assertEquals("SessionId should be AAABBB", "AAABBB", cp.getSessionId());
-    }
-
-    @Test
     public void parseCookieValue() throws Exception
     {
         Cookie ck = new Cookie(SSOCookieManager.DEFAULT_SSO_COOKIE_NAME,
