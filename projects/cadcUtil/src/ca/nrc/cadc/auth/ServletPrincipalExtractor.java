@@ -180,7 +180,8 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
         
         for (Cookie cookie : cookies)
         {
-            if (SSOCookieManager.DEFAULT_SSO_COOKIE_NAME.equals(cookie.getName()))
+            if (SSOCookieManager.DEFAULT_SSO_COOKIE_NAME.equals(cookie.getName())
+                    && StringUtil.hasText(cookie.getValue()))
             {
                 SSOCookieManager ssoCookieManager = new SSOCookieManager();
                 CookiePrincipal cp = ssoCookieManager.createPrincipal(cookie);
