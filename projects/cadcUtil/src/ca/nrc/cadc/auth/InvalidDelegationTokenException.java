@@ -2,7 +2,7 @@
  ************************************************************************
  ****  C A N A D I A N   A S T R O N O M Y   D A T A   C E N T R E  *****
  *
- * (c) 2012.                         (c) 2012.
+ * (c) 2014.                            (c) 2014.
  * National Research Council            Conseil national de recherches
  * Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
  * All rights reserved                  Tous droits reserves
@@ -23,42 +23,26 @@
  *                                      sation du logiciel.
  *
  *
- * @author jenkinsd
- * 4/17/12 - 11:21 AM
- *
- *
- *
+ * @author adriand
+ * 
+ * @version $Revision: $
+ * 
+ * 
  ****  C A N A D I A N   A S T R O N O M Y   D A T A   C E N T R E  *****
  ************************************************************************
  */
+
 package ca.nrc.cadc.auth;
 
-
-
-import static org.junit.Assert.assertEquals;
-
-import java.net.URI;
-import java.util.Date;
-
-import javax.servlet.http.Cookie;
-
-import org.junit.Test;
-
-
-public class SSOCookieManagerTest
+public class InvalidDelegationTokenException extends Exception
 {
-    private SSOCookieManager testSubject;
-
-    @Test
-    public void parseCookieValue() throws Exception
+    public InvalidDelegationTokenException(final String msg)
     {
-        Cookie ck = new Cookie(SSOCookieManager.DEFAULT_SSO_COOKIE_NAME,
-                               "AAABBB");
-
-        SSOCookieManager cm = new SSOCookieManager();
-        
-        CookiePrincipal cp = cm.createPrincipal(ck);
-
-        assertEquals("SessionId should be AAABBB", "AAABBB", cp.getSessionId());
+        super(msg);
+    }
+    
+    public InvalidDelegationTokenException(final String msg, Throwable cause)
+    {
+        super(msg, cause);
     }
 }

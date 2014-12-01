@@ -93,6 +93,7 @@ import org.apache.log4j.Logger;
 import ca.nrc.cadc.net.event.TransferEvent;
 import ca.nrc.cadc.util.FileMetadata;
 import ca.nrc.cadc.util.StringUtil;
+import java.io.OutputStreamWriter;
 
 /**
  * Simple task to encapsulate a single download (GET). This class supports http and https
@@ -664,18 +665,24 @@ public class HttpDownload extends HttpTransfer
 
         String location = conn.getHeaderField("Location");
         if ((code == HttpURLConnection.HTTP_SEE_OTHER
-            || code == HttpURLConnection.HTTP_MOVED_TEMP) 
+            || code == HttpURLConnection.HTTP_MOVED_TEMP
+            || code == HttpURLConnection.HTTP_MOVED_PERM) 
             && location != null)
         {
             this.redirectURL = new URL(location);
         }
-        else if (code != HttpURLConnection.HTTP_OK)
+        else if (code > 303) // 300 has body to be read, 301-303 handled above
         {
             String msg = "(" + code + ") " + conn.getResponseMessage();
-            String body = NetUtil.getErrorBody(conn);
-            if (StringUtil.hasText(body))
+            if (destStream != null)
+                NetUtil.getErrorBody(conn, destStream);
+            else
             {
-                msg = msg + ": " + body;
+                String body = NetUtil.getErrorBody(conn);
+                if (StringUtil.hasText(body))
+                {
+                    msg = msg + ": " + body;
+                }
             }
             checkTransient(code, msg, conn);
             switch(code)

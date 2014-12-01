@@ -33,16 +33,20 @@
  */
 package ca.nrc.cadc.auth;
 
-import ca.nrc.cadc.util.ArrayUtil;
-import ca.nrc.cadc.util.StringUtil;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+
 import org.apache.log4j.Logger;
+
+import ca.nrc.cadc.util.ArrayUtil;
+import ca.nrc.cadc.util.StringUtil;
+import java.security.AccessControlException;
 
 
 /**
@@ -55,15 +59,12 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
     public static final String CERT_REQUEST_ATTRIBUTE = "javax.servlet.request.X509Certificate";
     private final HttpServletRequest request;
 
-    private final X509CertificateChain chain;
+    private X509CertificateChain chain;
+    private DelegationToken token;
 
-    /**
-     * Hidden no-arg constructor.
-     */
-    ServletPrincipalExtractor()
+    private ServletPrincipalExtractor()
     {
         this.request = null;
-        this.chain = null;
     }
 
     /**
@@ -78,8 +79,54 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
             request.getAttribute(CERT_REQUEST_ATTRIBUTE);
         if (!ArrayUtil.isEmpty(ca))
             chain = new X509CertificateChain(Arrays.asList(ca));
-        else
-            chain = null;
+
+        // add user if they have a valid delegation token
+        String tokenValue = request.getHeader(AuthenticationUtil.AUTH_HEADER);
+        if ( StringUtil.hasText(tokenValue) )
+        {
+            try
+            {
+                this.token = DelegationToken.parse(tokenValue, request.getRequestURI());
+            }
+            catch (InvalidDelegationTokenException ex) 
+            {
+                log.debug("invalid DelegationToken: " + tokenValue, ex);
+                throw new AccessControlException("invalid delegation token");
+            }
+            catch(RuntimeException ex)
+            {
+                log.debug("invalid DelegationToken: " + tokenValue, ex);
+                throw new AccessControlException("invalid delegation token");
+            }
+            finally { }
+        }
+        /*
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null)
+        {
+            for (Cookie cookie : cookies)
+            {
+                if (SSOCookieManager.DELEGATION_COOKIE_NAME.equals(cookie.getName()))
+                {
+                    try
+                    {
+                        this.token = DelegationToken.parse(cookie.getValue(), request.getRequestURI());
+                    }
+                    catch (InvalidDelegationTokenException ex) 
+                    {
+                        log.debug("invalid DelegationToken: " + cookie.getValue(), ex);
+                        throw new AccessControlException("invalid delegation token");
+                    }
+                    catch(RuntimeException ex)
+                    {
+                        log.debug("invalid DelegationToken: " + cookie.getValue(), ex);
+                        throw new AccessControlException("invalid delegation token");
+                    }
+                    finally { }
+                }
+            }
+        }
+        */
     }
 
     /**
@@ -102,8 +149,16 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
         return chain;
     }
 
+    public DelegationToken getDelegationToken() 
+    {
+        return token;
+    }
+
+    
     /**
      * Add known principals.
+     * 
+     * @param principals 
      */
     protected void addPrincipals(Set<Principal> principals)
     {
@@ -114,80 +169,51 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
 
     /**
      * Add the cookie principal, if it exists.
+     * 
+     * @param principals 
      */
     protected void addCookiePrincipal(Set<Principal> principals)
     {
-        Cookie[] cookies = getRequest().getCookies();
+        Cookie[] cookies = request.getCookies();
         if (cookies == null || ArrayUtil.isEmpty(cookies))
             return;
         
         for (Cookie cookie : cookies)
         {
-            SSOCookieManager ssoCookieManager = new SSOCookieManager();
-            if (SSOCookieManager.DEFAULT_SSO_COOKIE_NAME.equals(cookie.getName()))
+            if (SSOCookieManager.DEFAULT_SSO_COOKIE_NAME.equals(cookie.getName())
+                    && StringUtil.hasText(cookie.getValue()))
             {
-                try
-                {
-                    CookiePrincipal cp = ssoCookieManager.createPrincipal(cookie);
-                    principals.add(cp);
-                    return; // only pick up one SSO cookie
-                }
-                catch(Exception oops)
-                {
-                    log.error("failed to create CookiePrincipal: " + cookie.getValue(), oops);
-                }
+                SSOCookieManager ssoCookieManager = new SSOCookieManager();
+                CookiePrincipal cp = ssoCookieManager.createPrincipal(cookie);
+                principals.add(cp);
             }
         }
     }
 
     /**
      * Add the HTTP Principal, if it exists.
+     * 
+     * @param principals 
      */
     protected void addHTTPPrincipal(Set<Principal> principals)
     {
-        final String httpUser = getRequest().getRemoteUser();
+        // add remote user from HTTP AUTH
+        final String httpUser = request.getRemoteUser();
         if (StringUtil.hasText(httpUser))
             principals.add(new HttpPrincipal(httpUser));
+        
+        if (token != null)
+            principals.add(token.getUser());
     }
 
     /**
      * Add the X500 Principal, if it exists.
+     * 
+     * @param principals 
      */
     protected void addX500Principal(Set<Principal> principals)
     {
         if (chain != null)
             principals.add(chain.getPrincipal());
-    }
-
-    
-    /**
-     * Obtain this Principal Extractor's HTTP Request.
-     *
-     * @return      HttpServletRequest instance.
-     */
-    protected HttpServletRequest getRequest()
-    {
-        return request;
-    }
-
-    /**
-     * Read in the pertinent cookie for this authentication.
-     *
-     * @return              Cookie, if present, or null if not.
-     */
-    protected Cookie getCookie()
-    {
-        final Cookie[] cookies = getRequest().getCookies();
-        if (!ArrayUtil.isEmpty(cookies))
-        {
-            for (final Cookie cookie : cookies)
-            {
-                if (SSOCookieManager.DEFAULT_SSO_COOKIE_NAME.equals(cookie.getName()))
-                {
-                    return cookie;
-                }
-            }
-        }
-        return null;
     }
 }

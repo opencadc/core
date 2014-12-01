@@ -92,4 +92,10 @@ public class AnonPrincipalExtractor implements PrincipalExtractor
         return new TreeSet<Principal>();
     }
 
+    public DelegationToken getDelegationToken() 
+    {
+        return null;
+    }
+
+    
 }

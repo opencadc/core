@@ -33,8 +33,6 @@
  */
 package ca.nrc.cadc.auth;
 
-import ca.nrc.cadc.util.ArrayUtil;
-import ca.nrc.cadc.util.StringUtil;
 import javax.servlet.http.Cookie;
 
 /**
@@ -49,38 +47,6 @@ public class SSOCookieManager
     public CookiePrincipal createPrincipal(final Cookie cookie)
     {
         String value = cookie.getValue();
-        final String[] items = value.split("\\|");
-        final StringBuilder sessionIDBuilder = new StringBuilder();
-
-        if (items.length == 3)
-        {
-            // olds style cookies. All we are interested in is the token
-            // which has become the session id.
-            // this if case exists for backwards compatibility
-            // and it's to be removed when no old style cookies exist.
-            // adriand - 13/03/2013
-            for (final String item : items)
-            {
-                if (item.startsWith("token=")) 
-                {
-                    sessionIDBuilder.append(item.split("=")[1]);
-                }
-            }
-        }
-        else
-        {
-            sessionIDBuilder.append(value);
-//            if (value.startsWith("sessionID="))
-//            {
-//                sessionIDBuilder.append(value.split("=")[1]);
-//            }
-//            else
-//            {
-//                throw new IllegalArgumentException(
-//                        "Cannot parse SSO cookie with value:" + value);
-//            }
-        }
-
-        return new CookiePrincipal(sessionIDBuilder.toString());
+        return new CookiePrincipal(value);
     }
 }

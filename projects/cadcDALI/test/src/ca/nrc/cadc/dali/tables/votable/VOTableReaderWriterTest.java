@@ -103,7 +103,7 @@ public class VOTableReaderWriterTest
     
     static
     {
-        Log4jInit.setLevel("ca.nrc.cadc.dali.tables", Level.INFO);
+        Log4jInit.setLevel("ca.nrc.cadc.dali.tables", Level.DEBUG);
         dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
     }
     
@@ -116,6 +116,7 @@ public class VOTableReaderWriterTest
         try
         {
             String resourceName = "VOTable resource name";
+            
 
             // Build a VOTable.
             VOTableDocument expected = new VOTableDocument();
@@ -126,8 +127,12 @@ public class VOTableReaderWriterTest
             vr.getGroups().add(getMetaGroup());
             
             vr = new VOTableResource("results");
+            VOTableInfo vi = new VOTableInfo("FOO", "bar");
+            vi.content = "useful message";
+            vr.getInfos().add(vi);
             expected.getResources().add(vr);
             vr.setName(resourceName);
+            
             VOTableTable vot = new VOTableTable();
             vr.setTable(vot);
 
@@ -155,7 +160,7 @@ public class VOTableReaderWriterTest
             log.debug("Expected:\n\n" + expected);
             log.debug("Actual:\n\n" + actual);
 
-            // writer always places thios placeholder after a table
+            // writer always places this placeholder after a table
             vr.getInfos().add(new VOTableInfo("QUERY_STATUS", "OK"));
             compareVOTable(expected, actual, null);
 
@@ -208,7 +213,8 @@ public class VOTableReaderWriterTest
             VOTableDocument actual = reader.read(xml);
             
             // the write should stick in this extra INFO element, so add to expected
-            vr.getInfos().add(new VOTableInfo("QUERY_STATUS", "OVERFLOW"));
+            VOTableInfo vi = new VOTableInfo("QUERY_STATUS", "OVERFLOW");
+            vr.getInfos().add(vi);
             compareVOTable(expected, actual, 3L);
 
             log.info("testReadWriteVOTable passed");
@@ -352,6 +358,7 @@ public class VOTableReaderWriterTest
             Assert.assertNotNull(actualInfo);
             Assert.assertEquals(expectedInfo.getName(), actualInfo.getName());
             Assert.assertEquals(expectedInfo.getValue(), actualInfo.getValue());
+            Assert.assertEquals(expectedInfo.content, actualInfo.content);
         }
     }
     public void compareGroups(List<VOTableGroup> expected, List<VOTableGroup> actual)

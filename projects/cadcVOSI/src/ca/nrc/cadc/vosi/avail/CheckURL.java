@@ -3,12 +3,12 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2009.                            (c) 2009.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*
+*                                       
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*
+*                                       
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*
+*                                       
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*
+*                                       
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*
+*                                       
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -62,130 +62,96 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
+*  $Revision: 4 $
 *
 ************************************************************************
 */
 
-package ca.nrc.cadc.net;
+package ca.nrc.cadc.vosi.avail;
 
-import ca.nrc.cadc.auth.SSOCookieCredential;
-import ca.nrc.cadc.util.Log4jInit;
-import java.net.HttpURLConnection;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.easymock.EasyMock;
-import org.junit.Assert;
-import org.junit.Test;
-
-import javax.security.auth.Subject;
+import ca.nrc.cadc.net.HttpDownload;
+import ca.nrc.cadc.net.InputStreamWrapper;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
-import java.security.PrivilegedAction;
-
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author pdowler
  */
-public class HttpTransferTest 
+public class CheckURL  implements CheckResource
 {
-    private static Logger log = Logger.getLogger(HttpTransferTest.class);
+    private static Logger log = Logger.getLogger(CheckURL.class);
 
-    static
+    private String name;
+    private URL url;
+    private int expectedResponseCode;
+    private String expectedContentType;
+    
+    public CheckURL(String name, URL url, int expectedResponseCode, String expectedContentType)
     {
-        Log4jInit.setLevel("ca.nrc.cadc.net", Level.INFO);
+        this.name = name;
+        this.url = url;
+        this.expectedResponseCode = expectedResponseCode;
+        this.expectedContentType = expectedContentType;
+    }
+    
+    @Override
+    public String toString()
+    {
+        return "CheckURL[" + name + "," + url + "]";
     }
 
-    @Test
-    public void testBufferSize() throws Exception
+    public void check() 
+        throws CheckException 
     {
-        log.debug("TEST: testBufferSize");
+        HttpDownload get = null;
         try
         {
-            String cur = System.getProperty(HttpTransfer.class.getName() + ".bufferSize");
-            Assert.assertNull("test setup", cur);
-
-            HttpTransfer trans = new TestDummy();
-            Assert.assertEquals("default buffer size", HttpTransfer.DEFAULT_BUFFER_SIZE, trans.getBufferSize());
-
-            trans.setBufferSize(12345);
-            Assert.assertEquals("set buffer size", 12345, trans.getBufferSize());
-
-            System.setProperty(HttpTransfer.class.getName() + ".bufferSize", "16384");
-            trans = new TestDummy();
-            Assert.assertEquals("system prop buffer size (bytes)", 16384, trans.getBufferSize());
-
-            System.setProperty(HttpTransfer.class.getName() + ".bufferSize", "32k");
-            trans = new TestDummy();
-            Assert.assertEquals("system prop buffer size KB", 32*1024, trans.getBufferSize());
-
-            System.setProperty(HttpTransfer.class.getName() + ".bufferSize", "2m");
-            trans = new TestDummy();
-            Assert.assertEquals("system prop buffer size MB", 2*1024*1024, trans.getBufferSize());
-
-            // bad syntax -> default
-            System.setProperty(HttpTransfer.class.getName() + ".bufferSize", "123d");
-            trans = new TestDummy();
-            Assert.assertEquals("system prop buffer size (invalid)", HttpTransfer.DEFAULT_BUFFER_SIZE, trans.getBufferSize());
-
-        }
-        catch (Exception unexpected)
-        {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
-    }
-
-    @Test
-    public void setRequestSSOCookie() throws Exception
-    {
-        final HttpTransfer testSubject = new HttpTransfer(true)
-        {
-            @Override
-            public void run()
+            InputStreamWrapper dump = new InputStreamWrapper() 
             {
-
-            }
-        };
-
-        final Subject subject = new Subject();
-        subject.getPublicCredentials().add(
-                new SSOCookieCredential("CADC_SSO=VALUE_1", "en.host.com"));
-        subject.getPublicCredentials().add(
-                new SSOCookieCredential("CADC_SSO=VALUE_2", "fr.host.com"));
-        final URL testURL =
-                new URL("http://www.fr.host.com/my/path/to/file.txt");
-        final HttpURLConnection mockConnection =
-                EasyMock.createMock(HttpURLConnection.class);
-
-        EasyMock.expect(mockConnection.getURL()).andReturn(testURL).atLeastOnce();
-
-        mockConnection.setRequestProperty("Cookie", "CADC_SSO=VALUE_2");
-        EasyMock.expectLastCall().once();
-
-        EasyMock.replay(mockConnection);
-
-        Subject.doAs(subject, new PrivilegedAction<Object>()
+                public void read(InputStream in) 
+                    throws IOException 
+                {
+                    byte[] buf = new byte[8192];
+                    int num;
+                    while ( (num = in.read(buf)) != -1 )
+                        log.debug("read: " + num);
+                }
+            };
+            get = new HttpDownload(url, dump);
+            get.setHeadOnly(true);
+            get.setFollowRedirects(true);
+            get.run();
+        }
+        catch(Exception ex)
         {
-            @Override
-            public Object run()
-            {
-                testSubject.setRequestSSOCookie(mockConnection);
-                return null;
-            }
-        });
-
-        EasyMock.verify(mockConnection);
-    }
-
-    private class TestDummy extends HttpTransfer
-    {
-        TestDummy() { super(true); }
-        
-        public void run()
+            log.debug("FAIL", ex);
+            throw new CheckException(name + " " + url.toExternalForm() + " test failed: " + ex);
+        }
+            
+        if (get.getThrowable() != null)
         {
-            throw new UnsupportedOperationException();
+            log.debug("FAIL", get.getThrowable());
+            throw new CheckException(name + " " + url.toExternalForm() + " test failed: " + get.getThrowable());
         }
         
+        int responseCode = get.getResponseCode();
+        String contentType = get.getContentType();
+        int i = contentType.indexOf(';');
+        if (i > 0)
+            contentType = contentType.substring(0, i);
+        if ( responseCode != expectedResponseCode
+                || (expectedContentType != null && !expectedContentType.equals(contentType)) )
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.append(name).append(" ").append(url.toExternalForm()).append(" failed:");
+            sb.append(" found ").append(contentType).append(" (").append(responseCode).append(")");
+            sb.append(" expected ").append(expectedContentType).append(" (").append(expectedResponseCode).append(")");
+            throw new CheckException(sb.toString());
+        }
     }
 }

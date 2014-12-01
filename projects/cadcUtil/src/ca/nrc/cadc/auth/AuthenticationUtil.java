@@ -69,9 +69,6 @@
 
 package ca.nrc.cadc.auth;
 
-import javax.security.auth.Subject;
-import javax.security.auth.x500.X500Principal;
-import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Constructor;
 import java.security.AccessControlContext;
 import java.security.AccessController;
@@ -82,7 +79,19 @@ import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.text.DateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.security.auth.Subject;
+import javax.security.auth.x500.X500Principal;
+import javax.servlet.http.HttpServletRequest;
 
 import org.apache.log4j.Logger;
 
@@ -98,6 +107,11 @@ import ca.nrc.cadc.net.NetUtil;
  */
 public class AuthenticationUtil
 {
+    public static final String AUTH_HEADER = "X-CADC-DelegationToken";
+    
+    public static final String AUTH_TYPE_HTTP = "http";
+    public static final String AUTH_TYPE_X500 = "x500";
+    public static final String AUTH_TYPE_CADC = "cadc";
 
     // Mandatory support list of RDN descriptors according to RFC 4512.
     private static final String[] ORDERED_RDN_KEYS = new String[]
@@ -184,9 +198,11 @@ public class AuthenticationUtil
 
         X509CertificateChain chain = principalExtractor.getCertificateChain();
         if (chain != null)
-        {
             publicCred.add(chain);
-        }
+
+        DelegationToken token = principalExtractor.getDelegationToken();
+        if (token != null)
+            publicCred.add(token);
 
         Subject subject = new Subject(false, principalExtractor.getPrincipals(),
                                       publicCred, privateCred);
@@ -251,96 +267,6 @@ public class AuthenticationUtil
         return subject; // this method for client apps only: no augment
     }
 
-    /**
-     * Create a complete Subject with principal(s) and credentials (X509Certificate).
-     * This method tries to detect the use of a proxy certificate and add the Principal
-     * representing the real identity of the user by comparing the subject and issuer fields
-     * of the certificate and using the issuer principal when the certificate is self-signed.
-     * If the user has connected anonymously, the returned Subject will have no
-     * principals and no credentials, but should be safe to use with Subject.doAs(...).
-     * </p><p>
-     * This method will also try to load an implementation of the Authenticator interface
-     * and use it to process the Subject before return. By default, it will try to load a
-     * class named <code>ca.nrc.cadc.auth.AuthenticatorImpl</code>. Applications may override
-     * this default class name by setting the <em>ca.nrc.cadc.auth.Authenticator</em> system
-     * property to the class name of their implementation. Note that the default implementation
-     * class does not exist in this library  so implementors can provide that exact class and
-     * then not need the system property.
-     * </p><p>
-     * To get the collection of certificates in the servlet environment:
-     * <pre>
-     *   X509Certificate[] ca =
-     *       (X509Certificate[]) request.getAttribute("javax.servlet.request.X509Certificate");
-     *   Collection<X509Certificate> certs = null;
-     *   if (ca != null && ca.length > 0)
-     *       certs = Arrays.asList(ca);
-     * </pre>
-     * In Restlet:
-     * <pre>
-     *   Request request = getRequest();
-     *   Map<String, Object> requestAttributes = request.getAttributes();
-     *   Collection<X509Certificate> certs =
-     *       (Collection<X509Certificate>) requestAttributes.get("org.restlet.https.clientCertificates");
-     * </pre>
-     *
-     * @param remoteUser the remote user id (e.g. from http authentication)
-     * @param certs      certificates extracted from the calling context/session
-     * @return a Subject
-     * @deprecated Use #getSubject(X509CertificateChain, PrincipalExtractor)
-     */
-    public static Subject getSubject(final String remoteUser,
-                                     final Collection<X509Certificate> certs)
-    {
-        final X509CertificateChain chain;
-        if ((certs != null) && !certs.isEmpty())
-        {
-            chain = new X509CertificateChain(certs);
-        }
-        else
-        {
-            chain = null;
-        }
-
-        return getSubject(remoteUser, chain);
-    }
-
-    /**
-     * Create a subject from the specified user name and certficate chain.
-     *
-     * @param remoteUser The HTTP Authenticated user, if any.
-     * @param chain      The X509Certificate chain of certificates,
-     *                   if any.
-     * @return An augmented Subject.
-     * @deprecated Use #getSubject(X509CertificateChain, PrincipalExtractor)
-     */
-    public static Subject getSubject(final String remoteUser,
-                                     final X509CertificateChain chain)
-    {
-        Set<Principal> principals = new HashSet<Principal>();
-        Set<Object> publicCred = new HashSet<Object>();
-        Set privateCred = new HashSet();
-
-        // basic authentication
-        if (remoteUser != null)
-        {
-            // user logged in. Create corresponding Principal
-            principals.add(new HttpPrincipal(remoteUser));
-        }
-
-        // SSL authentication
-        if (chain != null)
-        {
-            principals.add(chain.getX500Principal());
-            publicCred.add(chain);
-            // note: we just leave the PrivateKey in the chain (eg public) rather
-            // than extracting and putting it into the privateCred set... TBD
-        }
-
-        Subject subject = new Subject(false, principals, publicCred,
-                                      privateCred);
-
-        return augmentSubject(subject);
-    }
 
     // Encode a Subject in the format:
     // Principal Class name[Principal name]
@@ -738,5 +664,48 @@ public class AuthenticationUtil
         final AccessControlContext accessControlContext =
                 AccessController.getContext();
         return Subject.getSubject(accessControlContext);
+    }
+    
+    public static Principal createPrincipal(String userID, String idType)
+    {
+        if (AUTH_TYPE_X500.equalsIgnoreCase(idType))
+        {
+            return new X500Principal(
+                    AuthenticationUtil.canonizeDistinguishedName(userID));
+        }
+        if (AUTH_TYPE_HTTP.equalsIgnoreCase(idType))
+        {
+            return new HttpPrincipal(userID);
+        }
+        if (AUTH_TYPE_CADC.equalsIgnoreCase(idType))
+        {
+            try
+            {
+                Long name = new Long(userID);
+                return new NumericPrincipal(name);
+            }
+            catch (NumberFormatException e)
+            {
+                log.warn("CADCPrincipal is non-numeric: " + userID);
+            }
+        }
+        return null;
+    }
+    
+    public static String getPrincipalType(Principal userID)
+    {
+        if (userID instanceof X500Principal)
+        {
+            return AUTH_TYPE_X500;
+        }
+        if (userID instanceof HttpPrincipal)
+        {
+            return AUTH_TYPE_HTTP;
+        }
+        if (userID instanceof NumericPrincipal)
+        {
+            return AUTH_TYPE_CADC;
+        }
+        return null;
     }
 }

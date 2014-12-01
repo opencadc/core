@@ -282,6 +282,8 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
                 Element info = new Element("INFO", namespace);
                 info.setAttribute("name", in.getName());
                 info.setAttribute("value", in.getValue());
+                if (in.content != null)
+                    info.setText(in.content);
                 resource.addContent(info);
             }
             log.debug("wrote resource.info: " + votResource.getInfos().size());
@@ -311,6 +313,9 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
                     Element info = new Element("INFO", namespace);
                     info.setAttribute("name", in.getName());
                     info.setAttribute("value", in.getValue());
+                    log.debug("INFO content: " + in.content);
+                    if (in.content != null)
+                        info.setText(in.content);
                     table.addContent(info);
                 }
                 log.debug("wrote resource.table.info: " + vot.getInfos().size());
