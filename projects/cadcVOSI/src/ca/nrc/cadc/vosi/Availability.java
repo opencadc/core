@@ -89,13 +89,6 @@ public class Availability
 {
     private AvailabilityStatus _status;
 
-    /**
-     * @param host
-     * @param context
-     * @param standardID
-     * @param resourceName
-     * @param role
-     */
     public Availability(AvailabilityStatus status)
     {
         super();

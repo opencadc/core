@@ -69,18 +69,17 @@
 
 package ca.nrc.cadc.vosi;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.MissingResourceException;
+import ca.nrc.cadc.xml.XmlUtil;
 import org.apache.log4j.Logger;
 import org.jdom2.Document;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
-import org.jdom2.input.sax.XMLReaderSAX2Factory;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Parser to setup the schema map for parsing a VOSI-capabilities document.
@@ -105,7 +104,7 @@ public class CapabilitiesParser
             this.schemaMap = new HashMap<String,String>();
             String url;
 
-            url = getResourceUrlString(VOSI.CAPABILITIES_SCHEMA, CapabilitiesParser.class);
+            url = XmlUtil.getResourceUrlString(VOSI.CAPABILITIES_SCHEMA, CapabilitiesParser.class);
             if (url != null)
             {
                 log.debug(VOSI.CAPABILITIES_NS_URI + " -> " + url);
@@ -114,7 +113,7 @@ public class CapabilitiesParser
             else
                 log.warn("failed to find resource: " + VOSI.CAPABILITIES_SCHEMA);
 
-            url = getResourceUrlString(VOSI.VORESOURCE_SCHEMA, CapabilitiesParser.class);
+            url = XmlUtil.getResourceUrlString(VOSI.VORESOURCE_SCHEMA, CapabilitiesParser.class);
             if (url != null)
             {
                 log.debug(VOSI.VORESOURCE_NS_URI + " -> " + url);
@@ -123,7 +122,7 @@ public class CapabilitiesParser
             else
                 log.warn("failed to find resource: " + VOSI.VORESOURCE_SCHEMA);
 
-            url = getResourceUrlString(VOSI.VODATASERVICE_SCHEMA, CapabilitiesParser.class);
+            url = XmlUtil.getResourceUrlString(VOSI.VODATASERVICE_SCHEMA, CapabilitiesParser.class);
             if (url != null)
             {
                 log.debug(VOSI.VODATASERVICE_NS_URI + " -> " + url);
@@ -132,7 +131,7 @@ public class CapabilitiesParser
             else
                 log.warn("failed to find resource: " + VOSI.VODATASERVICE_SCHEMA);
 
-            url = getResourceUrlString(VOSI.XSI_SCHEMA, CapabilitiesParser.class);
+            url = XmlUtil.getResourceUrlString(VOSI.XSI_SCHEMA, CapabilitiesParser.class);
             if (url != null)
             {
                 log.debug(VOSI.XSI_NS_URI + " -> " + url);
@@ -159,61 +158,15 @@ public class CapabilitiesParser
     public Document parse(Reader rdr)
         throws IOException, JDOMException
     {
-        SAXBuilder sb = createBuilder(schemaMap);
+        SAXBuilder sb = XmlUtil.createBuilder(schemaMap);
         return sb.build(rdr);
     }
 
     public Document parse(InputStream istream)
         throws IOException, JDOMException
     {
-        SAXBuilder sb = createBuilder(schemaMap);
+        SAXBuilder sb = XmlUtil.createBuilder(schemaMap);
         return sb.build(istream);
     }
-    
-    // copied from the jdom2 based XmlUtil in cadcUWS TODO: don't forget to use common lib
-    private static String getResourceUrlString(String resourceFileName, Class runningClass)
-    {
-        URL url = runningClass.getClassLoader().getResource(resourceFileName);
-        if (url == null)
-            throw new MissingResourceException("Resource not found: " + resourceFileName, runningClass.getName(), resourceFileName);
-        return url.toExternalForm();
-    }
-    
-    public static final String PARSER = "org.apache.xerces.parsers.SAXParser";
-    private static final String GRAMMAR_POOL = "org.apache.xerces.parsers.XMLGrammarCachingConfiguration";
-    private SAXBuilder createBuilder(Map<String, String> schemaMap)
-    {
-        long start = System.currentTimeMillis();
-        boolean schemaVal = (schemaMap != null);
-        String schemaResource;
-        String space = " ";
-        StringBuilder sbSchemaLocations = new StringBuilder();
-        if (schemaVal)
-        {
-            log.debug("schemaMap.size(): " + schemaMap.size());
-            for (String schemaNSKey : schemaMap.keySet())
-            {
-                schemaResource = (String) schemaMap.get(schemaNSKey);
-                sbSchemaLocations.append(schemaNSKey).append(space).append(schemaResource).append(space);
-            }
-            // enable xerces grammar caching
-            System.setProperty("org.apache.xerces.xni.parser.XMLParserConfiguration", GRAMMAR_POOL);
-        }
 
-        XMLReaderSAX2Factory factory = new XMLReaderSAX2Factory(schemaVal, PARSER);
-        SAXBuilder builder = new SAXBuilder(factory);
-        if (schemaVal)
-        {
-            builder.setFeature("http://xml.org/sax/features/validation", true);
-            builder.setFeature("http://apache.org/xml/features/validation/schema", true);
-            if (schemaMap.size() > 0)
-            {
-                builder.setProperty("http://apache.org/xml/properties/schema/external-schemaLocation",
-                    sbSchemaLocations.toString());
-            }
-        }
-        long finish = System.currentTimeMillis();
-        log.debug("SAXBuilder in " + (finish - start) + "ms");
-        return builder;
-    }
 }

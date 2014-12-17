@@ -92,13 +92,11 @@ public class WebGet
     public String submit()
         throws IOException, MalformedURLException
     {
-        String rtn = null;
-
         URL url = new URL(_urlStr);
         URLConnection urlc = url.openConnection();
 
         // TODO: check HTTP status codes and throw an exception if not OK to help
-        // callerfigure out what went wrong
+        // caller figure out what went wrong
         
         BufferedReader in = new BufferedReader(new InputStreamReader(urlc.getInputStream()));
 

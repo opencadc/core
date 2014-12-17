@@ -109,8 +109,4 @@ public class VOSI
 
     public static final String VORESOURCE_SCHEMA = "VOResource-v1.0.xsd";
 
-    // xsi schema location (pdowler - what is this??)
-    //public static final String XSI_LOC = "http://www.ivoa.net/xml/VOSI/v1.0 http://www.ivoa.net/xml/VOSI/v1.0 "
-    //        + "http://www.ivoa.net/xml/VODataService/v1.0 http://www.ivoa.net/xml/VODataService/v1.0";
-
 }

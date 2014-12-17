@@ -8,7 +8,7 @@
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -66,93 +66,63 @@
 *
 ************************************************************************
 */
-
 package ca.nrc.cadc.vosi;
 
-import ca.nrc.cadc.util.Log4jInit;
+
+import ca.nrc.cadc.net.HttpDownload;
+import ca.nrc.cadc.net.HttpTransfer;
 import ca.nrc.cadc.xml.XmlUtil;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jdom2.Document;
-import org.jdom2.output.Format;
-import org.jdom2.output.XMLOutputter;
-import org.junit.Before;
-import org.junit.Test;
+import org.jdom2.JDOMException;
 
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.URL;
 
-/**
- * @author zhangsa
- *
- */
-public class CapabilityTest
+public class AvailabilityClient
 {
-    private static Logger log = Logger.getLogger(CapabilityTest.class);
-    static
+    private static Logger log = Logger.getLogger(AvailabilityClient.class);
+
+    public static final String AVAILABILITY_ENDPOINT = "/availability";
+
+    public AvailabilityClient() {}
+
+    public Availability getAvailability(final URL serviceUrl)
+            throws IOException, JDOMException
     {
-        Log4jInit.setLevel("ca.nrc.cadc.vosi", Level.INFO);
+        if (serviceUrl == null)
+        {
+            throw new IllegalArgumentException("null URL");
+        }
+
+        URL availabilityURL =
+                new URL(serviceUrl.getProtocol(), serviceUrl.getHost(),
+                        serviceUrl.getPort(), serviceUrl.getPath() + AVAILABILITY_ENDPOINT);
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(HttpTransfer.DEFAULT_BUFFER_SIZE);
+        HttpDownload httpDownload = getHttpDownload(availabilityURL, outputStream);
+        httpDownload.run();
+
+        Availability availability;
+        if (httpDownload.getResponseCode() == 200)
+        {
+            Document xml =
+                    XmlUtil.buildDocument(outputStream.toString("UTF-8"),
+                            VOSI.AVAILABILITY_NS_URI, VOSI.AVAILABILITY_SCHEMA);
+            availability = new Availability(xml);
+        }
+        else
+        {
+            AvailabilityStatus status = new AvailabilityStatus(false, null, null, null, null);
+            availability = new Availability(status);
+        }
+        return availability;
     }
 
-    String schemaResource1 = VOSI.CAPABILITIES_SCHEMA;
-    String schemaNSKey1 = VOSI.CAPABILITIES_NS_URI;
-
-    String schemaNSKey2 = VOSI.VORESOURCE_NS_URI;
-    String schemaResource2 =  VOSI.VORESOURCE_SCHEMA;
-
-    String schemaNSKey3 = VOSI.VODATASERVICE_NS_URI;
-    String schemaResource3 = VOSI.VODATASERVICE_SCHEMA;
-
-    Map<String, String> schemaNSMap;
-
-    /**
-     * @throws java.lang.Exception
-     */
-    @Before
-    public void setUp() throws Exception
+    protected HttpDownload getHttpDownload(final URL url, final ByteArrayOutputStream out)
     {
-        schemaNSMap = new HashMap<String, String>();
-        schemaNSMap.put(schemaNSKey1, XmlUtil.getResourceUrlString(schemaResource1, CapabilityTest.class));
-        schemaNSMap.put(schemaNSKey2, XmlUtil.getResourceUrlString(schemaResource2, CapabilityTest.class));
-        schemaNSMap.put(schemaNSKey3, XmlUtil.getResourceUrlString(schemaResource3, CapabilityTest.class));
+        return new HttpDownload(url, out);
     }
 
-    @Test
-    public void testCapabilities() throws Exception
-    {
-        List<Capability> capList = new ArrayList<Capability>();
-        // no trailing slash on context url
-        Capability cap1 = new Capability("http://example.com/myApp", "ivo://ivoa.net/std/VOSI#capability", "capabilities", null);
-        capList.add(cap1);
-        // with trailing slash on context url
-        Capability cap2 = new Capability("http://example.com/myApp/", "ivo://ivoa.net/std/VOSI#availability", "availability", null);
-        capList.add(cap2);
-        // with a role
-        Capability cap3 = new Capability("http://example.com/myApp/", "ivo://ivoa.net/std/Something", "something", "std");
-        capList.add(cap3);
-
-        Capabilities caps = new Capabilities(capList);
-        Document doc = caps.toXmlDocument();
-
-        XMLOutputter xop = new XMLOutputter(Format.getPrettyFormat());
-        Writer stringWriter = new StringWriter();
-        xop.output(doc, stringWriter);
-        String xmlString = stringWriter.toString();
-        StringReader reader = new StringReader(xmlString);
-        XmlUtil.buildDocument(reader, schemaNSMap);
-
-        // these xpath tests are somewhat brittle as a change in the prefix in Capabilities.java
-        // would require a change here
-        // TODO: find the prefix by examining the xmlns attributes of the root element
-        TestUtil.assertXmlNode(doc, "/vosi:capabilities", VOSI.NS_PREFIX, VOSI.CAPABILITIES_NS_URI);
-        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability[@standardID='ivo://ivoa.net/std/VOSI#capability']", VOSI.NS_PREFIX, VOSI.CAPABILITIES_NS_URI);
-        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability[@standardID='ivo://ivoa.net/std/VOSI#availability']", VOSI.NS_PREFIX, VOSI.CAPABILITIES_NS_URI);
-        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability[@standardID='ivo://ivoa.net/std/Something']", VOSI.NS_PREFIX, VOSI.CAPABILITIES_NS_URI);
-        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability/interface/accessURL[.='http://example.com/myApp/availability']", VOSI.NS_PREFIX, VOSI.CAPABILITIES_NS_URI);
-    }
 }

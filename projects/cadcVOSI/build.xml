@@ -91,13 +91,14 @@
     <property name="project" value="cadcVOSI" />
 
     <!-- JAR files to be included in classpath and war file -->
-    <property name="log4j"       value="${ext.lib}/log4j.jar" />
-    <property name="servlet-api" value="${ext.lib}/servlet-api.jar" />
-    <property name="jdom2"        value="${ext.lib}/jdom2.jar" />
+    <property name="cadcUtil"       value="${lib}/cadcUtil.jar" />
+    <property name="jdom2"          value="${ext.lib}/jdom2.jar" />
+    <property name="log4j"          value="${ext.lib}/log4j.jar" />
+    <property name="servlet-api"    value="${ext.lib}/servlet-api.jar" />
     
-    <property name="jars" value="${lib}/cadcUtil.jar:${jdom2}:${log4j}:${servlet-api}" />
+    <property name="jars"           value="${cadcUtil}:${jdom2}:${log4j}:${servlet-api}" />
 
-    <target name="build" depends="compile,resources">
+    <target name="build" depends="compile, resources">
             <jar jarfile="${build}/lib/cadcVOSI.jar"
                     basedir="${build}/class" update="no">
                     <exclude name="test/**" />
@@ -115,15 +116,13 @@
     <property name="resources.dir" value="test/resources/" />
 
     <!-- JAR files needed to run the test suite -->
-    <property name="build.cadcTAP" value="${build}/lib/${project}.jar" />
-    <property name="ext.postgres" value="${ext.lib}/postgresql-jdbc.jar" />
-    <property name="ext.junit" value="${ext.lib}/junit.jar" />
-    <property name="ext.xerces" value="${ext.lib}/xerces.jar" />
-    <property name="ext.jaxen.core" value="${ext.lib}/jaxen-core.jar"/>
-    <property name="ext.jaxen.jdom" value="${ext.lib}/jaxen-jdom.jar"/>
-    <property name="ext.saxpath" value="${ext.lib}/saxpath.jar"/>
-    <property name="ext.commonsLog" value="${ext.lib}/commons-logging.jar" />
-    <property name="testingJars" value="${build.cadcTAP}:${ext.junit}:${ext.xerces}:${ext.jaxen.core}:${ext.jaxen.jdom}:${ext.saxpath}:${ext.postgres}:${ext.commonsLog}" />
+    <property name="asm"            value="${ext.dev}/asm.jar" />
+    <property name="cglib"          value="${ext.dev}/cglib.jar" />
+    <property name="easymock"       value="${ext.dev}/easymock.jar" />
+    <property name="junit"          value="${ext.dev}/junit.jar" />
+    <property name="objenesis"      value="${ext.dev}/objenesis.jar" />
+    <property name="xerces"         value="${ext.lib}/xerces.jar" />
+    <property name="testingJars"    value="${asm}:${cglib}:${easymock}:${junit}:${objenesis}:${xerces}" />
 
     <!-- Run the test suite -->
     <target name="test" depends="compile-test, resources">
@@ -138,11 +137,12 @@
                 <pathelement path="${resources.dir}"/>
                 <pathelement path="${jars}:${testingJars}" />
             </classpath>
-            
-            <test name="ca.nrc.cadc.vosi.AvailabilityTest"/>
-		    <test name="ca.nrc.cadc.vosi.CapabilityTest"/>
-			<test name="ca.nrc.cadc.vosi.avail.CheckDataSourceTest"/>
-			<test name="ca.nrc.cadc.vosi.avail.CheckWebServiceTest"/>
+
+            <test name="ca.nrc.cadc.vosi.AvailabilityClientTest"/>
+            <!--<test name="ca.nrc.cadc.vosi.AvailabilityTest"/>-->
+		    <!--<test name="ca.nrc.cadc.vosi.CapabilityTest"/>-->
+			<!--<test name="ca.nrc.cadc.vosi.avail.CheckDataSourceTest"/>-->
+			<!--<test name="ca.nrc.cadc.vosi.avail.CheckWebServiceTest"/>-->
             <formatter type="plain" usefile="false"/>
         </junit>
 

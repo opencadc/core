@@ -69,32 +69,24 @@
 
 package ca.nrc.cadc.vosi;
 
-import java.io.StringWriter;
-import java.io.Writer;
-import java.text.ParseException;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.Map;
-
+import ca.nrc.cadc.date.DateUtil;
+import ca.nrc.cadc.util.Log4jInit;
+import ca.nrc.cadc.xml.XmlUtil;
 import junit.framework.Assert;
-
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jdom2.Document;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
-import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-import ca.nrc.cadc.date.DateUtil;
-import ca.nrc.cadc.util.Log4jInit;
-import ca.nrc.cadc.vosi.avail.CheckWebService;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.text.DateFormat;
+import java.text.ParseException;
+import java.util.*;
 
 /**
  * @author zhangsa
@@ -110,23 +102,6 @@ public class AvailabilityTest
 
     Map<String,String> schemaMap = new HashMap<String,String>();
     DateFormat df = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.LOCAL);
-    
-
-    /**
-     * @throws java.lang.Exception
-     */
-    @BeforeClass
-    public static void setUpBeforeClass() throws Exception
-    {
-    }
-
-    /**
-     * @throws java.lang.Exception
-     */
-    @AfterClass
-    public static void tearDownAfterClass() throws Exception
-    {
-    }
 
     /**
      * @throws java.lang.Exception
@@ -134,18 +109,7 @@ public class AvailabilityTest
     @Before
     public void setUp() throws Exception
     {
-    	// TODO: After cadcUtil has been updated to use jdom2, please remove the following statement
-    	//       and uncomment the statement above it.
-        //this.schemaMap.put( VOSI.AVAILABILITY_NS_URI, XmlUtil.getResourceUrlString(VOSI.AVAILABILITY_SCHEMA, AvailabilityTest.class));
-        this.schemaMap.put( VOSI.AVAILABILITY_NS_URI, CheckWebService.getResourceUrlString(VOSI.AVAILABILITY_SCHEMA, AvailabilityTest.class));
-    }
-
-    /**
-     * @throws java.lang.Exception
-     */
-    @After
-    public void tearDown() throws Exception
-    {
+        this.schemaMap.put( VOSI.AVAILABILITY_NS_URI, XmlUtil.getResourceUrlString(VOSI.AVAILABILITY_SCHEMA, AvailabilityTest.class));
     }
 
     @Test
@@ -169,11 +133,9 @@ public class AvailabilityTest
         Writer stringWriter = new StringWriter();
         xop.output(doc, stringWriter);
         String xmlString = stringWriter.toString();
-        
-        // TODO: After cadcUtil has been updated to use jdom2, please remove the following statement
-        //       and uncomment the statement above it.
-        //XmlUtil.validateXml(xmlString, schemaMap);
-        CheckWebService.validateXml(xmlString, schemaMap);
+        StringReader reader = new StringReader(xmlString);
+        XmlUtil.buildDocument(reader, schemaMap);
+
         TestUtil.assertXmlNode(doc, "/vosi:availability", VOSI.NS_PREFIX, VOSI.AVAILABILITY_NS_URI);
         TestUtil.assertXmlNode(doc, "/vosi:availability/vosi:available", VOSI.NS_PREFIX, VOSI.AVAILABILITY_NS_URI);
         TestUtil.assertXmlNode(doc, "/vosi:availability/vosi:upSince", VOSI.NS_PREFIX, VOSI.AVAILABILITY_NS_URI);
@@ -194,11 +156,8 @@ public class AvailabilityTest
         Writer stringWriter = new StringWriter();
         xop.output(doc, stringWriter);
         String xmlString = stringWriter.toString();
-
-        // TODO: After cadcUtil has been updated to use jdom2, please remove the following statement
-        //       and uncomment the statement above it.
-        //XmlUtil.validateXml(xmlString, schemaMap);
-        CheckWebService.validateXml(xmlString, schemaMap);
+        StringReader reader = new StringReader(xmlString);
+        XmlUtil.buildDocument(reader, schemaMap);
         
         TestUtil.assertXmlNode(doc, "/vosi:availability", VOSI.NS_PREFIX, VOSI.AVAILABILITY_NS_URI);
         TestUtil.assertXmlNode(doc, "/vosi:availability/vosi:available[.='false']", VOSI.NS_PREFIX, VOSI.AVAILABILITY_NS_URI);

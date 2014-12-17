@@ -82,10 +82,6 @@ import org.jdom2.Namespace;
  */
 public class Capabilities
 {
-    // xsi schema location
-    //public static final String XSI_LOC = "http://www.ivoa.net/xml/VOSI/v1.0 http://www.ivoa.net/xml/VOSI/v1.0 "
-    //        + "http://www.ivoa.net/xml/VODataService/v1.0 http://www.ivoa.net/xml/VODataService/v1.0";
-
     private List<Capability> _caps;
 
     /**
@@ -110,9 +106,6 @@ public class Capabilities
         eleCapabilities.addNamespaceDeclaration(xsi);
         eleCapabilities.addNamespaceDeclaration(cap);
         eleCapabilities.addNamespaceDeclaration(vod);
-
-        //Attribute attSchemaLocation = new Attribute("schemaLocation", XSI_LOC, xsi);
-        //eleCapabilities.setAttribute(attSchemaLocation);
 
         Document document = new Document();
         document.addContent(eleCapabilities);

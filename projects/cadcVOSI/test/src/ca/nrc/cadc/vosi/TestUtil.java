@@ -69,10 +69,17 @@
 
 package ca.nrc.cadc.vosi;
 
-import ca.nrc.cadc.vosi.avail.CheckWebService;
 import org.apache.log4j.Logger;
 import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.Namespace;
+import org.jdom2.filter.Filters;
+import org.jdom2.xpath.XPathBuilder;
+import org.jdom2.xpath.XPathExpression;
+import org.jdom2.xpath.XPathFactory;
 import org.junit.Assert;
+
+import java.util.List;
 
 /**
  * @author zhangsa
@@ -90,10 +97,7 @@ public class TestUtil
      */
     public static void assertXmlNode(Document document, String xpathString, String nsPrefix, String nsUri)
     {
-    	// TODO: After cadcUtil has been updated to use jdom2, remove the following statement
-    	//       and uncomment the statement above it.
-        //Assert.assertTrue(XmlUtil.getXmlNodeCount(document, xpathString, nsPrefix, nsUri) == 1);
-        Assert.assertTrue(CheckWebService.getXmlNodeCount(document, xpathString, nsPrefix, nsUri) == 1);
+        Assert.assertTrue(getXmlNodeCount(document, xpathString, nsPrefix, nsUri) == 1);
     }
 
     /**
@@ -104,9 +108,31 @@ public class TestUtil
      */
     public static void assertNoXmlNode(Document document, String xpathString, String nsPrefix, String nsUri)
     {
-    	// TODO: After cadcUtil has been updated to use jdom2, remove the following statement
-    	//       and uncomment the statement above it.
-        //Assert.assertTrue(XmlUtil.getXmlNodeCount(document, xpathString, nsPrefix, nsUri) == 0);
-        Assert.assertTrue(CheckWebService.getXmlNodeCount(document, xpathString, nsPrefix, nsUri) == 0);
+        Assert.assertTrue(getXmlNodeCount(document, xpathString, nsPrefix, nsUri) == 0);
     }
+
+    /**
+     * count how many nodes are represented by the xpath
+     *
+     * @param doc
+     * @param xpathStr
+     * @param nsPrefix namespace prefix, null or empty String value means no namespace
+     * @param nsUri    namespace URI
+     * @return
+     */
+    public static int getXmlNodeCount(Document doc, String xpathStr, String nsPrefix, String nsUri)
+    {
+        int rtn;
+        XPathBuilder<Element> builder = new XPathBuilder<Element>(xpathStr, Filters.element());
+        if (nsPrefix != null && !nsPrefix.isEmpty())
+        {
+            Namespace ns = Namespace.getNamespace(nsPrefix, nsUri);
+            builder.setNamespace(ns);
+        }
+        XPathExpression<Element> xpath = builder.compileWith(XPathFactory.instance());
+        List<Element> rs = xpath.evaluate(doc);
+        rtn = rs.size();
+        return rtn;
+    }
+
 }
