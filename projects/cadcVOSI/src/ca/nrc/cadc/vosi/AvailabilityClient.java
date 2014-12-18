@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2014.                            (c) 2014.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -89,40 +89,66 @@ public class AvailabilityClient
     public AvailabilityClient() {}
 
     public Availability getAvailability(final URL serviceUrl)
-            throws IOException, JDOMException
     {
         if (serviceUrl == null)
         {
             throw new IllegalArgumentException("null URL");
         }
 
-        URL availabilityURL =
-                new URL(serviceUrl.getProtocol(), serviceUrl.getHost(),
-                        serviceUrl.getPort(), serviceUrl.getPath() + AVAILABILITY_ENDPOINT);
-
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(HttpTransfer.DEFAULT_BUFFER_SIZE);
-        HttpDownload httpDownload = getHttpDownload(availabilityURL, outputStream);
-        httpDownload.run();
-
         Availability availability;
-        if (httpDownload.getResponseCode() == 200)
+        try
         {
-            Document xml =
-                    XmlUtil.buildDocument(outputStream.toString("UTF-8"),
-                            VOSI.AVAILABILITY_NS_URI, VOSI.AVAILABILITY_SCHEMA);
-            availability = new Availability(xml);
+            URL availabilityURL =
+                    new URL(serviceUrl.getProtocol(), serviceUrl.getHost(),
+                            serviceUrl.getPort(), serviceUrl.getPath() + AVAILABILITY_ENDPOINT);
+
+            ByteArrayOutputStream outputStream = getOutputStream();
+            HttpDownload httpDownload = getHttpDownload(availabilityURL, outputStream);
+            httpDownload.run();
+
+            if (httpDownload.getResponseCode() == 200)
+            {
+                Document xml =
+                        XmlUtil.buildDocument(outputStream.toString("UTF-8"),
+                                VOSI.AVAILABILITY_NS_URI, VOSI.AVAILABILITY_SCHEMA);
+                availability = new Availability(xml);
+            }
+            else
+            {
+                availability = getFalseAvailability();
+            }
         }
-        else
+        catch (IOException e)
         {
-            AvailabilityStatus status = new AvailabilityStatus(false, null, null, null, null);
-            availability = new Availability(status);
+            final String message = "Error getting availability for "
+                                 + serviceUrl + " because " + e.getMessage();
+            log.error(message);
+            availability = getFalseAvailability();
+        }
+        catch (JDOMException e)
+        {
+            final String message = "Error parsing availability for "
+                    + serviceUrl + " because " + e.getMessage();
+            log.error(message);
+            availability = getFalseAvailability();
         }
         return availability;
+    }
+
+    protected Availability getFalseAvailability()
+    {
+        AvailabilityStatus status = new AvailabilityStatus(false, null, null, null, null);
+        return new Availability(status);
     }
 
     protected HttpDownload getHttpDownload(final URL url, final ByteArrayOutputStream out)
     {
         return new HttpDownload(url, out);
+    }
+
+    protected ByteArrayOutputStream getOutputStream()
+    {
+        return new ByteArrayOutputStream(HttpTransfer.DEFAULT_BUFFER_SIZE);
     }
 
 }

@@ -84,12 +84,6 @@ public class AvailabilityClientTest
 {
     private static Logger log = Logger.getLogger(AvailabilityClientTest.class);
 
-    @Before
-    public void setUp() throws Exception
-    {
-
-    }
-
     @Test
     public void testNullURL() throws Exception
     {
@@ -118,7 +112,7 @@ public class AvailabilityClientTest
         EasyMock.expect(mockDownload.getResponseCode()).andReturn(200).once();
 
         final ByteArrayOutputStream mockOut = EasyMock.createMock(ByteArrayOutputStream.class);
-        EasyMock.expect(mockOut.toString("UTF-8")).andReturn(xml).once();
+        EasyMock.expect(mockOut.toString("UTF-8")).andReturn(xml);
 
         EasyMock.replay(mockDownload, mockOut);
 
@@ -128,6 +122,12 @@ public class AvailabilityClientTest
             protected HttpDownload getHttpDownload(URL url, ByteArrayOutputStream out)
             {
                 return mockDownload;
+            }
+
+            @Override
+            protected ByteArrayOutputStream getOutputStream()
+            {
+                return mockOut;
             }
         };
 
@@ -157,6 +157,12 @@ public class AvailabilityClientTest
             protected HttpDownload getHttpDownload(URL url, ByteArrayOutputStream out)
             {
                 return mockDownload;
+            }
+
+            @Override
+            protected ByteArrayOutputStream getOutputStream()
+            {
+                return mockOut;
             }
         };
 
@@ -193,14 +199,18 @@ public class AvailabilityClientTest
             {
                 return mockDownload;
             }
+
+            @Override
+            protected ByteArrayOutputStream getOutputStream()
+            {
+                return mockOut;
+            }
         };
 
-        try
-        {
-            client.getAvailability(new URL("http://localhost/foo"));
-            fail("invalid XML from service should throw JDOMException");
-        }
-        catch (JDOMException expected) {}
+        Availability availability = client.getAvailability(new URL("http://localhost/foo"));
+
+        assertNotNull(availability);
+        assertFalse(availability.getStatus().isAvailable());
 
         EasyMock.verify(mockDownload, mockOut);
     }

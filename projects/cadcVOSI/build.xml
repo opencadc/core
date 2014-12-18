@@ -91,18 +91,42 @@
     <property name="project" value="cadcVOSI" />
 
     <!-- JAR files to be included in classpath and war file -->
+    <property name="registryClient" value="${lib}/cadcRegistryClient.jar" />
     <property name="cadcUtil"       value="${lib}/cadcUtil.jar" />
     <property name="jdom2"          value="${ext.lib}/jdom2.jar" />
     <property name="log4j"          value="${ext.lib}/log4j.jar" />
     <property name="servlet-api"    value="${ext.lib}/servlet-api.jar" />
+    <property name="xerces"         value="${ext.lib}/xerces.jar" />
     
-    <property name="jars"           value="${cadcUtil}:${jdom2}:${log4j}:${servlet-api}" />
+    <property name="jars"           value="${registryClient}:${cadcUtil}:${jdom2}:${log4j}:${servlet-api}" />
+    <property name="client.jars"    value="${registryClient} ${cadcUtil} ${jdom2} ${log4j} ${xerces}" />
 
-    <target name="build" depends="compile, resources">
-            <jar jarfile="${build}/lib/cadcVOSI.jar"
-                    basedir="${build}/class" update="no">
-                    <exclude name="test/**" />
-            </jar>
+    <target name="build" depends="client, server" />
+
+    <target name="server" depends="compile, resources">
+        <jar jarfile="${build}/lib/${project}.jar"
+             basedir="${build}/class"
+             update="no">
+            <exclude name="test/**" />
+            <!--<include name="ca/nrc/cadc/**" />-->
+        </jar>
+    </target>
+
+    <target name="client" depends="compile, resources, manifest">
+        <jar jarfile="${build}/lib/cadcAvailabilityClient.jar"
+             basedir="${build}/class"
+             update="no"
+             manifest="${build}/tmp/cadcAvailabilityClient.mf">
+            <include name="ca/nrc/cadc/vosi/**.class" />
+            <include name="VOSIAvailability-v1.0.xsd" />
+        </jar>
+    </target>
+
+    <target name="manifest">
+        <manifest file="${build}/tmp/cadcAvailabilityClient.mf" mode="replace">
+            <attribute name="Main-Class" value="ca.nrc.cadc.vosi.AvailabilityApp"/>
+            <attribute name="Class-Path" value="${client.jars}" />
+        </manifest>
     </target>
 
     <target name="resources">
@@ -116,13 +140,19 @@
     <property name="resources.dir" value="test/resources/" />
 
     <!-- JAR files needed to run the test suite -->
+    <property name="jaxen-core"     value="${ext.lib}/jaxen-core.jar" />
+    <property name="jaxen-jdom2"    value="${ext.lib}/jaxen-jdom2.jar" />
+    <property name="saxpath"        value="${ext.lib}/saxpath.jar" />
+
+
     <property name="asm"            value="${ext.dev}/asm.jar" />
     <property name="cglib"          value="${ext.dev}/cglib.jar" />
     <property name="easymock"       value="${ext.dev}/easymock.jar" />
     <property name="junit"          value="${ext.dev}/junit.jar" />
     <property name="objenesis"      value="${ext.dev}/objenesis.jar" />
-    <property name="xerces"         value="${ext.lib}/xerces.jar" />
-    <property name="testingJars"    value="${asm}:${cglib}:${easymock}:${junit}:${objenesis}:${xerces}" />
+
+    <property name="testingJars"    value="${jaxen-core}:${jaxen-jdom2}:${saxpath}:${xerces}:
+                                           ${asm}:${cglib}:${easymock}:${junit}:${objenesis}" />
 
     <!-- Run the test suite -->
     <target name="test" depends="compile-test, resources">
@@ -139,10 +169,10 @@
             </classpath>
 
             <test name="ca.nrc.cadc.vosi.AvailabilityClientTest"/>
-            <!--<test name="ca.nrc.cadc.vosi.AvailabilityTest"/>-->
-		    <!--<test name="ca.nrc.cadc.vosi.CapabilityTest"/>-->
-			<!--<test name="ca.nrc.cadc.vosi.avail.CheckDataSourceTest"/>-->
-			<!--<test name="ca.nrc.cadc.vosi.avail.CheckWebServiceTest"/>-->
+            <test name="ca.nrc.cadc.vosi.AvailabilityTest"/>
+		    <test name="ca.nrc.cadc.vosi.CapabilityTest"/>
+			<test name="ca.nrc.cadc.vosi.avail.CheckDataSourceTest"/>
+			<test name="ca.nrc.cadc.vosi.avail.CheckWebServiceTest"/>
             <formatter type="plain" usefile="false"/>
         </junit>
 

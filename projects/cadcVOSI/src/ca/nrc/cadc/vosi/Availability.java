@@ -73,6 +73,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.Date;
 
+import ca.nrc.cadc.util.StringBuilderWriter;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.Namespace;
@@ -175,4 +176,23 @@ public class Availability
     {
         return _status;
     }
+
+    @Override
+    public String toString()
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Availability[");
+        sb.append("available=").append(_status.isAvailable());
+        if (_status.getUpSince() != null)
+            sb.append(",upSince=").append(_status.getUpSince());
+        if (_status.getDownAt() != null)
+            sb.append(",downAt=").append(_status.getDownAt());
+        if (_status.getBackAt() != null)
+            sb.append(",backAt=").append(_status.getBackAt());
+        if (_status.getNote() != null)
+            sb.append(",note=").append(_status.getNote());
+        sb.append("]");
+        return sb.toString();
+    }
+
 }
