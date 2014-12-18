@@ -74,8 +74,6 @@ import ca.nrc.cadc.net.InputStreamWrapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
 import org.apache.log4j.Logger;
 
 /**
@@ -84,12 +82,12 @@ import org.apache.log4j.Logger;
  */
 public class CheckURL  implements CheckResource
 {
-    private static Logger log = Logger.getLogger(CheckURL.class);
+    private final static Logger log = Logger.getLogger(CheckURL.class);
 
-    private String name;
-    private URL url;
-    private int expectedResponseCode;
-    private String expectedContentType;
+    private final String name;
+    private final URL url;
+    private final int expectedResponseCode;
+    private final String expectedContentType;
     
     public CheckURL(String name, URL url, int expectedResponseCode, String expectedContentType)
     {
