@@ -1,6 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
-<!--
+/*
 ************************************************************************
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
@@ -67,86 +65,62 @@
 *  $Revision: 4 $
 *
 ************************************************************************
--->
-		
-<!DOCTYPE project>
-<project default="build" basedir=".">
+*/
 
-<property environment="env"/>
-    <property file="local.build.properties" />
+package ca.nrc.cadc.vosi.avail;
 
-    <!-- site-specific build properties or overrides of values in opencadc.properties -->
-    <property file="${env.CADC_PREFIX}/etc/local.properties" />
+import ca.nrc.cadc.util.Log4jInit;
+import java.net.URL;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
-    <!-- site-specific targets, e.g. install, cannot duplicate those in opencadc.targets.xml -->
-    <import file="${env.CADC_PREFIX}/etc/local.targets.xml" optional="true" />
-
-    <!-- default properties and targets -->
-    <property file="${env.CADC_PREFIX}/etc/opencadc.properties" />
-    <import file="${env.CADC_PREFIX}/etc/opencadc.targets.xml"/>
-
-    <!-- developer convenience: place for extra targets and properties -->
-    <import file="extras.xml" optional="true" />
+/**
+ *
+ * @author pdowler
+ */
+public class CheckURLTest 
+{
+    private static final Logger log = Logger.getLogger(CheckURLTest.class);
     
-    <property name="project" value="cadcVOSI" />
-
-    <!-- JAR files to be included in classpath and war file -->
-    <property name="log4j"       value="${ext.lib}/log4j.jar" />
-    <property name="servlet-api" value="${ext.lib}/servlet-api.jar" />
-    <property name="jdom2"        value="${ext.lib}/jdom2.jar" />
+    static
+    {
+        Log4jInit.setLevel("ca.nrc.cadc.auth", Level.INFO);
+        Log4jInit.setLevel("ca.nrc.cadc.vosi", Level.INFO);
+    }
     
-    <property name="jars" value="${lib}/cadcUtil.jar:${jdom2}:${log4j}:${servlet-api}" />
-
-    <target name="build" depends="compile,resources">
-            <jar jarfile="${build}/lib/cadcVOSI.jar"
-                    basedir="${build}/class" update="no">
-                    <exclude name="test/**" />
-            </jar>
-    </target>
-
-    <target name="resources">
-        <copy todir="${build}/class">
-            <fileset dir="src/resources">
-		<include name="**.xsd" />
-	    </fileset>
-        </copy>
-    </target>
-
-    <property name="resources.dir" value="test/resources/" />
-
-    <!-- JAR files needed to run the test suite -->
-    <property name="build.cadcTAP" value="${build}/lib/${project}.jar" />
-    <property name="ext.postgres" value="${ext.lib}/postgresql-jdbc.jar" />
-    <property name="ext.junit" value="${ext.dev}/junit.jar" />
-    <property name="ext.xerces" value="${ext.lib}/xerces.jar" />
-    <property name="ext.jaxen" value="${ext.lib}/jaxen-core.jar"/>
-    <property name="ext.saxpath" value="${ext.lib}/saxpath.jar"/>
-    <property name="ext.commonsLog" value="${ext.lib}/commons-logging.jar" />
-    <property name="testingJars" value="${build.cadcTAP}:${ext.junit}:${ext.xerces}:${ext.jaxen}:${ext.saxpath}:${ext.postgres}:${ext.commonsLog}" />
-
-    <!-- Run the test suite -->
-    <target name="test" depends="compile-test, resources">
-        <echo message="Running test" />
-
-        <!-- Run the junit test suite -->
-        <echo message="Running test suite..." />
-        <junit printsummary="yes" haltonfailure="yes" fork="yes">
-            <classpath>
-                <pathelement path="${build}/class"/>
-                <pathelement path="${build}/test/class"/>
-                <pathelement path="${resources.dir}"/>
-                <pathelement path="${jars}:${testingJars}" />
-            </classpath>
+    @Test
+    public void testHTTP()
+    {
+        try
+        {
             
-            <test name="ca.nrc.cadc.vosi.AvailabilityTest"/>
-	    <test name="ca.nrc.cadc.vosi.CapabilityTest"/>
-            <test name="ca.nrc.cadc.vosi.avail.CheckDataSourceTest"/>
-            <test name="ca.nrc.cadc.vosi.avail.CheckWebServiceTest"/>
-            <test name="ca.nrc.cadc.vosi.avail.CheckURLTest"/>
-
-            <formatter type="plain" usefile="false"/>
-        </junit>
-
-    </target>
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
     
-</project>
+    @Test
+    public void testHTTPS()
+    {
+        try
+        {
+	    log.info("java version: "  + System.getProperty("java.version"));
+            log.info("jsse.enableSNIExtension: "  + System.getProperty("jsse.enableSNIExtension"));
+            URL url = new URL("https://www.google.com/");
+            int expectedCode = 200;
+            String expectedContentType = "text/html";
+            CheckURL cu = new CheckURL("testHTTPS", url, expectedCode, expectedContentType);
+            cu.check();
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+}
