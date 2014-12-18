@@ -69,87 +69,58 @@
 
 package ca.nrc.cadc.vosi.avail;
 
-import ca.nrc.cadc.net.HttpDownload;
-import ca.nrc.cadc.net.InputStreamWrapper;
-import java.io.IOException;
-import java.io.InputStream;
+import ca.nrc.cadc.util.Log4jInit;
 import java.net.URL;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  *
  * @author pdowler
  */
-public class CheckURL  implements CheckResource
+public class CheckURLTest 
 {
-    private final static Logger log = Logger.getLogger(CheckURL.class);
-
-    private final String name;
-    private final URL url;
-    private final int expectedResponseCode;
-    private final String expectedContentType;
+    private static final Logger log = Logger.getLogger(CheckURLTest.class);
     
-    public CheckURL(String name, URL url, int expectedResponseCode, String expectedContentType)
+    static
     {
-        this.name = name;
-        this.url = url;
-        this.expectedResponseCode = expectedResponseCode;
-        this.expectedContentType = expectedContentType;
+        Log4jInit.setLevel("ca.nrc.cadc.auth", Level.INFO);
+        Log4jInit.setLevel("ca.nrc.cadc.vosi", Level.INFO);
     }
     
-    @Override
-    public String toString()
+    @Test
+    public void testHTTP()
     {
-        return "CheckURL[" + name + "," + url + "]";
-    }
-
-    public void check() 
-        throws CheckException 
-    {
-        HttpDownload get = null;
         try
         {
-            InputStreamWrapper dump = new InputStreamWrapper() 
-            {
-                public void read(InputStream in) 
-                    throws IOException 
-                {
-                    byte[] buf = new byte[8192];
-                    int num;
-                    while ( (num = in.read(buf)) != -1 )
-                        log.debug("read: " + num);
-                }
-            };
-            get = new HttpDownload(url, dump);
-            get.setHeadOnly(true);
-            get.setFollowRedirects(true);
-            get.run();
-        }
-        catch(Exception ex)
-        {
-            log.debug("FAIL", ex);
-            throw new CheckException(name + " " + url.toExternalForm() + " test failed: " + ex);
-        }
             
-        if (get.getThrowable() != null)
-        {
-            log.debug("FAIL", get.getThrowable());
-            throw new CheckException(name + " " + url.toExternalForm() + " test failed: " + get.getThrowable());
         }
-        
-        int responseCode = get.getResponseCode();
-        String contentType = get.getContentType();
-        int i = contentType.indexOf(';');
-        if (i > 0)
-            contentType = contentType.substring(0, i);
-        if ( responseCode != expectedResponseCode
-                || (expectedContentType != null && !expectedContentType.equals(contentType)) )
+        catch(Exception unexpected)
         {
-            StringBuilder sb = new StringBuilder();
-            sb.append(name).append(" ").append(url.toExternalForm()).append(" failed:");
-            sb.append(" found ").append(contentType).append(" (").append(responseCode).append(")");
-            sb.append(" expected ").append(expectedContentType).append(" (").append(expectedResponseCode).append(")");
-            throw new CheckException(sb.toString());
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+    
+    @Test
+    public void testHTTPS()
+    {
+        try
+        {
+	    log.info("java version: "  + System.getProperty("java.version"));
+            log.info("jsse.enableSNIExtension: "  + System.getProperty("jsse.enableSNIExtension"));
+            URL url = new URL("https://www.google.com/");
+            int expectedCode = 200;
+            String expectedContentType = "text/html";
+            CheckURL cu = new CheckURL("testHTTPS", url, expectedCode, expectedContentType);
+            cu.check();
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
         }
     }
 }

@@ -144,7 +144,6 @@
     <property name="jaxen-jdom2"    value="${ext.lib}/jaxen-jdom2.jar" />
     <property name="saxpath"        value="${ext.lib}/saxpath.jar" />
 
-
     <property name="asm"            value="${ext.dev}/asm.jar" />
     <property name="cglib"          value="${ext.dev}/cglib.jar" />
     <property name="easymock"       value="${ext.dev}/easymock.jar" />
@@ -170,9 +169,11 @@
 
             <test name="ca.nrc.cadc.vosi.AvailabilityClientTest"/>
             <test name="ca.nrc.cadc.vosi.AvailabilityTest"/>
-		    <test name="ca.nrc.cadc.vosi.CapabilityTest"/>
-			<test name="ca.nrc.cadc.vosi.avail.CheckDataSourceTest"/>
-			<test name="ca.nrc.cadc.vosi.avail.CheckWebServiceTest"/>
+	    <test name="ca.nrc.cadc.vosi.CapabilityTest"/>
+            <test name="ca.nrc.cadc.vosi.avail.CheckDataSourceTest"/>
+            <test name="ca.nrc.cadc.vosi.avail.CheckWebServiceTest"/>
+            <test name="ca.nrc.cadc.vosi.avail.CheckURLTest"/>
+
             <formatter type="plain" usefile="false"/>
         </junit>
 
