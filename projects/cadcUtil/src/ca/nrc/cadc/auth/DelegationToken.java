@@ -232,6 +232,9 @@ public class DelegationToken implements Serializable
             throw new InvalidDelegationTokenException("missing starttime");
         Date now = new Date();
         long durationMs = duration*60*60*1000;
+        log.debug("starttime: " + starttime.getTime());
+        log.debug("now: " + now.getTime());
+        log.debug("durationMs: " + durationMs);
         if ( (now.getTime() < starttime.getTime()) ||
                 ((now.getTime() - starttime.getTime()) > durationMs) )
             throw new InvalidDelegationTokenException("expired");
