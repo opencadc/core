@@ -40,6 +40,8 @@ import static org.junit.Assert.fail;
 import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.TimeZone;
 
 import org.junit.Test;
 
@@ -93,8 +95,9 @@ public class DelegationTokenTest
         HttpPrincipal userid = new HttpPrincipal("someuser");
         URI scope = new URI("foo:bar");
         int duration = 10; // h
-        DelegationToken expToken = new DelegationToken(userid, duration, 
-                scope, new Date());
+        Calendar expiry = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+        expiry.add(Calendar.HOUR, duration);
+        DelegationToken expToken = new DelegationToken(userid, scope, expiry.getTime());
         /*
         DelegationToken actToken = DelegationToken.parse(
                 expToken.format(false), false);
@@ -117,18 +120,15 @@ public class DelegationTokenTest
         
         assertEquals("User id not the same", expToken.getUser(),
                 actToken.getUser());
-        assertEquals("Duration not the same", expToken.getDuration(),
-                actToken.getDuration());
-        assertEquals("Start time not the same", expToken.getStartTime(),
-                actToken.getStartTime());
+        assertEquals("Expiry time not the same", expToken.getExpiryTime(),
+                actToken.getExpiryTime());
         assertEquals("Scope not the same", expToken.getScope(),
                 actToken.getScope());
         
         // invalid scope
         try
         {
-            DelegationToken wrongScope = new DelegationToken(userid, duration, 
-                new URI("bar:baz"), new Date());
+            DelegationToken wrongScope = new DelegationToken(userid, new URI("bar:baz"), expiry.getTime());
             DelegationToken.parse(DelegationToken.format(wrongScope), null);
             fail("Exception expected");
         }
@@ -222,32 +222,12 @@ public class DelegationTokenTest
         assertTrue(expToken.isValid());
         */
         
-        Calendar cal = Calendar.getInstance(); // creates calendar
-
+        Calendar expiredDate = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+        expiredDate.add(Calendar.DATE, -1);
         // parse expired token
-        cal.setTime(new Date()); // sets calendar time/date
-        cal.add(Calendar.HOUR_OF_DAY, duration*2); // removes duration hours
         try
         {
-            expToken = new DelegationToken(userid, duration, 
-                    scope, cal.getTime());
-            DelegationToken.parse(DelegationToken.format(expToken), null);
-            fail("Exception expected");
-        }
-        catch(InvalidDelegationTokenException expected) 
-        {
-            log.debug("caught expected exception: " + expected);
-        }
-        
-        
-        cal = Calendar.getInstance(); // creates calendar
-        cal.setTime(new Date()); // sets calendar time/date
-        cal.add(Calendar.HOUR_OF_DAY, duration); // add duration hours
-        // parse future token
-        try
-        {
-            expToken = new DelegationToken(userid, duration, 
-                    scope, cal.getTime());
+            expToken = new DelegationToken(userid, scope, expiredDate.getTime());
             DelegationToken.parse(DelegationToken.format(expToken), null);
             fail("Exception expected");
         }
@@ -259,8 +239,7 @@ public class DelegationTokenTest
         //invalidate signature field
         try
         {
-            expToken = new DelegationToken(userid, duration, 
-                    scope, cal.getTime());
+            expToken = new DelegationToken(userid, scope, expiry.getTime());
             
             token = DelegationToken.format(expToken);
             CharSequence subSequence = token.subSequence(0,  token.indexOf("signature") + 10);
@@ -276,18 +255,17 @@ public class DelegationTokenTest
         // tamper with one character in the signature
         try
         {
-            expToken = new DelegationToken(userid, duration, 
-                    scope, cal.getTime());
+            expToken = new DelegationToken(userid, scope, expiry.getTime());
             
             token = DelegationToken.format(expToken);
             char toReplace = token.charAt(token.indexOf("signature") + 10);
             if (toReplace != 'A')
             {
-                token.replace(token.charAt(token.indexOf("signature") + 20), 'A');
+                token = token.replace(token.charAt(token.indexOf("signature") + 10), 'A');
             }
             else
             {
-                token.replace(token.charAt(token.indexOf("signature") + 20), 'B');
+                token = token.replace(token.charAt(token.indexOf("signature") + 10), 'B');
             }
             DelegationToken.parse(token, null);
             fail("Exception expected");
