@@ -54,8 +54,7 @@ import org.apache.log4j.Logger;
  * Class that captures the information required to perform delegation (i.e.
  * accessing resources on user's behalf). The required fields are:
  * - the user that delegates
- * - start time of the delegation
- * - duration
+ * - the expirty time
  * - scope of delegation
  * 
  * This class can serialize and de-serialize the information into a 
@@ -69,8 +68,7 @@ public class DelegationToken implements Serializable
     private static final long serialVersionUID = 20141025143750l;
 
     private HttpPrincipal user; // identity of the user
-    private Date startTime; // start time of the delegation (UTC)
-    private int duration; // duration of delegation (h)
+    private Date expiryTime; // expirty time of the delegation (UTC)
     private URI scope; // resources that are the object of the delegation
     
     public static final String FIELD_DELIM = "&";
@@ -89,32 +87,22 @@ public class DelegationToken implements Serializable
      * Constructor.
      * 
      * @param user identity of the delegating user - required 
-     * @param duration - duration of the delegation. Replaced with default if
-     * less then 0h.
      * @param scope - scope of the delegation, i.e. resource that it applies
      * to - optional
-     * @param startTime - the start date of this token (UTC)
+     * @param expiryTime - the expiry date of this token (UTC)
      */    
-    public DelegationToken(HttpPrincipal user, int duration,  URI scope, Date startTime)
+    public DelegationToken(HttpPrincipal user, URI scope, Date expiryTime)
     {
         if (user == null)
         {
             throw new IllegalArgumentException("User identity required");
         }
         this.user = user;
-        if(startTime == null)
+        if(expiryTime == null)
         {
-            throw new IllegalArgumentException("No start time");
+            throw new IllegalArgumentException("No expiry time");
         }
-        this.startTime = startTime;
-        if (duration > 0)
-        {
-            this.duration = duration;
-        }
-        else
-        {
-            throw new IllegalArgumentException("Negative duration: " + duration);
-        }
+        this.expiryTime = expiryTime;
         this.scope = scope;
     }
 
@@ -154,13 +142,9 @@ public class DelegationToken implements Serializable
         sb.append(VALUE_DELIM);
         sb.append(token.getUser().getName());
         sb.append(FIELD_DELIM);
-        sb.append("starttime");
+        sb.append("expirytime");
         sb.append(VALUE_DELIM);
-        sb.append(token.getStartTime().getTime());
-        sb.append(FIELD_DELIM);
-        sb.append("duration");
-        sb.append(VALUE_DELIM);
-        sb.append(token.getDuration());
+        sb.append(token.getExpiryTime().getTime());
         if (token.getScope() != null)
         {
             sb.append(FIELD_DELIM);
@@ -183,8 +167,7 @@ public class DelegationToken implements Serializable
     {
         String[] fields = text.split(FIELD_DELIM);
         HttpPrincipal userid = null;
-        Date starttime = null;
-        int duration = -1;
+        Date expirytime = null;
         URI scope = null;
         String signature = null;
         try
@@ -197,13 +180,9 @@ public class DelegationToken implements Serializable
                 {
                     userid = new HttpPrincipal(value);
                 }
-                if (key.equalsIgnoreCase("duration"))
+                if (key.equalsIgnoreCase("expirytime"))
                 {
-                    duration = Integer.valueOf(value);
-                }
-                if (key.equalsIgnoreCase("starttime"))
-                {
-                    starttime = new Date(Long.valueOf(value));
+                    expirytime = new Date(Long.valueOf(value));
                 }
                 if (key.equalsIgnoreCase("scope"))
                 {
@@ -228,12 +207,11 @@ public class DelegationToken implements Serializable
             throw new InvalidDelegationTokenException("Missing signature");
         
         // validate expiry
-        if (starttime == null)
-            throw new InvalidDelegationTokenException("missing starttime");
+        if (expirytime == null)
+            throw new InvalidDelegationTokenException("missing expirytime");
         Date now = new Date();
-        long durationMs = duration*60*60*1000;
-        if ( (now.getTime() < starttime.getTime()) ||
-                ((now.getTime() - starttime.getTime()) > durationMs) )
+        
+        if (now.getTime() > expirytime.getTime())
             throw new InvalidDelegationTokenException("expired");
         
         // validate scope
@@ -242,7 +220,7 @@ public class DelegationToken implements Serializable
         
         // validate signature
         DelegationToken result = 
-                new DelegationToken(userid, duration, scope, starttime);
+                new DelegationToken(userid, scope, expirytime);
         
         try
         {
@@ -295,17 +273,10 @@ public class DelegationToken implements Serializable
     }
 
 
-    public Date getStartTime()
+    public Date getExpiryTime()
     {
-        return startTime;
+        return expiryTime;
     }
-
-
-    public int getDuration()
-    {
-        return duration;
-    }
-
 
     public URI getScope()
     {
@@ -320,9 +291,7 @@ public class DelegationToken implements Serializable
         sb.append(",scope=");
         sb.append(getScope());
         sb.append(",startTime=");
-        sb.append(getStartTime());
-        sb.append(",duration=");
-        sb.append(getDuration());
+        sb.append(getExpiryTime());
         sb.append(")");
         return sb.toString();
     }
