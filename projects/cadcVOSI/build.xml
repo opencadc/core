@@ -91,49 +91,26 @@
     <property name="project" value="cadcVOSI" />
 
     <!-- JAR files to be included in classpath and war file -->
-    <property name="registryClient" value="${lib}/cadcRegistryClient.jar" />
     <property name="cadcUtil"       value="${lib}/cadcUtil.jar" />
     <property name="jdom2"          value="${ext.lib}/jdom2.jar" />
     <property name="log4j"          value="${ext.lib}/log4j.jar" />
     <property name="servlet-api"    value="${ext.lib}/servlet-api.jar" />
     <property name="xerces"         value="${ext.lib}/xerces.jar" />
     
-    <property name="jars"           value="${registryClient}:${cadcUtil}:${jdom2}:${log4j}:${servlet-api}" />
-    <property name="client.jars"    value="${registryClient} ${cadcUtil} ${jdom2} ${log4j} ${xerces}" />
+    <property name="jars"           value="${cadcUtil}:${jdom2}:${log4j}:${servlet-api}" />
 
-    <target name="build" depends="client, server" />
-
-    <target name="server" depends="compile, resources">
+    <target name="build" depends="compile,resources">
         <jar jarfile="${build}/lib/${project}.jar"
-             basedir="${build}/class"
-             update="no">
+             basedir="${build}/class" update="no">
             <exclude name="test/**" />
-            <!--<include name="ca/nrc/cadc/**" />-->
         </jar>
-    </target>
-
-    <target name="client" depends="compile, resources, manifest">
-        <jar jarfile="${build}/lib/cadcAvailabilityClient.jar"
-             basedir="${build}/class"
-             update="no"
-             manifest="${build}/tmp/cadcAvailabilityClient.mf">
-            <include name="ca/nrc/cadc/vosi/**.class" />
-            <include name="VOSIAvailability-v1.0.xsd" />
-        </jar>
-    </target>
-
-    <target name="manifest">
-        <manifest file="${build}/tmp/cadcAvailabilityClient.mf" mode="replace">
-            <attribute name="Main-Class" value="ca.nrc.cadc.vosi.AvailabilityApp"/>
-            <attribute name="Class-Path" value="${client.jars}" />
-        </manifest>
     </target>
 
     <target name="resources">
         <copy todir="${build}/class">
             <fileset dir="src/resources">
-		<include name="**.xsd" />
-	    </fileset>
+                <include name="**.xsd" />
+            </fileset>
         </copy>
     </target>
 
@@ -169,7 +146,7 @@
 
             <test name="ca.nrc.cadc.vosi.AvailabilityClientTest"/>
             <test name="ca.nrc.cadc.vosi.AvailabilityTest"/>
-	    <test name="ca.nrc.cadc.vosi.CapabilityTest"/>
+	        <test name="ca.nrc.cadc.vosi.CapabilityTest"/>
             <test name="ca.nrc.cadc.vosi.avail.CheckDataSourceTest"/>
             <test name="ca.nrc.cadc.vosi.avail.CheckWebServiceTest"/>
             <test name="ca.nrc.cadc.vosi.avail.CheckURLTest"/>
