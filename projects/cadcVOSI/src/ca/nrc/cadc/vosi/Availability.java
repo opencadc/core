@@ -132,7 +132,7 @@ public class Availability
 
         Document document = new Document();
         document.addContent(eleAvailability);
-
+        
         return document;
     }
     
