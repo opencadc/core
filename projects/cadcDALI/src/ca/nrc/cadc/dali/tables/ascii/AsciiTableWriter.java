@@ -123,17 +123,23 @@ public class AsciiTableWriter implements TableWriter<VOTableDocument>
 
     public static enum ContentType
     {
-        CSV("text/csv; header=present"),
-        TSV("text/tab-separated-values");
+        CSV("text/csv; header=present", "csv"),
+        TSV("text/tab-separated-values", "tsv");
 
         private String value;
+        private String extension;
 
-        private ContentType(String s) { this.value = s; }
+        private ContentType(String s, String ext)
+        {
+            this.value = s; this.extension = ext;
+        }
 
         public String getValue()
         {
             return value;
         }
+
+        public String getExtension() { return extension; }
     }
 
 
@@ -150,7 +156,7 @@ public class AsciiTableWriter implements TableWriter<VOTableDocument>
     @Override
     public String getExtension()
     {
-        return "txt";
+        return contentType.getExtension();
     }
 
     @Override
