@@ -72,7 +72,6 @@ package ca.nrc.cadc.dali.tables.ascii;
 import java.io.LineNumberReader;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.text.DateFormat;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -80,11 +79,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import ca.nrc.cadc.dali.tables.TableWriter;
-import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
-import ca.nrc.cadc.dali.tables.votable.VOTableReaderWriterTest;
-import ca.nrc.cadc.dali.tables.votable.VOTableResource;
-import ca.nrc.cadc.dali.tables.votable.VOTableTable;
-import ca.nrc.cadc.date.DateUtil;
+import ca.nrc.cadc.dali.tables.votable.*;
 import ca.nrc.cadc.util.Log4jInit;
 
 /**
@@ -95,13 +90,9 @@ public class AsciiTableWriterTest
 {
     private static final Logger log = Logger.getLogger(AsciiTableWriterTest.class);
 
-    private static final String DATE_TIME = "2009-01-02T11:04:05.678";
-    private static DateFormat dateFormat;
-
     static
     {
         Log4jInit.setLevel("ca.nrc.cadc.dali.tables", Level.DEBUG);
-        dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
     }
 
     public AsciiTableWriterTest() { }
@@ -111,6 +102,13 @@ public class AsciiTableWriterTest
     {
         TableWriter<VOTableDocument> writer = new AsciiTableWriter(AsciiTableWriter.ContentType.CSV);
         Assert.assertEquals("text/csv; header=present", writer.getContentType());
+        Assert.assertEquals("csv", writer.getExtension());
+
+        TableWriter<VOTableDocument> voTableDocumentTableWriter =
+                new VOTableWriter();
+        Assert.assertEquals("application/x-votable+xml",
+                            voTableDocumentTableWriter.getContentType());
+        Assert.assertEquals("xml", voTableDocumentTableWriter.getExtension());
     }
 
     @Test
@@ -142,6 +140,10 @@ public class AsciiTableWriterTest
 
             StringWriter sw = new StringWriter();
             TableWriter<VOTableDocument> writer = new AsciiTableWriter(AsciiTableWriter.ContentType.CSV);
+
+            Assert.assertEquals("Should be csv extension.", "csv",
+                                writer.getExtension());
+
             writer.write(expected, sw);
             String csv = sw.toString();
             log.info("CSV: \n\n" + csv);
@@ -182,6 +184,10 @@ public class AsciiTableWriterTest
 
             StringWriter sw = new StringWriter();
             TableWriter<VOTableDocument> writer = new AsciiTableWriter(AsciiTableWriter.ContentType.CSV);
+
+            Assert.assertEquals("Should be csv extension.", "csv",
+                                writer.getExtension());
+
             writer.write(expected, sw);
             String csv = sw.toString();
             log.info("CSV: \n\n" + csv);
@@ -222,6 +228,10 @@ public class AsciiTableWriterTest
 
             StringWriter sw = new StringWriter();
             TableWriter<VOTableDocument> writer = new AsciiTableWriter(AsciiTableWriter.ContentType.TSV);
+
+            Assert.assertEquals("Should be tsv extension.", "tsv",
+                                writer.getExtension());
+
             writer.write(expected, sw);
             String tsv = sw.toString();
             log.info("TSV: \n\n" + tsv);
@@ -262,6 +272,10 @@ public class AsciiTableWriterTest
 
             StringWriter sw = new StringWriter();
             TableWriter<VOTableDocument> writer = new AsciiTableWriter(AsciiTableWriter.ContentType.CSV);
+
+            Assert.assertEquals("Should be csv extension.", "csv",
+                                writer.getExtension());
+
             writer.write(expected, sw, 3L);
             String csv = sw.toString();
             log.info("CSV: \n\n" + csv);
