@@ -161,7 +161,7 @@ public class JsonOutputter implements Serializable
         w.print(QUOTE);
         w.print("@xmlns");
         w.print(QUOTE);
-        w.print(":");
+        w.print(" : ");
         w.print(QUOTE);
         w.print(d.getRootElement().getNamespace().getURI());
         w.print(QUOTE);
@@ -181,7 +181,7 @@ public class JsonOutputter implements Serializable
             w.print("@");
             w.print(a.getName());
             w.print(QUOTE);
-            w.print(":");
+            w.print(" : ");
             w.print(QUOTE);
             w.print(a.getValue());
             w.print(QUOTE);
@@ -196,23 +196,24 @@ public class JsonOutputter implements Serializable
     private void writeElement(Element e, PrintWriter w, int i, boolean writeNames)
         throws IOException
     {
-        String open = " [";
+        String open = "[";
         String close = "]";
         boolean writeChildNames = false;
         if (!listElementNames.contains(e.getName()))
         {
-            open = " {";
+            open = "{";
             close = "}";
             writeChildNames = true;
         }
         
         indent(w, i);
+        
         if (writeNames)
         {
             w.print(QUOTE);
             w.print(e.getName());
             w.print(QUOTE);
-            w.print(":");
+            w.print(" : ");
         }
         
         // write value
