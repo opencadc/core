@@ -109,7 +109,7 @@ public class JsonOutputter implements Serializable
     
     private final List<String> listElementNames = new ArrayList<String>();
     private final List<String> stringElementNames = new ArrayList<String>();
-
+    
     public JsonOutputter() { }
 
     /**
@@ -143,38 +143,44 @@ public class JsonOutputter implements Serializable
     public void output(final Document doc, Writer writer)
         throws IOException
     {
+        List<String>  namespaces = new ArrayList<String>();
         PrintWriter pw = new PrintWriter(writer);
-        Element root = doc.getRootElement();
-        pw.print("{");
-        writeSchema(doc, pw, 1);
-        pw.print(",");
-        writeElement(root, pw, 1, true);
-        indent(pw, 0);
-        pw.println("}");
+        writeElement(doc.getRootElement(), pw, 0, false, namespaces);
         pw.flush();
     }
     
-    private void writeSchema(Document d, PrintWriter w, int i)
+    private boolean writeSchema(Element e, PrintWriter w, int i, List<String>  namespaces)
         throws IOException
     {
+        String ns = e.getNamespace().getURI();
+        if (namespaces.contains(ns))
+            return false;
+        namespaces.add(ns);
+        
         indent(w, i);
         w.print(QUOTE);
         w.print("@xmlns");
         w.print(QUOTE);
         w.print(" : ");
         w.print(QUOTE);
-        w.print(d.getRootElement().getNamespace().getURI());
+        w.print(ns);
         w.print(QUOTE);
+        
+        return true;
     }
     
     // use @ for attribute names, see: http://badgerfish.ning.com/
-    private void writeAttributes(Element e, PrintWriter w, int i)
+    private boolean writeAttributes(Element e, PrintWriter w, int i, List<String>  namespaces)
         throws IOException
     {
+        boolean ret = writeSchema(e, w, i, namespaces);
         
         Iterator<Attribute> iter = e.getAttributes().iterator();
+        if (ret && iter.hasNext())
+            w.print(",");
         while ( iter.hasNext() )
         {
+            ret = true;
             Attribute a = iter.next();
             indent(w, i);
             w.print(QUOTE);
@@ -188,12 +194,14 @@ public class JsonOutputter implements Serializable
             if (iter.hasNext())
                 w.print(",");
         }
+        
+        return ret;
     }
     
     // use "name" : " " for scalar values
     // use "name" : { } for object values
     // use "name" : [ ] for list values
-    private void writeElement(Element e, PrintWriter w, int i, boolean writeNames)
+    private void writeElement(Element e, PrintWriter w, int i, boolean writeNames, List<String>  namespaces)
         throws IOException
     {
         String open = "[";
@@ -220,10 +228,10 @@ public class JsonOutputter implements Serializable
         if (e.hasAttributes() || !e.getChildren().isEmpty())
         {
             w.print(open);
-            writeAttributes(e, w, i+1);
-            if (e.hasAttributes() && !e.getChildren().isEmpty())
+            boolean attrs = writeAttributes(e, w, i+1, namespaces);
+            if (attrs && !e.getChildren().isEmpty())
                 w.print(",");
-            writeChildElements(e, w, i+1, writeChildNames);
+            writeChildElements(e, w, i+1, writeChildNames, namespaces);
             indent(w, i);
             w.print(close);
         }
@@ -242,14 +250,14 @@ public class JsonOutputter implements Serializable
     }
     
     // comma separated list of children
-    private void writeChildElements(Element e, PrintWriter w, int i, boolean writeNames)
+    private void writeChildElements(Element e, PrintWriter w, int i, boolean writeNames, List<String>  namespaces)
         throws IOException
     {
         Iterator<Element> iter = e.getChildren().iterator();
         while ( iter.hasNext() )
         {
             Element c = iter.next();
-            writeElement(c, w, i, writeNames);
+            writeElement(c, w, i, writeNames, namespaces);
             if (iter.hasNext())
                 w.print(",");
         }
