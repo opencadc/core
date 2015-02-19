@@ -619,4 +619,30 @@ public class AuthenticationUtilTest
             }
         });
     }
+    
+    @Test
+    public void testGetOrderedForm()
+    {
+        try
+        {
+            String name = "CN=Mr Toad, OU=toad.hall.com, O=Grid, C=CA"; // java normal order
+            String lname = name.toLowerCase();
+            String rname = "  C=CA, O=Grid, OU=toad.hall.com, CN=Mr Toad  "; // openssl normal order
+            
+            X500Principal x1 = new X500Principal(name);
+            X500Principal x2 = new X500Principal(lname);
+            X500Principal x3 = new X500Principal(rname);
+            
+            assertEquals("forward==ordered(reverse)", x1, AuthenticationUtil.getOrderedForm(x3));
+            
+            assertTrue("canon lower==reverse", AuthenticationUtil.equals(x2, x3));
+            assertNotSame("lower==reverse", x2, x3);
+            assertEquals("lower==ordered(reverse)", x2, AuthenticationUtil.getOrderedForm(x3));
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            fail("unexpected exception: " + unexpected);
+        }
+    }
 }

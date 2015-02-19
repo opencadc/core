@@ -89,6 +89,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.naming.InvalidNameException;
+import javax.naming.ldap.LdapName;
+import javax.naming.ldap.Rdn;
 import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
 import javax.servlet.http.HttpServletRequest;
@@ -361,6 +364,44 @@ public class AuthenticationUtil
             log.error(e.getMessage(), e);
         }
         return subject;
+    }
+    
+    /**
+     * Re-order the pairs in the X500 distinguished name to standard order. This method
+     * causes the pairs to be ordered such that the user parts are first and the country (C)
+     * is last in the string form of the distinguished name. If the DN does not have a C type
+     * RDN it will not be flipped.
+     *
+     * @param p
+     * @return ordered principal, possibly the argument if re-order not required
+     */
+    public static X500Principal getOrderedForm(X500Principal p)
+    {
+        try
+        {
+            X500Principal ret = p;
+            String up = p.getName(X500Principal.RFC2253);
+            LdapName dn = new LdapName(up);
+            List<Rdn> rdns = dn.getRdns();
+            Rdn left = rdns.get(rdns.size() - 1); // LDAP order from right-left
+            if ( "C".equalsIgnoreCase(left.getType()) )
+            {
+                // flip
+                StringBuilder sb = new StringBuilder();
+                for (Rdn r : rdns) // writing in normal order is actually flipping LDAP order
+                {
+                    sb.append(r.toString());
+                    sb.append(", ");
+                }
+                ret = new X500Principal(sb.substring(0, sb.length() - 2)); // strip off comma-space
+            }
+            return ret;
+        }
+        catch (InvalidNameException ex)
+        {
+            throw new IllegalArgumentException("invalid DN: " + p.getName(), ex);
+        }
+        finally { }
     }
 
     /**
