@@ -111,7 +111,7 @@ public class CheckDataSource implements CheckResource
      * Constructor to test a DataSource via JNDI name.
      *
      * @param dataSourceName JNDI name of DataSource
-     * @param testSQL test quiery that should work
+     * @param testSQL test query that should work
      */
     public CheckDataSource(String dataSourceName, String testSQL)
     {
@@ -145,12 +145,12 @@ public class CheckDataSource implements CheckResource
         catch(NamingException e)
         {
             log.warn("test failed: " + dataSourceName + " (" + testSQL + ")");
-            throw new CheckException("failed to find " + dataSourceName + " via JNDI", e);
+            throw new CheckException("DataSource not found: " + dataSourceName, e);
         }
         catch (SQLException e)
         {
             log.warn("test failed: " + dataSourceName + " (" + testSQL + ")");
-            throw new CheckException("DataSource is not usable", e);
+            throw new CheckException("DataSource is not usable: " + dataSourceName, e);
         }
         finally
         {
