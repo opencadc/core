@@ -170,7 +170,7 @@ public class CapabilitiesParser
     public void addSchemaLocation(String namespace, String schemaLocation)
     {
         log.debug("addSchemaLocation: " + namespace + " -> " + schemaLocation);
-        schemaMap.put(VOSI.XSI_NS_URI, schemaLocation);
+        schemaMap.put(namespace, schemaLocation);
     }
     
     public Document parse(Reader rdr)
