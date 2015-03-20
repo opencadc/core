@@ -77,11 +77,11 @@ import java.security.Principal;
  */
 public enum AuthMethod implements Principal
 {
-    ANON("anon"),                   // anonymous
-    CERT("x509-cert"),              // X509 certificate
-    COOKIE("cookie"),               // http-cookie
-    PASSWORD("username-password"),  // http-basic, http-digest
-    TOKEN("delegation-token");      // DelegationToken
+    ANON("anon"),          // anonymous
+    CERT("cert"),          // X509 certificate
+    COOKIE("cookie"),      // http-cookie
+    PASSWORD("password"),  // http-basic, http-digest
+    TOKEN("token");        // DelegationToken
     
     private final String value;
     
