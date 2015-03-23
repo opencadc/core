@@ -164,7 +164,7 @@ public class AuthenticationUtil
     {
         if (s == null)
             return null;
-        Set<AuthMethod> m = s.getPublicCredentials(AuthMethod.class);
+        Set<AuthMethod> m = s.getPrincipals(AuthMethod.class);
         if (m.isEmpty())
             return null;
         return m.iterator().next();
@@ -250,7 +250,7 @@ public class AuthenticationUtil
                 }
             }
         }
-        publicCred.add(am);
+        principals.add(am);
         Subject subject = new Subject(false, principals, publicCred, privateCred);
 
         return augmentSubject(subject);
