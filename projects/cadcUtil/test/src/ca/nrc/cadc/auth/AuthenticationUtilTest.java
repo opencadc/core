@@ -378,11 +378,9 @@ public class AuthenticationUtilTest
             replay(mockRequest);
             final Subject subject1 = AuthenticationUtil.getSubject(mockRequest);
 
-            assertEquals(1, subject1.getPrincipals().size());
+            assertEquals(0, subject1.getPrincipals().size());
             AuthMethod am = AuthenticationUtil.getAuthMethod(subject1);
             assertEquals(AuthMethod.ANON, am);
-            assertEquals(0, subject1.getPublicCredentials().size());
-            assertEquals(0, subject1.getPrivateCredentials().size());
 
             verify(mockRequest);
         }
@@ -415,7 +413,7 @@ public class AuthenticationUtilTest
             replay(mockRequest);
             final Subject subject1 = AuthenticationUtil.getSubject(mockRequest);
 
-            assertEquals(2, subject1.getPrincipals().size());
+            assertEquals(1, subject1.getPrincipals().size());
             AuthMethod am = AuthenticationUtil.getAuthMethod(subject1);
             assertEquals(AuthMethod.PASSWORD, am);
             Principal p = null;
@@ -430,8 +428,6 @@ public class AuthenticationUtilTest
             assertNotNull(p);
             HttpPrincipal hp = (HttpPrincipal) p;
             assertEquals("foo", p.getName());
-            assertEquals(0, subject1.getPublicCredentials().size());
-            assertEquals(0, subject1.getPrivateCredentials().size());
 
             verify(mockRequest);
         }
@@ -481,7 +477,7 @@ public class AuthenticationUtilTest
             replay(mockRequest);
             final Subject subject1 = AuthenticationUtil.getSubject(mockRequest);
 
-            assertEquals(2, subject1.getPrincipals().size());
+            assertEquals(1, subject1.getPrincipals().size());
             AuthMethod am = AuthenticationUtil.getAuthMethod(subject1);
             assertEquals(AuthMethod.PASSWORD, am);
             Principal p = null;
@@ -497,8 +493,6 @@ public class AuthenticationUtilTest
             assertTrue(p instanceof X500Principal);
             X500Principal xp = (X500Principal) p;
             assertEquals(subjectX500Principal, xp);
-            assertEquals(0, subject1.getPublicCredentials().size());
-            assertEquals(0, subject1.getPrivateCredentials().size());
 
             verify(mockRequest);
         }
@@ -562,7 +556,7 @@ public class AuthenticationUtilTest
             replay(mockRequest);
             final Subject subject1 = AuthenticationUtil.getSubject(mockRequest);
 
-            assertEquals(2, subject1.getPrincipals().size());
+            assertEquals(1, subject1.getPrincipals().size());
             AuthMethod am = AuthenticationUtil.getAuthMethod(subject1);
             assertEquals(AuthMethod.COOKIE, am);
             Principal p = null;
@@ -578,8 +572,6 @@ public class AuthenticationUtilTest
             assertTrue(p instanceof CookiePrincipal);
             CookiePrincipal cp = (CookiePrincipal) p;
             assertEquals("AAABBB", new String(cp.getSessionId()));
-            assertEquals(0, subject1.getPublicCredentials().size());
-            assertEquals(0, subject1.getPrivateCredentials().size());
 
             verify(mockRequest);
         }

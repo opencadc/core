@@ -164,12 +164,19 @@ public class AuthenticationUtil
     {
         if (s == null)
             return null;
-        Set<AuthMethod> m = s.getPrincipals(AuthMethod.class);
+        Set<AuthMethod> m = s.getPublicCredentials(AuthMethod.class);
         if (m.isEmpty())
             return null;
         return m.iterator().next();
     }
-
+    
+    private static void setAuthMethod(Subject s, AuthMethod am)
+    {
+        if (s == null || am == null)
+            return;
+        s.getPublicCredentials().add(am);
+    }
+    
     /**
      * Create a Subject using the given PrincipalExtractor. An implementation of the
      * PrincipalExtractor interface is used to extract the authentication information
@@ -203,7 +210,7 @@ public class AuthenticationUtil
         }
 
         AuthMethod am = null;
-        
+
         final Set<Object> publicCred = new HashSet<Object>();
         final Set<Object> privateCred = new HashSet<Object>();
         
@@ -250,9 +257,8 @@ public class AuthenticationUtil
                 }
             }
         }
-        principals.add(am);
         Subject subject = new Subject(false, principals, publicCred, privateCred);
-
+        setAuthMethod(subject, am);
         return augmentSubject(subject);
     }
 

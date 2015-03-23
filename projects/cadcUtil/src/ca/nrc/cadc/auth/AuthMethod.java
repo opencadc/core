@@ -75,7 +75,7 @@ import java.security.Principal;
  *
  * @author pdowler
  */
-public enum AuthMethod implements Principal
+public enum AuthMethod
 {
     ANON("anon"),          // anonymous
     CERT("cert"),          // X509 certificate
@@ -100,8 +100,7 @@ public enum AuthMethod implements Principal
         throw new IllegalArgumentException("invalid value: " + s);
     }
     
-    @Override
-    public String getName() { return value; }
+    public String getValue() { return value; }
     
     @Override
     public String toString() { return "AuthMethod[" + value + "]"; }
