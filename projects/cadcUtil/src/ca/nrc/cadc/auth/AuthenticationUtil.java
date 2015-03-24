@@ -159,7 +159,24 @@ public class AuthenticationUtil
         }
         return s;
     }
-
+    
+    public static AuthMethod getAuthMethod(Subject s)
+    {
+        if (s == null)
+            return null;
+        Set<AuthMethod> m = s.getPublicCredentials(AuthMethod.class);
+        if (m.isEmpty())
+            return null;
+        return m.iterator().next();
+    }
+    
+    private static void setAuthMethod(Subject s, AuthMethod am)
+    {
+        if (s == null || am == null)
+            return;
+        s.getPublicCredentials().add(am);
+    }
+    
     /**
      * Create a Subject using the given PrincipalExtractor. An implementation of the
      * PrincipalExtractor interface is used to extract the authentication information
@@ -189,24 +206,59 @@ public class AuthenticationUtil
     {
         if (principalExtractor == null)
         {
-            throw new IllegalArgumentException(
-                    "principalExtractor cannot be null");
+            throw new IllegalArgumentException("principalExtractor cannot be null");
         }
+
+        AuthMethod am = null;
 
         final Set<Object> publicCred = new HashSet<Object>();
         final Set<Object> privateCred = new HashSet<Object>();
-
+        
+        Set<Principal> principals = principalExtractor.getPrincipals();
+        
+        if (principals.isEmpty())
+            am = AuthMethod.ANON;
+        
         X509CertificateChain chain = principalExtractor.getCertificateChain();
         if (chain != null)
+        {
             publicCred.add(chain);
+            am = AuthMethod.CERT;
+        }
 
         DelegationToken token = principalExtractor.getDelegationToken();
         if (token != null)
+        {
             publicCred.add(token);
-
-        Subject subject = new Subject(false, principalExtractor.getPrincipals(),
-                                      publicCred, privateCred);
-
+            if (am == null)
+                am = AuthMethod.TOKEN;
+        }
+        
+        if (am == null)
+        {
+            for (Object o : principals)
+            {
+                if (o instanceof CookiePrincipal)
+                {
+                    am = AuthMethod.COOKIE;
+                    break;
+                }
+            }
+        }
+        
+        if (am == null)
+        {
+            for (Object o : principals)
+            {
+                if (o instanceof HttpPrincipal)
+                {
+                    am = AuthMethod.PASSWORD;
+                    break;
+                }
+            }
+        }
+        Subject subject = new Subject(false, principals, publicCred, privateCred);
+        setAuthMethod(subject, am);
         return augmentSubject(subject);
     }
 
@@ -262,8 +314,7 @@ public class AuthenticationUtil
             // than extracting and putting it into the privateCred set... TBD
         }
 
-        Subject subject = new Subject(false, principals, publicCred,
-                                      privateCred);
+        Subject subject = new Subject(false, principals, publicCred, privateCred);
         return subject; // this method for client apps only: no augment
     }
 
@@ -446,10 +497,10 @@ public class AuthenticationUtil
      * IllegalArgumentException is thrown.
      * </ul>
      * <p/>
-     * Please see RFC#4514 for more inforamation.
+     * Please see RFC#4514 for more information.
      *
      * @param dnSrc
-     * @return An extended canonized dn
+     * @return canonized distinguished name
      */
     public static String canonizeDistinguishedName(String dnSrc)
     {

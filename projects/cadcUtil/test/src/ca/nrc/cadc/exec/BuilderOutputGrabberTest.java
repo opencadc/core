@@ -111,7 +111,7 @@ public class BuilderOutputGrabberTest
         BuilderOutputGrabber bog = new BuilderOutputGrabber();
         String[] cmd = {"/bin/bash", "-c", "ls -al $CADC_ROOT"};
         Map<String, String> env = new TreeMap<String, String>();
-        env.put("CADC_ROOT", "/usr/cadc/local");
+        env.put("CADC_ROOT", "/usr/local");
         bog.captureOutput(cmd, env);
         assertEquals("", bog.getErrorOutput());
         assertNotNull(bog.getOutput());
