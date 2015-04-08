@@ -160,6 +160,13 @@ public class AuthenticationUtil
         return s;
     }
     
+    public static Subject getAnonSubject()
+    {
+        Subject ret = new Subject();
+        setAuthMethod(ret, AuthMethod.ANON);
+        return ret;
+    }
+    
     public static AuthMethod getAuthMethod(Subject s)
     {
         if (s == null)
@@ -176,6 +183,8 @@ public class AuthenticationUtil
             return;
         s.getPublicCredentials().add(am);
     }
+    
+    
     
     /**
      * Create a Subject using the given PrincipalExtractor. An implementation of the
