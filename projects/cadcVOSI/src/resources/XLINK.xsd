@@ -1,4 +1,6 @@
-/*
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
 ************************************************************************
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
@@ -65,56 +67,60 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+-->
 
-package ca.nrc.cadc.vosi;
+<!--$Id: XLINK.xsd,v 1.2 2006/09/26 15:34:24 clq2 Exp $--><!-- Schema definition for Xlink for the SpaceTimeCoords --><!--Change Log:
+$Log: XLINK.xsd,v $
+Revision 1.2  2006/09/26 15:34:24  clq2
+SLI_KEA_1794 for slinger and PAL_KEA_1974 for pal and xml, deleted slinger jar from repo, merged with pal
 
-/**
- * VOSI constants. Actually, this class contains more than VOSI constants: it also
- * includes other commonly used IVOA schema constants. For each schema, there is a
- * constant for the namespace (SOMETHING_NS_URI) and a constant for the name of the
- * schema (xsd) file (SOMETHING_SCHEMA) included in the cadcVOSI.jar during build.
- * The name can be used with XmlUtil.getResourceUrlString to find a URL to the file
- * in the classpath and then the namespace URI and URL can be used to set up the
- * schema map to pass to XmlUtil to parse the document (or create a SAXBuilder).
- *
- * @author pdowler
- */
-public class VOSI
-{
-    public static final String NS_PREFIX = "vosi";
-	
-    public static final String XSI_NS_URI = "http://www.w3.org/2001/XMLSchema-instance";
-    
-    public static final String XLINK_NS_URI = "http://www.w3.org/1999/xlink";
-    
-    public static final String AVAILABILITY_NS_URI = "http://www.ivoa.net/xml/VOSIAvailability/v1.0";
+Revision 1.1.2.1  2006/07/13 10:13:55  KevinBenson
+Added several 1.0 xsd schemas related to vo-resource-types.  Also added these new namespaces to the SchemaMap to be used with Validation.  Errors were in the ContractsFilter for writing out schema's and wsdls via a filter.
 
-    public static final String CAPABILITIES_NS_URI = "http://www.ivoa.net/xml/VOSICapabilities/v1.0";
+Revision 1.2  2006/03/01 21:55:31  arots
+Fixed missing end-of-comment.
 
-    public static final String TABLES_NS_URI = "http://www.ivoa.net/xml/VOSITables/v1.0";
-
-    public static final String VODATASERVICE_NS_URI = "http://www.ivoa.net/xml/VODataService/v1.1";
-
-    public static final String VORESOURCE_NS_URI = "http://www.ivoa.net/xml/VOResource/v1.0";
-    
-    public static final String STC_NS_URI = "http://www.ivoa.net/xml/STC/stc-v1.30.xsd";
-
-    
-    public static final String XSI_SCHEMA = "XMLSchema.xsd";
-    
-    public static final String XLINK_SCHEMA = "XLINK.xsd";
-
-    public static final String AVAILABILITY_SCHEMA = "VOSIAvailability-v1.0.xsd";
-
-    public static final String CAPABILITIES_SCHEMA = "VOSICapabilities-v1.0.xsd";
-
-    public static final String TABLES_SCHEMA = "VOSITables-v1.0.xsd";
-
-    public static final String VODATASERVICE_SCHEMA = "VODataService-v1.1.xsd";
-
-    public static final String VORESOURCE_SCHEMA = "VOResource-v1.0.xsd";
-    
-    public static final String STC_SCHEMA = "STC-v1.3.xsd";
-
-}
+Revision 1.1  2006/03/01 21:06:05  arots
+Initial revision
+ --><xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" targetNamespace="http://www.w3.org/1999/xlink" elementFormDefault="qualified" attributeFormDefault="qualified">
+  <xs:attribute name="type">
+    <xs:simpleType>
+      <xs:restriction base="xs:NMTOKEN">
+        <xs:enumeration value="simple"/>
+        <xs:enumeration value="extended"/>
+        <xs:enumeration value="locator"/>
+        <xs:enumeration value="arc"/>
+        <xs:enumeration value="resource"/>
+        <xs:enumeration value="title"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:attribute>
+  <xs:attribute name="href" type="xs:anyURI"/>
+  <xs:attribute name="role" type="xs:anyURI"/>
+  <xs:attribute name="arcrole" type="xs:anyURI"/>
+  <xs:attribute name="title" type="xs:string"/>
+  <xs:attribute name="show">
+    <xs:simpleType>
+      <xs:restriction base="xs:NMTOKEN">
+        <xs:enumeration value="new"/>
+        <xs:enumeration value="replace"/>
+        <xs:enumeration value="embed"/>
+        <xs:enumeration value="other"/>
+        <xs:enumeration value="none"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:attribute>
+  <xs:attribute name="label" type="xs:NMTOKEN"/>
+  <xs:attribute name="actuate">
+    <xs:simpleType>
+      <xs:restriction base="xs:NMTOKEN">
+        <xs:enumeration value="onLoad"/>
+        <xs:enumeration value="onRequest"/>
+        <xs:enumeration value="other"/>
+        <xs:enumeration value="none"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:attribute>
+  <xs:attribute name="from" type="xs:NMTOKEN"/>
+  <xs:attribute name="to" type="xs:NMTOKEN"/>
+</xs:schema>

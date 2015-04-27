@@ -96,7 +96,7 @@ public class CapabilityTest
     private static Logger log = Logger.getLogger(CapabilityTest.class);
     static
     {
-        Log4jInit.setLevel("ca.nrc.cadc.vosi", Level.INFO);
+        Log4jInit.setLevel("ca.nrc.cadc.vosi", Level.DEBUG);
     }
 
     String schemaResource1 = VOSI.CAPABILITIES_SCHEMA;
@@ -113,7 +113,7 @@ public class CapabilityTest
     /**
      * @throws java.lang.Exception
      */
-    @Before
+    //@Before
     public void setUp() throws Exception
     {
         schemaNSMap = new HashMap<String, String>();
@@ -143,8 +143,11 @@ public class CapabilityTest
         Writer stringWriter = new StringWriter();
         xop.output(doc, stringWriter);
         String xmlString = stringWriter.toString();
-        StringReader reader = new StringReader(xmlString);
-        XmlUtil.buildDocument(reader, schemaNSMap);
+        
+        //StringReader reader = new StringReader(xmlString);
+        //XmlUtil.buildDocument(reader, schemaNSMap);
+        CapabilitiesParser cp = new CapabilitiesParser();
+        Document doc2 = cp.parse(new StringReader(xmlString));
 
         // these xpath tests are somewhat brittle as a change in the prefix in Capabilities.java
         // would require a change here

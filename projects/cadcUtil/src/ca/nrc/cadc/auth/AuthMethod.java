@@ -3,12 +3,12 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2011.                            (c) 2011.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -62,59 +62,46 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 4 $
+*  $Revision: 5 $
 *
 ************************************************************************
 */
 
-package ca.nrc.cadc.vosi;
+package ca.nrc.cadc.auth;
+
+import java.security.Principal;
 
 /**
- * VOSI constants. Actually, this class contains more than VOSI constants: it also
- * includes other commonly used IVOA schema constants. For each schema, there is a
- * constant for the namespace (SOMETHING_NS_URI) and a constant for the name of the
- * schema (xsd) file (SOMETHING_SCHEMA) included in the cadcVOSI.jar during build.
- * The name can be used with XmlUtil.getResourceUrlString to find a URL to the file
- * in the classpath and then the namespace URI and URL can be used to set up the
- * schema map to pass to XmlUtil to parse the document (or create a SAXBuilder).
  *
  * @author pdowler
  */
-public class VOSI
+public enum AuthMethod
 {
-    public static final String NS_PREFIX = "vosi";
-	
-    public static final String XSI_NS_URI = "http://www.w3.org/2001/XMLSchema-instance";
+    ANON("anon"),          // anonymous
+    CERT("cert"),          // X509 certificate
+    COOKIE("cookie"),      // http-cookie
+    PASSWORD("password"),  // http-basic, http-digest
+    TOKEN("token");        // DelegationToken
     
-    public static final String XLINK_NS_URI = "http://www.w3.org/1999/xlink";
+    private final String value;
     
-    public static final String AVAILABILITY_NS_URI = "http://www.ivoa.net/xml/VOSIAvailability/v1.0";
-
-    public static final String CAPABILITIES_NS_URI = "http://www.ivoa.net/xml/VOSICapabilities/v1.0";
-
-    public static final String TABLES_NS_URI = "http://www.ivoa.net/xml/VOSITables/v1.0";
-
-    public static final String VODATASERVICE_NS_URI = "http://www.ivoa.net/xml/VODataService/v1.1";
-
-    public static final String VORESOURCE_NS_URI = "http://www.ivoa.net/xml/VOResource/v1.0";
+    private AuthMethod(String s)
+    {
+        this.value = s;
+    }
     
-    public static final String STC_NS_URI = "http://www.ivoa.net/xml/STC/stc-v1.30.xsd";
-
+    public static AuthMethod getAuthMethod(String s)
+    {
+        for (AuthMethod am : values())
+        {
+            if (am.value.equals(s))
+                return am;
+        }
+        throw new IllegalArgumentException("invalid value: " + s);
+    }
     
-    public static final String XSI_SCHEMA = "XMLSchema.xsd";
+    public String getValue() { return value; }
     
-    public static final String XLINK_SCHEMA = "XLINK.xsd";
-
-    public static final String AVAILABILITY_SCHEMA = "VOSIAvailability-v1.0.xsd";
-
-    public static final String CAPABILITIES_SCHEMA = "VOSICapabilities-v1.0.xsd";
-
-    public static final String TABLES_SCHEMA = "VOSITables-v1.0.xsd";
-
-    public static final String VODATASERVICE_SCHEMA = "VODataService-v1.1.xsd";
-
-    public static final String VORESOURCE_SCHEMA = "VOResource-v1.0.xsd";
-    
-    public static final String STC_SCHEMA = "STC-v1.3.xsd";
-
+    @Override
+    public String toString() { return "AuthMethod[" + value + "]"; }
 }
