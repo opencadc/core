@@ -87,9 +87,9 @@ import org.jdom2.output.Format;
  * Special JDOM2 Outputter that writes a Document in JSON format. This class 
  * nominally follows the Badgerfish convention (http://badgerfish.ning.com/)
  * except that it assumes it will be used for structured data and not mark up. 
- * For example, there is no mixing of child text and child elements and no 
- * attributes on elements containing ~scalar values (string, number, or boolean).
- * Unlike Badgerfish, scalar valeus are written as simple key:value pairs instead
+ * For example, there is no mixing of child text and child elements.
+ * 
+ * Unlike Badgerfish, scalar values are written as simple key:value pairs instead
  * of using an object value with special key ($) for the content. Also, this class
  * does not try to guess if the children of an object should be another object ({})
  * or a list ([]). You must specify which elements correspond to lists and then
@@ -188,9 +188,16 @@ public class JsonOutputter implements Serializable
             w.print(a.getName());
             w.print(QUOTE);
             w.print(" : ");
-            w.print(QUOTE);
-            w.print(a.getValue());
-            w.print(QUOTE);
+            if ( isBoolean(e.getName(), a.getValue()) || isNumeric(e.getName(), a.getValue()) )
+            {
+                w.print(a.getValue());
+            }
+            else
+            {
+                w.print(QUOTE);
+                w.print(a.getValue());
+                w.print(QUOTE);
+            }
             if (iter.hasNext())
                 w.print(",");
         }
@@ -225,19 +232,24 @@ public class JsonOutputter implements Serializable
         }
         
         // write value
-        if (e.hasAttributes() || !e.getChildren().isEmpty())
+        w.print(open);
+        boolean multiLine = true;
+        boolean attrs = writeAttributes(e, w, i+1, namespaces);
+        boolean children = writeChildElements(e, w, i+1, writeChildNames, namespaces, attrs);
+        if (!children && writeChildNames)
         {
-            w.print(open);
-            boolean attrs = writeAttributes(e, w, i+1, namespaces);
-            if (attrs && !e.getChildren().isEmpty())
+            if (attrs)
+            {
                 w.print(",");
-            writeChildElements(e, w, i+1, writeChildNames, namespaces);
-            indent(w, i);
-            w.print(close);
-        }
-        else
-        {
+                indent(w,i+1);
+            }
+            else
+                multiLine = false;
             String sval = e.getTextNormalize();
+            w.print(QUOTE);
+            w.print("$");
+            w.print(QUOTE);
+            w.print(" : ");
             if ( isBoolean(e.getName(), sval) || isNumeric(e.getName(), sval) )
                 w.print(sval);
             else
@@ -247,20 +259,33 @@ public class JsonOutputter implements Serializable
                 w.print(QUOTE);
             }
         }
+        if (multiLine)
+            indent(w, i);
+        w.print(close);
     }
     
     // comma separated list of children
-    private void writeChildElements(Element e, PrintWriter w, int i, boolean writeNames, List<String>  namespaces)
+    private boolean writeChildElements(Element e, PrintWriter w, int i, boolean writeNames, 
+            List<String>  namespaces, boolean parentAttrs)
         throws IOException
     {
+        boolean ret = false;
         Iterator<Element> iter = e.getChildren().iterator();
         while ( iter.hasNext() )
         {
+            if (!ret && parentAttrs)
+            {
+                w.print(",");
+                indent(w,i);
+            }
+            ret = true;
+            
             Element c = iter.next();
             writeElement(c, w, i, writeNames, namespaces);
             if (iter.hasNext())
                 w.print(",");
         }
+        return ret;
     }
     
     private boolean isBoolean(String ename, String s)
