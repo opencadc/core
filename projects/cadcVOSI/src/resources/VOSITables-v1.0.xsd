@@ -1,6 +1,6 @@
 <xsd:schema targetNamespace="http://www.ivoa.net/xml/VOSITables/v1.0"
             xmlns:tns="http://www.ivoa.net/xml/VOSITables/v1.0"
-            xmlns:vds="http://www.ivoa.net/xml/VODataService/v1.1"
+            xmlns:vs="http://www.ivoa.net/xml/VODataService/v1.1"
             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             elementFormDefault="qualified"
@@ -22,6 +22,13 @@
   <!--
     -  the root element for a VOSI tables metadata from VODataService
     -->
-  <xsd:element name="tableset" type="vds:TableSet" />
+  <xsd:element name="tableset" type="vs:TableSet" />
+  
+  
+  <!-- prototype root element for a single schema document -->
+  <xsd:element name="schema" type="vs:TableSchema" />
+  
+  <!-- prototype root element for a single schema document -->
+  <xsd:element name="table" type="vs:Table" />
 
 </xsd:schema>
