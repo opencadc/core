@@ -92,7 +92,7 @@ public class ShortArrayFormat implements Format<short[]>
         for (short s : object)
         {
             sb.append(Short.toString(s));
-            sb.append(",");
+            sb.append(" ");
         }
         return sb.substring(0, sb.length() - 1); // trim trailing comma
     }
@@ -111,7 +111,7 @@ public class ShortArrayFormat implements Format<short[]>
         }
         else
         {
-            String[] tokens = s.split(",");
+            String[] tokens = s.split(" ");
             short[] array = new short[tokens.length];
             for (int i = 0; i < tokens.length; i++)
             {
