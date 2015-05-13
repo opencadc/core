@@ -92,7 +92,7 @@ public class ByteArrayFormat implements Format<byte[]>
         for (byte b : object)
         {
             sb.append(Byte.toString(b));
-            sb.append(",");
+            sb.append(" ");
         }
         return sb.substring(0, sb.length() - 1); // trim trailing comma
     }
@@ -111,7 +111,7 @@ public class ByteArrayFormat implements Format<byte[]>
         }
         else
         {
-            String[] tokens = s.split(",");
+            String[] tokens = s.split(" ");
             byte[] array = new byte[tokens.length];
             for (int i = 0; i < tokens.length; i++)
             {

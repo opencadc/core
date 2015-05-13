@@ -93,7 +93,7 @@ public class FloatArrayFormat  implements Format<float[]>
         for (float f : object)
         {
             sb.append(Float.toString(f));
-            sb.append(",");
+            sb.append(" ");
         }
         return sb.substring(0, sb.length() - 1); // trim trailing comma
     }
@@ -112,7 +112,7 @@ public class FloatArrayFormat  implements Format<float[]>
         }
         else
         {
-            String[] tokens = s.split(",");
+            String[] tokens = s.split(" ");
             float[] array = new float[tokens.length];
             for (int i = 0; i < tokens.length; i++)
             {

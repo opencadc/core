@@ -92,7 +92,7 @@ public class LongArrayFormat implements Format<long[]>
         for (long i : object)
         {
             sb.append(Long.toString(i));
-            sb.append(",");
+            sb.append(" ");
         }
         return sb.substring(0, sb.length() - 1); // trim trailing comma
     }
@@ -111,7 +111,7 @@ public class LongArrayFormat implements Format<long[]>
         }
         else
         {
-            String[] tokens = s.split(",");
+            String[] tokens = s.split(" ");
             long[] array = new long[tokens.length];
             for (int i = 0; i < tokens.length; i++)
             {

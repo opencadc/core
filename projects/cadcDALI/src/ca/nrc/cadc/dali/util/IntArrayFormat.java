@@ -92,7 +92,7 @@ public class IntArrayFormat implements Format<int[]>
         for (int i : object)
         {
             sb.append(Integer.toString(i));
-            sb.append(",");
+            sb.append(" ");
         }
         return sb.substring(0, sb.length() - 1); // trim trailing comma
     }
@@ -111,7 +111,7 @@ public class IntArrayFormat implements Format<int[]>
         }
         else
         {
-            String[] tokens = s.split(",");
+            String[] tokens = s.split(" ");
             int[] array = new int[tokens.length];
             for (int i = 0; i < tokens.length; i++)
             {
