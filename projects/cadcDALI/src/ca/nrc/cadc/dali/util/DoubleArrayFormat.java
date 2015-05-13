@@ -93,7 +93,7 @@ public class DoubleArrayFormat implements Format<double[]>
         for (double d : object)
         {
             sb.append(Double.toString(d));
-            sb.append(",");
+            sb.append(" ");
         }
         return sb.substring(0, sb.length() - 1); // trim trailing comma
     }
@@ -112,7 +112,7 @@ public class DoubleArrayFormat implements Format<double[]>
         }
         else
         {
-            String[] tokens = s.split(",");
+            String[] tokens = s.split(" ");
             double[] array = new double[tokens.length];
             for (int i = 0; i < tokens.length; i++)
             {
