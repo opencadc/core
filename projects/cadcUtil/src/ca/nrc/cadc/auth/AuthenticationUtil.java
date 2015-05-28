@@ -117,8 +117,7 @@ public class AuthenticationUtil
     private static final String[] ORDERED_RDN_KEYS = new String[]
             {"DC", "CN", "OU", "O", "STREET", "L", "ST", "C", "UID"};
 
-    private static final String DEFAULT_AUTH = Authenticator.class
-                                                       .getName() + "Impl";
+    private static final String DEFAULT_AUTH = Authenticator.class.getName() + "Impl";
 
     private static Logger log = Logger.getLogger(AuthenticationUtil.class);
 
