@@ -379,8 +379,8 @@ public class AuthenticationUtilTest
             final Subject subject1 = AuthenticationUtil.getSubject(mockRequest);
 
             assertEquals(0, subject1.getPrincipals().size());
-            assertEquals(0, subject1.getPublicCredentials().size());
-            assertEquals(0, subject1.getPrivateCredentials().size());
+            AuthMethod am = AuthenticationUtil.getAuthMethod(subject1);
+            assertEquals(AuthMethod.ANON, am);
 
             verify(mockRequest);
         }
@@ -414,12 +414,20 @@ public class AuthenticationUtilTest
             final Subject subject1 = AuthenticationUtil.getSubject(mockRequest);
 
             assertEquals(1, subject1.getPrincipals().size());
-            Principal p = subject1.getPrincipals().iterator().next();
-            assertTrue(p instanceof HttpPrincipal);
+            AuthMethod am = AuthenticationUtil.getAuthMethod(subject1);
+            assertEquals(AuthMethod.PASSWORD, am);
+            Principal p = null;
+            for (Principal tmp : subject1.getPrincipals())
+            {
+                if (tmp instanceof HttpPrincipal)
+                {
+                    p = tmp;
+                    break;
+                }
+            }
+            assertNotNull(p);
             HttpPrincipal hp = (HttpPrincipal) p;
             assertEquals("foo", p.getName());
-            assertEquals(0, subject1.getPublicCredentials().size());
-            assertEquals(0, subject1.getPrivateCredentials().size());
 
             verify(mockRequest);
         }
@@ -470,12 +478,21 @@ public class AuthenticationUtilTest
             final Subject subject1 = AuthenticationUtil.getSubject(mockRequest);
 
             assertEquals(1, subject1.getPrincipals().size());
-            Principal p = subject1.getPrincipals().iterator().next();
+            AuthMethod am = AuthenticationUtil.getAuthMethod(subject1);
+            assertEquals(AuthMethod.PASSWORD, am);
+            Principal p = null;
+            for (Principal tmp : subject1.getPrincipals())
+            {
+                if (tmp instanceof X500Principal)
+                {
+                    p = tmp;
+                    break;
+                }
+            }
+            assertNotNull(p);
             assertTrue(p instanceof X500Principal);
             X500Principal xp = (X500Principal) p;
             assertEquals(subjectX500Principal, xp);
-            assertEquals(0, subject1.getPublicCredentials().size());
-            assertEquals(0, subject1.getPrivateCredentials().size());
 
             verify(mockRequest);
         }
@@ -524,14 +541,11 @@ public class AuthenticationUtilTest
         try
         {
             final Cookie[] cookies = new Cookie[]
-                    {
-                            new Cookie("SOMECOOKIE", "SOMEVALUE"),
-                            new Cookie(SSOCookieManager.DEFAULT_SSO_COOKIE_NAME,
-//                                       "sessionID=AAABBB")
-                                       "AAABBB")
-                    };
-            final HttpServletRequest mockRequest =
-                    createMock(HttpServletRequest.class);
+            {
+                    new Cookie("SOMECOOKIE", "SOMEVALUE"),
+                    new Cookie(SSOCookieManager.DEFAULT_SSO_COOKIE_NAME, "AAABBB")
+            };
+            final HttpServletRequest mockRequest = createMock(HttpServletRequest.class);
 
             expect(mockRequest.getRemoteUser()).andReturn(null).atLeastOnce();
             expect(mockRequest.getCookies()).andReturn(cookies).atLeastOnce();
@@ -543,12 +557,21 @@ public class AuthenticationUtilTest
             final Subject subject1 = AuthenticationUtil.getSubject(mockRequest);
 
             assertEquals(1, subject1.getPrincipals().size());
-            Principal p = subject1.getPrincipals().iterator().next();
+            AuthMethod am = AuthenticationUtil.getAuthMethod(subject1);
+            assertEquals(AuthMethod.COOKIE, am);
+            Principal p = null;
+            for (Principal tmp : subject1.getPrincipals())
+            {
+                if (tmp instanceof CookiePrincipal)
+                {
+                    p = tmp;
+                    break;
+                }
+            }
+            assertNotNull(p);
             assertTrue(p instanceof CookiePrincipal);
             CookiePrincipal cp = (CookiePrincipal) p;
             assertEquals("AAABBB", new String(cp.getSessionId()));
-            assertEquals(0, subject1.getPublicCredentials().size());
-            assertEquals(0, subject1.getPrivateCredentials().size());
 
             verify(mockRequest);
         }
