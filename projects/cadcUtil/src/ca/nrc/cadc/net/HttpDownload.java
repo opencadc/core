@@ -911,7 +911,24 @@ public class HttpDownload extends HttpTransfer
                 if (use_nio)
                     nioLoop(istream, ostream, 2*bufferSize, startingPos);
                 else
-                    ioLoop(istream, ostream, 2*bufferSize, startingPos);
+                {
+                    String md5 = ioLoop(istream, ostream, 2*bufferSize, startingPos);
+                    if (contentMD5 != null && md5 != null)
+                    {
+                        if ( !md5.equals(contentMD5) )
+                        {
+                            StringBuilder sb = new StringBuilder();
+                            sb.append("MD5 mismatch: ");
+                            sb.append(contentMD5).append(" (header) != ").append(md5).append(" (bytes)");
+                            if (remoteURL != null)
+                                sb.append(" url: ").append(remoteURL);
+                            if (destFile != null)
+                                sb.append(" destFile: ").append(destFile.getAbsolutePath());
+                            // TODO: throw an Exception??
+                            log.warn(sb.toString());
+                        }
+                    }
+                }
             }
 
             if (ostream != null)
