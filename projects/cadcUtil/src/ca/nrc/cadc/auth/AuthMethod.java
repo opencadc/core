@@ -69,7 +69,10 @@
 
 package ca.nrc.cadc.auth;
 
-import java.security.Principal;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -82,6 +85,23 @@ public enum AuthMethod
     COOKIE("cookie"),      // http-cookie
     PASSWORD("password"),  // http-basic, http-digest
     TOKEN("token");        // DelegationToken
+    
+    private static final Map<AuthMethod,URI> SEC_MAP = new HashMap<AuthMethod,URI>();
+    static
+    {
+        try
+        {
+            SEC_MAP.put(ANON, new URI("ivo://ivoa.net/sso#anon"));
+            SEC_MAP.put(CERT, new URI("ivo://ivoa.net/sso#tls-with-certficate"));
+            SEC_MAP.put(COOKIE, new URI("ivo://ivoa.net/sso#cookie"));
+            SEC_MAP.put(PASSWORD, new URI("http://www.w3.org/Protocols/HTTP/1.0/spec.html#BasicAA"));
+            SEC_MAP.put(TOKEN, new URI("ivo://cadc.nrc.ca/auth#delegation-token"));
+        }
+        catch(URISyntaxException bug)
+        {
+            throw new RuntimeException("BUG: invalid URI in static constants", bug);
+        }
+    }
     
     private final String value;
     
@@ -100,7 +120,27 @@ public enum AuthMethod
         throw new IllegalArgumentException("invalid value: " + s);
     }
     
+    public static AuthMethod getAuthMethod(URI securityMethod)
+    {
+        for (Map.Entry<AuthMethod,URI> me : SEC_MAP.entrySet())
+        {
+            if ( me.getValue().equals(securityMethod))
+                return me.getKey();
+        }
+        throw new IllegalArgumentException("invalid value: " + securityMethod);
+    }
+    
     public String getValue() { return value; }
+    
+    /**
+     * Get the equivalent IVOA securityMethod identifier.
+     * 
+     * @return 
+     */
+    public URI getSecurityMethod()
+    {
+        return SEC_MAP.get(this);
+    }
     
     @Override
     public String toString() { return "AuthMethod[" + value + "]"; }
