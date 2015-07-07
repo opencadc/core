@@ -100,7 +100,8 @@ public class IdentityTypeTest
         IdentityType[] expResult = new IdentityType[]
         {
             IdentityType.X500, IdentityType.OPENID, 
-            IdentityType.USERNAME, IdentityType.UID
+            IdentityType.USERNAME, IdentityType.UID,
+            IdentityType.COOKIE
         };
         IdentityType[] result = IdentityType.values();
         assertArrayEquals(expResult, result);
@@ -116,6 +117,7 @@ public class IdentityTypeTest
         assertEquals(IdentityType.OPENID, IdentityType.valueOf("OPENID"));
         assertEquals(IdentityType.USERNAME, IdentityType.valueOf("USERNAME"));
         assertEquals(IdentityType.UID, IdentityType.valueOf("UID"));
+        assertEquals(IdentityType.COOKIE, IdentityType.valueOf("COOKIE"));
     }
 
     /**
@@ -135,6 +137,7 @@ public class IdentityTypeTest
         assertEquals(IdentityType.OPENID, IdentityType.toValue("OpenID"));
         assertEquals(IdentityType.USERNAME, IdentityType.toValue("HTTP"));
         assertEquals(IdentityType.UID, IdentityType.toValue("UID"));
+        assertEquals(IdentityType.COOKIE, IdentityType.toValue("sessionID"));
     }
 
     /**
@@ -147,6 +150,8 @@ public class IdentityTypeTest
         assertEquals("OpenID", IdentityType.OPENID.getValue());
         assertEquals("HTTP", IdentityType.USERNAME.getValue());
         assertEquals("UID", IdentityType.UID.getValue());
+        assertEquals("sessionID", IdentityType.COOKIE.getValue());
+
     }
 
     /**
@@ -159,6 +164,7 @@ public class IdentityTypeTest
         assertEquals("OpenID".hashCode(), IdentityType.OPENID.checksum());
         assertEquals("HTTP".hashCode(), IdentityType.USERNAME.checksum());
         assertEquals("UID".hashCode(), IdentityType.UID.checksum());
+        assertEquals("sessionID".hashCode(), IdentityType.COOKIE.checksum());
     }
     
 }
