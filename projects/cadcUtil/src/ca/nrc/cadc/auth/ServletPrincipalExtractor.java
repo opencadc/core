@@ -147,20 +147,20 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
      */
     private void addCookiePrincipal(Set<Principal> principals)
     {
-        Cookie[] cookies = request.getCookies();
-        if (cookies == null || ArrayUtil.isEmpty(cookies))
-            return;
-        
-        for (Cookie cookie : cookies)
-        {
-            if (SSOCookieManager.DEFAULT_SSO_COOKIE_NAME.equals(cookie.getName())
-                    && StringUtil.hasText(cookie.getValue()))
-            {
-                SSOCookieManager ssoCookieManager = new SSOCookieManager();
-                CookiePrincipal cp = ssoCookieManager.createPrincipal(cookie);
-                principals.add(cp);
-            }
-        }
+//        Cookie[] cookies = request.getCookies();
+//        if (cookies == null || ArrayUtil.isEmpty(cookies))
+//            return;
+//
+//        for (Cookie cookie : cookies)
+//        {
+//            if (SSOCookieManager.DEFAULT_SSO_COOKIE_NAME.equals(cookie.getName())
+//                    && StringUtil.hasText(cookie.getValue()))
+//            {
+//                SSOCookieManager ssoCookieManager = new SSOCookieManager();
+//                CookiePrincipal cp = ssoCookieManager.createPrincipal(cookie);
+//                principals.add(cp);
+//            }
+//        }
     }
 
     /**
