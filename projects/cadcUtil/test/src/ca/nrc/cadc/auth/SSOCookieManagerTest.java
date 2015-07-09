@@ -34,31 +34,79 @@
 package ca.nrc.cadc.auth;
 
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Calendar;
 
-import static org.junit.Assert.assertEquals;
-
-import java.net.URI;
-import java.util.Date;
-
-import javax.servlet.http.Cookie;
+import ca.nrc.cadc.util.RsaSignatureGenerator;
 
 import org.junit.Test;
+import static org.junit.Assert.*;
+import static org.easymock.EasyMock.*;
 
 
 public class SSOCookieManagerTest
 {
-    private SSOCookieManager testSubject;
+    private static final RsaSignatureGenerator MOCK_RSA_SIGNATURE_GENERATOR =
+            createMock(RsaSignatureGenerator.class);
+    private static final Calendar EXPIRATION_CALENDAR = Calendar.getInstance();
+
+    static
+    {
+        EXPIRATION_CALENDAR.set(1977, Calendar.NOVEMBER, 25, 3, 21, 0);
+        EXPIRATION_CALENDAR.set(Calendar.MILLISECOND, 0);
+    }
+
+
+//    @Test
+//    public void parseCookieValue() throws Exception
+//    {
+//        final SSOCookieManager testSubject =
+//                new SSOCookieManager(MOCK_RSA_SIGNATURE_GENERATOR);
+//
+//        expect(MO)
+//
+//        assertEquals("SessionId should be AAABBB", "AAABBB", cp.getSessionId());
+//    }
 
     @Test
-    public void parseCookieValue() throws Exception
+    public void generateCookie() throws Exception
     {
-        Cookie ck = new Cookie(SSOCookieManager.DEFAULT_SSO_COOKIE_NAME,
-                               "AAABBB");
+        final String mockToken = "ENCODEDTOKEN";
+        final String tokenValue = "CADCtest-http-19771127032100";
+        final String expectedCookieValue = tokenValue + "-ENCODEDTOKEN";
+        final InputStream inputStream =
+                new ByteArrayInputStream(tokenValue.getBytes());
 
-        SSOCookieManager cm = new SSOCookieManager();
-        
-        CookiePrincipal cp = cm.createPrincipal(ck);
+        final SSOCookieManager testSubject =
+                new SSOCookieManager(MOCK_RSA_SIGNATURE_GENERATOR)
+                {
+                    @Override
+                    Calendar getCurrentCalendar()
+                    {
+                        return EXPIRATION_CALENDAR;
+                    }
 
-        assertEquals("SessionId should be AAABBB", "AAABBB", cp.getSessionId());
+                    @Override
+                    InputStream createInputStream(byte[] bytes)
+                    {
+                        assertTrue("Wrong bytes.",
+                                   Arrays.equals(tokenValue.getBytes(), bytes));
+                        return inputStream;
+                    }
+                };
+
+
+        expect(MOCK_RSA_SIGNATURE_GENERATOR.sign(inputStream)).andReturn(
+                mockToken.getBytes()).once();
+
+        replay(MOCK_RSA_SIGNATURE_GENERATOR);
+        final String resultCookieValue =
+                String.valueOf(testSubject.generate(
+                        new HttpPrincipal("CADCtest")));
+        assertEquals("Wrong cookie value.", expectedCookieValue,
+                     resultCookieValue);
+        verify(MOCK_RSA_SIGNATURE_GENERATOR);
     }
 }

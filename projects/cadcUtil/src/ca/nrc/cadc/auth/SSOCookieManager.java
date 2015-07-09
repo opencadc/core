@@ -33,7 +33,15 @@
  */
 package ca.nrc.cadc.auth;
 
-import javax.servlet.http.Cookie;
+import ca.nrc.cadc.util.RsaSignatureGenerator;
+
+import java.io.*;
+import java.security.InvalidKeyException;
+import java.security.Principal;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.TimeZone;
+
 
 /**
  * Manage authentication cookies.
@@ -42,11 +50,93 @@ public class SSOCookieManager
 {
     public final static String DEFAULT_SSO_COOKIE_NAME = "CADC_SSO";
 
-    public SSOCookieManager() { }
+    public static final int SSO_COOKIE_LIFETIME_HOURS = 2 * 24; // in hours
+    public final static String TOKEN_VALUE_FORMAT = "%s-%s-%tY%tm%td%tH%tM%tS";
+    public final static String COOKIE_VALUE_FORMAT = TOKEN_VALUE_FORMAT + "-%s";
 
-    public CookiePrincipal createPrincipal(final Cookie cookie)
+    private final RsaSignatureGenerator rsaSignatureGenerator;
+
+
+    public SSOCookieManager(final RsaSignatureGenerator rsaSignatureGenerator)
     {
-        String value = cookie.getValue();
-        return new CookiePrincipal(value);
+        this.rsaSignatureGenerator = rsaSignatureGenerator;
+    }
+
+
+    public final char[] parse(final Principal principal) throws IOException
+    {
+        final String principalType =
+                AuthenticationUtil.getPrincipalType(principal);
+
+        return null;
+    }
+
+    public final char[] generate(final Principal principal) throws IOException
+    {
+        final String principalType =
+                AuthenticationUtil.getPrincipalType(principal);
+        final Date expirationDateInUTF = getExpirationDate();
+        final String token = new String(
+                generateToken(getTokenInputBytes(principal, principalType,
+                                                 expirationDateInUTF)));
+        final String cookieValue = String.format(COOKIE_VALUE_FORMAT,
+                                                 principal.getName(),
+                                                 principalType,
+                                                 expirationDateInUTF,
+                                                 expirationDateInUTF,
+                                                 expirationDateInUTF,
+                                                 expirationDateInUTF,
+                                                 expirationDateInUTF,
+                                                 expirationDateInUTF,
+                                                 token);
+
+        return cookieValue.toCharArray();
+    }
+
+    private byte[] getTokenInputBytes(final Principal principal,
+                              final String principalType,
+                              final Date expirationDate)
+            throws IOException
+    {
+        final String tokenInputString = String.format(TOKEN_VALUE_FORMAT,
+                                                      principal.getName(),
+                                                      principalType,
+                                                      expirationDate,
+                                                      expirationDate,
+                                                      expirationDate,
+                                                      expirationDate,
+                                                      expirationDate,
+                                                      expirationDate);
+        return tokenInputString.getBytes();
+    }
+
+    InputStream createInputStream(final byte[] bytes)
+    {
+        return new ByteArrayInputStream(bytes);
+    }
+
+    private byte[] generateToken(final byte[] input) throws IOException
+    {
+        try
+        {
+            return rsaSignatureGenerator.sign(createInputStream(input));
+        }
+        catch (InvalidKeyException e)
+        {
+            throw new IOException("Invalid key.", e);
+        }
+    }
+
+    private Date getExpirationDate()
+    {
+        final Calendar cal = getCurrentCalendar();
+        cal.add(Calendar.HOUR, SSO_COOKIE_LIFETIME_HOURS);
+
+        return cal.getTime();
+    }
+
+    Calendar getCurrentCalendar()
+    {
+        return Calendar.getInstance(TimeZone.getTimeZone("UTF-8"));
     }
 }
