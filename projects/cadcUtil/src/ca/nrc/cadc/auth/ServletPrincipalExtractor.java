@@ -100,33 +100,6 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
             }
             finally { }
         }
-        /*
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null)
-        {
-            for (Cookie cookie : cookies)
-            {
-                if (SSOCookieManager.DELEGATION_COOKIE_NAME.equals(cookie.getName()))
-                {
-                    try
-                    {
-                        this.token = DelegationToken.parse(cookie.getValue(), request.getRequestURI());
-                    }
-                    catch (InvalidDelegationTokenException ex) 
-                    {
-                        log.debug("invalid DelegationToken: " + cookie.getValue(), ex);
-                        throw new AccessControlException("invalid delegation token");
-                    }
-                    catch(RuntimeException ex)
-                    {
-                        log.debug("invalid DelegationToken: " + cookie.getValue(), ex);
-                        throw new AccessControlException("invalid delegation token");
-                    }
-                    finally { }
-                }
-            }
-        }
-        */
     }
 
     /**
@@ -168,11 +141,11 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
     }
 
     /**
-     * Add the cookie principal, if it exists.
+     * Add the principal encoded in the cookie, if the cookie exists exists.
      * 
      * @param principals 
      */
-    protected void addCookiePrincipal(Set<Principal> principals)
+    private void addCookiePrincipal(Set<Principal> principals)
     {
         Cookie[] cookies = request.getCookies();
         if (cookies == null || ArrayUtil.isEmpty(cookies))
