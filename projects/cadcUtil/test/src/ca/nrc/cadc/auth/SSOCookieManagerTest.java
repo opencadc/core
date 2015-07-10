@@ -38,8 +38,10 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.security.Principal;
 
 import ca.nrc.cadc.util.RsaSignatureGenerator;
+import ca.nrc.cadc.util.RsaSignatureVerifier;
 
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -50,6 +52,8 @@ public class SSOCookieManagerTest
 {
     private static final RsaSignatureGenerator MOCK_RSA_SIGNATURE_GENERATOR =
             createMock(RsaSignatureGenerator.class);
+    private static final RsaSignatureVerifier MOCK_RSA_SIGNATURE_VERIFIER =
+            createMock(RsaSignatureVerifier.class);            
     private static final Calendar EXPIRATION_CALENDAR = Calendar.getInstance();
 
     static
@@ -59,6 +63,41 @@ public class SSOCookieManagerTest
     }
 
     
+    @Test
+    public void parse() throws Exception
+    {
+        final String mockToken = "ENCODEDTOKEN";
+        final String tokenValue = "CADCtest-http-19771127032100";
+        final String testCookieValueString = tokenValue + "-" + mockToken;
+        final InputStream inputStream =
+                new ByteArrayInputStream(tokenValue.getBytes());    	
+    	
+        final SSOCookieManager testSubject = 
+        			 new SSOCookieManager(MOCK_RSA_SIGNATURE_GENERATOR,
+        			                      MOCK_RSA_SIGNATURE_VERIFIER)
+                {                    
+                    @Override
+                    InputStream createInputStream(byte[] bytes)
+                    {
+                        assertTrue("Wrong bytes.",
+                                   Arrays.equals(tokenValue.getBytes(), bytes));
+                        return inputStream;
+                    }
+                };    
+        			                      
+        final InputStream testCookieValue = 
+               new ByteArrayInputStream(testCookieValueString.getBytes());
+               
+        expect(MOCK_RSA_SIGNATURE_VERIFIER.verify(eq(inputStream), 
+                                                  aryEq(mockToken.getBytes()))).
+                                   andReturn(true).once();               
+               
+        replay(MOCK_RSA_SIGNATURE_VERIFIER);
+        final Principal principal1 = testSubject.parse(testCookieValue);
+        
+        assertTrue("Wrong principal.", principal1 instanceof HttpPrincipal);
+        verify(MOCK_RSA_SIGNATURE_VERIFIER);
+    }
 
     @Test
     public void generateCookie() throws Exception
@@ -70,7 +109,8 @@ public class SSOCookieManagerTest
                 new ByteArrayInputStream(tokenValue.getBytes());
 
         final SSOCookieManager testSubject =
-                new SSOCookieManager(MOCK_RSA_SIGNATURE_GENERATOR)
+                new SSOCookieManager(MOCK_RSA_SIGNATURE_GENERATOR,
+                                     MOCK_RSA_SIGNATURE_VERIFIER)
                 {
                     @Override
                     Calendar getCurrentCalendar()
