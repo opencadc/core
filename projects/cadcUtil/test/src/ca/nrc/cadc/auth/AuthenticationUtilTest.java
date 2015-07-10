@@ -87,6 +87,7 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.Ignore;
 
 import ca.nrc.cadc.util.Log4jInit;
 import java.security.PrivateKey;
@@ -534,6 +535,7 @@ public class AuthenticationUtilTest
     }
 
     @Test
+    @Ignore("In development")
     public void testGetSubjectFromHttpServletRequest_CookiePrincipal() throws Exception
     {
         log.debug("testGetSubjectFromHttpServletRequest_CookiePrincipal - START");
