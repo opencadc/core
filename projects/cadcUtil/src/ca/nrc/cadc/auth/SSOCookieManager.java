@@ -63,14 +63,25 @@ public class SSOCookieManager
     }
 
 
-    public final char[] parse(final Principal principal) throws IOException
+    /**
+     * Parse the cookie value.
+     *
+     * @param inputStream           The stream to read in.
+     * @return
+     * @throws IOException
+     */
+    public final char[] parse(final InputStream inputStream) throws IOException
     {
-        final String principalType =
-                AuthenticationUtil.getPrincipalType(principal);
-
         return null;
     }
 
+    /**
+     * Generate a new cookie value for the given Principal.
+     *
+     * @param principal The Principal to generate the value from.
+     * @return char array of the value.  never null.
+     * @throws IOException Any errors with writing and generation.
+     */
     public final char[] generate(final Principal principal) throws IOException
     {
         final String principalType =
@@ -93,9 +104,19 @@ public class SSOCookieManager
         return cookieValue.toCharArray();
     }
 
+    /**
+     * Obtain the byte array of values that will be passed to the token
+     * generator to produce an encoded token string.
+     *
+     * @param principal             The principal.
+     * @param principalType         The principal type.
+     * @param expirationDate        The Date this cookie expires.
+     * @return                      byte array.  Never null.
+     * @throws IOException
+     */
     private byte[] getTokenInputBytes(final Principal principal,
-                              final String principalType,
-                              final Date expirationDate)
+                                      final String principalType,
+                                      final Date expirationDate)
             throws IOException
     {
         final String tokenInputString = String.format(TOKEN_VALUE_FORMAT,
@@ -115,6 +136,13 @@ public class SSOCookieManager
         return new ByteArrayInputStream(bytes);
     }
 
+    /**
+     * Call upon the RSA signature generator to produce a new token.
+     *
+     * @param input             The input source for the token.
+     * @return                  byte array of the new token.
+     * @throws IOException
+     */
     private byte[] generateToken(final byte[] input) throws IOException
     {
         try
@@ -127,6 +155,11 @@ public class SSOCookieManager
         }
     }
 
+    /**
+     * Produce an expiration date.  The default is forty-eight (48) hours.
+     *
+     * @return      Date of expiration.  Never null.
+     */
     private Date getExpirationDate()
     {
         final Calendar cal = getCurrentCalendar();

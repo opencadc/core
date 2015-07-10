@@ -58,17 +58,7 @@ public class SSOCookieManagerTest
         EXPIRATION_CALENDAR.set(Calendar.MILLISECOND, 0);
     }
 
-
-//    @Test
-//    public void parseCookieValue() throws Exception
-//    {
-//        final SSOCookieManager testSubject =
-//                new SSOCookieManager(MOCK_RSA_SIGNATURE_GENERATOR);
-//
-//        expect(MO)
-//
-//        assertEquals("SessionId should be AAABBB", "AAABBB", cp.getSessionId());
-//    }
+    
 
     @Test
     public void generateCookie() throws Exception
