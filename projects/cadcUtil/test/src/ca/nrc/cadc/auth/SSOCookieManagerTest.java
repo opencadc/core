@@ -49,94 +49,15 @@ import static org.easymock.EasyMock.*;
 
 
 public class SSOCookieManagerTest
-{
-    private static final RsaSignatureGenerator MOCK_RSA_SIGNATURE_GENERATOR =
-            createMock(RsaSignatureGenerator.class);
-    private static final RsaSignatureVerifier MOCK_RSA_SIGNATURE_VERIFIER =
-            createMock(RsaSignatureVerifier.class);            
-    private static final Calendar EXPIRATION_CALENDAR = Calendar.getInstance();
-
-    static
-    {
-        EXPIRATION_CALENDAR.set(1977, Calendar.NOVEMBER, 25, 3, 21, 0);
-        EXPIRATION_CALENDAR.set(Calendar.MILLISECOND, 0);
-    }
-
-    
+{    
     @Test
-    public void parse() throws Exception
+    public void roundtrip() throws Exception
     {
-        final String mockToken = "ENCODEDTOKEN";
-        final String tokenValue = "CADCtest-http-19771127032100";
-        final String testCookieValueString = tokenValue + "-" + mockToken;
-        final InputStream inputStream =
-                new ByteArrayInputStream(tokenValue.getBytes());    	
-    	
-        final SSOCookieManager testSubject = 
-        			 new SSOCookieManager(MOCK_RSA_SIGNATURE_GENERATOR,
-        			                      MOCK_RSA_SIGNATURE_VERIFIER)
-                {                    
-                    @Override
-                    InputStream createInputStream(byte[] bytes)
-                    {
-                        assertTrue("Wrong bytes.",
-                                   Arrays.equals(tokenValue.getBytes(), bytes));
-                        return inputStream;
-                    }
-                };    
-        			                      
-        final InputStream testCookieValue = 
-               new ByteArrayInputStream(testCookieValueString.getBytes());
-               
-        expect(MOCK_RSA_SIGNATURE_VERIFIER.verify(eq(inputStream), 
-                                                  aryEq(mockToken.getBytes()))).
-                                   andReturn(true).once();               
-               
-        replay(MOCK_RSA_SIGNATURE_VERIFIER);
-        final Principal principal1 = testSubject.parse(testCookieValue);
+        final HttpPrincipal userPrincipal = new HttpPrincipal("CADCtest");
+        SSOCookieManager cm = new SSOCookieManager();
+        HttpPrincipal actualPrincipal = cm.parse(cm.generate(userPrincipal));
         
-        assertTrue("Wrong principal.", principal1 instanceof HttpPrincipal);
-        verify(MOCK_RSA_SIGNATURE_VERIFIER);
+        assertEquals(userPrincipal, actualPrincipal);
     }
 
-    @Test
-    public void generateCookie() throws Exception
-    {
-        final String mockToken = "ENCODEDTOKEN";
-        final String tokenValue = "CADCtest-http-19771127032100";
-        final String expectedCookieValue = tokenValue + "-ENCODEDTOKEN";
-        final InputStream inputStream =
-                new ByteArrayInputStream(tokenValue.getBytes());
-
-        final SSOCookieManager testSubject =
-                new SSOCookieManager(MOCK_RSA_SIGNATURE_GENERATOR,
-                                     MOCK_RSA_SIGNATURE_VERIFIER)
-                {
-                    @Override
-                    Calendar getCurrentCalendar()
-                    {
-                        return EXPIRATION_CALENDAR;
-                    }
-
-                    @Override
-                    InputStream createInputStream(byte[] bytes)
-                    {
-                        assertTrue("Wrong bytes.",
-                                   Arrays.equals(tokenValue.getBytes(), bytes));
-                        return inputStream;
-                    }
-                };
-
-
-        expect(MOCK_RSA_SIGNATURE_GENERATOR.sign(inputStream)).andReturn(
-                mockToken.getBytes()).once();
-
-        replay(MOCK_RSA_SIGNATURE_GENERATOR);
-        final String resultCookieValue =
-                String.valueOf(testSubject.generate(
-                        new HttpPrincipal("CADCtest")));
-        assertEquals("Wrong cookie value.", expectedCookieValue,
-                     resultCookieValue);
-        verify(MOCK_RSA_SIGNATURE_GENERATOR);
-    }
 }

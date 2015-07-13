@@ -33,19 +33,27 @@
  */
 package ca.nrc.cadc.auth;
 
-import ca.nrc.cadc.util.RsaSignatureGenerator;
-import ca.nrc.cadc.util.RsaSignatureVerifier;
-
-import java.io.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.text.SimpleDateFormat;
-import java.text.ParseException;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.security.InvalidKeyException;
 import java.security.Principal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.security.auth.x500.X500Principal;
+
+import ca.nrc.cadc.util.Base64;
+import ca.nrc.cadc.util.RsaSignatureGenerator;
+import ca.nrc.cadc.util.RsaSignatureVerifier;
+
 
 
 /**
@@ -57,199 +65,54 @@ public class SSOCookieManager
 
     // For token and cookie value generation.
     private static final int SSO_COOKIE_LIFETIME_HOURS = 2 * 24; // in hours
-    private static final String TOKEN_VALUE_FORMAT = "%s-%s-%tY%tm%td%tH%tM%tS";
-    private static final String COOKIE_VALUE_FORMAT = TOKEN_VALUE_FORMAT + "-%s";
-    
-    // RegEx and formatters for parsing.
-    private static final SimpleDateFormat DATE_FORMAT = 
-                   new SimpleDateFormat("yyyyMMddhhmmss");
-    private static final String ALPHA_CAPTURE_REGEX = "(\\w+)";
-    private static final Pattern COOKIE_VALUE_PATTERN = 
-                         Pattern.compile(ALPHA_CAPTURE_REGEX + "\\-" 
-                                         + ALPHA_CAPTURE_REGEX 
-                                         + "\\-(\\d{14})\\-"
-                                         + ALPHA_CAPTURE_REGEX);
-
-    private final RsaSignatureGenerator rsaSignatureGenerator;
-    private final RsaSignatureVerifier rsaSignatureVerifier;
-
-
-	 /**
-	  * Constructor to use for generating new cookie values, and parsing
-	  * existing ones.  Either argument can be null depending on the
-	  * operation desired.
-	  *
-	  * @param rsaSignatureGenerator		The generator for the token section 
-	  * 										   of the cookie value.
-	  * @param rsaSignatureVerifier     The verifier used for cookie value 
-	  *                                 parsing.
-	  */
-    public SSOCookieManager(final RsaSignatureGenerator rsaSignatureGenerator,
-                            final RsaSignatureVerifier rsaSignatureVerifier)
-    {
-        this.rsaSignatureGenerator = rsaSignatureGenerator;
-        this.rsaSignatureVerifier = rsaSignatureVerifier;
-    }
 
 
 
     /**
      * Parse the cookie value.  If validation is successful, then the stream
      * is read in and a Principal representing the cookie value is returned.
+     * Format of the value is:
+     *    UserPrincipal-PrincipalType-ExpirationDateUTC-Base64SignatureToken
+     *    where:
+     *    UserPrincipal - principal of the user
+     *    PrincipalType - principal type
+     *    ExpirationDateUTC - long representing the expiration Java date in UTC
+     *    Base64SignatureToken - The signature token of the 3 fields above in
+     *                           Base64 format.
      *
-     * NOTE: It is the responsibility of the caller to handle the finalization
-     * of the given InputStream (e.g. closing).
-     *
-     * @param inputStream           The stream to read in.
-     * @return		The Principal decoded if the cookie value can be parsed 
+     * @param value           Cookie value.
+     * @return		The HttpPrincipal decoded if the cookie value can be parsed 
      *            and validated.
-     * @throws IOException
+     * @throws InvalidDelegationTokenException 
      */
-    public final Principal parse(final InputStream inputStream) 
-                    throws IOException
+    public final HttpPrincipal parse(final String value) 
+                    throws IOException, InvalidDelegationTokenException
     {
-        final BufferedReader reader = 
-               new BufferedReader(new InputStreamReader(inputStream));
-        final StringBuilder sb = new StringBuilder(256);
-        String line = null;
-        
-        while ((line = reader.readLine()) != null) 
-        {
-            sb.append(line);
-        }
-        
-        final String cookieValue = sb.toString();
-        final Matcher matcher = COOKIE_VALUE_PATTERN.matcher(cookieValue);
-        
-        if (matcher.matches())
-        {
-        	   final String principalName = matcher.group(1);
-        	   final String principalType = matcher.group(2);
-        	   final String expirationDateUTF = matcher.group(3);
-        	   final String token = matcher.group(4);
-        	   
-        	   try
-        	   {
-	        	    final Date expirationDate = DATE_FORMAT.parse(expirationDateUTF);
-	        	   
-	        	    if (this.rsaSignatureVerifier.verify(
-	        	         createInputStream(getTokenInputBytes(principalName, 
-	        	                                              principalType, 
-	        	                                              expirationDate)),
-	        	         token.getBytes()))
-	        	    {
-	        	        return new HttpPrincipal(principalName);
-	        	    }
-	        	    else
-	        	    {
-	                 throw new IOException("Unauthorized");        	   
-	        	    }
-	        	}
-	        	catch (ParseException pe)
-	        	{
-	        	    throw new IOException("Can't parse date: " + expirationDateUTF);
-	        	}
-	        	catch (InvalidKeyException ike)
-	        	{
-	        		 throw new IOException("Invalid Key.");
-	        	}
-        }
-        else
-        {
-            throw new IOException("Invalid cookie presented.\n" + cookieValue);
-        }
+        DelegationToken token = DelegationToken.parse(value, null);
+        return token.getUser();
     }
 
     /**
-     * Generate a new cookie value for the given Principal.
+     * Generate a new cookie value for the given HttpPrincipal.
+     * Format of the value is:
+     *    HttpPrincipal-ExpirationDateUTC-Base64SignatureToken
+     *    where:
+     *    HttpPrincipal - principal of the user
+     *    ExpirationDateUTC - long representing the expiration Java date in UTC
+     *    Base64SignatureToken - The signature token of the 2 fields above in
+     *                           Base64 format.
      *
-     * @param principal The Principal to generate the value from.
-     * @return char array of the value.  never null.
+     * @param principal The HttpPrincipal to generate the value from.
+     * @return string of the value.  never null.
      * @throws IOException Any errors with writing and generation.
+     * @throws InvalidKeyExcpetion Signing key is invalid
      */
-    public final char[] generate(final Principal principal) throws IOException
+    public final String generate(final HttpPrincipal principal) 
+            throws InvalidKeyException, IOException
     {
-        final String principalType =
-                AuthenticationUtil.getPrincipalType(principal);
-        final Date expirationDateInUTF = getExpirationDate();
-        final String token = new String(
-                generateToken(getTokenInputBytes(principal.getName(), 
-                											 principalType,
-                                                 expirationDateInUTF)));
-        final String cookieValue = String.format(COOKIE_VALUE_FORMAT,
-                                                 principal.getName(),
-                                                 principalType,
-                                                 expirationDateInUTF,
-                                                 expirationDateInUTF,
-                                                 expirationDateInUTF,
-                                                 expirationDateInUTF,
-                                                 expirationDateInUTF,
-                                                 expirationDateInUTF,
-                                                 token);
-
-        return cookieValue.toCharArray();
-    }
-
-    /**
-     * Obtain the byte array of values that will be passed to the token
-     * generator to produce an encoded token string.
-     *
-     * @param principalName         The principal's name.
-     * @param principalType         The principal type.
-     * @param expirationDate        The Date this cookie expires.
-     * @return                      byte array.  Never null.
-     * @throws IOException
-     */
-    private byte[] getTokenInputBytes(final String principalName,
-                                      final String principalType,
-                                      final Date expirationDate)
-            throws IOException
-    {
-        final String tokenInputString = String.format(TOKEN_VALUE_FORMAT,
-                                                      principalName,
-                                                      principalType,
-                                                      expirationDate,
-                                                      expirationDate,
-                                                      expirationDate,
-                                                      expirationDate,
-                                                      expirationDate,
-                                                      expirationDate);
-        return tokenInputString.getBytes();
-    }
-
-    /**
-     * Create a new InputStream for the given bytes to use in the token 
-     * generator.  Used by testers to override.
-     * 
-     */
-    InputStream createInputStream(final byte[] bytes)
-    {
-        return new ByteArrayInputStream(bytes);
-    }
-
-    /**
-     * Call upon the RSA signature generator to produce a new token.
-     *
-     * @param input             The input source for the token.
-     * @return                  byte array of the new token.
-     * @throws IOException
-     */
-    private byte[] generateToken(final byte[] input) throws IOException
-    {
-        if (rsaSignatureGenerator == null)
-        {
-        	   throw new IllegalStateException(
-        	       "RSA Generator cannot be null to produce a token.");        
-        }    	
-    	
-        try
-        {
-            return rsaSignatureGenerator.sign(createInputStream(input));
-        }
-        catch (InvalidKeyException e)
-        {
-            throw new IOException("Invalid key.", e);
-        }
+        DelegationToken token = new DelegationToken((HttpPrincipal)principal, 
+            null, getExpirationDate());
+        return DelegationToken.format(token);
     }
 
     /**

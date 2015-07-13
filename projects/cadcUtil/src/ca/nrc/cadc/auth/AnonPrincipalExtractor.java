@@ -97,5 +97,10 @@ public class AnonPrincipalExtractor implements PrincipalExtractor
         return null;
     }
 
+    @Override
+    public SSOCookieCredential getSSOCookieCredential()
+    {
+        return null;
+    }  
     
 }

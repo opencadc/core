@@ -33,6 +33,10 @@
  */
 package ca.nrc.cadc.auth;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.security.AccessControlException;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
@@ -45,8 +49,8 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.log4j.Logger;
 
 import ca.nrc.cadc.util.ArrayUtil;
+import ca.nrc.cadc.util.RsaSignatureVerifier;
 import ca.nrc.cadc.util.StringUtil;
-import java.security.AccessControlException;
 
 
 /**
@@ -61,6 +65,8 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
 
     private X509CertificateChain chain;
     private DelegationToken token;
+    private SSOCookieCredential cookieCredential;
+    private Principal cookiePrincipal; // principal extracted from cookie
 
     private ServletPrincipalExtractor()
     {
@@ -86,7 +92,8 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
         {
             try
             {
-                this.token = DelegationToken.parse(tokenValue, request.getRequestURI());
+                this.token = DelegationToken.parse(tokenValue, 
+                        request.getRequestURI());
             }
             catch (InvalidDelegationTokenException ex) 
             {
@@ -100,6 +107,40 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
             }
             finally { }
         }
+        
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null || ArrayUtil.isEmpty(cookies))
+            return;
+        
+        for (Cookie ssoCookie : cookies)
+        {
+            if (SSOCookieManager.DEFAULT_SSO_COOKIE_NAME.equals(
+                    ssoCookie.getName())
+                    && StringUtil.hasText(ssoCookie.getValue()))
+            {
+                SSOCookieManager ssoCookieManager = new SSOCookieManager();
+                try
+                {
+                    cookiePrincipal = ssoCookieManager.parse(
+                                    ssoCookie.getValue());
+                    cookieCredential = new 
+                            SSOCookieCredential(ssoCookie.getValue(), 
+                            ssoCookie.getDomain());
+                } 
+                catch (IOException e)
+                {
+                    log.info("Cannot use SSO Cookie. Reason: " 
+                            + e.getMessage());
+                } 
+                catch (InvalidDelegationTokenException e)
+                {
+                    log.info("Cannot use SSO Cookie. Reason: " 
+                            + e.getMessage());
+                }
+                
+            }
+        }
+        
     }
 
     /**
@@ -126,6 +167,11 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
     {
         return token;
     }
+    
+    public SSOCookieCredential getSSOCookieCredential()
+    {
+        return cookieCredential;
+    }
 
     
     /**
@@ -141,26 +187,16 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
     }
 
     /**
-     * Add the principal encoded in the cookie, if the cookie exists exists.
+     * Add the principal encoded in the cookie, if  exists.
      * 
      * @param principals 
      */
     private void addCookiePrincipal(Set<Principal> principals)
     {
-//        Cookie[] cookies = request.getCookies();
-//        if (cookies == null || ArrayUtil.isEmpty(cookies))
-//            return;
-//
-//        for (Cookie cookie : cookies)
-//        {
-//            if (SSOCookieManager.DEFAULT_SSO_COOKIE_NAME.equals(cookie.getName())
-//                    && StringUtil.hasText(cookie.getValue()))
-//            {
-//                SSOCookieManager ssoCookieManager = new SSOCookieManager();
-//                CookiePrincipal cp = ssoCookieManager.createPrincipal(cookie);
-//                principals.add(cp);
-//            }
-//        }
+        if (cookiePrincipal != null)
+        {
+            principals.add(cookiePrincipal);
+        }
     }
 
     /**
