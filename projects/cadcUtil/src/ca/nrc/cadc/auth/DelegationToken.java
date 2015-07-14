@@ -24,10 +24,10 @@
  *
  *
  * @author adriand
- * 
+ *
  * @version $Revision: $
- * 
- * 
+ *
+ *
  ****  C A N A D I A N   A S T R O N O M Y   D A T A   C E N T R E  *****
  ************************************************************************
  */
@@ -56,24 +56,24 @@ import org.apache.log4j.Logger;
  * - the user that delegates
  * - the expirty time
  * - scope of delegation
- * 
- * This class can serialize and de-serialize the information into a 
+ *
+ * This class can serialize and de-serialize the information into a
  * String token. Optionally, it can sign the serialized token and
- * verify when one is received. 
+ * verify when one is received.
  */
 public class DelegationToken implements Serializable
 {
     private static final Logger log = Logger.getLogger(DelegationToken.class);
-    
+
     private static final long serialVersionUID = 20141025143750l;
 
     private HttpPrincipal user; // identity of the user
     private Date expiryTime; // expirty time of the delegation (UTC)
     private URI scope; // resources that are the object of the delegation
-    
+
     public static final String FIELD_DELIM = "&";
     public static final String VALUE_DELIM = "=";
-    
+
     public static class ScopeValidator
     {
         public void verifyScope(URI scope, String requestURI)
@@ -82,15 +82,15 @@ public class DelegationToken implements Serializable
             throw new InvalidDelegationTokenException("default: invalid scope");
         }
     }
-    
+
     /**
      * Constructor.
-     * 
-     * @param user identity of the delegating user - required 
+     *
+     * @param user identity of the delegating user - required
      * @param scope - scope of the delegation, i.e. resource that it applies
      * to - optional
      * @param expiryTime - the expiry date of this token (UTC)
-     */    
+     */
     public DelegationToken(HttpPrincipal user, URI scope, Date expiryTime)
     {
         if (user == null)
@@ -106,34 +106,34 @@ public class DelegationToken implements Serializable
         this.scope = scope;
     }
 
-    
+
     /**
      * Serializes and signs the object into a string of attribute-value pairs.
-     * 
+     *
      * @param token the token to format
      * the returned string
      * @return String with DelegationToken information
-     * @throws IOException 
-     * @throws InvalidKeyException 
+     * @throws IOException
+     * @throws InvalidKeyException
      */
-    public static String format(DelegationToken token) 
+    public static String format(DelegationToken token)
         throws InvalidKeyException, IOException
     {
         StringBuilder sb = getContent(token);
-        
+
         //sign and add the signature field
         String toSign = sb.toString();
         sb.append(FIELD_DELIM);
         sb.append("signature");
         sb.append(VALUE_DELIM);
         RsaSignatureGenerator su = new RsaSignatureGenerator();
-        byte[] sig = 
+        byte[] sig =
                 su.sign(new ByteArrayInputStream(toSign.getBytes()));
         sb.append(new String(Base64.encode(sig)));
-        
+
         return sb.toString();
     }
-    
+
     // the formatted content without the signature
     private static StringBuilder getContent(DelegationToken token)
     {
@@ -154,7 +154,7 @@ public class DelegationToken implements Serializable
         }
         return sb;
     }
-    
+
     /**
      * Builds a DelegationToken from a text string
      * @param text to parse
@@ -162,7 +162,7 @@ public class DelegationToken implements Serializable
      * @return corresponding DelegationToken
      * @throws InvalidDelegationTokenException
      */
-    public static DelegationToken parse(String text, String requestURI) 
+    public static DelegationToken parse(String text, String requestURI)
             throws InvalidDelegationTokenException
     {
         String[] fields = text.split(FIELD_DELIM);
@@ -191,57 +191,57 @@ public class DelegationToken implements Serializable
                 if (key.equalsIgnoreCase("signature"))
                 {
                     signature = value;
-                }              
+                }
             }
         }
         catch(NumberFormatException ex)
         {
             throw new InvalidDelegationTokenException("invalid numeric field", ex);
-        } 
-        catch (URISyntaxException ex) 
+        }
+        catch (URISyntaxException ex)
         {
             throw new InvalidDelegationTokenException("invalid scope URI", ex);
         }
-        
+
         if (signature == null)
             throw new InvalidDelegationTokenException("Missing signature");
-        
+
         // validate expiry
         if (expirytime == null)
             throw new InvalidDelegationTokenException("missing expirytime");
         Date now = new Date();
-        
+
         if (now.getTime() > expirytime.getTime())
             throw new InvalidDelegationTokenException("expired");
-        
+
         // validate scope
         ScopeValidator sv = getScopeValidator();
         sv.verifyScope(scope, requestURI);
-        
-        // validate signature
-        DelegationToken result = 
-                new DelegationToken(userid, scope, expirytime);
-        
+
         try
         {
+            // validate signature
+            DelegationToken result =
+                    new DelegationToken(userid, scope, expirytime);
+
             RsaSignatureVerifier su = new RsaSignatureVerifier();
             String str = DelegationToken.getContent(result).toString();
             boolean valid = su.verify(
-                new ByteArrayInputStream(str.getBytes()), 
+                new ByteArrayInputStream(str.getBytes()),
                     Base64.decode(signature));
             if (valid)
                 return result;
             log.debug("invalid token: " + str);
-            
+
         }
         catch(Exception ex)
         {
             log.debug("failed to verify DelegationToken signature", ex);
         }
-       
+
         throw new InvalidDelegationTokenException("Cannot verify signature");
     }
-    
+
     private static ScopeValidator getScopeValidator()
     {
         try
@@ -257,12 +257,12 @@ public class DelegationToken implements Serializable
             log.debug("created: " + ret.getClass().getName());
             return ret;
         }
-        catch(Exception ignore) 
-        { 
+        catch(Exception ignore)
+        {
             log.debug("failed to load custom ScopeValidator", ignore);
-        } 
+        }
         finally { }
-        
+
         // default
         return new ScopeValidator();
     }
