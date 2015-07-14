@@ -128,6 +128,7 @@ public class HttpDownload extends HttpTransfer
 
     private OutputStream destStream;
     
+    private String serverFilename;
     private File destFile;
     private InputStreamWrapper wrapper;
     
@@ -342,6 +343,23 @@ public class HttpDownload extends HttpTransfer
      */
     public String getContentMD5() { return contentMD5; }
 
+    /**
+     * Last-modified timestamp from http header.
+     * 
+     * @return 
+     */
+    public Date getLastModified()
+    {
+        if (lastModified > 0)
+            return new Date(lastModified);
+        return null;
+    }
+    
+    public String getFilename()
+    {
+        return serverFilename;
+    }
+    
     /**
      * Get a reference to the result file. In some cases this is null until the
      * download is complete.
@@ -583,9 +601,10 @@ public class HttpDownload extends HttpTransfer
 
         this.lastModified = conn.getLastModified();
         
+        this.serverFilename = getServerFilename(conn);
+        
         if (destStream == null && wrapper == null) // download to file: extra metadata
         {
-            // determine filename and use destDir
             String origFilename = null;
 
             // first option: use what the caller suggested
@@ -594,29 +613,7 @@ public class HttpDownload extends HttpTransfer
 
             if (origFile == null)
             {
-                // second option: use supplied filename if present in http header
-                String cdisp = conn.getHeaderField("Content-Disposition");
-                log.debug("HTTP HEAD: Content-Disposition = " + cdisp);
-                if ( cdisp != null )
-                    origFilename = parseContentDisposition(cdisp);
-
-                // last resort: pull something from the end of the URL
-                if (origFilename == null)
-                {
-                    String s = remoteURL.getPath();
-                    String query = remoteURL.getQuery();
-                    int i = s.lastIndexOf('/');
-                    if (i != -1 && i < s.length() - 1)
-                        origFilename = s.substring(i + 1, s.length());
-                    if (query != null)
-                        origFilename += "?" + query;
-                }
-                // very last resort for no path: use hostname
-                if (origFilename == null)
-                {
-                    origFilename = remoteURL.getHost();
-                }
-                this.origFile = new File(destDir, origFilename);
+                this.origFile = new File(destDir, serverFilename);
             }
             origFilename = origFile.getName();
 
@@ -656,6 +653,37 @@ public class HttpDownload extends HttpTransfer
         log.debug("    lastModified: " + lastModified);
     }
 
+    private String getServerFilename(HttpURLConnection conn)
+    {
+        String ret = null;
+
+        // first option: use supplied filename if present in http header
+        String cdisp = conn.getHeaderField("Content-Disposition");
+        log.debug("HTTP HEAD: Content-Disposition = " + cdisp);
+        if ( cdisp != null )
+            ret = parseContentDisposition(cdisp);
+
+        // alternative: pull something from the end of the URL
+        if (ret == null)
+        {
+            String s = remoteURL.getPath();
+            String query = remoteURL.getQuery();
+            int i = s.lastIndexOf('/');
+            if (i != -1 && i < s.length() - 1)
+                ret = s.substring(i + 1, s.length());
+            if (query != null)
+                ret += "?" + query;
+        }
+        
+        // last resort for no path: use hostname
+        if (ret == null)
+        {
+            ret = remoteURL.getHost();
+        }
+        
+        return ret;
+    }
+    
     private int checkStatusCode(HttpURLConnection conn)
         throws IOException, TransientException
     {
@@ -883,7 +911,24 @@ public class HttpDownload extends HttpTransfer
                 if (use_nio)
                     nioLoop(istream, ostream, 2*bufferSize, startingPos);
                 else
-                    ioLoop(istream, ostream, 2*bufferSize, startingPos);
+                {
+                    String md5 = ioLoop(istream, ostream, 2*bufferSize, startingPos);
+                    if (contentMD5 != null && md5 != null)
+                    {
+                        if ( !md5.equals(contentMD5) )
+                        {
+                            StringBuilder sb = new StringBuilder();
+                            sb.append("MD5 mismatch: ");
+                            sb.append(contentMD5).append(" (header) != ").append(md5).append(" (bytes)");
+                            if (remoteURL != null)
+                                sb.append(" url: ").append(remoteURL);
+                            if (destFile != null)
+                                sb.append(" destFile: ").append(destFile.getAbsolutePath());
+                            // TODO: throw an Exception??
+                            log.warn(sb.toString());
+                        }
+                    }
+                }
             }
 
             if (ostream != null)

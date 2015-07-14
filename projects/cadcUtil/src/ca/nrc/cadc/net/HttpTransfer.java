@@ -97,7 +97,10 @@ import ca.nrc.cadc.net.event.ProgressListener;
 import ca.nrc.cadc.net.event.TransferEvent;
 import ca.nrc.cadc.net.event.TransferListener;
 import ca.nrc.cadc.util.FileMetadata;
+import ca.nrc.cadc.util.HexUtil;
 import ca.nrc.cadc.util.StringUtil;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * Base class for HTTP transfers.
@@ -578,15 +581,24 @@ public abstract class HttpTransfer implements Runnable
      * @param sz
      * @param startingPos for resumed transfers, this effects the reported value seen by
      * the progressListener (if set)
+     * @return string representation of the content md5sum
+     * 
      * @throws IOException
      * @throws InterruptedException
      */
-    protected void ioLoop(InputStream istream, OutputStream ostream, int sz, long startingPos)
+    protected String ioLoop(InputStream istream, OutputStream ostream, int sz, long startingPos)
         throws IOException, InterruptedException
     {
         log.debug("ioLoop: using java.io with byte[] buffer size " + sz + " startingPos " + startingPos);
         byte[] buf = new byte[sz];
 
+        MessageDigest md5 = null;
+        try { md5 = MessageDigest.getInstance("MD5"); }
+        catch(NoSuchAlgorithmException oops)
+        {
+            log.warn("failed to create MessageDigest(MD5): " + oops);
+        }
+        
         int nb = 0;
         int nb2 = 0;
         long tot = startingPos; // non-zero for resumed transfer
@@ -613,13 +625,21 @@ public abstract class HttpTransfer implements Runnable
                         nb += nb2;
                 }
                 //log.debug("write buffer: " + nb);
+                if (md5 != null)
+                    md5.update(buf, 0, nb);
                 ostream.write(buf, 0, nb);
                 tot += nb;
                 if (progressListener != null)
                     progressListener.update(nb, tot);
             }
-
         }
+        if (md5 != null)
+        {
+            byte[] md5sum = md5.digest();
+            String ret = HexUtil.toHex(md5sum);
+            return ret;
+        }
+        return null;
     }
 
     /**
@@ -639,6 +659,13 @@ public abstract class HttpTransfer implements Runnable
         // check/clear interrupted flag and throw if necessary
         if ( Thread.interrupted() )
             throw new InterruptedException();
+        
+        MessageDigest md5 = null;
+        try { md5 = MessageDigest.getInstance("MD5"); }
+        catch(NoSuchAlgorithmException oops)
+        {
+            log.warn("failed to create MessageDigest(MD5): " + oops);
+        }
 
         ReadableByteChannel rbc = Channels.newChannel(istream);
         WritableByteChannel wbc = Channels.newChannel(ostream);
