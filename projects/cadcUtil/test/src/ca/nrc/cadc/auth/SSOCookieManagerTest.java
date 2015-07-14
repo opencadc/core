@@ -34,24 +34,14 @@
 package ca.nrc.cadc.auth;
 
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.security.Principal;
-
-import ca.nrc.cadc.util.RsaSignatureGenerator;
-import ca.nrc.cadc.util.RsaSignatureVerifier;
-
 import org.junit.Test;
 import static org.junit.Assert.*;
-import static org.easymock.EasyMock.*;
 
 
 public class SSOCookieManagerTest
 {    
     @Test
-    public void roundtrip() throws Exception
+    public void roundTrip() throws Exception
     {
         final HttpPrincipal userPrincipal = new HttpPrincipal("CADCtest");
         SSOCookieManager cm = new SSOCookieManager();

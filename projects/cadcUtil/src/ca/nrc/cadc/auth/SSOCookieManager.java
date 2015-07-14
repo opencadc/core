@@ -33,26 +33,12 @@
  */
 package ca.nrc.cadc.auth;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.net.URI;
 import java.security.InvalidKeyException;
-import java.security.Principal;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.security.auth.x500.X500Principal;
-
-import ca.nrc.cadc.util.Base64;
-import ca.nrc.cadc.util.RsaSignatureGenerator;
-import ca.nrc.cadc.util.RsaSignatureVerifier;
 
 
 
@@ -64,8 +50,9 @@ public class SSOCookieManager
     public static final String DEFAULT_SSO_COOKIE_NAME = "CADC_SSO";
 
     // For token and cookie value generation.
-    private static final int SSO_COOKIE_LIFETIME_HOURS = 2 * 24; // in hours
+    public static final int SSO_COOKIE_LIFETIME_HOURS = 2 * 24; // in hours
 
+    public static final URI SCOPE_URI = URI.create("sso:cadc+canfar");
 
 
     /**
@@ -88,7 +75,22 @@ public class SSOCookieManager
     public final HttpPrincipal parse(final String value) 
                     throws IOException, InvalidDelegationTokenException
     {
-        DelegationToken token = DelegationToken.parse(value, null);
+        /*
+        TODO - The DelegationToken class really should be fixed to handle
+        TODO - null values and bad entries.
+        TODO - jenkinsd 2015.07.14
+         */
+        DelegationToken token;
+
+        try
+        {
+            token = DelegationToken.parse(value, SCOPE_URI.toASCIIString());
+        }
+        catch (Exception e)
+        {
+            throw new InvalidDelegationTokenException("Bad token." + value);
+        }
+
         return token.getUser();
     }
 
@@ -105,12 +107,12 @@ public class SSOCookieManager
      * @param principal The HttpPrincipal to generate the value from.
      * @return string of the value.  never null.
      * @throws IOException Any errors with writing and generation.
-     * @throws InvalidKeyExcpetion Signing key is invalid
+     * @throws InvalidKeyException Signing key is invalid
      */
     public final String generate(final HttpPrincipal principal) 
             throws InvalidKeyException, IOException
     {
-        DelegationToken token = new DelegationToken((HttpPrincipal)principal, 
+        DelegationToken token = new DelegationToken(principal,
             null, getExpirationDate());
         return DelegationToken.format(token);
     }
@@ -128,8 +130,13 @@ public class SSOCookieManager
         return cal.getTime();
     }
 
-    Calendar getCurrentCalendar()
+    /**
+     * Testers can override this to provide a consistent test.
+     *
+     * @return  Calendar instance.  Never null.
+     */
+    public Calendar getCurrentCalendar()
     {
-        return Calendar.getInstance(TimeZone.getTimeZone("UTF-8"));
+        return Calendar.getInstance(TimeZone.getTimeZone("UTC"));
     }
 }
