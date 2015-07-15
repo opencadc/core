@@ -55,6 +55,10 @@ public class SSOCookieManager
 
     public static final URI SCOPE_URI = URI.create("sso:cadc+canfar");
 
+    // Offset to add to the expiry hours.  This is mainly used to set a cookie
+    // date in the past to expire it.  This can be a negative value.
+    private int offsetExpiryHours = 1;
+
 
     /**
      * Parse the cookie value.  If validation is successful, then the stream
@@ -126,7 +130,7 @@ public class SSOCookieManager
     private Date getExpirationDate()
     {
         final Calendar cal = getCurrentCalendar();
-        cal.add(Calendar.HOUR, SSO_COOKIE_LIFETIME_HOURS);
+        cal.add(Calendar.HOUR, (SSO_COOKIE_LIFETIME_HOURS * offsetExpiryHours));
 
         return cal.getTime();
     }
@@ -139,5 +143,10 @@ public class SSOCookieManager
     public Calendar getCurrentCalendar()
     {
         return Calendar.getInstance(DateUtil.UTC);
+    }
+
+    public void setOffsetExpiryHours(int offsetExpiryHours)
+    {
+        this.offsetExpiryHours = offsetExpiryHours;
     }
 }
