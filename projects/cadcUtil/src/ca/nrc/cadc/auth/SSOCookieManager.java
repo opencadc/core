@@ -33,12 +33,13 @@
  */
 package ca.nrc.cadc.auth;
 
+import ca.nrc.cadc.date.DateUtil;
+
 import java.io.IOException;
 import java.net.URI;
 import java.security.InvalidKeyException;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.TimeZone;
 
 
 
@@ -112,8 +113,8 @@ public class SSOCookieManager
     public final String generate(final HttpPrincipal principal) 
             throws InvalidKeyException, IOException
     {
-        DelegationToken token = new DelegationToken(principal,
-            null, getExpirationDate());
+        DelegationToken token =
+                new DelegationToken(principal, SCOPE_URI, getExpirationDate());
         return DelegationToken.format(token);
     }
 
@@ -137,6 +138,6 @@ public class SSOCookieManager
      */
     public Calendar getCurrentCalendar()
     {
-        return Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        return Calendar.getInstance(DateUtil.UTC);
     }
 }
