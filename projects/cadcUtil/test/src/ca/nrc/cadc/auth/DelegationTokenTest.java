@@ -98,18 +98,6 @@ public class DelegationTokenTest
         Calendar expiry = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         expiry.add(Calendar.HOUR, duration);
         DelegationToken expToken = new DelegationToken(userid, scope, expiry.getTime());
-        /*
-        DelegationToken actToken = DelegationToken.parse(
-                expToken.format(false), false);
-        assertEquals("User id not the same", expToken.getUser(),
-                actToken.getUser());
-        assertEquals("Duration not the same", expToken.getDuration(),
-                actToken.getDuration());
-        assertEquals("Start time not the same", expToken.getStartTime(),
-                actToken.getStartTime());
-        assertEquals("Scope not the same", expToken.getScope(),
-                actToken.getScope());
-        */
         
         DelegationToken actToken;
         
@@ -136,91 +124,6 @@ public class DelegationTokenTest
         {
             log.debug("caught expected exception: " + expected);
         }
-        
-        // round trip with signature ignored
-        /*
-        actToken = DelegationToken.parse(
-                expToken.format(true), false);
-        assertEquals("User id not the same", expToken.getUser(),
-                actToken.getUser());
-        assertEquals("Duration not the same", expToken.getDuration(),
-                actToken.getDuration());
-        assertEquals("Start time not the same", expToken.getStartTime(),
-                actToken.getStartTime());
-        assertEquals("Scope not the same", expToken.getScope(),
-                actToken.getScope());
-        
-        // Same tests but with no scope
-        expToken = new DelegationToken(userid, duration, null, new Date());
-        actToken = DelegationToken.parse(
-                expToken.format(false), false);
-        assertEquals("User id not the same", expToken.getUser(),
-                actToken.getUser());
-        assertEquals("Duration not the same", expToken.getDuration(),
-                actToken.getDuration());
-        assertEquals("Start time not the same", expToken.getStartTime(),
-                actToken.getStartTime());
-        assertNull(actToken.getScope());
-        
-        // round trip test with signature
-        actToken = DelegationToken.parse(
-                expToken.format(true), true);
-        assertEquals("User id not the same", expToken.getUser(),
-                actToken.getUser());
-        assertEquals("Duration not the same", expToken.getDuration(),
-                actToken.getDuration());
-        assertEquals("Start time not the same", expToken.getStartTime(),
-                actToken.getStartTime());
-        assertNull(actToken.getScope());
-        
-        // round trip with missing signature - no token
-        try
-        {
-            actToken = DelegationToken.parse(
-                expToken.format(false), true);
-            fail("Exception expected");
-        }
-        catch(InvalidDelegationTokenException ignore){}
-        
-        // round trip with signature ignored
-        actToken = DelegationToken.parse(
-                expToken.format(true), false);
-        assertEquals("User id not the same", expToken.getUser(),
-                actToken.getUser());
-        assertEquals("Duration not the same", expToken.getDuration(),
-                actToken.getDuration());
-        assertEquals("Start time not the same", expToken.getStartTime(),
-                actToken.getStartTime());
-        assertNull(actToken.getScope());
-        
-        // some failures
-        boolean thrown = false;
-        try
-        {
-            expToken = new DelegationToken(null, duration, null, new Date());
-        }
-        catch (IllegalArgumentException e)
-        {
-            thrown = true;
-        }
-        assertTrue(thrown);
-        try
-        {
-            expToken = new DelegationToken(userid, -2, null, new Date());
-            fail("Exception expected");
-        }
-        catch(IllegalArgumentException ignore){}
-
-        actToken = DelegationToken.parse(
-                expToken.format(true), true);
-        assertEquals("Duration not the same", expToken.getDuration(),
-                actToken.getDuration());
-        
-        // check isValid
-        expToken = new DelegationToken(userid, duration, 
-                scope, new Date());
-        assertTrue(expToken.isValid());
-        */
         
         Calendar expiredDate = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         expiredDate.add(Calendar.DATE, -1);
