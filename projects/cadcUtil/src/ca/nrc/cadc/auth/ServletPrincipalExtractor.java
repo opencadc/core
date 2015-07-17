@@ -181,22 +181,8 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
      */
     protected void addPrincipals(Set<Principal> principals)
     {
-        addCookiePrincipal(principals);
         addHTTPPrincipal(principals);
         addX500Principal(principals);
-    }
-
-    /**
-     * Add the principal encoded in the cookie, if  exists.
-     * 
-     * @param principals 
-     */
-    private void addCookiePrincipal(Set<Principal> principals)
-    {
-        if (cookiePrincipal != null)
-        {
-            principals.add(cookiePrincipal);
-        }
     }
 
     /**
@@ -206,12 +192,13 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
      */
     protected void addHTTPPrincipal(Set<Principal> principals)
     {
-        // add remote user from HTTP AUTH
+        // only add one HttpPrincipal, precedence order
         final String httpUser = request.getRemoteUser();
-        if (StringUtil.hasText(httpUser))
+        if (StringUtil.hasText(httpUser)) // user from HTTP AUTH
             principals.add(new HttpPrincipal(httpUser));
-        
-        if (token != null)
+        else if (cookiePrincipal != null) // user from cookie
+            principals.add(cookiePrincipal);
+        else if (token != null) // user from token
             principals.add(token.getUser());
     }
 

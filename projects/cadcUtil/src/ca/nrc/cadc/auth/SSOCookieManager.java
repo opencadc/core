@@ -89,7 +89,7 @@ public class SSOCookieManager
 
         try
         {
-            token = DelegationToken.parse(value, SCOPE_URI.toASCIIString());
+            token = DelegationToken.parse(value, SCOPE_URI.toASCIIString(), new CookieScopeValidator());
         }
         catch (Exception e)
         {

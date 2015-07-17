@@ -156,13 +156,27 @@ public class DelegationToken implements Serializable
     }
     
     /**
+     * 
+     * @param text
+     * @param requestURI
+     * @return
+     * @throws InvalidDelegationTokenException 
+     */
+    public static DelegationToken parse(String text, String requestURI) 
+            throws InvalidDelegationTokenException
+    {
+        return parse(text, requestURI, null);
+    }
+    
+    /**
      * Builds a DelegationToken from a text string
      * @param text to parse
      * @param requestURI the request URI
+     * @param sv 
      * @return corresponding DelegationToken
      * @throws InvalidDelegationTokenException
      */
-    public static DelegationToken parse(String text, String requestURI) 
+    public static DelegationToken parse(String text, String requestURI, ScopeValidator sv) 
             throws InvalidDelegationTokenException
     {
         String[] fields = text.split(FIELD_DELIM);
@@ -217,7 +231,8 @@ public class DelegationToken implements Serializable
         // validate scope
         if (scope != null)
         {
-            ScopeValidator sv = getScopeValidator();        
+            if (sv == null) // not supplied
+                sv = getScopeValidator();        
             sv.verifyScope(scope, requestURI);
         }
         
