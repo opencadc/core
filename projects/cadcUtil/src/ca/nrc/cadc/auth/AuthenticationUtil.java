@@ -245,16 +245,11 @@ public class AuthenticationUtil
                 am = AuthMethod.TOKEN;
         }
         
-        if (am == null)
+        SSOCookieCredential cookie = principalExtractor.getSSOCookieCredential();
+        if (cookie != null)
         {
-            for (Object o : principals)
-            {
-                if (o instanceof CookiePrincipal)
-                {
-                    am = AuthMethod.COOKIE;
-                    break;
-                }
-            }
+            publicCred.add(cookie);
+            am = AuthMethod.COOKIE;
         }
         
         if (am == null)
