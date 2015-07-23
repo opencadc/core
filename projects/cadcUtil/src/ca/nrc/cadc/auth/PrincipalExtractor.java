@@ -66,4 +66,12 @@ public interface PrincipalExtractor
      * @return 
      */
     DelegationToken getDelegationToken();
+    
+    
+    /**
+     * Create and return a SSOCookieCredential from the request
+     * 
+     * @return
+     */
+    SSOCookieCredential getSSOCookieCredential();
 }

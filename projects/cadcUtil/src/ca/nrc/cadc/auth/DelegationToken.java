@@ -68,7 +68,7 @@ public class DelegationToken implements Serializable
     private static final long serialVersionUID = 20141025143750l;
 
     private HttpPrincipal user; // identity of the user
-    private Date expiryTime; // expirty time of the delegation (UTC)
+    private Date expiryTime; // expiration time of the delegation (UTC)
     private URI scope; // resources that are the object of the delegation
     
     public static final String FIELD_DELIM = "&";
@@ -156,13 +156,27 @@ public class DelegationToken implements Serializable
     }
     
     /**
+     * 
+     * @param text
+     * @param requestURI
+     * @return
+     * @throws InvalidDelegationTokenException 
+     */
+    public static DelegationToken parse(String text, String requestURI) 
+            throws InvalidDelegationTokenException
+    {
+        return parse(text, requestURI, null);
+    }
+    
+    /**
      * Builds a DelegationToken from a text string
      * @param text to parse
      * @param requestURI the request URI
+     * @param sv 
      * @return corresponding DelegationToken
      * @throws InvalidDelegationTokenException
      */
-    public static DelegationToken parse(String text, String requestURI) 
+    public static DelegationToken parse(String text, String requestURI, ScopeValidator sv) 
             throws InvalidDelegationTokenException
     {
         String[] fields = text.split(FIELD_DELIM);
@@ -215,8 +229,12 @@ public class DelegationToken implements Serializable
             throw new InvalidDelegationTokenException("expired");
         
         // validate scope
-        ScopeValidator sv = getScopeValidator();
-        sv.verifyScope(scope, requestURI);
+        if (scope != null)
+        {
+            if (sv == null) // not supplied
+                sv = getScopeValidator();        
+            sv.verifyScope(scope, requestURI);
+        }
         
         // validate signature
         DelegationToken result = 

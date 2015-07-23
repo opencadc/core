@@ -115,7 +115,8 @@ public class RsaSignatureVerifier
 {
     private static Logger log = Logger.getLogger(RsaSignatureVerifier.class);
 
-
+    private static final String DEFAULT_CONFIG_DIR = System.getProperty("user.home") + "/config/";
+    
     protected static RsaSignatureVerifier inst;
     protected Set<PublicKey> pubKeys = new HashSet<PublicKey>();
     protected static final String KEY_ALGORITHM = "RSA";
@@ -157,21 +158,26 @@ public class RsaSignatureVerifier
         // try to load the keys
         try
         {
-            File keysFile = null;
-            try
+            // check config dir first
+            File keysFile = new File(DEFAULT_CONFIG_DIR, PUB_KEY_FILE_NAME);
+            if (!keysFile.exists())
             {
-               keysFile = FileUtil.getFileFromResource(
-                    PUB_KEY_FILE_NAME, this.getClass());
-            }
-            catch (MissingResourceException ex)
-            {
-                if (privateKeyExpected)
+                try // find in classpath
                 {
-                    return;
+
+                   keysFile = FileUtil.getFileFromResource(
+                        PUB_KEY_FILE_NAME, this.getClass());
                 }
-                else
+                catch (MissingResourceException ex)
                 {
-                    throw ex;
+                    if (privateKeyExpected)
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        throw ex;
+                    }
                 }
             }
             

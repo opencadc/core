@@ -33,20 +33,120 @@
  */
 package ca.nrc.cadc.auth;
 
-import javax.servlet.http.Cookie;
+import ca.nrc.cadc.date.DateUtil;
+
+import java.io.IOException;
+import java.net.URI;
+import java.security.InvalidKeyException;
+import java.util.Calendar;
+import java.util.Date;
+
+
 
 /**
  * Manage authentication cookies.
  */
 public class SSOCookieManager
 {
-    public final static String DEFAULT_SSO_COOKIE_NAME = "CADC_SSO";
+    public static final String DEFAULT_SSO_COOKIE_NAME = "CADC_SSO";
 
-    public SSOCookieManager() { }
+    // For token and cookie value generation.
+    public static final int SSO_COOKIE_LIFETIME_HOURS = 2 * 24; // in hours
 
-    public CookiePrincipal createPrincipal(final Cookie cookie)
+    public static final URI SCOPE_URI = URI.create("sso:cadc+canfar");
+
+    // Offset to add to the expiry hours.  This is mainly used to set a cookie
+    // date in the past to expire it.  This can be a negative value.
+    private int offsetExpiryHours = 1;
+
+
+    /**
+     * Parse the cookie value.  If validation is successful, then the stream
+     * is read in and a Principal representing the cookie value is returned.
+     * Format of the value is:
+     *    UserPrincipal-PrincipalType-ExpirationDateUTC-Base64SignatureToken
+     *    where:
+     *    UserPrincipal - principal of the user
+     *    PrincipalType - principal type
+     *    ExpirationDateUTC - long representing the expiration Java date in UTC
+     *    Base64SignatureToken - The signature token of the 3 fields above in
+     *                           Base64 format.
+     *
+     * @param value           Cookie value.
+     * @return		The HttpPrincipal decoded if the cookie value can be parsed 
+     *            and validated.
+     * @throws InvalidDelegationTokenException 
+     */
+    public final HttpPrincipal parse(final String value) 
+                    throws IOException, InvalidDelegationTokenException
     {
-        String value = cookie.getValue();
-        return new CookiePrincipal(value);
+        /*
+        TODO - The DelegationToken class really should be fixed to handle
+        TODO - null values and bad entries.
+        TODO - jenkinsd 2015.07.14
+         */
+        DelegationToken token;
+
+        try
+        {
+            token = DelegationToken.parse(value, SCOPE_URI.toASCIIString(), new CookieScopeValidator());
+        }
+        catch (Exception e)
+        {
+            throw new InvalidDelegationTokenException("Bad token." + value);
+        }
+
+        return token.getUser();
+    }
+
+    /**
+     * Generate a new cookie value for the given HttpPrincipal.
+     * Format of the value is:
+     *    HttpPrincipal-ExpirationDateUTC-Base64SignatureToken
+     *    where:
+     *    HttpPrincipal - principal of the user
+     *    ExpirationDateUTC - long representing the expiration Java date in UTC
+     *    Base64SignatureToken - The signature token of the 2 fields above in
+     *                           Base64 format.
+     *
+     * @param principal The HttpPrincipal to generate the value from.
+     * @return string of the value.  never null.
+     * @throws IOException Any errors with writing and generation.
+     * @throws InvalidKeyException Signing key is invalid
+     */
+    public final String generate(final HttpPrincipal principal) 
+            throws InvalidKeyException, IOException
+    {
+        DelegationToken token =
+                new DelegationToken(principal, SCOPE_URI, getExpirationDate());
+        return DelegationToken.format(token);
+    }
+
+    /**
+     * Produce an expiration date.  The default is forty-eight (48) hours.
+     *
+     * @return      Date of expiration.  Never null.
+     */
+    private Date getExpirationDate()
+    {
+        final Calendar cal = getCurrentCalendar();
+        cal.add(Calendar.HOUR, (SSO_COOKIE_LIFETIME_HOURS * offsetExpiryHours));
+
+        return cal.getTime();
+    }
+
+    /**
+     * Testers can override this to provide a consistent test.
+     *
+     * @return  Calendar instance.  Never null.
+     */
+    public Calendar getCurrentCalendar()
+    {
+        return Calendar.getInstance(DateUtil.UTC);
+    }
+
+    public void setOffsetExpiryHours(int offsetExpiryHours)
+    {
+        this.offsetExpiryHours = offsetExpiryHours;
     }
 }
