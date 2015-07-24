@@ -34,9 +34,13 @@
 
 package ca.nrc.cadc.exec;
 
+import ca.nrc.cadc.util.StringUtil;
 import org.apache.log4j.Level;
 
 import java.io.File;
+import java.io.FileDescriptor;
+import java.io.FileInputStream;
+import java.io.FileReader;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -74,7 +78,7 @@ public class BuilderOutputGrabberTest
     }
 
     @Test
-    public void captureOutputSucceeds()
+    public void captureOutputSucceeds() throws Exception
     {
         BuilderOutputGrabber bog = new BuilderOutputGrabber();
         String cmd = "/bin/date";
@@ -85,7 +89,7 @@ public class BuilderOutputGrabberTest
     }
 
     @Test
-    public void captureOutputFails()
+    public void captureOutputFails() throws Exception
     {
         BuilderOutputGrabber bog = new BuilderOutputGrabber();
         String cmd = "date -d \"2011-01-01 01:01:01\" +%s";
@@ -96,18 +100,20 @@ public class BuilderOutputGrabberTest
     }
 
     @Test
-    public void captureOutputSucceedsArray()
+    public void captureOutputSucceedsArray() throws Exception
     {
         BuilderOutputGrabber bog = new BuilderOutputGrabber();
-        String[] cmd = {"/bin/bash", "-c", "date -d \"2011-01-01 01:01:01\" +%s"};
-        bog.captureOutput(cmd);
-        assertEquals("usage: date [-jnu] [-d dst] [-r seconds] [-t west] [-v[+|-]val[ymwdHMS]] ... \n" +
-                     "            [-f fmt date | [[[mm]dd]HH]MM[[cc]yy][.ss]] [+format]", bog.getErrorOutput());
-        assertEquals("", bog.getOutput());
+        String[] cmd = {"/bin/bash", "-c", "ls -al $RPS"};
+        Map<String, String> env = new TreeMap<String, String>();
+        env.put("RPS", "/usr/local");
+        bog.captureOutput(cmd, env);
+        assertEquals("", bog.getErrorOutput());
+        assertTrue("Output should not be empty.",
+                   StringUtil.hasText(bog.getOutput()));
     }
 
     @Test
-    public void captureOutputSucceedsEnvironment()
+    public void captureOutputSucceedsEnvironment() throws Exception
     {
         BuilderOutputGrabber bog = new BuilderOutputGrabber();
         String[] cmd = {"/bin/bash", "-c", "ls -al $CADC_ROOT"};
@@ -119,17 +125,24 @@ public class BuilderOutputGrabberTest
     }
 
     @Test
-    public void captureOutputSucceedsFile()
+    public void captureOutputSucceedsFile() throws Exception
     {
         File file = new File("build/tmp");
         BuilderOutputGrabber bog = new BuilderOutputGrabber();
-        String[] cmd = {"/bin/bash", "-c", "date -d \"2011-01-01 01:01:01\" +%s >> date_output"};
-        bog.captureOutput(cmd, null, file);
-        assertEquals("usage: date [-jnu] [-d dst] [-r seconds] [-t west] [-v[+|-]val[ymwdHMS]] ... \n" +
-                     "            [-f fmt date | [[[mm]dd]HH]MM[[cc]yy][.ss]] [+format]", bog.getErrorOutput());
+        String[] cmd = {"/bin/bash", "-c", "ls -al $RPS >> ls_output"};
+        Map<String, String> env = new TreeMap<String, String>();
+        env.put("RPS", "/usr/local");
+        bog.captureOutput(cmd, env, file);
+        assertEquals("", bog.getErrorOutput());
         assertEquals("", bog.getOutput());
-        File outputFile = new File(file, "date_output");
+        File outputFile = new File(file, "ls_output");
         assertTrue(outputFile.exists());
+
+        final char[] outputContent =
+                new char[new Long(outputFile.length()).intValue()];
+        new FileReader(outputFile).read(outputContent);
+        assertTrue("File contents",
+                   StringUtil.hasText(String.valueOf(outputContent)));
     }
 
 }
