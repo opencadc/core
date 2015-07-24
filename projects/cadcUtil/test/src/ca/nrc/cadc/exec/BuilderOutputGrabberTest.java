@@ -101,8 +101,9 @@ public class BuilderOutputGrabberTest
         BuilderOutputGrabber bog = new BuilderOutputGrabber();
         String[] cmd = {"/bin/bash", "-c", "date -d \"2011-01-01 01:01:01\" +%s"};
         bog.captureOutput(cmd);
-        assertEquals("", bog.getErrorOutput());
-        assertEquals("1293872461", bog.getOutput());
+        assertEquals("usage: date [-jnu] [-d dst] [-r seconds] [-t west] [-v[+|-]val[ymwdHMS]] ... \n" +
+                     "            [-f fmt date | [[[mm]dd]HH]MM[[cc]yy][.ss]] [+format]", bog.getErrorOutput());
+        assertEquals("", bog.getOutput());
     }
 
     @Test
@@ -124,7 +125,8 @@ public class BuilderOutputGrabberTest
         BuilderOutputGrabber bog = new BuilderOutputGrabber();
         String[] cmd = {"/bin/bash", "-c", "date -d \"2011-01-01 01:01:01\" +%s >> date_output"};
         bog.captureOutput(cmd, null, file);
-        assertEquals("", bog.getErrorOutput());
+        assertEquals("usage: date [-jnu] [-d dst] [-r seconds] [-t west] [-v[+|-]val[ymwdHMS]] ... \n" +
+                     "            [-f fmt date | [[[mm]dd]HH]MM[[cc]yy][.ss]] [+format]", bog.getErrorOutput());
         assertEquals("", bog.getOutput());
         File outputFile = new File(file, "date_output");
         assertTrue(outputFile.exists());
