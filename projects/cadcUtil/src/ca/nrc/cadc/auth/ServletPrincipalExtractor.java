@@ -46,6 +46,7 @@ import java.util.Set;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
+import ca.nrc.cadc.net.NetUtil;
 import org.apache.log4j.Logger;
 
 import ca.nrc.cadc.util.ArrayUtil;
@@ -125,7 +126,7 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
                                     ssoCookie.getValue());
                     cookieCredential = new 
                             SSOCookieCredential(ssoCookie.getValue(), 
-                            ssoCookie.getDomain());
+                            NetUtil.getDomainName(request.getServerName()));
                 } 
                 catch (IOException e)
                 {
