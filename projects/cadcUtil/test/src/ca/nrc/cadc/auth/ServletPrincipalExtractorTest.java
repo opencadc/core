@@ -67,7 +67,8 @@ public class ServletPrincipalExtractorTest
                 ServletPrincipalExtractor.CERT_REQUEST_ATTRIBUTE)).andReturn(null);
         expect(request.getHeader(AuthenticationUtil.AUTH_HEADER)).andReturn(null);
         expect(request.getCookies()).andReturn(cookies);
-        expect(request.getRemoteUser()).andReturn(null).atLeastOnce();
+        expect(request.getRemoteUser()).andReturn(null).times(2);
+        expect(request.getServerName()).andReturn("cookiedomain").once();
         expect(cookie.getName()).
             andReturn(SSOCookieManager.DEFAULT_SSO_COOKIE_NAME);
         expect(cookie.getValue()).andReturn(cookieValue).atLeastOnce();
