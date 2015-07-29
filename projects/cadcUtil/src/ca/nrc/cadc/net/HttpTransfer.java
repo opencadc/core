@@ -156,9 +156,9 @@ public abstract class HttpTransfer implements Runnable
     public static final int MAX_RETRY_DELAY = 128;
     public static final int DEFAULT_RETRY_DELAY = 30;
 
-    protected int maxRetries = 0;
-    protected int retryDelay = 0;
-    protected RetryReason retryReason = RetryReason.SERVER;
+    protected int maxRetries = 3;
+    protected int retryDelay = 1; // 1, 2, 4 sec
+    protected RetryReason retryReason = RetryReason.TRANSIENT;
 
     protected int numRetries = 0;
     protected int curRetryDelay = 0; // scaled after each retry
