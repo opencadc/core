@@ -375,7 +375,7 @@ public class LogControlServlet extends HttpServlet
 
             url.append("ID=").append(URLEncoder.encode(httpPrincipal.getName(), "UTF-8"));
             url.append("&IDTYPE=").append(AuthenticationUtil.AUTH_TYPE_HTTP);
-            url.append("&ROLE=MEMBER");
+            url.append("&ROLE=member");
             url.append("&GROUPID=").append(URLEncoder.encode(accessGroup, "UTF-8"));
 
             logger.debug("getMembership request to " + url.toString());
