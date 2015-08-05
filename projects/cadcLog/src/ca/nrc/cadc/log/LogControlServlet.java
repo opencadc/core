@@ -8,7 +8,7 @@
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -71,12 +71,23 @@
 package ca.nrc.cadc.log;
 
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
 
+import javax.net.ssl.SSLSocketFactory;
+import javax.security.auth.Subject;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -86,6 +97,11 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.auth.HttpPrincipal;
+import ca.nrc.cadc.auth.SSLUtil;
+import ca.nrc.cadc.net.HttpDownload;
+import ca.nrc.cadc.reg.client.RegistryClient;
 import ca.nrc.cadc.util.Log4jInit;
 
 
@@ -96,7 +112,7 @@ import ca.nrc.cadc.util.Log4jInit;
  * whole number than is used for any other servlet
  * in the webapp.
  * </p><p>
- * The initial level is set with an init-param named 
+ * The initial level is set with an init-param named
  * <code>logLevel</code> and value equivalent to one of the
  * log4j levels (upper case, eg INFO).
  * </p><p>
@@ -104,12 +120,12 @@ import ca.nrc.cadc.util.Log4jInit;
  * named <code>logLevelPackages</code> and value of whitespace-separated
  * package names.
  * </p><p>
- * The current configuration can be retrieved with an HTTP GET. 
+ * The current configuration can be retrieved with an HTTP GET.
  * </p><p>
- * The configuration can be modified with an HTTP PIOST to this servlet. 
+ * The configuration can be modified with an HTTP PIOST to this servlet.
  * The currently supported params are <code>level</code> (for example,
  * level=DEBUG) and <code>package</code> (for example, package=ca.nrc.cadc.log).
- * The level parameter is required. The package parameter is optional and 
+ * The level parameter is required. The package parameter is optional and
  * may specify a new package to configure
  * or a change in level for an existing package; if no packages are specified, the
  * level is changed for all previously configured packages.
@@ -118,15 +134,19 @@ public class LogControlServlet extends HttpServlet
 {
 	private static final long serialVersionUID = 200909091014L;
 
+	private static final String AC_URI = "ivo://cadc.nrc.ca/canfargms";
+
 	private static final Logger logger = Logger.getLogger( LogControlServlet.class);
 
 	private static final Level DEFAULT_LEVEL = Level.INFO;
-	
+
 	private static final String LOG_LEVEL_PARAM = "logLevel";
 	private static final String PACKAGES_PARAM  = "logLevelPackages";
+	private static final String GROUP_PARAM  = "logAccessGroup";
 
 	private Level level = null;
 	private List<String> packages;
+	private String accessGroup;
 
     /**
      *  Initialize the logging.  This method should only get
@@ -160,15 +180,15 @@ public class LogControlServlet extends HttpServlet
     		level = Level.FATAL;
     	else
     		level = DEFAULT_LEVEL;
-    	
+
     	String webapp = config.getServletContext().getServletContextName();
     	if (webapp == null) webapp = "[?]";
-    	    
+
         String thisPkg = LogControlServlet.class.getPackage().getName();
         Log4jInit.setLevel(webapp, thisPkg, level);
         packages.add(thisPkg);
         logger.info("log level: " + thisPkg + " =  " + level);
-        
+
         String packageParamValues = config.getInitParameter( PACKAGES_PARAM );
         if (packageParamValues != null)
         {
@@ -186,6 +206,9 @@ public class LogControlServlet extends HttpServlet
             }
         }
 
+        // get the access group
+        accessGroup = config.getInitParameter(GROUP_PARAM);
+
         // these are here to help detect problems with logging setup
         logger.info("init complete");
         logger.debug("init complete -- YOU SHOULD NEVER SEE THIS MESSAGE");
@@ -194,7 +217,7 @@ public class LogControlServlet extends HttpServlet
     /**
      * In response to an HTTP GET, return the current logging level and the list
 	 * of packages for which logging is enabled.
-     * 
+     *
      * @param request
      * @param response
      * @throws ServletException
@@ -204,6 +227,19 @@ public class LogControlServlet extends HttpServlet
     public void doGet(HttpServletRequest request, HttpServletResponse response)
         throws ServletException, IOException
 	{
+        Subject subject = AuthenticationUtil.getSubject(request);
+        logger.debug(subject.toString());
+
+        try
+        {
+            authorize(subject);
+        }
+        catch (AccessControlException e)
+        {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+
         //Subject subject = AuthenticationUtil.getSubject(request);
         //logger.debug(subject.toString());
 
@@ -217,10 +253,10 @@ public class LogControlServlet extends HttpServlet
             Logger log = Logger.getLogger(pkg);
         	writer.println(pkg + " " + log.getLevel());
         }
-        
+
         writer.close();
 	}
-	
+
     /**
      * Allows the caller to set the log level (e.g. with the level=DEBUG parameter).
      * @param request
@@ -232,8 +268,18 @@ public class LogControlServlet extends HttpServlet
     public void doPost(HttpServletRequest request, HttpServletResponse response)
         throws ServletException, IOException
 	{
-        //Subject subject = AuthenticationUtil.getSubject(request);
-        //logger.debug(subject.toString());
+        Subject subject = AuthenticationUtil.getSubject(request);
+        logger.debug(subject.toString());
+
+        try
+        {
+            authorize(subject);
+        }
+        catch (AccessControlException e)
+        {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
 
         String[] params = request.getParameterValues("level");
         String levelVal = null;
@@ -264,7 +310,7 @@ public class LogControlServlet extends HttpServlet
                 writer.close();
             }
         }
-        
+
         String[] pkgs = request.getParameterValues("package");
         if (pkgs != null)
         {
@@ -286,10 +332,96 @@ public class LogControlServlet extends HttpServlet
                 Log4jInit.setLevel(p, level);
             }
         }
-        
+
         // redirect the caller to the resulting settings
         response.setStatus(HttpServletResponse.SC_SEE_OTHER);
         String url = request.getRequestURI();
         response.setHeader("Location", url);
+    }
+
+    /**
+     * Check for proper group membership.
+     */
+    private void authorize(Subject subject) throws AccessControlException
+    {
+        if (accessGroup == null)
+        {
+            logger.debug("No access group, authorized.");
+            return;
+        }
+
+        if (subject == null)
+        {
+            // no identity
+            throw new AccessControlException("Permission denied");
+        }
+
+        RegistryClient registryClient = new RegistryClient();
+        URL acURL;
+        try
+        {
+            acURL = registryClient.getServiceURL(new URI(AC_URI), "https");
+
+            Set<HttpPrincipal> userids = subject.getPrincipals(HttpPrincipal.class);
+            if (userids == null || userids.size() == 0)
+            {
+                // no http principal
+                throw new AccessControlException("Permission denied");
+            }
+            HttpPrincipal httpPrincipal = userids.iterator().next();
+
+            StringBuilder url = new StringBuilder(acURL.toExternalForm());
+            url.append("/search?");
+
+            url.append("ID=").append(URLEncoder.encode(httpPrincipal.getName(), "UTF-8"));
+            url.append("&IDTYPE=").append(AuthenticationUtil.AUTH_TYPE_HTTP);
+            url.append("&ROLE=MEMBER");
+            url.append("&GROUPID=").append(URLEncoder.encode(accessGroup, "UTF-8"));
+
+            logger.debug("getMembership request to " + url.toString());
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+            HttpDownload transfer = new HttpDownload(new URL(url.toString()), out);
+
+            SSLSocketFactory sslSocketFactory = SSLUtil.getSocketFactory(subject);
+            transfer.setSSLSocketFactory(sslSocketFactory);
+            transfer.run();
+
+            Throwable error = transfer.getThrowable();
+            if (error != null)
+            {
+                String message = "Failed to check log control authorization";
+                logger.error(message, error);
+                throw new IllegalStateException(message, error);
+            }
+
+            String groupsXML = new String(out.toByteArray(), "UTF-8");
+            logger.debug("groups XML: " + groupsXML);
+
+            if (!groupsXML.contains(accessGroup))
+            {
+                throw new AccessControlException("Permission denied");
+            }
+
+        }
+        catch (MalformedURLException e)
+        {
+            String message = "Unexpected error";
+            logger.error(message, e);
+            throw new IllegalStateException(message, e);
+        }
+        catch (URISyntaxException e)
+        {
+            String message = "Unexpected error";
+            logger.error(message, e);
+            throw new IllegalStateException(message, e);
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            String message = "Unexpected error";
+            logger.error(message, e);
+            throw new IllegalStateException(message, e);
+        }
+
     }
 }
