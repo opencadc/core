@@ -72,6 +72,7 @@ package ca.nrc.cadc.log;
 
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
@@ -81,6 +82,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.security.AccessControlException;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -98,9 +101,12 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.auth.Authenticator;
+import ca.nrc.cadc.auth.Authorizer;
 import ca.nrc.cadc.auth.HttpPrincipal;
 import ca.nrc.cadc.auth.SSLUtil;
 import ca.nrc.cadc.net.HttpDownload;
+import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.reg.client.RegistryClient;
 import ca.nrc.cadc.util.Log4jInit;
 
@@ -134,19 +140,21 @@ public class LogControlServlet extends HttpServlet
 {
 	private static final long serialVersionUID = 200909091014L;
 
-	private static final String AC_URI = "ivo://cadc.nrc.ca/canfargms";
-
-	private static final Logger logger = Logger.getLogger( LogControlServlet.class);
+	private static final Logger logger = Logger.getLogger(LogControlServlet.class);
 
 	private static final Level DEFAULT_LEVEL = Level.INFO;
 
 	private static final String LOG_LEVEL_PARAM = "logLevel";
 	private static final String PACKAGES_PARAM  = "logLevelPackages";
+
 	private static final String GROUP_PARAM  = "logAccessGroup";
+	private static final String GROUP_AUTHORIZER  = "groupAuthorizer";
 
 	private Level level = null;
 	private List<String> packages;
+
 	private String accessGroup;
+	private Authorizer groupAuthorizer;
 
     /**
      *  Initialize the logging.  This method should only get
@@ -206,8 +214,24 @@ public class LogControlServlet extends HttpServlet
             }
         }
 
-        // get the access group
+        // get the access group and group authorizer
         accessGroup = config.getInitParameter(GROUP_PARAM);
+        String authClassName = config.getInitParameter(GROUP_AUTHORIZER);
+
+        // instantiate the class if all configuration is present
+        if (accessGroup != null && authClassName != null)
+        {
+            try
+            {
+                Class authClass = Class.forName(authClassName);
+                Object o = authClass.newInstance();
+                groupAuthorizer = (Authorizer) o;
+            }
+            catch (Exception e)
+            {
+                logger.error("Could not load group authorizer", e);
+            }
+        }
 
         // these are here to help detect problems with logging setup
         logger.info("init complete");
@@ -227,21 +251,29 @@ public class LogControlServlet extends HttpServlet
     public void doGet(HttpServletRequest request, HttpServletResponse response)
         throws ServletException, IOException
 	{
-        Subject subject = AuthenticationUtil.getSubject(request);
-        logger.debug(subject.toString());
 
         try
         {
-            authorize(subject);
+            authorize(request, true);
         }
         catch (AccessControlException e)
         {
+            logger.debug("Forbidden");
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
-
-        //Subject subject = AuthenticationUtil.getSubject(request);
-        //logger.debug(subject.toString());
+        catch (TransientException e)
+        {
+            logger.error("Error calling group authorizer", e);
+            response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+            return;
+        }
+        catch (Throwable t)
+        {
+            logger.error("Error calling group authorizer", t);
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            return;
+        }
 
         response.setStatus(HttpServletResponse.SC_OK);
         response.setContentType("text/plain");
@@ -273,11 +305,24 @@ public class LogControlServlet extends HttpServlet
 
         try
         {
-            authorize(subject);
+            authorize(request, false);
         }
         catch (AccessControlException e)
         {
+            logger.debug("Forbidden");
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+        catch (TransientException e)
+        {
+            logger.error("Error calling group authorizer", e);
+            response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+            return;
+        }
+        catch (Throwable t)
+        {
+            logger.error("Error calling group authorizer", t);
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             return;
         }
 
@@ -342,86 +387,83 @@ public class LogControlServlet extends HttpServlet
     /**
      * Check for proper group membership.
      */
-    private void authorize(Subject subject) throws AccessControlException
+    private void authorize(HttpServletRequest request, boolean readOnly) throws AccessControlException, TransientException
     {
-        if (accessGroup == null)
+        if (accessGroup == null || groupAuthorizer == null)
         {
-            logger.debug("No access group, authorized.");
+            logger.debug("Authorization not configured, log control is public.");
             return;
         }
 
-        if (subject == null)
-        {
-            // no identity
-            throw new AccessControlException("Permission denied");
-        }
+        Subject subject = AuthenticationUtil.getSubject(request);
+        logger.debug(subject.toString());
 
-        RegistryClient registryClient = new RegistryClient();
-        URL acURL;
+        GroupAuthorizationAction groupCheck = new GroupAuthorizationAction(readOnly);
+
         try
         {
-            acURL = registryClient.getServiceURL(new URI(AC_URI), "https");
-
-            Set<HttpPrincipal> userids = subject.getPrincipals(HttpPrincipal.class);
-            if (userids == null || userids.size() == 0)
+            if (subject == null)
             {
-                // no http principal
-                throw new AccessControlException("Permission denied");
+                groupCheck.run();
             }
-            HttpPrincipal httpPrincipal = userids.iterator().next();
-
-            StringBuilder url = new StringBuilder(acURL.toExternalForm());
-            url.append("/search?");
-
-            url.append("ID=").append(URLEncoder.encode(httpPrincipal.getName(), "UTF-8"));
-            url.append("&IDTYPE=").append(AuthenticationUtil.AUTH_TYPE_HTTP);
-            url.append("&ROLE=member");
-            url.append("&GROUPID=").append(URLEncoder.encode(accessGroup, "UTF-8"));
-
-            logger.debug("getMembership request to " + url.toString());
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-            HttpDownload transfer = new HttpDownload(new URL(url.toString()), out);
-
-            SSLSocketFactory sslSocketFactory = SSLUtil.getSocketFactory(subject);
-            transfer.setSSLSocketFactory(sslSocketFactory);
-            transfer.run();
-
-            Throwable error = transfer.getThrowable();
-            if (error != null)
+            else
             {
-                String message = "Failed to check log control authorization";
-                logger.error(message, error);
-                throw new IllegalStateException(message, error);
+                try
+                {
+                    Subject.doAs(subject, groupCheck);
+                }
+                catch (PrivilegedActionException e)
+                {
+                    throw e.getException();
+                }
             }
-
-            String groupsXML = new String(out.toByteArray(), "UTF-8");
-            logger.debug("groups XML: " + groupsXML);
-
-            if (!groupsXML.contains(accessGroup))
+        }
+        catch (Exception e)
+        {
+            if (e instanceof AccessControlException)
             {
-                throw new AccessControlException("Permission denied");
+                throw (AccessControlException) e;
             }
-
+            if (e instanceof TransientException)
+            {
+                throw (TransientException) e;
+            }
+            throw new IllegalStateException(e);
         }
-        catch (MalformedURLException e)
-        {
-            String message = "Unexpected error";
-            logger.error(message, e);
-            throw new IllegalStateException(message, e);
-        }
-        catch (URISyntaxException e)
-        {
-            String message = "Unexpected error";
-            logger.error(message, e);
-            throw new IllegalStateException(message, e);
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            String message = "Unexpected error";
-            logger.error(message, e);
-            throw new IllegalStateException(message, e);
-        }
-
     }
+
+    class GroupAuthorizationAction implements PrivilegedExceptionAction<Object>
+    {
+        private boolean readOnly;
+
+        GroupAuthorizationAction(boolean readOnly)
+        {
+            this.readOnly = readOnly;
+        }
+
+        @Override
+        public Object run() throws Exception
+        {
+            try
+            {
+                if (readOnly)
+                {
+                    groupAuthorizer.getReadPermission(null);
+                }
+                else
+                {
+                    groupAuthorizer.getWritePermission(null);
+                }
+            }
+            catch (FileNotFoundException e)
+            {
+                throw new IllegalStateException("UnexpectedException", e);
+            }
+
+            return null;
+        }
+    }
+
+
+
 }
