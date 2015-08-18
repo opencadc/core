@@ -326,6 +326,7 @@ public class AuthenticationUtil
         }
 
         Subject subject = new Subject(false, principals, publicCred, privateCred);
+        setAuthMethod(subject, AuthMethod.CERT); // client side and testing
         return subject; // this method for client apps only: no augment
     }
 
