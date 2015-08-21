@@ -388,7 +388,7 @@ public class HttpDownload extends HttpTransfer
                 try
                 {
                     long dt = 1000L * ex.getRetryDelay(); // to milliseconds
-                    log.debug("retry "+numRetries+" sleeping  for " + dt);
+                    log.debug("retry " + numRetries +" sleeping  for " + dt);
                     fireEvent(TransferEvent.RETRYING);
                     Thread.sleep(dt);
                 }
