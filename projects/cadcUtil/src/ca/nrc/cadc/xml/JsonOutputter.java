@@ -188,16 +188,16 @@ public class JsonOutputter implements Serializable
             w.print(a.getName());
             w.print(QUOTE);
             w.print(" : ");
-//            if ( isBoolean(e.getName(), a.getValue()) || isNumeric(e.getName(), a.getValue()) )
-//            {
-//                w.print(a.getValue());
-//            }
-//            else
-//            {
+            if ( isBoolean(e.getName(), a.getValue()) || isNumeric(e.getName(), a.getValue()) )
+            {
+                w.print(a.getValue());
+            }
+            else
+            {
                 w.print(QUOTE);
                 w.print(a.getValue());
                 w.print(QUOTE);
-//            }
+            }
             if (iter.hasNext())
                 w.print(",");
         }
