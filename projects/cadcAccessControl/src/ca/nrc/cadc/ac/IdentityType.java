@@ -77,7 +77,7 @@ public enum IdentityType
     X500("X500"),
     OPENID("OpenID"),
     USERNAME("HTTP"),
-    UID("UID"),
+    CADC("CADC"),
     COOKIE("sessionID");
     
     private final String value;

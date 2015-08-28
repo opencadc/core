@@ -71,9 +71,6 @@ package ca.nrc.cadc.ac;
 import ca.nrc.cadc.util.Log4jInit;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -100,7 +97,7 @@ public class IdentityTypeTest
         IdentityType[] expResult = new IdentityType[]
         {
             IdentityType.X500, IdentityType.OPENID, 
-            IdentityType.USERNAME, IdentityType.UID,
+            IdentityType.USERNAME, IdentityType.CADC,
             IdentityType.COOKIE
         };
         IdentityType[] result = IdentityType.values();
@@ -116,7 +113,7 @@ public class IdentityTypeTest
         assertEquals(IdentityType.X500, IdentityType.valueOf("X500"));
         assertEquals(IdentityType.OPENID, IdentityType.valueOf("OPENID"));
         assertEquals(IdentityType.USERNAME, IdentityType.valueOf("USERNAME"));
-        assertEquals(IdentityType.UID, IdentityType.valueOf("UID"));
+        assertEquals(IdentityType.CADC, IdentityType.valueOf("CADC"));
         assertEquals(IdentityType.COOKIE, IdentityType.valueOf("COOKIE"));
     }
 
@@ -136,7 +133,7 @@ public class IdentityTypeTest
         assertEquals(IdentityType.X500, IdentityType.toValue("X500"));
         assertEquals(IdentityType.OPENID, IdentityType.toValue("OpenID"));
         assertEquals(IdentityType.USERNAME, IdentityType.toValue("HTTP"));
-        assertEquals(IdentityType.UID, IdentityType.toValue("UID"));
+        assertEquals(IdentityType.CADC, IdentityType.toValue("CADC"));
         assertEquals(IdentityType.COOKIE, IdentityType.toValue("sessionID"));
     }
 
@@ -149,7 +146,7 @@ public class IdentityTypeTest
         assertEquals("X500", IdentityType.X500.getValue());
         assertEquals("OpenID", IdentityType.OPENID.getValue());
         assertEquals("HTTP", IdentityType.USERNAME.getValue());
-        assertEquals("UID", IdentityType.UID.getValue());
+        assertEquals("CADC", IdentityType.CADC.getValue());
         assertEquals("sessionID", IdentityType.COOKIE.getValue());
 
     }
@@ -163,7 +160,7 @@ public class IdentityTypeTest
         assertEquals("X500".hashCode(), IdentityType.X500.checksum());
         assertEquals("OpenID".hashCode(), IdentityType.OPENID.checksum());
         assertEquals("HTTP".hashCode(), IdentityType.USERNAME.checksum());
-        assertEquals("UID".hashCode(), IdentityType.UID.checksum());
+        assertEquals("CADC".hashCode(), IdentityType.CADC.checksum());
         assertEquals("sessionID".hashCode(), IdentityType.COOKIE.checksum());
     }
     
