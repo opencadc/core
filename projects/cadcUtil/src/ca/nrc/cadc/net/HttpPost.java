@@ -69,6 +69,7 @@
 
 package ca.nrc.cadc.net;
 
+import ca.nrc.cadc.net.event.TransferEvent;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -214,6 +215,7 @@ public class HttpPost extends HttpTransfer
                 {
                     long dt = 1000L * ex.getRetryDelay();
                     log.debug("retry " + numRetries + " sleeping  for " + dt);
+                    fireEvent(TransferEvent.RETRYING);
                     Thread.sleep(dt);
                 }
                 catch(InterruptedException iex)
