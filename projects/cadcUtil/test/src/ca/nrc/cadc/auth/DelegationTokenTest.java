@@ -90,7 +90,7 @@ public class DelegationTokenTest
         w.flush();
         w.close();
         
-        // round trip test without signature
+        // round trip test with signature
        
         HttpPrincipal userid = new HttpPrincipal("someuser");
         URI scope = new URI("foo:bar");
@@ -99,10 +99,28 @@ public class DelegationTokenTest
         expiry.add(Calendar.HOUR, duration);
         DelegationToken expToken = new DelegationToken(userid, scope, expiry.getTime());
         
-        DelegationToken actToken;
-        
-        // round trip test with signature
         String token = DelegationToken.format(expToken);
+        log.debug("valid token: " + token);
+        DelegationToken actToken = DelegationToken.parse(token, null);
+        
+        assertEquals("User id not the same", expToken.getUser(),
+                actToken.getUser());
+        assertEquals("Expiry time not the same", expToken.getExpiryTime(),
+                actToken.getExpiryTime());
+        assertEquals("Scope not the same", expToken.getScope(),
+                actToken.getScope());
+        
+        
+        // round trip test without signature and principal with proxy user
+        
+        userid = new HttpPrincipal("someuser", "someproxyuser");
+        scope = new URI("foo:bar");
+        duration = 10; // h
+        expiry = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+        expiry.add(Calendar.HOUR, duration);
+        expToken = new DelegationToken(userid, scope, expiry.getTime());
+
+        token = DelegationToken.format(expToken);
         log.debug("valid token: " + token);
         actToken = DelegationToken.parse(token, null);
         

@@ -47,6 +47,8 @@ import ca.nrc.cadc.util.Base64;
 import ca.nrc.cadc.util.PropertiesReader;
 import ca.nrc.cadc.util.RsaSignatureGenerator;
 import ca.nrc.cadc.util.RsaSignatureVerifier;
+import ca.nrc.cadc.util.StringUtil;
+
 import java.util.Properties;
 import org.apache.log4j.Logger;
 
@@ -141,6 +143,13 @@ public class DelegationToken implements Serializable
         sb.append("userid");
         sb.append(VALUE_DELIM);
         sb.append(token.getUser().getName());
+        if (StringUtil.hasText(token.getUser().getProxyUser()))
+        {
+            sb.append(FIELD_DELIM);
+            sb.append("proxyuser");
+            sb.append(VALUE_DELIM);
+            sb.append(token.getUser().getProxyUser());
+        }
         sb.append(FIELD_DELIM);
         sb.append("expirytime");
         sb.append(VALUE_DELIM);
@@ -180,7 +189,8 @@ public class DelegationToken implements Serializable
             throws InvalidDelegationTokenException
     {
         String[] fields = text.split(FIELD_DELIM);
-        HttpPrincipal userid = null;
+        String userid = null;
+        String proxyUser = null;
         Date expirytime = null;
         URI scope = null;
         String signature = null;
@@ -192,7 +202,11 @@ public class DelegationToken implements Serializable
                 String value = field.substring(field.indexOf(VALUE_DELIM) + 1);
                 if (key.equalsIgnoreCase("userid"))
                 {
-                    userid = new HttpPrincipal(value);
+                    userid = value;
+                }
+                if (key.equalsIgnoreCase("proxyuser"))
+                {
+                    proxyUser = value;
                 }
                 if (key.equalsIgnoreCase("expirytime"))
                 {
@@ -207,6 +221,7 @@ public class DelegationToken implements Serializable
                     signature = value;
                 }              
             }
+            
         }
         catch(NumberFormatException ex)
         {
@@ -238,7 +253,8 @@ public class DelegationToken implements Serializable
         
         // validate signature
         DelegationToken result = 
-                new DelegationToken(userid, scope, expirytime);
+                new DelegationToken(new HttpPrincipal(userid, proxyUser), 
+                        scope, expirytime);
         
         try
         {
@@ -305,6 +321,11 @@ public class DelegationToken implements Serializable
     {
         StringBuilder sb = new StringBuilder();
         sb.append("DelegationToken(user=");
+        if (StringUtil.hasText(getUser().getProxyUser()))
+        {
+            sb.append(",proxyUser=");
+            sb.append(getUser().getProxyUser());
+        }
         sb.append(getUser());
         sb.append(",scope=");
         sb.append(getScope());
