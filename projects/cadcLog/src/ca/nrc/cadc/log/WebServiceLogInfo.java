@@ -8,7 +8,7 @@
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -85,20 +85,20 @@ import org.apache.log4j.Logger;
  * Class to be used by web services to log at INFO level the start and
  * end messages for each request. All non-private, non-static, non-transient
  * fields are logged in a simple JSON string.
- * 
+ *
  * @author majorb
  *
  */
 public abstract class WebServiceLogInfo
 {
     private static final Logger log = Logger.getLogger(WebServiceLogInfo.class);
-    
+
     private static final String ANONYMOUS_USER = "anonUser";
-    
+
     private boolean userSuccess = true;
-    
+
     protected String method;
-    
+
     protected String path;
 
     protected Boolean success;
@@ -108,17 +108,17 @@ public abstract class WebServiceLogInfo
     protected String proxyUser;
     
     protected String from;
-    
+
     protected Long time;
-    
+
     protected Long bytes;
-    
+
     protected String message;
-    
+
     protected String jobID;
-    
+
     protected WebServiceLogInfo() { }
-    
+
     /**
      * Generates the log.info message for the start of the request.
      * @return
@@ -127,7 +127,7 @@ public abstract class WebServiceLogInfo
     {
         return "START: " + doit();
     }
-    
+
     /**
      * Generates the log.info message for the end of the request.
      * @return
@@ -137,7 +137,7 @@ public abstract class WebServiceLogInfo
         this.success = userSuccess;
         return "END: " + doit();
     }
-    
+
     String doit()
     {
         StringBuilder sb = new StringBuilder();
@@ -146,7 +146,7 @@ public abstract class WebServiceLogInfo
         sb.append("}");
         return sb.toString();
     }
-    
+
     private void populate(StringBuilder sb, Class c)
     {
         for (Field f : c.getDeclaredFields())
@@ -185,8 +185,8 @@ public abstract class WebServiceLogInfo
         if (WebServiceLogInfo.class.isAssignableFrom(sc) )
             populate(sb, sc);
     }
-    
-    
+
+
     /**
      * Set the success/fail boolean.
      * @param success
@@ -223,7 +223,7 @@ public abstract class WebServiceLogInfo
     {
         this.bytes = bytes;
     }
-    
+
     /**
      * Set a success or failure message.
      * @param message
@@ -233,13 +233,13 @@ public abstract class WebServiceLogInfo
         if (StringUtil.hasText(message))
             this.message = message.trim();
     }
-    
+
     protected void setJobID(String jobID)
     {
         if (StringUtil.hasText(jobID))
             this.jobID = jobID.trim();
     }
-    
+
     protected String getUser(Subject subject)
     {
         try
@@ -263,7 +263,7 @@ public abstract class WebServiceLogInfo
         {
             // ignore - can't throw exceptions here
         }
-        
+
         return ANONYMOUS_USER;
     }
 
