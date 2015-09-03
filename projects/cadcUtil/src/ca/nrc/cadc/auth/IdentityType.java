@@ -78,8 +78,9 @@ public enum IdentityType
     OPENID("OpenID"),
     USERNAME("HTTP"),
     CADC("CADC"),
-    COOKIE("sessionID");
-    
+    COOKIE("sessionID"),
+    ENTRY_DN("entryDN");
+
     private final String value;
 
     private IdentityType(String value)
@@ -96,7 +97,7 @@ public enum IdentityType
     }
 
     public String getValue()
-    { 
+    {
         return value;
     }
 
@@ -104,12 +105,12 @@ public enum IdentityType
     {
         return value.hashCode();
     }
-    
+
     @Override
     public String toString()
     {
         return this.getClass().getSimpleName() + "[" + value + "]";
     }
-    
+
 }
 
