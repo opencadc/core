@@ -125,13 +125,13 @@ public class WebServiceLogInfoTest
         log.info("testMaximalContentServlet: " + start);
         Assert.assertEquals("Wrong start", "START: {\"method\":\"GET\",\"path\":\"/path/of/request\",\"from\":\"192.168.0.0\"}", start);
         logInfo.setSuccess(false);
-        logInfo.setSubject(createSubject("the user"));
+        logInfo.setSubject(createSubject("the user", "the proxy"));
         logInfo.setElapsedTime(1234L);
         logInfo.setBytes(10L);
         logInfo.setMessage("the message");
         String end = logInfo.end();
         log.info("testMaximalContentServlet: " + end);
-        Assert.assertEquals("Wrong end", "END: {\"method\":\"GET\",\"path\":\"/path/of/request\",\"success\":false,\"user\":\"the user\",\"from\":\"192.168.0.0\",\"time\":1234,\"bytes\":10,\"message\":\"the message\"}", end);
+        Assert.assertEquals("Wrong end", "END: {\"method\":\"GET\",\"path\":\"/path/of/request\",\"success\":false,\"user\":\"the user\",\"proxyUser\":\"the proxy\",\"from\":\"192.168.0.0\",\"time\":1234,\"bytes\":10,\"message\":\"the message\"}", end);
         EasyMock.verify(request);
     }
 
@@ -150,7 +150,7 @@ public class WebServiceLogInfoTest
         log.info("testPathIsJobID: " + start);
         Assert.assertEquals("Wrong start", "START: {\"method\":\"GET\",\"from\":\"192.168.0.0\",\"jobID\":\"theJobID\"}", start);
         logInfo.setSuccess(false);
-        logInfo.setSubject(createSubject("the user"));
+        logInfo.setSubject(createSubject("the user", null));
         logInfo.setElapsedTime(1234L);
         logInfo.setBytes(10L);
         logInfo.setMessage("the message");
@@ -160,10 +160,10 @@ public class WebServiceLogInfoTest
         EasyMock.verify(request);
     }
 
-    private Subject createSubject(String userid)
+    private Subject createSubject(String userid, String proxyUser)
     {
         Subject s = new Subject();
-        HttpPrincipal p = new HttpPrincipal(userid);
+        HttpPrincipal p = new HttpPrincipal(userid, proxyUser);
         s.getPrincipals().add(p);
         return s;
     }
