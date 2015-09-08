@@ -249,13 +249,9 @@ public abstract class WebServiceLogInfo
                 final Set<HttpPrincipal> principals = subject.getPrincipals(HttpPrincipal.class);
                 if (!principals.isEmpty())
                 {
-                    Iterator<HttpPrincipal> i = principals.iterator();
-                    while (i.hasNext())
-                    {
-                        HttpPrincipal principal = i.next();
-                        this.proxyUser = principal.getProxyUser();
-                        return principal.getName();
-                    }
+                    HttpPrincipal principal = principals.iterator().next();
+                    this.proxyUser = principal.getProxyUser();
+                    return principal.getName();
                 }
             }
         }
