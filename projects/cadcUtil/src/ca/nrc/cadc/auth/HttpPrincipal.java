@@ -72,6 +72,8 @@ package ca.nrc.cadc.auth;
 import java.io.Serializable;
 import java.security.Principal;
 
+import ca.nrc.cadc.util.StringUtil;
+
 /**
  * This class encapsulates an Http Principal
  */
@@ -80,6 +82,7 @@ public class HttpPrincipal implements Principal, Serializable
     private static final long serialVersionUID = 20090816143750l;
 
     private String remoteUser;
+    private String proxyUser; // user that impersonates remoteUser
 
     
     /**
@@ -88,10 +91,22 @@ public class HttpPrincipal implements Principal, Serializable
      */
     public HttpPrincipal(String remoteUser)
     {
+        this(remoteUser, null);
+    }
+    
+    /**
+     * Ctor
+     * @param remoteUser Http remote user. Cannot be null.
+     * @param proxyUser Http ID of the real user that impersonates the
+     * remote user.
+     */
+    public HttpPrincipal(String remoteUser, String proxyUser)
+    {
         if (remoteUser == null)
         {
             throw new IllegalArgumentException("Provided null remoteUser");
         }
+        this.proxyUser = proxyUser;
         this.remoteUser = remoteUser;
     }
 
@@ -104,6 +119,15 @@ public class HttpPrincipal implements Principal, Serializable
         return remoteUser;
     }
     
+    /**
+     * 
+     * @return the proxy user (if any) that impersonates the remote user
+     */
+    public String getProxyUser()
+    {
+        return proxyUser;
+    }
+    
 
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
@@ -114,7 +138,8 @@ public class HttpPrincipal implements Principal, Serializable
         final int prime = 31;
         int result = 1;
         result = prime * result
-                + ((remoteUser == null) ? 0 : remoteUser.hashCode());
+                + ((remoteUser == null) ? 0 : remoteUser.hashCode())
+                + ((proxyUser == null) ? 0 : proxyUser.hashCode());
         return result;
     }
 
@@ -138,6 +163,17 @@ public class HttpPrincipal implements Principal, Serializable
             return false;
         }
         HttpPrincipal other = (HttpPrincipal) obj;
+        if (proxyUser == null)
+        {
+            if (other.proxyUser != null)
+            {
+                return false;
+            }
+        }
+        else if (!proxyUser.equals(other.proxyUser))
+        {
+            return false;
+        }
         if (remoteUser == null)
         {
             if (other.remoteUser != null)
@@ -155,7 +191,13 @@ public class HttpPrincipal implements Principal, Serializable
 
     public String toString()
     {
-        return getClass().getSimpleName() + "[" + getName() + "]";
+        String proxyUserStr = "";
+        if (StringUtil.hasText(getProxyUser()))
+        {
+            proxyUserStr = getProxyUser() + " as ";
+        }
+        return getClass().getSimpleName() + "[" + proxyUserStr + getName()
+                + "]";
     }
 
 }
