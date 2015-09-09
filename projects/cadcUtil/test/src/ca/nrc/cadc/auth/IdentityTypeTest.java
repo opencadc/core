@@ -98,7 +98,7 @@ public class IdentityTypeTest
         {
             IdentityType.X500, IdentityType.OPENID, 
             IdentityType.USERNAME, IdentityType.CADC,
-            IdentityType.COOKIE
+            IdentityType.COOKIE, IdentityType.ENTRY_DN
         };
         IdentityType[] result = IdentityType.values();
         assertArrayEquals(expResult, result);
