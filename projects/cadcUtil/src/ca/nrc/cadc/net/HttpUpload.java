@@ -360,14 +360,15 @@ public class HttpUpload extends HttpTransfer
         if (contentMD5 != null)
             conn.setRequestProperty("Content-MD5", contentMD5);
 
-        log.debug("custom request properties: " + requestProperties.size());
-        for (HttpRequestProperty rp : requestProperties)
-        {
-            String p = rp.getProperty();
-            String v = rp.getValue();
-            log.debug("set request property: "+p+"="+v);
-            conn.setRequestProperty(p, v);
-        }
+        setRequestHeaders(conn);
+//        log.debug("custom request properties: " + requestProperties.size());
+//        for (HttpRequestProperty rp : requestProperties)
+//        {
+//            String p = rp.getProperty();
+//            String v = rp.getValue();
+//            log.debug("set request property: "+p+"="+v);
+//            conn.setRequestProperty(p, v);
+//        }
 
         int bSize = bufferSize;
         if (localFile != null && localFile.length() < bSize)
