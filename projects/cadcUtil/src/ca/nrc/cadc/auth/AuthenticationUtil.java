@@ -772,7 +772,7 @@ public class AuthenticationUtil
         {
             try
             {
-                Long name = new Long(userID);
+                Integer name = new Integer(userID);
                 return new NumericPrincipal(name);
             }
             catch (NumberFormatException e)
