@@ -754,10 +754,11 @@ public class HttpDownload extends HttpTransfer
             conn.setInstanceFollowRedirects(followRedirects);
             conn.setRequestProperty("Accept", "*/*");
             conn.setRequestProperty("User-Agent", userAgent);
-            for (HttpRequestProperty rp : requestProperties)
-            {
-                conn.setRequestProperty(rp.getProperty(), rp.getValue());
-            }
+            setRequestHeaders(conn);
+//            for (HttpRequestProperty rp : requestProperties)
+//            {
+//                conn.setRequestProperty(rp.getProperty(), rp.getValue());
+//            }
 
             if (headOnly)
                 conn.setRequestMethod("HEAD");
@@ -813,9 +814,9 @@ public class HttpDownload extends HttpTransfer
                 rconn.setInstanceFollowRedirects(true);
                 rconn.setRequestProperty("Accept", "*/*");
                 rconn.setRequestProperty("User-Agent", userAgent);
-
-                for (HttpRequestProperty rp : requestProperties)
-                    rconn.setRequestProperty(rp.getProperty(), rp.getValue());
+                setRequestHeaders(conn);
+//                for (HttpRequestProperty rp : requestProperties)
+//                    rconn.setRequestProperty(rp.getProperty(), rp.getValue());
                 log.debug("trying: " + pkey + " = " + pvalue);
                 rconn.setRequestProperty(pkey, pvalue);
                 rconn.setRequestMethod("GET");
