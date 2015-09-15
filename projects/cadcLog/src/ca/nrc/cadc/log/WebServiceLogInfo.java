@@ -103,7 +103,7 @@ public abstract class WebServiceLogInfo
 
     protected Boolean success;
     
-    protected String user;
+    public String user;
     
     protected String proxyUser;
     
