@@ -68,20 +68,19 @@
 #***********************************************************************
 #
 
-USAGE="Usage: createProxyCert <UserPublicCertificateFile>  <UserPrivateKeyFile> <DaysValid> <ProxyFileBasename>"
+USAGE="Usage: createProxyCert <UserCertificateFile>  <DaysValid> <ProxyFileBasename>"
 
 # we want at least one parameter (it may be a flag or an argument)
-if [ $# -ne 4 ]; then
+if [ $# -ne 3 ]; then
 	echo $USAGE >&2
 	exit 1
 fi
 
-userpubcert=$1
-userprivcert=$2
-days=$3
-proxyfilename=$4
+usercert=$1
+days=$2
+proxyfilename=$3
 
-subj_temp=`openssl x509 -subject -noout -in $userpubcert`
+subj_temp=`openssl x509 -subject -noout -in $usercert`
 
 
 
@@ -103,11 +102,10 @@ tmpdir="/tmp/$randomdirname/$cnf"
 /bin/mkdir -p $tmpdir
 
 echo "[ req ]
-default_bits       = 2048
-#default_keyfile    = proxykey.pem
+default_bits       = 2048 
 distinguished_name = req_distinguished_name
 encrypt_rsa_key    = no
-default_md         = sha256
+default_md         = sha256 
 
 
 [ req_distinguished_name ]
@@ -128,7 +126,7 @@ emailAddress_default =
 
 [ v3_proxy ]
 proxyCertInfo=critical,language:id-ppl-inheritAll
-keyUsage=digitalSignature,keyEncipherment
+keyUsage=digitalSignature,keyEncipherment,dataEncipherment
 " > $tmpdir/csr.conf
 
 openssl req -new -config $tmpdir/csr.conf -out $tmpdir/proxyreq$cnf.csr -keyout $tmpdir/proxy$cnf.key -subj "$subj/CN=$$"
@@ -141,7 +139,7 @@ fi
 # make sure the key is PKCS#1
 openssl rsa -in $tmpdir/proxy$cnf.key -out  $tmpdir/proxy$cnf.key
 
-openssl x509 -req -sha256 -CAcreateserial -in $tmpdir/proxyreq$cnf.csr -days $days -CA $userpubcert -CAkey $userprivcert -extfile $tmpdir/csr.conf -extensions v3_proxy -out $tmpdir/proxyclient$cnf.pem
+openssl x509 -req -sha256 -CAcreateserial -in $tmpdir/proxyreq$cnf.csr -days $days -CA $usercert -extfile $tmpdir/csr.conf -extensions v3_proxy -out $tmpdir/proxyclient$cnf.pem
 
 if [ $? != 0 ]; then
     echo "Errors signing the proxy certificate"
@@ -150,27 +148,12 @@ if [ $? != 0 ]; then
 fi
 
 # extract just the cert from the userpubcert file
-openssl x509 -in $userpubcert -outform PEM -out $tmpdir/userpubcert.pem
+openssl x509 -in $usercert -outform PEM -out $tmpdir/userpubcert.pem
 
-# extract the RSA private key in DER format for java apps
-openssl pkcs8 -topk8 -inform PEM -in $tmpdir/proxy$cnf.key -outform DER -nocrypt -out $proxyfilename.key
-
-
-cat $tmpdir/proxyclient$cnf.pem $tmpdir/proxy$cnf.key $tmpdir/userpubcert.pem > $proxyfilename.pem
-cat $tmpdir/proxyclient$cnf.pem $tmpdir/userpubcert.pem > $proxyfilename.crt
+cat $tmpdir/proxyclient$cnf.pem $tmpdir/proxy$cnf.key $tmpdir/userpubcert.pem > ${proxyfilename}.pem
 
 echo "
-Successfully generated proxy certificate $proxyfilename. The certificate is valid for $days days.
-"
-
-echo "
-This will create three files with the same base name:
-.pem file with both the certificate chain and a new private key)
-.crt file with just the certificate chain (PEM format)
-.key file with just the private key (DER format)
-
-The PEM file is usable with ssl-enabled curl (--cert) while the .crt and .key files are usable with Java
-applications that use the SSLUtil class from OpenCADC (this library).
+Successfully generated proxy certificate ${proxyfilename}.pem -- valid for $days days
 "
 
 #clean up
