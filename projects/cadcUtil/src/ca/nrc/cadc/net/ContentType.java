@@ -3,12 +3,12 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2011.                            (c) 2011.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -62,143 +62,66 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 4 $
+*  $Revision: 5 $
 *
 ************************************************************************
 */
 
-package ca.nrc.cadc.util;
+package ca.nrc.cadc.net;
 
-import ca.nrc.cadc.net.NetUtil;
 
-import java.io.*;
-import java.net.URI;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.util.MissingResourceException;
-import java.util.zip.CRC32;
-import java.util.zip.CheckedInputStream;
+import org.apache.log4j.Logger;
 
 /**
- * @author zhangsa
- *
+ * Simple wrapper around a Content-Type value to support comparisons.
+ * Current: strips all extraneous whitespace. TODO: more careful
+ * comparison of parameters that is order-independent.
+ * 
+ * @author pdowler
  */
-public class FileUtil
+public class ContentType 
 {
-    public static boolean delete(File f, boolean recursive)
-        throws IOException
+    private static final Logger log = Logger.getLogger(ContentType.class);
+
+    private String value;
+    public ContentType(String value) 
     {
-        if ( !f.exists() )
-            return false;
-        
-        if (recursive && f.isDirectory())
-        {
-            File[] children = f.listFiles();
-            for (File c : children)
-            {
-                if ( ! delete(c, true) )
-                    return false; // return immediately if we fail to delete something
-            }
-        }
-        return f.delete();
+        if (value == null)
+            throw new IllegalArgumentException("null value");
+        this.value = toCanonicalForm(value);
     }
 
-    /**
-     * Compare the contents of two files.
-     *  
-     * @param file1
-     * @param file2
-     * @return true if the contents of two files are identical.
-     * 
-     * @throws IOException
-     */
-    public static boolean compare(File file1, File file2) throws IOException
+    @Override
+    public String toString()
     {
-        long cs1 = checksum(file1);
-        long cs2 = checksum(file2);
-        return (cs1 == cs2);
+        return "ContentType[" + value + "]";
+    }
+
+    
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (obj == null)
+            return false;
+        if (obj instanceof ContentType)
+        {
+            ContentType rhs = (ContentType) obj;
+            return value.equalsIgnoreCase(rhs.value);
+        }
+        return false;
     }
     
-    /**
-     * Get checksum value of a file.
-     * 
-     * @param file
-     * @return
-     * @throws IOException
-     */
-    public static long checksum(File file) throws IOException
+    // remove extraneous whitespace
+    private String toCanonicalForm(String s)
     {
-        FileInputStream fInStream = new FileInputStream(file);
-        CheckedInputStream cInStream = new CheckedInputStream(fInStream, new CRC32());
-        BufferedInputStream bInStream = new BufferedInputStream(cInStream);
-        while (bInStream.read() != -1)
+        s = s.trim();
+        String[] parts = s.split(";"); 
+        StringBuilder sb = new StringBuilder();
+        sb.append(parts[0]); // base type
+        for (int i=1; i<parts.length; i++) // parameters
         {
-            // Read file in completely
+            sb.append(";").append(parts[i].trim());
         }
-        return cInStream.getChecksum().getValue();
-    }
-
-    /**
-     * Read a (small) file into a byte array.
-     * 
-     * @param f
-     * @return byte array containing the content of the file
-     * @throws IOException
-     */
-    public static byte[] readFile(File f) throws IOException
-    {
-        DataInputStream dis = null;
-        try
-        {
-            dis = new DataInputStream(new FileInputStream(f));
-            byte[] ret = new byte[(int) f.length()];
-            dis.readFully(ret);
-            dis.close();
-            return ret;
-        }
-        finally
-        {
-            if (dis != null)
-                try { dis.close(); }
-                catch(IOException ignore) { }
-        }
-    }
-
-    /**
-     * Obtain a file object from the class path.
-     *
-     * @param resourceFileName      The file name to look for.
-     * @param runningClass          The class whose path to look for.
-     * @return                      File object.
-     */
-    public static File getFileFromResource(String resourceFileName, Class runningClass)
-    {
-        URL url = runningClass.getClassLoader().getResource(resourceFileName);
-
-        if (url == null)
-            throw new MissingResourceException("Resource not found: "
-                                               + resourceFileName,
-                                               runningClass.getName(),
-                                               resourceFileName);
-
-        return FileUtil.getFileFromURL(url);
-    }
-
-    public static File getFileFromURL(final URL url)
-    {
-        final String path = url.getPath();
-        final File found = new File(URI.create(url.toExternalForm()));
-        final File f;
-
-        if (found.exists())
-        {
-            f = found;
-        }
-        else
-        {
-            f = new File(NetUtil.decode(path));
-        }
-
-        return f;
+        return sb.toString();
     }
 }
