@@ -82,7 +82,7 @@ import java.util.regex.Pattern;
  * Useful utility methods dealing with Strings.  Not terribly Object Oriented
  * as this class contains no state or identity, but it's nice not having to
  * write this stuff over and over.
- *
+ * <p/>
  * Thanks to Rod Johnson for contributing.
  */
 public class StringUtil
@@ -118,7 +118,7 @@ public class StringUtil
      *
      * @param str the String to check, may be null
      * @return <code>true</code> if the String is not null, length > 0,
-     *         and not whitespace only
+     * and not whitespace only
      * @see Character#isWhitespace
      */
     public static boolean hasText(String str)
@@ -165,6 +165,7 @@ public class StringUtil
 
     /**
      * Trim trailing whitespace from the given String.
+     *
      * @param str the String to check
      * @return the trimmed String
      * @see java.lang.Character#isWhitespace
@@ -184,7 +185,7 @@ public class StringUtil
         }
 
         return buf.toString();
-	}
+    }
 
     public static boolean contains(final String searchString, final String crit)
     {
@@ -204,6 +205,21 @@ public class StringUtil
         }
 
         return false;
+    }
+
+    /**
+     * Perform a case-insensitive starts with.  Useful for namespace
+     * configuration checking.
+     *
+     * @param src       The source string.
+     * @param what      The string to look for in the source.
+     * @return          True if src.tolower.startswith(what.tolower), false
+     *                  otherwise.
+     */
+    public static boolean startsWithCaseInsensitive(final String src,
+                                                    final String what)
+    {
+        return src.regionMatches(true, 0, what, 0, what.length());
     }
 
     /**
@@ -229,13 +245,14 @@ public class StringUtil
 
         return false;
     }
-    
+
     /**
      * Method that mimics a Shell parsing the command line of an application.
      * The String command line is parsed and tokenized based on whitespaces.
      * Similar to a shell, consideration is given to special characters such
      * as ' and \. \ escapes the immediately following whitespace or ' and
      * characters inside '' have no special meanings.
+     *
      * @param toParse command line string to parse
      * @return set of tokens representing the command line arguments.
      */
@@ -248,14 +265,14 @@ public class StringUtil
         char current = ' ';
         String thisToParse = toParse.trim();
         boolean insideQuotes = false;
-        while( currentCharIndex < thisToParse.length() )
+        while (currentCharIndex < thisToParse.length())
         {
             previous = current;
             current = thisToParse.charAt(currentCharIndex++);
-            
-            if(insideQuotes)
+
+            if (insideQuotes)
             {
-                if(current=='\'')
+                if (current == '\'')
                 {
                     insideQuotes = false;
                 }
@@ -266,9 +283,9 @@ public class StringUtil
             }
             else
             {
-                if((current==' ') || (current=='\t'))
+                if ((current == ' ') || (current == '\t'))
                 {
-                    if(previous!='\\')
+                    if (previous != '\\')
                     {
                         // end of an argument
                         tokens.add(buffer.toString());
@@ -278,12 +295,12 @@ public class StringUtil
                     {
                         // space is escaped - treat it as a whitespace and
                         // replace the previous /
-                        buffer.setCharAt(buffer.length()-1, current);
+                        buffer.setCharAt(buffer.length() - 1, current);
                     }
                 }
-                else if (current=='\'')
+                else if (current == '\'')
                 {
-                    if(previous!='\\')
+                    if (previous != '\\')
                     {
                         // start quotes
                         insideQuotes = true;
@@ -291,26 +308,26 @@ public class StringUtil
                     else
                     {
                         // ' esaped - replace the previous \
-                        buffer.setCharAt(buffer.length()-1, current);
+                        buffer.setCharAt(buffer.length() - 1, current);
                     }
                 }
                 else
                 {
                     buffer.append(current);
                 }
-            }        
+            }
         }
-        if(buffer.length() > 0)
+        if (buffer.length() > 0)
         {
             tokens.add(buffer.toString());
         }
-        
+
         return tokens.toArray(new String[tokens.size()]);
     }
-    
+
     /**
      * List elements of a string array.
-     * 
+     *
      * @param strArr String array.
      * @return all elements in the format as ["str1", "str2", ...]
      * @author zhangsa
@@ -318,23 +335,28 @@ public class StringUtil
     public static String toString(String[] strArr)
     {
         if (strArr == null)
+        {
             return "";
-        
+        }
+
         String deli = "";
         StringBuilder sb = new StringBuilder();
         sb.append("[");
         for (String str : strArr)
         {
             sb.append(deli).append("\"").append(str).append("\"");
-            if ("".equals(deli)) deli = ", ";
+            if ("".equals(deli))
+            {
+                deli = ", ";
+            }
         }
         sb.append("]");
         return sb.toString();
     }
-    
+
     /**
      * Get a string which is the N-time repeat of the input string, i.e. repeat("ab", 3) => "ababab".
-     * 
+     *
      * @param str
      * @param num
      * @return
@@ -342,10 +364,15 @@ public class StringUtil
      */
     public static String repeat(String str, int num)
     {
-        if (num <= 0 || str == null) return "";
+        if (num <= 0 || str == null)
+        {
+            return "";
+        }
         StringBuffer sb = new StringBuffer();
-        for (int i = num; i-- > 0;)
+        for (int i = num; i-- > 0; )
+        {
             sb.append(str);
+        }
         return sb.toString();
     }
 
@@ -359,7 +386,7 @@ public class StringUtil
      * @author zhangsa
      */
     public static String readFromInputStream(InputStream inputStream, String charsetName)
-        throws IOException
+            throws IOException
     {
         StringBuffer sb = new StringBuffer();
         BufferedReader buf = null;
@@ -367,7 +394,7 @@ public class StringUtil
         {
             buf = new BufferedReader(new InputStreamReader(inputStream, charsetName));
             String line = buf.readLine();
-            while(line != null)
+            while (line != null)
             {
                 sb.append(line);
                 sb.append("\n");
@@ -376,12 +403,15 @@ public class StringUtil
         }
         finally
         {
-            if (buf != null) try
+            if (buf != null)
             {
-                buf.close();
-            }
-            catch (IOException ignored)
-            {
+                try
+                {
+                    buf.close();
+                }
+                catch (IOException ignored)
+                {
+                }
             }
         }
         return sb.toString();
@@ -390,10 +420,10 @@ public class StringUtil
     /**
      * Obtain whether the input matches the given regexp.
      *
-     * @param input             The String to match against.
-     * @param regexp            The regexp to calculate the match.
-     * @param caseInsensitive   Whether it's a case insensitive match or not.
-     * @return                  True if it matches, false otherwise.
+     * @param input           The String to match against.
+     * @param regexp          The regexp to calculate the match.
+     * @param caseInsensitive Whether it's a case insensitive match or not.
+     * @return True if it matches, false otherwise.
      */
     public static boolean matches(final String input, final String regexp,
                                   final boolean caseInsensitive)
