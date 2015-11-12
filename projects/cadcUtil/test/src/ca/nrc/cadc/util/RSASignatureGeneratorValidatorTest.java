@@ -43,6 +43,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.util.Date;
@@ -194,7 +195,7 @@ public class RSASignatureGeneratorValidatorTest
      * created so that the RsaSignature classes can find it.
      * @return
      */
-    public static String getCompleteKeysDirectoryName()
+    public static String getCompleteKeysDirectoryName() throws Exception
     {
         URL classLocation = 
                 RsaSignatureGenerator.class.getResource(
@@ -204,10 +205,12 @@ public class RSASignatureGeneratorValidatorTest
             throw new 
             IllegalStateException("SignatureUtil class is not stored in a file.");
         }
-        File classPath = new File(classLocation.getPath()).getParentFile();
+
+        File classPath = new File(URLDecoder.decode(classLocation.getPath(),
+                                                    "UTF-8")).getParentFile();
         String packageName = RsaSignatureGenerator.class.getPackage().getName();
         String packageRelPath = packageName.replace('.', File.separatorChar);
-        
+
         String dir = classPath.getAbsolutePath().
                 substring(0, classPath.getAbsolutePath().indexOf(packageRelPath));
         

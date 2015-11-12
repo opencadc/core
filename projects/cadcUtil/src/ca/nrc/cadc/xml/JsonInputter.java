@@ -88,7 +88,9 @@ import java.util.TreeMap;
  */
 public class JsonInputter
 {
-    public JsonInputter() {}
+    public JsonInputter()
+    {
+    }
 
     private final Map<String, String> listElementMap = new TreeMap<String, String>();
 
@@ -98,7 +100,7 @@ public class JsonInputter
     }
 
     public Document input(final String json)
-        throws JSONException
+            throws JSONException
     {
         JSONObject rootJson = new JSONObject(json);
         List<String> keys = Arrays.asList(JSONObject.getNames(rootJson));
@@ -115,9 +117,13 @@ public class JsonInputter
                 {
                     String value;
                     if (rootJson.isNull(key))
+                    {
                         value = "";
+                    }
                     else
+                    {
                         value = getStringValue(rootJson.get(key));
+                    }
                     attributes.add(new Attribute(key.substring(1), value));
                 }
                 else
@@ -148,18 +154,31 @@ public class JsonInputter
 
     private void processObject(String key, Object value, Element element,
                                Namespace namespace, List<Namespace> namespaces)
-        throws JSONException
+            throws JSONException
     {
         if (value == null)
+        {
             return;
+        }
 
-        if (value instanceof JSONObject)
+        if (listElementMap.containsKey(key))
+        {
+            final Object childObject =
+                    ((JSONObject) value).get(listElementMap.get(key));
+
+            if (childObject instanceof JSONArray)
+            {
+                processJSONArray(key, (JSONArray) childObject, element,
+                                 namespace, namespaces);
+            }
+            else if (childObject instanceof JSONObject)
+            {
+                processJSONObject((JSONObject) childObject, element, namespaces);
+            }
+        }
+        else if (value instanceof JSONObject)
         {
             processJSONObject((JSONObject) value, element, namespaces);
-        }
-        else if (value instanceof JSONArray)
-        {
-            processJSONArray(key, (JSONArray) value, element, namespace, namespaces);
         }
         else
         {
@@ -168,7 +187,7 @@ public class JsonInputter
     }
 
     private void processJSONObject(JSONObject jsonObject, Element element, List<Namespace> namespaces)
-        throws JSONException
+            throws JSONException
     {
         List<String> keys = Arrays.asList(JSONObject.getNames(jsonObject));
         Namespace namespace = getNamespace(namespaces, jsonObject, keys);
@@ -201,56 +220,76 @@ public class JsonInputter
             }
 
             Element child = new Element(key, namespace);
-            if (value instanceof JSONObject)
+            if (listElementMap.containsKey(key))
+            {
+                final String childKey = listElementMap.get(key);
+                final Object childObject = ((JSONObject) value).get(childKey);
+                Element grandChild = new Element(childKey, namespace);
+
+                if (childObject instanceof JSONArray)
+                {
+                    processJSONArray(key, (JSONArray) childObject, child,
+                                     namespace, namespaces);
+                }
+                else if (childObject instanceof JSONObject)
+                {
+                    processJSONObject((JSONObject) childObject, grandChild,
+                                      namespaces);
+                    child.addContent(grandChild);
+                }
+            }
+            else if (value instanceof JSONObject)
             {
                 processJSONObject((JSONObject) value, child, namespaces);
             }
-            else if (value instanceof JSONArray)
-            {
-                processJSONArray(key, (JSONArray) value, child, namespace, namespaces);
-            }
+
             element.addContent(child);
         }
     }
 
-    private void processJSONArray(String key, JSONArray jsonArray, Element element,
+    private void processJSONArray(String key, JSONArray jsonArray,
+                                  Element arrayElement,
                                   Namespace namespace, List<Namespace> namespaces)
-        throws JSONException
+            throws JSONException
     {
-        String name = getListElementMap().get(key);
+        String childTypeName = getListElementMap().get(key);
 
         for (int i = 0; i < jsonArray.length(); i++)
         {
             if (jsonArray.isNull(i))
+            {
                 continue;
+            }
 
             Element child;
-            if (name == null)
+            if (childTypeName == null)
             {
-                child = element;
+                child = arrayElement;
             }
             else
             {
-                child = new Element(name, namespace);
-                element.addContent(child);
+                child = new Element(childTypeName, namespace);
+                arrayElement.addContent(child);
             }
 
             Object value = jsonArray.get(i);
-            processObject(key, value, child, namespace, namespaces);
+            processObject(childTypeName, value, child, namespace, namespaces);
         }
     }
 
     private Namespace getNamespace(List<Namespace> namespaces,
                                    JSONObject jsonObject,
                                    List<String> keys)
-        throws JSONException
+            throws JSONException
     {
         for (String key : keys)
         {
             if (key.equals("@xmlns"))
             {
                 if (jsonObject.isNull(key))
+                {
                     break;
+                }
                 String uri = jsonObject.getString(key);
                 Namespace namespace = Namespace.getNamespace(uri);
                 if (!namespaces.contains(namespace))
