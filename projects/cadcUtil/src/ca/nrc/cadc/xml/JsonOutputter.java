@@ -323,15 +323,11 @@ public class JsonOutputter implements Serializable
     {
         boolean ret = false;
         Iterator<Element> iter = e.getChildren().iterator();
+        if (iter.hasNext() && (parentAttrs && !listItem))
+            w.print(",");
         while ( iter.hasNext() )
         {
-            if (!ret && (parentAttrs && !listItem))
-            {
-                w.print(",");
-                indent(w,i);
-            }
             ret = true;
-            
             Element c = iter.next();
             writeElement(c, w, i, listItem, namespaces);
             if (iter.hasNext())
