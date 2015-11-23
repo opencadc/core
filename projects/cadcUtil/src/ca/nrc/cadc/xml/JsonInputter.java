@@ -163,8 +163,8 @@ public class JsonInputter
 
         if (listElementMap.containsKey(key))
         {
-            final Object childObject =
-                    ((JSONObject) value).get(listElementMap.get(key));
+            final Object childObject = ((JSONObject) value).get("$");
+            //        ((JSONObject) value).get(listElementMap.get(key));
 
             if (childObject instanceof JSONArray)
             {
@@ -223,7 +223,7 @@ public class JsonInputter
             if (listElementMap.containsKey(key))
             {
                 final String childKey = listElementMap.get(key);
-                final Object childObject = ((JSONObject) value).get(childKey);
+                final Object childObject = ((JSONObject) value).get("$");
                 Element grandChild = new Element(childKey, namespace);
 
                 if (childObject instanceof JSONArray)
