@@ -154,15 +154,32 @@ public class JsonOutputter implements Serializable
         pw.flush();
     }
     
-    private boolean writeSchema(Element e, PrintWriter w, int i, List<String>  namespaces)
+    private void writeSchema(String uri, String pre, PrintWriter w)
+    {
+        w.print(QUOTE);
+        w.print("@");
+        w.print("xmlns");
+        if (StringUtil.hasText(pre))
+        {
+            w.print(":");
+            w.print(pre);
+        }
+        w.print(QUOTE);
+        w.print(" : ");
+        w.print(QUOTE);
+        w.print(uri);
+        w.print(QUOTE);
+    }
+    
+    private boolean writeSchemaAttributes(Element e, PrintWriter w, int i, List<String>  namespaces)
         throws IOException
     {
         boolean ret = false;
-        for (Namespace ans : e.getAdditionalNamespaces())
+        
+        for (Namespace ans : e.getNamespacesIntroduced())
         {
             String uri = ans.getURI();
             String pre = ans.getPrefix();
-            
             if (!namespaces.contains(uri))
             {
                 namespaces.add(uri);
@@ -171,21 +188,8 @@ public class JsonOutputter implements Serializable
                     w.print(",");
                 }
                 ret = true;
-                
                 indent(w, i);
-                w.print(QUOTE);
-                w.print("@");
-                w.print("xmlns");
-                if (StringUtil.hasText(pre))
-                {
-                    w.print(":");
-                    w.print(pre);
-                }
-                w.print(QUOTE);
-                w.print(" : ");
-                w.print(QUOTE);
-                w.print(uri);
-                w.print(QUOTE);
+                writeSchema(uri, pre, w);
             }
         }
         return ret;
@@ -195,7 +199,7 @@ public class JsonOutputter implements Serializable
     private boolean writeAttributes(Element e, PrintWriter w, int i, List<String>  namespaces)
         throws IOException
     {
-        boolean ret = writeSchema(e, w, i, namespaces);
+        boolean ret = writeSchemaAttributes(e, w, i, namespaces);
         
         Iterator<Attribute> iter = e.getAttributes().iterator();
         if (ret && iter.hasNext())
@@ -284,7 +288,7 @@ public class JsonOutputter implements Serializable
         else
             children = writeChildElements(e, w, i+1, childListItem, namespaces, attrs);
         
-        if (!children)
+        if (!children && !childListItem) // plain value
         {
             if (attrs)
             {

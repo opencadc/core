@@ -95,6 +95,41 @@ public class JsonOutputterTest
     }
     
     @Test
+    public void writeEmptyList() throws Exception
+    {
+        final JsonOutputter testSubject = new JsonOutputter();
+        testSubject.getListElementNames().add("items");
+        testSubject.getStringElementNames().add("item");
+        
+        final Element root = new Element("root");
+        final Element itemsElement = new Element("items");
+
+        final Element metaElement = new Element("meta");
+        metaElement.addContent(new Text("META"));
+
+        root.addContent(metaElement);
+        root.addContent(itemsElement);
+
+        final Document document = new Document();
+        document.setRootElement(root);
+
+        final Writer writer = new StringWriter();
+
+        testSubject.output(document, writer);
+
+        final JSONObject expected = new JSONObject("{\"root\" : {"
+                                                   + "\"meta\" : {\"$\": \"META\"},"
+                                                   + "\"items\" : {"
+                                                   + "\"$\" : ["
+                                                   + "] } } }");
+        String actual = writer.toString();
+        log.debug("writeEmptyList:\n" + actual);
+        final JSONObject result = new JSONObject(actual);
+
+        JSONAssert.assertEquals(expected, result, true);
+    }
+    
+    @Test
     public void writeMultiObject() throws Exception
     {
         final JsonOutputter testSubject = new JsonOutputter();
@@ -194,7 +229,7 @@ public class JsonOutputterTest
         // no prefix
         Namespace ns = Namespace.getNamespace("nsi", "http://ns.items.com");
         final Element itemsElement = new Element("items", ns);
-        itemsElement.addNamespaceDeclaration(ns);
+        //itemsElement.addNamespaceDeclaration(ns);
 
         // Array of five items.
         for (int i = 0; i < 5; i++)
@@ -239,7 +274,7 @@ public class JsonOutputterTest
         // no prefix
         Namespace ns = Namespace.getNamespace("http://ns.items.com");
         final Element itemsElement = new Element("items", ns);
-        itemsElement.addNamespaceDeclaration(ns);
+        //itemsElement.addNamespaceDeclaration(ns);
 
         // Array of five items.
         for (int i = 0; i < 5; i++)
