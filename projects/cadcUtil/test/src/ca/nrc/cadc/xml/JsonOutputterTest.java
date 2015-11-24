@@ -69,6 +69,7 @@
 package ca.nrc.cadc.xml;
 
 import ca.nrc.cadc.util.Log4jInit;
+import java.io.IOException;
 import org.jdom2.Document;
 import org.jdom2.Element;
 
@@ -80,6 +81,7 @@ import org.jdom2.Attribute;
 
 import org.jdom2.Namespace;
 import org.jdom2.Text;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
@@ -91,51 +93,66 @@ public class JsonOutputterTest
     
     static
     {
-        Log4jInit.setLevel("ca.nrc.cadc.xml", Level.DEBUG);
+        Log4jInit.setLevel("ca.nrc.cadc.xml", Level.INFO);
+    }
+    
+    private void doit(String tname, Document document, JSONObject expected)
+        throws IOException, JSONException
+    {
+        final JsonOutputter jsonOut = new JsonOutputter();
+        jsonOut.getListElementNames().add("items");
+        jsonOut.getStringElementNames().add("item");
+        
+        JsonInputter jsonIn = new JsonInputter();
+        jsonIn.getListElementMap().put("items", "item");
+        
+        final Writer writer = new StringWriter();
+
+        jsonOut.output(document, writer);
+        String actual = writer.toString();
+        log.debug(tname + ":\n" + actual);
+        
+        // verify expected json format
+        final JSONObject result = new JSONObject(actual);
+        JSONAssert.assertEquals(expected, result, true);
+        
+        // verify round-trip through outputter and inputter
+        
+        // JsonInputter does not handle namespaces correctly so disable this
+        //Document doc2 = jsonIn.input(actual);
+        //Writer writer2 = new StringWriter();
+        //jsonOut.output(doc2, writer2);
+        //String actual2 = writer2.toString();
+        //log.debug(tname + ": (round-trip)\n" + actual2);
+        
+        //final JSONObject result2 = new JSONObject(actual2);
+        //JSONAssert.assertEquals(expected, result2, true);
     }
     
     @Test
     public void writeEmptyList() throws Exception
     {
-        final JsonOutputter testSubject = new JsonOutputter();
-        testSubject.getListElementNames().add("items");
-        testSubject.getStringElementNames().add("item");
-        
         final Element root = new Element("root");
         final Element itemsElement = new Element("items");
-
         final Element metaElement = new Element("meta");
         metaElement.addContent(new Text("META"));
-
         root.addContent(metaElement);
         root.addContent(itemsElement);
-
-        final Document document = new Document();
+        Document document = new Document();
         document.setRootElement(root);
-
-        final Writer writer = new StringWriter();
-
-        testSubject.output(document, writer);
 
         final JSONObject expected = new JSONObject("{\"root\" : {"
                                                    + "\"meta\" : {\"$\": \"META\"},"
                                                    + "\"items\" : {"
                                                    + "\"$\" : ["
                                                    + "] } } }");
-        String actual = writer.toString();
-        log.debug("writeEmptyList:\n" + actual);
-        final JSONObject result = new JSONObject(actual);
-
-        JSONAssert.assertEquals(expected, result, true);
+        
+        doit("writeEmptyList", document, expected);
     }
     
     @Test
     public void writeMultiObject() throws Exception
     {
-        final JsonOutputter testSubject = new JsonOutputter();
-        testSubject.getListElementNames().add("items");
-        testSubject.getStringElementNames().add("item");
-        
         final Element root = new Element("root");
         final Element itemsElement = new Element("items");
 
@@ -157,10 +174,6 @@ public class JsonOutputterTest
         final Document document = new Document();
         document.setRootElement(root);
 
-        final Writer writer = new StringWriter();
-
-        testSubject.output(document, writer);
-
         final JSONObject expected = new JSONObject("{\"root\" : {"
                                                    + "\"meta\" : {\"$\": \"META\"},"
                                                    + "\"items\" : {"
@@ -171,20 +184,13 @@ public class JsonOutputterTest
                                                    + "{\"@i\" : \"3\", \"$\" : \"3\"},"
                                                    + "{\"@i\" : \"4\", \"$\" : \"4\"}"
                                                    + "] } } }");
-        String actual = writer.toString();
-        log.debug("writeMultiObject:\n" + actual);
-        final JSONObject result = new JSONObject(actual);
-
-        JSONAssert.assertEquals(expected, result, true);
+        
+        doit("writeMultiObject", document, expected);
     }
 
     @Test
     public void writeRootArray() throws Exception
     {
-        final JsonOutputter testSubject = new JsonOutputter();
-        testSubject.getListElementNames().add("items");
-        testSubject.getStringElementNames().add("item");
-        
         final Element itemsElement = new Element("items");
 
         // Array of five items.
@@ -200,10 +206,6 @@ public class JsonOutputterTest
 
         document.setRootElement(itemsElement);
 
-        final Writer writer = new StringWriter();
-
-        testSubject.output(document, writer);
-
         final JSONObject expected = new JSONObject("{\"items\" : {"
                                                    + "\"$\" : ["
                                                    + "{\"$\" : \"0\"},"
@@ -212,24 +214,16 @@ public class JsonOutputterTest
                                                    + "{\"$\" : \"3\"},"
                                                    + "{\"$\" : \"4\"}"
                                                    + "] } }");
-        String actual = writer.toString();
-        log.debug("writeRootArray:\n" + actual);
-        final JSONObject result = new JSONObject(actual);
-
-        JSONAssert.assertEquals(expected, result, true);
+        
+        doit("writeRootArray", document, expected);
     }
-
+    
     @Test
     public void writeNamespacePrefix() throws Exception
     {
-        final JsonOutputter testSubject = new JsonOutputter();
-        testSubject.getListElementNames().add("items");
-        testSubject.getStringElementNames().add("item");
-        
         // no prefix
         Namespace ns = Namespace.getNamespace("nsi", "http://ns.items.com");
         final Element itemsElement = new Element("items", ns);
-        //itemsElement.addNamespaceDeclaration(ns);
 
         // Array of five items.
         for (int i = 0; i < 5; i++)
@@ -240,13 +234,8 @@ public class JsonOutputterTest
         }
 
         final Document document = new Document();
-
         document.setRootElement(itemsElement);
-
-        final Writer writer = new StringWriter();
-
-        testSubject.output(document, writer);
-
+        
         final JSONObject expected = new JSONObject("{\r\n"
                                                    + "\"nsi:items\" : {"
                                                    + "\"@xmlns:nsi\": \"http://ns.items.com\","
@@ -257,24 +246,15 @@ public class JsonOutputterTest
                                                    + "{\"$\" : \"3\"},"
                                                    + "{\"$\" : \"4\"}"
                                                    + "] } }");
-        String actual = writer.toString();
-        log.debug("writeNamespacePrefix:\n" + actual);
-        final JSONObject result = new JSONObject(actual);
-
-        JSONAssert.assertEquals(expected, result, true);
+        
+        doit("writeNamespacePrefix", document, expected);
     }
     
     @Test
     public void writeNamespaceNoPrefix() throws Exception
     {
-        final JsonOutputter testSubject = new JsonOutputter();
-        testSubject.getListElementNames().add("items");
-        testSubject.getStringElementNames().add("item");
-        
-        // no prefix
         Namespace ns = Namespace.getNamespace("http://ns.items.com");
         final Element itemsElement = new Element("items", ns);
-        //itemsElement.addNamespaceDeclaration(ns);
 
         // Array of five items.
         for (int i = 0; i < 5; i++)
@@ -285,12 +265,7 @@ public class JsonOutputterTest
         }
 
         final Document document = new Document();
-
         document.setRootElement(itemsElement);
-
-        final Writer writer = new StringWriter();
-
-        testSubject.output(document, writer);
 
         final JSONObject expected = new JSONObject("{\r\n"
                                                    + "\"items\" : {"
@@ -302,10 +277,41 @@ public class JsonOutputterTest
                                                    + "{\"$\" : \"3\"},"
                                                    + "{\"$\" : \"4\"}"
                                                    + "] } }");
-        String actual = writer.toString();
-        log.debug("writeNamespaceNoPrefix:\n" + actual);
-        final JSONObject result = new JSONObject(actual);
+        
+        doit("writeNamespaceNoPrefix", document, expected);
+    }
+    
+    @Test
+    public void testNamespaceOnMultipleBranches() throws Exception
+    {
+        Namespace ns = Namespace.getNamespace("nsi", "http://ns.items.com");
+        Namespace otherNS = Namespace.getNamespace("nso", "http://ns.items.com/other");
+        Element itemsElement = new Element("items", ns);
 
-        JSONAssert.assertEquals(expected, result, true);
+        for (int i = 0; i < 2; i++)
+        {
+            Element itemElement = new Element("item", ns);
+            Element child = new Element("other", otherNS);
+            child.addContent("stuff"+i);
+            itemElement.addContent(child);
+            itemsElement.addContent(itemElement);
+        }
+
+        final Document document = new Document();
+        document.setRootElement(itemsElement);
+
+        final JSONObject expected = new JSONObject("{"
+                                                   + "\"nsi:items\" : {"
+                                                   + "\"@xmlns:nsi\": \"http://ns.items.com\","
+                                                   + "\"$\": ["
+                                                   + "{ \"nso:other\" : {"
+                                                   + "  \"@xmlns:nso\" : \"http://ns.items.com/other\","
+                                                   + "  \"$\" : \"stuff0\" } },"
+                                                   + "{ \"nso:other\" : {"
+                                                   + "  \"@xmlns:nso\" : \"http://ns.items.com/other\","
+                                                   + "  \"$\" : \"stuff1\" } }"
+                                                   + "] } }");
+        
+        doit("testNamespaceOnMultipleBranches", document, expected);
     }
 }
