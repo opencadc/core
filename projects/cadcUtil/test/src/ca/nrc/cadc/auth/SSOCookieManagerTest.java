@@ -34,31 +34,20 @@
 package ca.nrc.cadc.auth;
 
 
-
-import static org.junit.Assert.assertEquals;
-
-import java.net.URI;
-import java.util.Date;
-
-import javax.servlet.http.Cookie;
-
 import org.junit.Test;
+import static org.junit.Assert.*;
 
 
 public class SSOCookieManagerTest
-{
-    private SSOCookieManager testSubject;
-
+{    
     @Test
-    public void parseCookieValue() throws Exception
+    public void roundTrip() throws Exception
     {
-        Cookie ck = new Cookie(SSOCookieManager.DEFAULT_SSO_COOKIE_NAME,
-                               "AAABBB");
-
+        final HttpPrincipal userPrincipal = new HttpPrincipal("CADCtest");
         SSOCookieManager cm = new SSOCookieManager();
+        HttpPrincipal actualPrincipal = cm.parse(cm.generate(userPrincipal));
         
-        CookiePrincipal cp = cm.createPrincipal(ck);
-
-        assertEquals("SessionId should be AAABBB", "AAABBB", cp.getSessionId());
+        assertEquals(userPrincipal, actualPrincipal);
     }
+
 }

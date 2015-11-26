@@ -70,6 +70,7 @@
 package ca.nrc.cadc.xml;
 
 
+import ca.nrc.cadc.util.StringUtil;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
@@ -81,6 +82,7 @@ import org.apache.log4j.Logger;
 import org.jdom2.Attribute;
 import org.jdom2.Document;
 import org.jdom2.Element;
+import org.jdom2.Namespace;
 import org.jdom2.output.Format;
 
 /**
@@ -143,37 +145,59 @@ public class JsonOutputter implements Serializable
     public void output(final Document doc, Writer writer)
         throws IOException
     {
-        List<String>  namespaces = new ArrayList<String>();
         PrintWriter pw = new PrintWriter(writer);
-        writeElement(doc.getRootElement(), pw, 0, false, namespaces);
+        pw.print("{ ");
+        writeElement(doc.getRootElement(), pw, 1, false);
+        indent(pw, 0);
+        pw.print("}");
         pw.flush();
     }
     
-    private boolean writeSchema(Element e, PrintWriter w, int i, List<String>  namespaces)
-        throws IOException
+    private void writeSchema(String uri, String pre, PrintWriter w)
     {
-        String ns = e.getNamespace().getURI();
-        if (namespaces.contains(ns))
-            return false;
-        namespaces.add(ns);
-        
-        indent(w, i);
         w.print(QUOTE);
-        w.print("@xmlns");
+        w.print("@");
+        w.print("xmlns");
+        if (StringUtil.hasText(pre))
+        {
+            w.print(":");
+            w.print(pre);
+        }
         w.print(QUOTE);
         w.print(" : ");
         w.print(QUOTE);
-        w.print(ns);
+        w.print(uri);
         w.print(QUOTE);
+    }
+    
+    private boolean writeSchemaAttributes(Element e, PrintWriter w, int i)
+        throws IOException
+    {
+        boolean ret = false;
         
-        return true;
+        // getNamespacesIntroduced: only write for newly introduced namespaces;
+        // this correctly handles the current context of namespaces from root to 
+        // current element
+        for (Namespace ans : e.getNamespacesIntroduced())
+        {
+            String uri = ans.getURI();
+            String pre = ans.getPrefix();
+            if (ret)
+            {
+                w.print(",");
+            }
+            ret = true;
+            indent(w, i);
+            writeSchema(uri, pre, w);
+        }
+        return ret;
     }
     
     // use @ for attribute names, see: http://badgerfish.ning.com/
-    private boolean writeAttributes(Element e, PrintWriter w, int i, List<String>  namespaces)
+    private boolean writeAttributes(Element e, PrintWriter w, int i)
         throws IOException
     {
-        boolean ret = writeSchema(e, w, i, namespaces);
+        boolean ret = writeSchemaAttributes(e, w, i);
         
         Iterator<Attribute> iter = e.getAttributes().iterator();
         if (ret && iter.hasNext())
@@ -185,6 +209,11 @@ public class JsonOutputter implements Serializable
             indent(w, i);
             w.print(QUOTE);
             w.print("@");
+            if (StringUtil.hasText(a.getNamespacePrefix()))
+            {
+                w.print(a.getNamespacePrefix());
+                w.print(":");
+            }
             w.print(a.getName());
             w.print(QUOTE);
             w.print(" : ");
@@ -208,35 +237,56 @@ public class JsonOutputter implements Serializable
     // use "name" : " " for scalar values
     // use "name" : { } for object values
     // use "name" : [ ] for list values
-    private void writeElement(Element e, PrintWriter w, int i, boolean writeNames, List<String>  namespaces)
+    private void writeElement(Element e, PrintWriter w, int i, boolean listItem)
         throws IOException
     {
-        String open = "[";
-        String close = "]";
-        boolean writeChildNames = false;
-        if (!listElementNames.contains(e.getName()))
-        {
-            open = "{";
-            close = "}";
-            writeChildNames = true;
-        }
+        boolean childListItem = listElementNames.contains(e.getName());
         
         indent(w, i);
         
-        if (writeNames)
+        if (!listItem)
         {
+            // write key
             w.print(QUOTE);
+            if (StringUtil.hasText(e.getNamespacePrefix()))
+            {
+                w.print(e.getNamespacePrefix());
+                w.print(":");
+            }
             w.print(e.getName());
             w.print(QUOTE);
             w.print(" : ");
         }
         
         // write value
-        w.print(open);
+        w.print("{");
         boolean multiLine = true;
-        boolean attrs = writeAttributes(e, w, i+1, namespaces);
-        boolean children = writeChildElements(e, w, i+1, writeChildNames, namespaces, attrs);
-        if (!children && writeChildNames)
+        boolean children = false;
+        boolean attrs = writeAttributes(e, w, i+1);
+        
+        if (childListItem)
+        {
+            // in badgerfish, this would be the name of child elements but prefer $ since [] 
+            // is the value of e and e is a list of children; $ is also consistent with how
+            // we (and badgerfish) handle leaf values inside elements: { "$" : value }
+            if (attrs)
+            {
+                w.print(",");
+            }
+            indent(w,i+1);
+            w.print(QUOTE);
+            w.print("$");
+            w.print(QUOTE);
+            w.print(" : ");
+            w.print("[");
+            children = writeChildElements(e, w, i+2, childListItem, attrs);
+            indent(w,i+1);
+            w.print("]");
+        }
+        else
+            children = writeChildElements(e, w, i+1, childListItem, attrs);
+        
+        if (!children && !childListItem) // plain value
         {
             if (attrs)
             {
@@ -261,27 +311,22 @@ public class JsonOutputter implements Serializable
         }
         if (multiLine)
             indent(w, i);
-        w.print(close);
+        w.print("}");
     }
     
     // comma separated list of children
-    private boolean writeChildElements(Element e, PrintWriter w, int i, boolean writeNames, 
-            List<String>  namespaces, boolean parentAttrs)
+    private boolean writeChildElements(Element e, PrintWriter w, int i, boolean listItem, boolean parentAttrs)
         throws IOException
     {
         boolean ret = false;
         Iterator<Element> iter = e.getChildren().iterator();
+        if (iter.hasNext() && (parentAttrs && !listItem))
+            w.print(",");
         while ( iter.hasNext() )
         {
-            if (!ret && parentAttrs)
-            {
-                w.print(",");
-                indent(w,i);
-            }
             ret = true;
-            
             Element c = iter.next();
-            writeElement(c, w, i, writeNames, namespaces);
+            writeElement(c, w, i, listItem);
             if (iter.hasNext())
                 w.print(",");
         }

@@ -49,4 +49,16 @@ public class StringUtilTest
         assertFalse("Should match.", StringUtil.matches("at88mph",
                                                         "aT.*8[mp]?h", true));
     }
+
+    @Test
+    public void startsWithCaseInsensitive() throws Exception
+    {
+        assertFalse("Should not match.",
+                    StringUtil.startsWithCaseInsensitive("ONETWO", "FOURFIVE"));
+        assertTrue("Should match.",
+                   StringUtil.startsWithCaseInsensitive("ONETWO", "onE"));
+        assertFalse("Should not match.",
+                   StringUtil.startsWithCaseInsensitive("ONETWO",
+                                                        "tWoas;lkfdjasldf"));
+    }
 }

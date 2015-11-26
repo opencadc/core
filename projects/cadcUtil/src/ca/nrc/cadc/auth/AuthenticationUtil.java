@@ -112,10 +112,6 @@ public class AuthenticationUtil
 {
     public static final String AUTH_HEADER = "X-CADC-DelegationToken";
     
-    public static final String AUTH_TYPE_HTTP = "http";
-    public static final String AUTH_TYPE_X500 = "x500";
-    public static final String AUTH_TYPE_CADC = "cadc";
-
     // Mandatory support list of RDN descriptors according to RFC 4512.
     private static final String[] ORDERED_RDN_KEYS = new String[]
             {"DC", "CN", "OU", "O", "STREET", "L", "ST", "C", "UID"};
@@ -245,16 +241,11 @@ public class AuthenticationUtil
                 am = AuthMethod.TOKEN;
         }
         
-        if (am == null)
+        SSOCookieCredential cookie = principalExtractor.getSSOCookieCredential();
+        if (cookie != null)
         {
-            for (Object o : principals)
-            {
-                if (o instanceof CookiePrincipal)
-                {
-                    am = AuthMethod.COOKIE;
-                    break;
-                }
-            }
+            publicCred.add(cookie);
+            am = AuthMethod.COOKIE;
         }
         
         if (am == null)
@@ -768,20 +759,20 @@ public class AuthenticationUtil
     
     public static Principal createPrincipal(String userID, String idType)
     {
-        if (AUTH_TYPE_X500.equalsIgnoreCase(idType))
+        if (IdentityType.X500.getValue().equalsIgnoreCase(idType))
         {
             return new X500Principal(
                     AuthenticationUtil.canonizeDistinguishedName(userID));
         }
-        if (AUTH_TYPE_HTTP.equalsIgnoreCase(idType))
+        if (IdentityType.USERNAME.getValue().equalsIgnoreCase(idType))
         {
             return new HttpPrincipal(userID);
         }
-        if (AUTH_TYPE_CADC.equalsIgnoreCase(idType))
+        if (IdentityType.CADC.getValue().equalsIgnoreCase(idType))
         {
             try
             {
-                Long name = new Long(userID);
+                Integer name = new Integer(userID);
                 return new NumericPrincipal(name);
             }
             catch (NumberFormatException e)
@@ -796,15 +787,15 @@ public class AuthenticationUtil
     {
         if (userID instanceof X500Principal)
         {
-            return AUTH_TYPE_X500;
+            return IdentityType.X500.getValue().toLowerCase();
         }
         if (userID instanceof HttpPrincipal)
         {
-            return AUTH_TYPE_HTTP;
+            return IdentityType.USERNAME.getValue().toLowerCase();
         }
         if (userID instanceof NumericPrincipal)
         {
-            return AUTH_TYPE_CADC;
+            return IdentityType.CADC.getValue().toLowerCase();
         }
         return null;
     }

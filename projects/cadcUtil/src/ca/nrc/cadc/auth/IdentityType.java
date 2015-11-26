@@ -66,99 +66,51 @@
  *
  ************************************************************************
  */
-package ca.nrc.cadc.ac;
-
-import ca.nrc.cadc.util.Log4jInit;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import static org.junit.Assert.*;
+package ca.nrc.cadc.auth;
 
 /**
  *
  * @author jburke
  */
-public class IdentityTypeTest
+public enum IdentityType
 {
-    private final static Logger log = Logger.getLogger(IdentityTypeTest.class);
-    
-    @BeforeClass
-    public static void setUpClass()
+    X500("X500"),
+    OPENID("OpenID"),
+    USERNAME("HTTP"),
+    CADC("CADC"),
+    COOKIE("sessionID"),
+    ENTRY_DN("entryDN");
+
+    private final String value;
+
+    private IdentityType(String value)
     {
-        Log4jInit.setLevel("ca.nrc.cadc.ac", Level.INFO);
-    }
-    /**
-     * Test of values method, of class IdentityType.
-     */
-    @Test
-    public void testValues()
-    {
-        IdentityType[] expResult = new IdentityType[]
-        {
-            IdentityType.X500, IdentityType.OPENID, 
-            IdentityType.USERNAME, IdentityType.UID
-        };
-        IdentityType[] result = IdentityType.values();
-        assertArrayEquals(expResult, result);
+        this.value = value;
     }
 
-    /**
-     * Test of valueOf method, of class IdentityType.
-     */
-    @Test
-    public void testValueOf()
+    public static IdentityType toValue(String s)
     {
-        assertEquals(IdentityType.X500, IdentityType.valueOf("X500"));
-        assertEquals(IdentityType.OPENID, IdentityType.valueOf("OPENID"));
-        assertEquals(IdentityType.USERNAME, IdentityType.valueOf("USERNAME"));
-        assertEquals(IdentityType.UID, IdentityType.valueOf("UID"));
+        for (IdentityType type : values())
+            if (type.value.equals(s))
+                return type;
+        throw new IllegalArgumentException("invalid value: " + s);
     }
 
-    /**
-     * Test of toValue method, of class IdentityType.
-     */
-    @Test
-    public void testToValue()
+    public String getValue()
     {
-        try
-        {
-            IdentityType.toValue("foo");
-            fail("invalid value should throw IllegalArgumentException");
-        }
-        catch (IllegalArgumentException ignore) {}
-        
-        assertEquals(IdentityType.X500, IdentityType.toValue("X500"));
-        assertEquals(IdentityType.OPENID, IdentityType.toValue("OpenID"));
-        assertEquals(IdentityType.USERNAME, IdentityType.toValue("HTTP"));
-        assertEquals(IdentityType.UID, IdentityType.toValue("UID"));
+        return value;
     }
 
-    /**
-     * Test of getValue method, of class IdentityType.
-     */
-    @Test
-    public void testGetValue()
+    public int checksum()
     {
-        assertEquals("X500", IdentityType.X500.getValue());
-        assertEquals("OpenID", IdentityType.OPENID.getValue());
-        assertEquals("HTTP", IdentityType.USERNAME.getValue());
-        assertEquals("UID", IdentityType.UID.getValue());
+        return value.hashCode();
     }
 
-    /**
-     * Test of checksum method, of class IdentityType.
-     */
-    @Test
-    public void testChecksum()
+    @Override
+    public String toString()
     {
-        assertEquals("X500".hashCode(), IdentityType.X500.checksum());
-        assertEquals("OpenID".hashCode(), IdentityType.OPENID.checksum());
-        assertEquals("HTTP".hashCode(), IdentityType.USERNAME.checksum());
-        assertEquals("UID".hashCode(), IdentityType.UID.checksum());
+        return this.getClass().getSimpleName() + "[" + value + "]";
     }
-    
+
 }
+

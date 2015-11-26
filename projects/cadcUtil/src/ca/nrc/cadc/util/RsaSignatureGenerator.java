@@ -76,6 +76,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.net.URLDecoder;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -151,9 +152,8 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier
         {
             File keysFile = FileUtil.getFileFromResource(
                     PRIV_KEY_FILE_NAME, this.getClass());
-            
-            BufferedReader br = new BufferedReader(new 
-                    FileReader(keysFile));
+
+            BufferedReader br = new BufferedReader(new FileReader(keysFile));
             try
             {
                 StringBuilder sb = null;
@@ -330,12 +330,12 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier
         }
         kpg.initialize(1024);
         KeyPair keyPair = kpg.genKeyPair();
-        
+
         String base64PrivKey = 
                 Base64.encodeLines(keyPair.getPrivate().getEncoded());
         String base64PubKey = 
                 Base64.encodeLines(keyPair.getPublic().getEncoded());
-        
+
         PrintWriter outPub = new PrintWriter(
                 new File(directory, PUB_KEY_FILE_NAME));
         try

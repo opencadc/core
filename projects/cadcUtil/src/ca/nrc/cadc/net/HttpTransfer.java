@@ -729,4 +729,16 @@ public abstract class HttpTransfer implements Runnable
             }
         }
     }
+
+    protected void setRequestHeaders(HttpURLConnection conn)
+    {
+        log.debug("custom request properties: " + requestProperties.size());
+        for (HttpRequestProperty rp : requestProperties)
+        {
+            String p = rp.getProperty();
+            String v = rp.getValue();
+            log.debug("set request property: "+p+"="+v);
+            conn.setRequestProperty(p, v);
+        }
+    }
 }

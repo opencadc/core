@@ -317,6 +317,7 @@ public class HttpPost extends HttpTransfer
             conn.setRequestProperty("Content-Type", contentType);
         else
             conn.setRequestProperty("Content-Type", "text/plain");
+        setRequestHeaders(conn);
         
         conn.setInstanceFollowRedirects(followRedirects);
         conn.setUseCaches(false);
@@ -340,6 +341,7 @@ public class HttpPost extends HttpTransfer
             && location != null)
         {
             this.redirectURL = new URL(location);
+            log.debug("redirectURL: " + redirectURL);
         }
         else
         {

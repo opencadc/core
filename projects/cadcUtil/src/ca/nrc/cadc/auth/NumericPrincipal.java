@@ -46,13 +46,13 @@ import java.security.Principal;
 public class NumericPrincipal implements Principal, Serializable
 {
     private static final long serialVersionUID = 20140625143750l;
-    private long numericID;
+    private int numericID;
 
     /**
      * Ctor
      * @param numericID unique identifier
      */
-    public NumericPrincipal(long numericID)
+    public NumericPrincipal(int numericID)
     {
         this.numericID = numericID;
     }

@@ -87,6 +87,7 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.Ignore;
 
 import ca.nrc.cadc.util.Log4jInit;
 import java.security.PrivateKey;
@@ -128,6 +129,14 @@ public class AuthenticationUtilTest
             assertTrue(String.format("Should be equal: [%s] and: [%s]", userIdPair[1], userIdPair[0]),
                     AuthenticationUtil.equals(p2, p1));
         }
+        
+        // with proxy users
+        Principal p1 = new HttpPrincipal("cadcregtest1", "cadcproxytest1");
+        Principal p2 = new HttpPrincipal("cadcregtest1", "cadcproxytest1");
+        assertTrue(p1 + " and " + p2 + " should be equal",
+                AuthenticationUtil.equals(p1, p2));
+        assertTrue(p2 + " and " + p1 + " should be equal",
+                AuthenticationUtil.equals(p2, p1));
     }
     
     @Test
@@ -135,18 +144,21 @@ public class AuthenticationUtilTest
     {
         String[][] testSet = new String[][]
         {
-            {"cadcregtest1", "cadcregtest2"}, // different values
-            {"cadcregtest1", "CADCREGTEST11"} // case should be sensitive
+            {"cadcregtest1", null, "cadcregtest2", null}, // different values
+            {"cadcregtest1", null, "CADCREGTEST11", null}, // case should be sensitive
+            {"cadcregtest1", "cadcregtest2", "cadcregtest1", null}, // different proxy users
+            {"cadcregtest1", "cadcregtest2", "cadcregtest1", "CADCREGTEST2"}, // different proxy users
         };
         for (String[] userIdPair : testSet)
         {
-            Principal p1 = new HttpPrincipal(userIdPair[0]);
-            Principal p2 = new HttpPrincipal(userIdPair[1]);
-            assertFalse(String.format("Should be unequal: [%s] and: [%s]", userIdPair[0], userIdPair[1]),
+            Principal p1 = new HttpPrincipal(userIdPair[0], userIdPair[1]);
+            Principal p2 = new HttpPrincipal(userIdPair[2], userIdPair[3]);
+            assertFalse(p1 + " and " + p2 + " should not be equal",
                     AuthenticationUtil.equals(p1, p2));
-            assertFalse(String.format("Should be unequal: [%s] and: [%s]", userIdPair[1], userIdPair[0]),
-                    AuthenticationUtil.equals(p2, p1));
+            assertFalse(p2 + " and " + p1 + " should not be equal",
+                    AuthenticationUtil.equals(p1, p2));
         }
+        
     }
  
     @Test
@@ -534,6 +546,7 @@ public class AuthenticationUtilTest
     }
 
     @Test
+    @Ignore("In development")
     public void testGetSubjectFromHttpServletRequest_CookiePrincipal() throws Exception
     {
         log.debug("testGetSubjectFromHttpServletRequest_CookiePrincipal - START");

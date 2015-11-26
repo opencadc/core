@@ -102,9 +102,11 @@ public abstract class WebServiceLogInfo
     protected String path;
 
     protected Boolean success;
-
+    
     public String user;
-
+    
+    protected String proxyUser;
+    
     protected String from;
 
     protected Long time;
@@ -244,20 +246,12 @@ public abstract class WebServiceLogInfo
         {
             if (subject != null)
             {
-                final Set<Principal> principals = subject.getPrincipals();
+                final Set<HttpPrincipal> principals = subject.getPrincipals(HttpPrincipal.class);
                 if (!principals.isEmpty())
                 {
-                    Principal userPrincipal = null;
-                    Iterator<Principal> i = principals.iterator();
-                    while (i.hasNext())
-                    {
-                        Principal nextPrincipal = i.next();
-                        if (!(userPrincipal instanceof HttpPrincipal))
-                        {
-                            userPrincipal = nextPrincipal;
-                        }
-                    }
-                    return userPrincipal.getName();
+                    HttpPrincipal principal = principals.iterator().next();
+                    this.proxyUser = principal.getProxyUser();
+                    return principal.getName();
                 }
             }
         }

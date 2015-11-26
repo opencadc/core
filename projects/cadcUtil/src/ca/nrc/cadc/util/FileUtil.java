@@ -69,12 +69,12 @@
 
 package ca.nrc.cadc.util;
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import ca.nrc.cadc.net.NetUtil;
+
+import java.io.*;
+import java.net.URI;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.MissingResourceException;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
@@ -164,14 +164,41 @@ public class FileUtil
         }
     }
 
+    /**
+     * Obtain a file object from the class path.
+     *
+     * @param resourceFileName      The file name to look for.
+     * @param runningClass          The class whose path to look for.
+     * @return                      File object.
+     */
     public static File getFileFromResource(String resourceFileName, Class runningClass)
     {
         URL url = runningClass.getClassLoader().getResource(resourceFileName);
+
         if (url == null)
-            throw new MissingResourceException("Resource not found: " + resourceFileName, runningClass.getName(), resourceFileName);
-        String path = url.getPath();
-        File rtn = new File(path);
-        return rtn;
+            throw new MissingResourceException("Resource not found: "
+                                               + resourceFileName,
+                                               runningClass.getName(),
+                                               resourceFileName);
+
+        return FileUtil.getFileFromURL(url);
     }
 
+    public static File getFileFromURL(final URL url)
+    {
+        final String path = url.getPath();
+        final File found = new File(URI.create(url.toExternalForm()));
+        final File f;
+
+        if (found.exists())
+        {
+            f = found;
+        }
+        else
+        {
+            f = new File(NetUtil.decode(path));
+        }
+
+        return f;
+    }
 }

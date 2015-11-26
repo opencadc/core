@@ -66,49 +66,96 @@
  *
  ************************************************************************
  */
-package ca.nrc.cadc.ac;
+
+package ca.nrc.cadc.auth;
+
+
+import java.io.Serializable;
+import java.security.Principal;
 
 /**
- *
- * @author jburke
+ * This class encapsulates an Http Principal
  */
-public enum IdentityType
+public class DNPrincipal implements Principal, Serializable
 {
-    X500("X500"),
-    OPENID("OpenID"),
-    USERNAME("HTTP"),
-    UID("UID");
-    
-    private final String value;
+    private static final long serialVersionUID = 20150902100215L;
 
-    private IdentityType(String value)
+    private String dn;
+
+    /**
+     * Ctor
+     * @param dn Users distinguished name. Cannot be null.
+     */
+    public DNPrincipal(String dn)
     {
-        this.value = value;
+        if (dn == null)
+        {
+            throw new IllegalArgumentException("Provided null dn");
+        }
+        this.dn = dn;
     }
 
-    public static IdentityType toValue(String s)
+
+    /* (non-Javadoc)
+     * @see java.security.Principal#getName()
+     */
+    public String getName()
     {
-        for (IdentityType type : values())
-            if (type.value.equals(s))
-                return type;
-        throw new IllegalArgumentException("invalid value: " + s);
+        return dn;
     }
 
-    public String getValue()
-    { 
-        return value;
-    }
 
-    public int checksum()
-    {
-        return value.hashCode();
-    }
-    
+    /* (non-Javadoc)
+     * @see java.lang.Object#hashCode()
+     */
     @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result
+            + ((dn == null) ? 0 : dn.hashCode());
+        return result;
+    }
+
+
+    /* (non-Javadoc)
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj)
+        {
+            return true;
+        }
+        if (obj == null)
+        {
+            return false;
+        }
+        if (!(obj instanceof DNPrincipal))
+        {
+            return false;
+        }
+        DNPrincipal other = (DNPrincipal) obj;
+        if (dn == null)
+        {
+            if (other.dn != null)
+            {
+                return false;
+            }
+        }
+        else if (!dn.equals(other.dn))
+        {
+            return false;
+        }
+        return true;
+    }
+
+
     public String toString()
     {
-        return this.getClass().getSimpleName() + "[" + value + "]";
+        return getClass().getSimpleName() + "[" + getName() + "]";
     }
-    
-}
 
+}
