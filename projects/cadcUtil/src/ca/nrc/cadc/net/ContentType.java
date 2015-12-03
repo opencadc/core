@@ -84,11 +84,15 @@ public class ContentType
     private static final Logger log = Logger.getLogger(ContentType.class);
 
     private String value;
+    private String baseType;
+    
     public ContentType(String value) 
     {
         if (value == null)
             throw new IllegalArgumentException("null value");
         this.value = toCanonicalForm(value);
+        if (baseType == null)
+            throw new IllegalArgumentException("null base type");
     }
 
     @Override
@@ -97,6 +101,15 @@ public class ContentType
         return "ContentType[" + value + "]";
     }
 
+    public String getValue()
+    {
+        return value;
+    }
+
+    public String getBaseType()
+    {
+        return baseType;
+    }
     
     @Override
     public boolean equals(Object obj)
@@ -118,6 +131,7 @@ public class ContentType
         String[] parts = s.split(";"); 
         StringBuilder sb = new StringBuilder();
         sb.append(parts[0]); // base type
+        this.baseType = parts[0];
         for (int i=1; i<parts.length; i++) // parameters
         {
             sb.append(";").append(parts[i].trim());

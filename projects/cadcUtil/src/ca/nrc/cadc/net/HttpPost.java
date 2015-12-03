@@ -129,7 +129,7 @@ public class HttpPost extends HttpTransfer
         this.outputStream = outputStream;
         this.followRedirects = true;
         if (url == null)
-            throw new IllegalArgumentException("dest cannot be null.");
+            throw new IllegalArgumentException("url cannot be null.");
         if (map == null || map.size() == 0)
             throw new IllegalArgumentException("parameters cannot be empty.");
         
@@ -148,7 +148,7 @@ public class HttpPost extends HttpTransfer
         this.remoteURL = url;
         this.map = map;
         if (url == null)
-            throw new IllegalArgumentException("dest cannot be null.");
+            throw new IllegalArgumentException("url cannot be null.");
         if (map == null || map.isEmpty())
             throw new IllegalArgumentException("parameters cannot be empty.");
     }
