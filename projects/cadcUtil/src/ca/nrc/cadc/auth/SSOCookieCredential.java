@@ -67,4 +67,12 @@ public class SSOCookieCredential
     {
         return domain;
     }
+
+    @Override
+    public String toString()
+    {
+        return getClass().getSimpleName() + "[" + domain + "," + ssoCookieValue + "]";
+    }
+    
+    
 }
