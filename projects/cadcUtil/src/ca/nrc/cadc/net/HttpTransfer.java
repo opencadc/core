@@ -93,6 +93,7 @@ import org.apache.log4j.Logger;
 
 import ca.nrc.cadc.auth.SSLUtil;
 import ca.nrc.cadc.auth.SSOCookieCredential;
+import ca.nrc.cadc.auth.SSOCookieManager;
 import ca.nrc.cadc.net.event.ProgressListener;
 import ca.nrc.cadc.net.event.TransferEvent;
 import ca.nrc.cadc.net.event.TransferListener;
@@ -712,7 +713,10 @@ public abstract class HttpTransfer implements Runnable
                 {
                     if (conn.getURL().getHost().endsWith(cookieCred.getDomain()))
                     {
-                        conn.setRequestProperty("Cookie", cookieCred.getSsoCookieValue());
+                        String cval = SSOCookieManager.DEFAULT_SSO_COOKIE_NAME
+                                + "=\"" + cookieCred.getSsoCookieValue() + "\"";
+                        conn.setRequestProperty("Cookie", cval);
+                        log.debug("setRequestSSOCookie: " + cval);
                         found = true;
                         break;
                     }
