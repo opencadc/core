@@ -76,7 +76,7 @@ import java.security.Principal;
 import javax.security.auth.x500.X500Principal;
 import java.security.PrivilegedAction;
 import java.security.cert.X509Certificate;
-import java.util.Collection;
+import java.util.*;
 import javax.security.auth.Subject;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -91,9 +91,6 @@ import org.junit.Ignore;
 
 import ca.nrc.cadc.util.Log4jInit;
 import java.security.PrivateKey;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Map;
 
 
 /**
@@ -438,7 +435,6 @@ public class AuthenticationUtilTest
                 }
             }
             assertNotNull(p);
-            HttpPrincipal hp = (HttpPrincipal) p;
             assertEquals("foo", p.getName());
 
             verify(mockRequest);
@@ -452,6 +448,115 @@ public class AuthenticationUtilTest
         {
             log.debug("testGetSubjectFromHttpServletRequest_HttpPrincipal - DONE");
         }
+    }
+
+    @Test
+    public void testGetSubjectFromPrincipalExtractorWithCookieAndX500()
+            throws Exception
+    {
+        final PrincipalExtractor mockPrincipalExtractor =
+                createMock(PrincipalExtractor.class);
+        final Set<Principal> principalSet = new HashSet<Principal>();
+        final X509CertificateChain mockCertChain =
+                createMock(X509CertificateChain.class);
+        final SSOCookieCredential mockCookieCredential =
+                createMock(SSOCookieCredential.class);
+
+        // To overcome the empty principals.
+        principalSet.add(new HttpPrincipal("USER1"));
+
+        expect(mockPrincipalExtractor.getPrincipals()).andReturn(
+                principalSet).once();
+
+        expect(mockPrincipalExtractor.getCertificateChain()).andReturn(
+                mockCertChain).once();
+
+        expect(mockPrincipalExtractor.getDelegationToken()).andReturn(
+                null).once();
+
+        expect(mockPrincipalExtractor.getSSOCookieCredential()).andReturn(
+                mockCookieCredential).once();
+
+        replay(mockPrincipalExtractor, mockCertChain, mockCookieCredential);
+
+        final Subject s = AuthenticationUtil.getSubject(mockPrincipalExtractor);
+
+        final Set<AuthMethod> authMethods =
+                s.getPublicCredentials(AuthMethod.class);
+        assertEquals("Wrong auth method.", AuthMethod.CERT,
+                     authMethods.toArray(new AuthMethod[authMethods.size()])[0]);
+
+        verify(mockPrincipalExtractor, mockCertChain, mockCookieCredential);
+    }
+
+    @Test
+    public void testGetSubjectFromPrincipalExtractorWithCookie()
+            throws Exception
+    {
+        final PrincipalExtractor mockPrincipalExtractor =
+                createMock(PrincipalExtractor.class);
+        final Set<Principal> principalSet = new HashSet<Principal>();
+        final SSOCookieCredential mockCookieCredential =
+                createMock(SSOCookieCredential.class);
+
+        // To overcome the empty principals.
+        principalSet.add(new HttpPrincipal("USER1"));
+
+        expect(mockPrincipalExtractor.getPrincipals()).andReturn(
+                principalSet).once();
+
+        expect(mockPrincipalExtractor.getCertificateChain()).andReturn(
+                null).once();
+
+        expect(mockPrincipalExtractor.getDelegationToken()).andReturn(
+                null).once();
+
+        expect(mockPrincipalExtractor.getSSOCookieCredential()).andReturn(
+                mockCookieCredential).once();
+
+        replay(mockPrincipalExtractor, mockCookieCredential);
+
+        final Subject s = AuthenticationUtil.getSubject(mockPrincipalExtractor);
+
+        final Set<AuthMethod> authMethods =
+                s.getPublicCredentials(AuthMethod.class);
+        assertEquals("Wrong auth method.", AuthMethod.COOKIE,
+                     authMethods.toArray(
+                             new AuthMethod[authMethods.size()])[0]);
+
+        verify(mockPrincipalExtractor, mockCookieCredential);
+    }
+
+    @Test
+    public void testGetSubjectFromPrincipalExtractorAnon() throws Exception
+    {
+        final PrincipalExtractor mockPrincipalExtractor =
+                createMock(PrincipalExtractor.class);
+        final Set<Principal> principalSet = new HashSet<Principal>();
+
+        expect(mockPrincipalExtractor.getPrincipals()).andReturn(
+                principalSet).once();
+
+        expect(mockPrincipalExtractor.getCertificateChain()).andReturn(
+                null).once();
+
+        expect(mockPrincipalExtractor.getDelegationToken()).andReturn(
+                null).once();
+
+        expect(mockPrincipalExtractor.getSSOCookieCredential()).andReturn(
+                null).once();
+
+        replay(mockPrincipalExtractor);
+
+        final Subject s = AuthenticationUtil.getSubject(mockPrincipalExtractor);
+
+        final Set<AuthMethod> authMethods =
+                s.getPublicCredentials(AuthMethod.class);
+        assertEquals("Wrong auth method.", AuthMethod.ANON,
+                     authMethods.toArray(
+                             new AuthMethod[authMethods.size()])[0]);
+
+        verify(mockPrincipalExtractor);
     }
 
     //@Test
