@@ -150,9 +150,9 @@ public class HttpTransferTest
 
         final Subject subject = new Subject();
         subject.getPublicCredentials().add(
-                new SSOCookieCredential("CADC_SSO=VALUE_1", "en.host.com"));
+                new SSOCookieCredential("VALUE_1", "en.host.com"));
         subject.getPublicCredentials().add(
-                new SSOCookieCredential("CADC_SSO=VALUE_2", "fr.host.com"));
+                new SSOCookieCredential("VALUE_2", "fr.host.com"));
         final URL testURL =
                 new URL("http://www.fr.host.com/my/path/to/file.txt");
         final HttpURLConnection mockConnection =
@@ -160,7 +160,7 @@ public class HttpTransferTest
 
         EasyMock.expect(mockConnection.getURL()).andReturn(testURL).atLeastOnce();
 
-        mockConnection.setRequestProperty("Cookie", "CADC_SSO=VALUE_2");
+        mockConnection.setRequestProperty("Cookie", "CADC_SSO=\"VALUE_2\"");
         EasyMock.expectLastCall().once();
 
         EasyMock.replay(mockConnection);
