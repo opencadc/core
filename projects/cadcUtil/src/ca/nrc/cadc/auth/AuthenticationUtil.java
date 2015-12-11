@@ -216,41 +216,40 @@ public class AuthenticationUtil
             throw new IllegalArgumentException("principalExtractor cannot be null");
         }
 
+        final Set<Principal> principals = principalExtractor.getPrincipals();
+        final X509CertificateChain chain =
+                principalExtractor.getCertificateChain();
+        final DelegationToken token = principalExtractor.getDelegationToken();
+        final SSOCookieCredential cookie =
+                principalExtractor.getSSOCookieCredential();
+
         AuthMethod am = null;
 
         final Set<Object> publicCred = new HashSet<Object>();
         final Set<Object> privateCred = new HashSet<Object>();
-        
-        Set<Principal> principals = principalExtractor.getPrincipals();
-        
+
         if (principals.isEmpty())
+        {
             am = AuthMethod.ANON;
-        
-        X509CertificateChain chain = principalExtractor.getCertificateChain();
-        if (chain != null)
+        }
+        else if (chain != null)
         {
             publicCred.add(chain);
             am = AuthMethod.CERT;
         }
-
-        DelegationToken token = principalExtractor.getDelegationToken();
-        if (token != null)
+        else if (token != null)
         {
             publicCred.add(token);
-            if (am == null)
-                am = AuthMethod.TOKEN;
+            am = AuthMethod.TOKEN;
         }
-        
-        SSOCookieCredential cookie = principalExtractor.getSSOCookieCredential();
-        if (cookie != null)
+        else if (cookie != null)
         {
             publicCred.add(cookie);
             am = AuthMethod.COOKIE;
         }
-        
-        if (am == null)
+        else
         {
-            for (Object o : principals)
+            for (final Object o : principals)
             {
                 if (o instanceof HttpPrincipal)
                 {
@@ -259,7 +258,9 @@ public class AuthenticationUtil
                 }
             }
         }
-        Subject subject = new Subject(false, principals, publicCred, privateCred);
+
+        final Subject subject = new Subject(false, principals, publicCred,
+                                            privateCred);
         setAuthMethod(subject, am);
         return augmentSubject(subject);
     }
