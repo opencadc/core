@@ -87,9 +87,9 @@ import org.jdom2.output.XMLOutputter;
 import ca.nrc.cadc.dali.tables.TableWriter;
 import ca.nrc.cadc.dali.util.Format;
 import ca.nrc.cadc.dali.util.FormatFactory;
-import ca.nrc.cadc.uws.util.ContentConverter;
-import ca.nrc.cadc.uws.util.IterableContent;
-import ca.nrc.cadc.uws.util.MaxIterations;
+import ca.nrc.cadc.xml.ContentConverter;
+import ca.nrc.cadc.xml.IterableContent;
+import ca.nrc.cadc.xml.MaxIterations;
 
 /**
  * Basic VOTable reader. This class currently supports a subset of VOTable (tabledata

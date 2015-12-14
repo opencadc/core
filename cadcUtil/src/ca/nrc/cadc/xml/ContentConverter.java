@@ -1,6 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
-<!--
+/*
 ************************************************************************
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
@@ -67,78 +65,23 @@
 *  $Revision: 4 $
 *
 ************************************************************************
--->
+*/
 
-<!DOCTYPE project>
-<project default="build" basedir=".">
+package ca.nrc.cadc.xml;
 
-	<property environment="env" />
-	<property file="local.build.properties" />
+import org.jdom2.Content;
 
-	<!-- site-specific build properties or overrides of values in opencadc.properties -->
-	<property file="${env.CADC_PREFIX}/etc/local.properties" />
+/**
+ * Given an object, convert it to jdom content.
+ * 
+ * @author majorb
+ *
+ * @param <E> The type of jdom content.
+ * @param <T> The type of object to convert.
+ */
+public interface ContentConverter<E extends Content, T>
+{
+    
+    public E convert(T obj);
 
-	<!-- site-specific targets, e.g. install, cannot duplicate those in opencadc.targets.xml -->
-	<import file="${env.CADC_PREFIX}/etc/local.targets.xml" optional="true" />
-
-	<!-- default properties and targets -->
-	<property file="${env.CADC_PREFIX}/etc/opencadc.properties" />
-	<import file="${env.CADC_PREFIX}/etc/opencadc.targets.xml" />
-
-	<!-- developer convenience: place for extra targets and properties -->
-	<import file="extras.xml" optional="true" />
-
-	<property name="project" value="cadcLog" />
-
-	<!-- JAR files to be included in classpath and war file -->
-    <property name="cadcUtil" value="${lib}/cadcUtil.jar" />
-	<property name="ext.log4j" value="${ext.lib}/log4j.jar" />
-	<property name="ext.servlet-api" value="${ext.lib}/servlet-api.jar" />
-
-    <property name="jars" value="${cadcUtil}:${lib}/cadcRegistry.jar:${ext.log4j}:${ext.servlet-api}" />
-
-	<target name="build" depends="cadcLog" />
-
-	<target name="cadcLog" depends="compile">
-		<jar jarfile="${build}/lib/cadcLog.jar" basedir="${build}/class" update="no">
-			<exclude name="test/**" />
-		</jar>
-	</target>
-
-	<!-- JAR files needed to run the test suite -->
-	<property name="dev.junit" value="${ext.dev}/junit.jar" />
-	<property name="dev.easyMock" value="${ext.dev}/easymock.jar" />
-	<property name="dev.cglib" value="${ext.dev}/cglib.jar" />
-	<property name="dev.objenesis" value="${ext.dev}/objenesis.jar" />
-	<property name="dev.asm" value="${ext.dev}/asm.jar" />
-	<property name="testingJars" value="${dev.junit}:${dev.easyMock}:${dev.cglib}:${dev.asm}:${dev.objenesis}" />
-
-
-    <target name="test" depends="compile-test,log-test,prof-test" />
-  
-    <target name="log-test" depends="compile-test">
-        <junit printsummary="yes" haltonfailure="yes" fork="yes">
-            <classpath>
-                <pathelement path="${build}/test/class" />
-                <pathelement path="${build}/class" />
-                <pathelement path="${jars}:${testingJars}" />
-            </classpath>
-            <test name="ca.nrc.cadc.log.WebServiceLogInfoTest" />
-            <formatter type="plain" usefile="false" />
-        </junit>
-    </target>
-  
-    <target name="prof-test" depends="compile-test">
-        <junit printsummary="yes" haltonfailure="yes" fork="yes">
-            <classpath>
-                <pathelement path="${build}/test/class" />
-                <pathelement path="${build}/class" />
-                <pathelement path="${jars}:${testingJars}" />
-            </classpath>
-            <test name="ca.nrc.cadc.profiler.ProfilerTest" />
-            <formatter type="plain" usefile="false" />
-        </junit>
-    </target>
-</project>
-
-
+}
