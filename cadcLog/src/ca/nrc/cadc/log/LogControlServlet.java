@@ -71,25 +71,16 @@
 package ca.nrc.cadc.log;
 
 
-import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLEncoder;
 import java.security.AccessControlException;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.StringTokenizer;
 
-import javax.net.ssl.SSLSocketFactory;
 import javax.security.auth.Subject;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -101,13 +92,8 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import ca.nrc.cadc.auth.AuthenticationUtil;
-import ca.nrc.cadc.auth.Authenticator;
 import ca.nrc.cadc.auth.Authorizer;
-import ca.nrc.cadc.auth.HttpPrincipal;
-import ca.nrc.cadc.auth.SSLUtil;
-import ca.nrc.cadc.net.HttpDownload;
 import ca.nrc.cadc.net.TransientException;
-import ca.nrc.cadc.reg.client.RegistryClient;
 import ca.nrc.cadc.util.Log4jInit;
 
 
