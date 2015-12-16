@@ -3,12 +3,12 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2009.                            (c) 2009.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*
+*                                       
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*
+*                                       
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*
+*                                       
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*
+*                                       
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*
+*                                       
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -62,53 +62,26 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
+*  $Revision: 4 $
 *
 ************************************************************************
 */
 
-package ca.nrc.cadc.dali.tables.votable;
+package ca.nrc.cadc.xml;
 
-import ca.nrc.cadc.dali.tables.TableData;
-import java.util.ArrayList;
-import java.util.List;
+import org.jdom2.Content;
 
 /**
+ * Given an object, convert it to jdom content.
+ * 
+ * @author majorb
  *
- * @author pdowler
+ * @param <E> The type of jdom content.
+ * @param <T> The type of object to convert.
  */
-public class VOTableTable 
+public interface ContentConverter<E extends Content, T>
 {
-    private List<VOTableInfo> infos = new ArrayList<VOTableInfo>();
-    private List<VOTableParam> params = new ArrayList<VOTableParam>();
-    private List<VOTableField> fields = new ArrayList<VOTableField>();
-
-    private TableData tableData;
     
-    public VOTableTable() { }
+    public E convert(T obj);
 
-    public List<VOTableInfo> getInfos()
-    {
-        return infos;
-    }
-
-    public List<VOTableParam> getParams()
-    {
-        return params;
-    }
-
-    public List<VOTableField> getFields()
-    {
-        return fields;
-    }
-
-    public TableData getTableData()
-    {
-        return tableData;
-    }
-
-    public void setTableData(TableData tableData)
-    {
-        this.tableData = tableData;
-    }
 }
