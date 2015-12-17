@@ -77,6 +77,7 @@ import java.util.Properties;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import javax.naming.NoInitialContextException;
 import javax.sql.DataSource;
 
 import org.apache.log4j.Level;
@@ -94,6 +95,8 @@ import org.springframework.transaction.CannotCreateTransactionException;
 public class DBUtil
 {
     private static final Logger log = Logger.getLogger(DBUtil.class);
+    
+    public static String DEFAULT_JNDI_ENV_CONTEXT = "java:/comp/env";
 
     /**
      * Create a DataSource with a single connection to the server. The DataSource
@@ -155,27 +158,101 @@ public class DBUtil
         }
 
     }
-
+    
+    /**
+     * Create a data source with the specified configuration and bind it in a
+     * standalone JNDI context so that a later call to getJNDIDataSource(String)
+     * will return it. This is for use in command-line apps (not application
+     * servers!!!!) and test code. This method uses the default JDNI environment 
+     * context that works in Tomcat App server as the name s
+     * 
+     * @param dataSourceName
+     * @param config
+     * @throws NamingException
+     * @see getJNDIDataSource(String)
+     */
+    public static void createJNDIDataSource(String dataSourceName, ConnectionConfig config)
+        throws NamingException
+    {
+        createJNDIDataSource(dataSourceName, DEFAULT_JNDI_ENV_CONTEXT, config);
+    }
+    
+    /**
+     * Create a JNDI DataSOurce resource with the specified name and environment context.
+     * 
+     * @param dataSourceName
+     * @param envContextName
+     * @param config
+     * @throws NamingException 
+     */
+    public static void createJNDIDataSource(String dataSourceName, String envContextName, ConnectionConfig config)
+        throws NamingException
+    {
+        log.debug("createDataSource: " + dataSourceName + " START");
+        StandaloneContextFactory.initJNDI();
+        
+        Context initContext = new InitialContext();
+        Context envContext = (Context) initContext.lookup(envContextName);
+        if (envContext == null)
+        {
+            envContext = initContext.createSubcontext(envContextName);
+        }    
+        log.debug("env: " + envContext);
+        
+        DataSource ds = getDataSource(config);
+        envContext.bind(dataSourceName, ds);
+        log.debug("createDataSource: " + dataSourceName + " DONE");
+    }
+    
+    /**
+     * This just calls findJNDIDataSource(String).
+     * 
+     * @param dataSource
+     * @return
+     * @throws NamingException 
+     * @deprecated 
+     */
+    public static DataSource getDataSource(String dataSource)
+        throws NamingException
+    {
+        return findJNDIDataSource(dataSource);
+    }
+    
     /**
      * Find a JNDI DataSource in an application server context. This is a
-     * convenience method for finding a DataSource via the java:/comp/env
-     * javax.naming.Context.
+     * convenience method for finding a DataSource via the default context
+     * (java:/comp/env) that Tomcat uses.
      * 
      * @param dataSource JNDI name of the data source
      * @throws NamingException if the context name cannot be resolved
      * @return a DataSource found via JNDI
      */
-    public static DataSource getDataSource(String dataSource)
+    public static DataSource findJNDIDataSource(String dataSource)
+        throws NamingException
+    {
+        return findJNDIDataSource(dataSource, DEFAULT_JNDI_ENV_CONTEXT);
+    }
+    
+    /**
+     * Find a JNDI DataSource in the specified context.
+     * 
+     * @param dataSource
+     * @param envContextName
+     * @return
+     * @throws NamingException 
+     */
+    public static DataSource findJNDIDataSource(String dataSource, String envContextName)
         throws NamingException
     {
         log.debug("getDataSource: " + dataSource);
-
         Context initContext = new InitialContext();
-        Context envContext = (Context) initContext.lookup("java:/comp/env");
+        Context envContext = (Context) initContext.lookup(envContextName);
         DataSource ds = (DataSource) envContext.lookup(dataSource);
 
         return ds;
     }
+    
+    
     
     /**
      * Return true if this is a known Spring DAO transient exception.

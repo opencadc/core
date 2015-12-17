@@ -3,12 +3,12 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2011.                            (c) 2011.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -62,146 +62,75 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 4 $
+*  $Revision: 5 $
 *
 ************************************************************************
 */
 
-package ca.nrc.cadc.util;
+package ca.nrc.cadc.db;
 
-import ca.nrc.cadc.net.NetUtil;
+import java.util.Hashtable;
 
-import java.io.*;
-import java.net.URI;
-import java.net.URL;
-import java.util.MissingResourceException;
-import java.util.zip.CRC32;
-import java.util.zip.CheckedInputStream;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.naming.NoInitialContextException;
+import javax.naming.spi.InitialContextFactory;
 import org.apache.log4j.Logger;
 
 /**
- * @author zhangsa
- *
+ * A simple JNDI context factory to support testing.
  */
-public class FileUtil
+public class StandaloneContextFactory implements InitialContextFactory
 {
-    private static final Logger log = Logger.getLogger(FileUtil.class);
+    private static final Logger log = Logger.getLogger(StandaloneContextFactory.class);
     
-    public static boolean delete(File f, boolean recursive)
-        throws IOException
-    {
-        if ( !f.exists() )
-            return false;
-        
-        if (recursive && f.isDirectory())
-        {
-            File[] children = f.listFiles();
-            for (File c : children)
-            {
-                if ( ! delete(c, true) )
-                    return false; // return immediately if we fail to delete something
-            }
-        }
-        return f.delete();
-    }
+    private static Context CTX;
 
     /**
-     * Compare the contents of two files.
-     *  
-     * @param file1
-     * @param file2
-     * @return true if the contents of two files are identical.
+     * Set system property so this factory is used to create the initial context.
      * 
-     * @throws IOException
+     * @throws NamingException if this is called in a real JNDI environment
      */
-    public static boolean compare(File file1, File file2) throws IOException
+    public static void initJNDI()
+        throws NamingException
     {
-        long cs1 = checksum(file1);
-        long cs2 = checksum(file2);
-        return (cs1 == cs2);
+        checkJNDI();
+        if (CTX == null)
+        {
+            CTX = new StandaloneContext();
+            System.setProperty("java.naming.factory.initial", StandaloneContextFactory.class.getName());
+        }
     }
     
-    /**
-     * Get checksum value of a file.
-     * 
-     * @param file
-     * @return
-     * @throws IOException
-     */
-    public static long checksum(File file) throws IOException
+    private static void checkJNDI()
+        throws NamingException
     {
-        FileInputStream fInStream = new FileInputStream(file);
-        CheckedInputStream cInStream = new CheckedInputStream(fInStream, new CRC32());
-        BufferedInputStream bInStream = new BufferedInputStream(cInStream);
-        while (bInStream.read() != -1)
-        {
-            // Read file in completely
-        }
-        return cInStream.getChecksum().getValue();
-    }
-
-    /**
-     * Read a (small) file into a byte array.
-     * 
-     * @param f
-     * @return byte array containing the content of the file
-     * @throws IOException
-     */
-    public static byte[] readFile(File f) throws IOException
-    {
-        DataInputStream dis = null;
+        String jnfi = System.getProperty("java.naming.factory.initial");
+        if (StandaloneContextFactory.class.getName().equals(jnfi))
+            return;
         try
         {
-            dis = new DataInputStream(new FileInputStream(f));
-            byte[] ret = new byte[(int) f.length()];
-            dis.readFully(ret);
-            dis.close();
-            return ret;
+            Context initContext = new InitialContext();
+            Context envContext = (Context) initContext.lookup("java:/com/env");
+            throw new IllegalStateException("attempt to initialise StandaloneContext in a real JNDI environment");
         }
-        finally
-        {
-            if (dis != null)
-                try { dis.close(); }
-                catch(IOException ignore) { }
+        catch(NoInitialContextException ignore) 
+        { 
+            log.debug("checkJNDI: caught NoInitialContextException -- standalone init OK");
         }
     }
-
+    
     /**
-     * Obtain a file object from the class path.
-     *
-     * @param resourceFileName      The file name to look for.
-     * @param runningClass          The class whose path to look for.
-     * @return                      File object.
+     * Do not call this directly. You must call initJNDI() to do the proper setup.
      */
-    public static File getFileFromResource(String resourceFileName, Class runningClass)
+    public StandaloneContextFactory() { }
+
+    @Override
+    public Context getInitialContext(Hashtable environment) throws NamingException
     {
-        URL url = runningClass.getClassLoader().getResource(resourceFileName);
-
-        if (url == null)
-            throw new MissingResourceException("Resource not found: "
-                                               + resourceFileName,
-                                               runningClass.getName(),
-                                               resourceFileName);
-
-        return FileUtil.getFileFromURL(url);
+        log.debug("StandaloneContextFactory.getInitialContext");
+        return CTX;
     }
 
-    public static File getFileFromURL(final URL url)
-    {
-        log.debug("getFileFromURL: " + url);
-        final String path = url.getPath();
-        final File found = new File(URI.create(url.toExternalForm()));
-        final File f;
-
-        if (found.exists())
-        {
-            f = found;
-        }
-        else
-        {
-            f = new File(NetUtil.decode(path));
-        }
-
-        return f;
-    }
 }
