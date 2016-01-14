@@ -69,6 +69,7 @@
 
 package ca.nrc.cadc.vosi.avail;
 
+import ca.nrc.cadc.db.DBUtil;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -99,7 +100,7 @@ public class CheckDataSource implements CheckResource
      * returns a small result set, such as <code>select x from someTable limit 0</code>.
      * 
      * @param dataSource the DataSource to check
-     * @param testSQL test quiery that should work
+     * @param testSQL test query that should work
      */
     public CheckDataSource(DataSource dataSource, String testSQL)
     {
@@ -130,11 +131,7 @@ public class CheckDataSource implements CheckResource
         {
             if (dataSource == null && dataSourceName != null)
             {
-                // JNDI lookup
-                // test job persistence, TODO: create and use JobDAOImpl?
-                Context initContext = new InitialContext();
-                Context envContext = (Context) initContext.lookup("java:/comp/env");
-                this.dataSource = (DataSource) envContext.lookup(dataSourceName);
+                this.dataSource = DBUtil.findJNDIDataSource(dataSourceName);
             }
             con = dataSource.getConnection();
             st = con.createStatement();

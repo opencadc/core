@@ -92,12 +92,13 @@
 
     <!-- JAR files to be included in classpath and war file -->
     <property name="cadcUtil"       value="${lib}/cadcUtil.jar" />
+    <property name="cadcLog"       value="${lib}/cadcLog.jar" />
     <property name="jdom2"          value="${ext.lib}/jdom2.jar" />
     <property name="log4j"          value="${ext.lib}/log4j.jar" />
     <property name="servlet-api"    value="${ext.lib}/servlet-api.jar" />
     <property name="xerces"         value="${ext.lib}/xerces.jar" />
     
-    <property name="jars"           value="${cadcUtil}:${jdom2}:${log4j}:${servlet-api}" />
+    <property name="jars"           value="${cadcUtil}:${cadcLog}:${jdom2}:${log4j}:${servlet-api}" />
 
     <target name="build" depends="compile,resources">
         <jar jarfile="${build}/lib/${project}.jar"

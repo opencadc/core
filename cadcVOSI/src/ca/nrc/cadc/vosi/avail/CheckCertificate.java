@@ -98,7 +98,7 @@ public class CheckCertificate implements CheckResource
     private File key;
 
     /**
-     * Check a certficate. This certficate is assumed to hold a cert and key.
+     * Check a certificate. This certificate is assumed to hold a cert and key.
      * @param cert
      */
     public CheckCertificate(File cert)
@@ -107,7 +107,7 @@ public class CheckCertificate implements CheckResource
     }
 
     /**
-     * Check a certficate. This certficate and key file are separate.
+     * Check a certificate. This certificate and key file are separate.
      *
      * @param cert
      * @param key
@@ -122,6 +122,7 @@ public class CheckCertificate implements CheckResource
     public void check()
         throws CheckException
     {
+        log.debug("read - cert: " + cert + " key: " + key);
         Subject s = null;
         try
         {
@@ -133,9 +134,10 @@ public class CheckCertificate implements CheckResource
         catch(Throwable t)
         {
             log.warn("test failed: " + cert + " " + key);
-            throw new CheckException("internal certificate check failed");
+            throw new CheckException("internal certificate check failed (not found)");
         }
 
+        log.debug("check validity - cert: " + cert + " key: " + key);
         try
         {
             Set<X509CertificateChain> certs = s.getPublicCredentials(X509CertificateChain.class);
@@ -150,7 +152,7 @@ public class CheckCertificate implements CheckResource
         catch(Throwable t)
         {
             log.warn("test failed: " + cert + " " + key);
-            throw new CheckException("certificate check failed", t);
+            throw new CheckException("certificate check failed (invalid)", t);
         }
         log.debug("test succeeded: " + cert + " " + key);
     }

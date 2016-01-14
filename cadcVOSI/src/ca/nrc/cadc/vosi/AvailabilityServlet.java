@@ -1,6 +1,8 @@
 package ca.nrc.cadc.vosi;
 
 import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.log.ServletLogInfo;
+import ca.nrc.cadc.log.WebServiceLogInfo;
 import java.io.IOException;
 import java.security.PrivilegedExceptionAction;
 import javax.security.auth.Subject;
@@ -21,7 +23,7 @@ import org.jdom2.output.XMLOutputter;
  */
 public class AvailabilityServlet extends HttpServlet
 {
-	private static Logger log = Logger.getLogger(AvailabilityServlet.class);
+    private static Logger log = Logger.getLogger(AvailabilityServlet.class);
     private static final long serialVersionUID = 201003131300L;
 
     private String wsClassName;
@@ -37,61 +39,85 @@ public class AvailabilityServlet extends HttpServlet
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
         throws ServletException, IOException
-	{
+    {
         boolean started = false;
-	    try
+        WebServiceLogInfo logInfo = new ServletLogInfo(request);
+        long start = System.currentTimeMillis();
+        try
         {
-	        Class wsClass = Class.forName(wsClassName);
-	        WebService ws = (WebService) wsClass.newInstance();
+            Subject subject = AuthenticationUtil.getSubject(request);
+            logInfo.setSubject(subject);
+            log.info(logInfo.start());
+            
+            Class wsClass = Class.forName(wsClassName);
+            WebService ws = (WebService) wsClass.newInstance();
 
-	        AvailabilityStatus status = ws.getStatus();
-	        Availability availability = new Availability(status);
+            AvailabilityStatus status = ws.getStatus();
+            Availability availability = new Availability(status);
 
-	        Document document = availability.toXmlDocument();
-	        XMLOutputter xop = new XMLOutputter(Format.getPrettyFormat());
+            Document document = availability.toXmlDocument();
+            XMLOutputter xop = new XMLOutputter(Format.getPrettyFormat());
             started = true;
             response.setContentType("text/xml");
-	        xop.output(document, response.getOutputStream());
-	    } 
+            xop.output(document, response.getOutputStream());
+            
+            logInfo.setSuccess(true);
+        }
         catch (Throwable t)
         {
             log.error("BUG", t);
             if (!started)
+            {
                 response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, t.getMessage());
+            }
+            logInfo.setSuccess(false);
+            logInfo.setMessage(t.toString());
         }
         finally
         {
-
+            logInfo.setElapsedTime(System.currentTimeMillis() - start);
+            log.info(logInfo.end());
         }
-	}
+    }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
         throws ServletException, IOException
-	{
+    {
         boolean started = false;
-	    try
+        WebServiceLogInfo logInfo = new ServletLogInfo(request);
+        long start = System.currentTimeMillis();
+        try
         {
             Subject subject = AuthenticationUtil.getSubject(request);
+            logInfo.setSubject(subject);
+            log.info(logInfo.start());
 
-	        Class wsClass = Class.forName(wsClassName);
-	        WebService ws = (WebService) wsClass.newInstance();
+            Class wsClass = Class.forName(wsClassName);
+            WebService ws = (WebService) wsClass.newInstance();
 
             Subject.doAs(subject, new ChangeServiceState(ws, request));
 
             response.sendRedirect(request.getRequestURL().toString());
-	    }
+            
+            logInfo.setSuccess(true);
+        }
         catch (Throwable t)
         {
             log.error("BUG", t);
             if (!started)
+            {
                 response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, t.getMessage());
+            }
+            logInfo.setSuccess(false);
+            logInfo.setMessage(t.toString());
         }
         finally
         {
-
+            logInfo.setElapsedTime(System.currentTimeMillis() - start);
+            log.info(logInfo.end());
         }
-	}
+    }
 
     private class ChangeServiceState implements PrivilegedExceptionAction
     {
@@ -110,7 +136,5 @@ public class AvailabilityServlet extends HttpServlet
             ws.setState(state);
             return null;
         }
-
-
     }
 }
