@@ -5,7 +5,7 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             elementFormDefault="qualified"
             attributeFormDefault="unqualified"
-            version="1.0rc1">
+            version="1.1">
 
   <xsd:annotation>
      <xsd:documentation>
@@ -24,11 +24,7 @@
     -->
   <xsd:element name="tableset" type="vs:TableSet" />
   
-  
-  <!-- prototype root element for a single schema document -->
-  <xsd:element name="schema" type="vs:TableSchema" />
-  
-  <!-- prototype root element for a single schema document -->
+  <!-- VOSI-tables 1.1 root element for a single table document -->
   <xsd:element name="table" type="vs:Table" />
 
 </xsd:schema>
