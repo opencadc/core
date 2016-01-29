@@ -79,9 +79,7 @@ import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.text.DateFormat;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -111,7 +109,7 @@ import ca.nrc.cadc.net.NetUtil;
 public class AuthenticationUtil
 {
     public static final String AUTH_HEADER = "X-CADC-DelegationToken";
-    
+
     // Mandatory support list of RDN descriptors according to RFC 4512.
     private static final String[] ORDERED_RDN_KEYS = new String[]
             {"DC", "CN", "OU", "O", "STREET", "L", "ST", "C", "UID"};
@@ -157,14 +155,14 @@ public class AuthenticationUtil
         }
         return s;
     }
-    
+
     public static Subject getAnonSubject()
     {
         Subject ret = new Subject();
         setAuthMethod(ret, AuthMethod.ANON);
         return ret;
     }
-    
+
     public static AuthMethod getAuthMethod(Subject s)
     {
         if (s == null)
@@ -174,16 +172,16 @@ public class AuthenticationUtil
             return null;
         return m.iterator().next();
     }
-    
+
     private static void setAuthMethod(Subject s, AuthMethod am)
     {
         if (s == null || am == null)
             return;
         s.getPublicCredentials().add(am);
     }
-    
-    
-    
+
+
+
     /**
      * Create a Subject using the given PrincipalExtractor. An implementation of the
      * PrincipalExtractor interface is used to extract the authentication information
@@ -416,7 +414,7 @@ public class AuthenticationUtil
         }
         return subject;
     }
-    
+
     /**
      * Re-order the pairs in the X500 distinguished name to standard order. This method
      * causes the pairs to be ordered such that the user parts are first and the country (C)
@@ -435,17 +433,27 @@ public class AuthenticationUtil
             LdapName dn = new LdapName(up);
             List<Rdn> rdns = dn.getRdns();
             Rdn left = rdns.get(rdns.size() - 1); // LDAP order from right-left
+            StringBuffer sb = new StringBuffer();
             if ( "C".equalsIgnoreCase(left.getType()) )
             {
                 // flip
-                StringBuilder sb = new StringBuilder();
                 for (Rdn r : rdns) // writing in normal order is actually flipping LDAP order
                 {
                     sb.append(r.toString());
-                    sb.append(", ");
+                    sb.append(",");
                 }
-                ret = new X500Principal(sb.substring(0, sb.length() - 2)); // strip off comma-space
             }
+            else
+            {
+                // don't flip
+                for (int i=0; i<rdns.size(); i++)
+                {
+                    sb.append(rdns.get(rdns.size() - (i + 1)));
+                    sb.append(",");
+                }
+            }
+            ret = new X500Principal(sb.substring(0, sb.length() - 1)); // strip off comma-space
+            log.debug("ordered form of " + up + " is " + ret);
             return ret;
         }
         catch (InvalidNameException ex)
@@ -545,123 +553,19 @@ public class AuthenticationUtil
      */
     public static String canonizeDistinguishedName(String dnSrc)
     {
-        if (dnSrc == null)
+        try
         {
-            throw new IllegalArgumentException("Null DN provided.");
+            X500Principal x = new X500Principal(dnSrc);
+            x = AuthenticationUtil.getOrderedForm(x);
+            String ret = x.getName().trim().toLowerCase();
+            log.debug(dnSrc + " converted to " + ret);
+            return ret;
         }
-
-        log.debug("canonizeDistinguishedName: canonizing: " + dnSrc);
-
-        // convert the entire DN to upper case
-        String original = dnSrc.toUpperCase();
-
-        // get a count of the number of RDN based on the number of
-        // non-escaped equal signs.  use this count to compare the
-        // results at the end
-        int equalsIndex = original.indexOf("=");
-        int rdnCount = 0;
-        while (equalsIndex != -1)
+        catch (Exception e)
         {
-            // make sure it isn't an espaced equals sign
-            if (equalsIndex == 0)
-            {
-                throw new IllegalArgumentException(
-                        "Cannot start a DN with '=')");
-            }
-            if (equalsIndex == (original.length() - 1))
-            {
-                throw new IllegalArgumentException("Cannot end a DN with '=')");
-            }
-            if (original.charAt(equalsIndex - 1) != '\\')
-            {
-                rdnCount++;
-            }
-            equalsIndex = original.indexOf("=", equalsIndex + 1);
+            log.debug("Invalid dn", e);
+            throw new IllegalArgumentException("Invalid DN: " + dnSrc, e);
         }
-
-        // Identify and collect the RDN (relative distinguished names).
-        List<String> rdns = new ArrayList<String>();
-        for (String rdnKey : ORDERED_RDN_KEYS)
-        {
-            // find the start of the RDN
-            int startIndex = original.indexOf(rdnKey.toUpperCase() + "=");
-            while (startIndex != -1)
-            {
-                // find the end of the RDN
-                int endIndex = -1;
-                for (String rdnKey2 : ORDERED_RDN_KEYS)
-                {
-                    int nextRdnStart = original
-                            .indexOf(rdnKey2.toUpperCase() + "=",
-                                     startIndex + 1);
-                    if (nextRdnStart != -1)
-                    {
-                        if (endIndex == -1 || (nextRdnStart < endIndex))
-                        {
-                            endIndex = nextRdnStart;
-                        }
-                    }
-                }
-
-                // check if this was the last RDN
-                if (endIndex == -1)
-                {
-                    endIndex = original.length();
-                }
-
-                String rdn = original.substring(startIndex, endIndex);
-
-                // remove any trailing spaces
-                rdn = rdn.trim();
-
-                // Remove the last character of the RDN if it is a comma or a forward
-                // slash
-                if (rdn.endsWith(",") || rdn.endsWith("/"))
-                {
-                    rdn = rdn.substring(0, rdn.length() - 1);
-                }
-
-                rdns.add(rdn);
-
-                startIndex = original
-                        .indexOf(rdnKey.toUpperCase() + "=", endIndex);
-            }
-        }
-
-        // ensure we have the right number of RDNs
-        if (rdns.size() != rdnCount)
-        {
-            throw new IllegalArgumentException(
-                    "Unexpected number of RDNs in DN.  At least one RDN is unrecognized.");
-        }
-
-        // put the RDNs back together separated by commas for a new DN
-        StringBuilder newDN = new StringBuilder();
-        List<String> rdnValues = null;
-        for (String rdnKey : ORDERED_RDN_KEYS)
-        {
-            rdnValues = new ArrayList<String>();
-            for (String rdn : rdns)
-            {
-                if (rdn.startsWith(rdnKey.toUpperCase() + "="))
-                {
-                    rdnValues.add(rdn);
-                }
-            }
-            Collections.sort(rdnValues);
-            for (String rdn : rdnValues)
-            {
-                if (newDN.length() != 0)
-                {
-                    newDN.append(",");
-                }
-                newDN.append(rdn);
-            }
-        }
-
-        String ret = newDN.toString().toLowerCase();
-        log.debug("canonizeDistinguishedName returning: " + ret);
-        return ret;
     }
 
     /**
@@ -757,7 +661,7 @@ public class AuthenticationUtil
                 AccessController.getContext();
         return Subject.getSubject(accessControlContext);
     }
-    
+
     public static Principal createPrincipal(String userID, String idType)
     {
         if (IdentityType.X500.getValue().equalsIgnoreCase(idType))
@@ -783,7 +687,7 @@ public class AuthenticationUtil
         }
         return null;
     }
-    
+
     public static String getPrincipalType(Principal userID)
     {
         if (userID instanceof X500Principal)

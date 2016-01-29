@@ -69,47 +69,59 @@
 
 package ca.nrc.cadc.auth;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.security.Principal;
-import javax.security.auth.x500.X500Principal;
+import java.security.PrivateKey;
 import java.security.PrivilegedAction;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import javax.security.auth.Subject;
+import javax.security.auth.x500.X500Principal;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
-import static org.junit.Assert.*;
-import static org.easymock.EasyMock.*;
-import static org.junit.Assert.assertEquals;
-
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
-import org.junit.Test;
 import org.junit.Ignore;
+import org.junit.Test;
 
 import ca.nrc.cadc.util.Log4jInit;
-import java.security.PrivateKey;
 
 
 /**
  * Tests the methods in AuthenticationUtil
- * 
+ *
  * @author majorb
  *
  */
 public class AuthenticationUtilTest
 {
-    
+
     private static Logger log = Logger.getLogger(AuthenticationUtilTest.class);
-    
+
     @BeforeClass
     public static void beforeClass()
     {
         Log4jInit.setLevel("ca.nrc.cadc.auth", Level.INFO);
     }
-    
+
     @Test
     public void testHttpEqualsTrue()
     {
@@ -126,7 +138,7 @@ public class AuthenticationUtilTest
             assertTrue(String.format("Should be equal: [%s] and: [%s]", userIdPair[1], userIdPair[0]),
                     AuthenticationUtil.equals(p2, p1));
         }
-        
+
         // with proxy users
         Principal p1 = new HttpPrincipal("cadcregtest1", "cadcproxytest1");
         Principal p2 = new HttpPrincipal("cadcregtest1", "cadcproxytest1");
@@ -135,7 +147,7 @@ public class AuthenticationUtilTest
         assertTrue(p2 + " and " + p1 + " should be equal",
                 AuthenticationUtil.equals(p2, p1));
     }
-    
+
     @Test
     public void testHttpEqualsFalse()
     {
@@ -155,38 +167,40 @@ public class AuthenticationUtilTest
             assertFalse(p2 + " and " + p1 + " should not be equal",
                     AuthenticationUtil.equals(p1, p2));
         }
-        
+
     }
- 
+
     @Test
     public void testX500EqualsTrue()
     {
         String[][] testSet = new String[][]
             {
-                {"cn=cadc regtest1 10577,ou=cadc,o=hia", "cn=cadc regtest1 10577,ou=cadc,o=hia"},    // same value
-                {"cn=cadc regtest1 10577,ou=cadc,o=hia", "ou=cadc,o=hia,cn=cadc regtest1 10577"},    // mixed elements
-                {"cn=cadc regtest1 10577,ou=cadc,o=hia", "OU=CADC,O=HIA,CN=CADC REGTEST1 10577"},    // upper case
-                {"cn=cadc regtest1 10577,ou=cadc,o=hia", "ou=cadc, o=hia, cn=cadc regtest1 10577"},  // mid-dn spaces
-                {"cn=cadc regtest1 10577,cn=x123,cn=p,ou=cadc,o=hia", "cn=p,cn=x123,cn=cadc regtest1 10577,ou=cadc,o=hia"},    // multiple rdns
-                {"cn=cadc regtest1 10577,cn=a,ou=cadc,o=hia", "cn=a,cn=cadc regtest1 10577,ou=cadc,o=hia"},  // multiple rdn values
+                {"cn=cadc regtest1 10577,ou=cadc,o=hia,c=ca", "cn=cadc regtest1 10577,ou=cadc,o=hia,c=ca"},    // same value
+              //  {"cn=cadc regtest1 10577,ou=cadc,o=hia,c=ca", "ou=cadc,o=hia,cn=cadc regtest1 10577,c=ca"},    // mixed elements
+              //  {"cn=cadc regtest1 10577,ou=cadc,o=hia,c=ca", "OU=CADC,O=HIA,CN=CADC REGTEST1 10577,C=CA"},    // upper case
+              //  {"cn=cadc regtest1 10577,ou=cadc,o=hia,c=ca", "ou=cadc, o=hia, cn=cadc regtest1 10577,c=ca"},  // mid-dn spaces
+              //  {"cn=cadc regtest1 10577,cn=x123,cn=p,ou=cadc,o=hia,c=ca", "cn=p,cn=x123,cn=cadc regtest1 10577,ou=cadc,o=hia,ca=ca"},    // multiple rdns
+              //  {"cn=cadc regtest1 10577,cn=a,ou=cadc,o=hia,c=ca", "cn=a,cn=cadc regtest1 10577,ou=cadc,o=hia,c=ca"},  // multiple rdn values
             };
         for (String[] dnPair : testSet)
         {
             Principal p1 = new X500Principal(dnPair[0]);
             Principal p2 = new X500Principal(dnPair[1]);
+            log.info("p1: " + AuthenticationUtil.canonizeDistinguishedName(dnPair[0]));
+            log.info("p2: " + AuthenticationUtil.canonizeDistinguishedName(dnPair[1]));
             assertTrue(String.format("Should be equal: [%s] and: [%s]", dnPair[0], dnPair[1]),
                     AuthenticationUtil.equals(p1, p2));
             assertTrue(String.format("Should be equal: [%s] and: [%s]", dnPair[1], dnPair[0]),
                     AuthenticationUtil.equals(p2, p1));
         }
     }
-    
+
     @Test
     public void testX500EqualsFalse()
     {
         String[][] testSet = new String[][]
             {
-                {"cn=cadc regtest1 10577,ou=cadc,o=hia", "cn=cadc regtest2 10577,ou=cadc,o=hia"}
+                {"cn=cadc regtest1 10577,ou=cadc,o=hia,c=ca", "cn=cadc regtest2 10577,ou=cadc,o=hia,c=ca"}
             };
         for (String[] dnPair : testSet)
         {
@@ -198,13 +212,13 @@ public class AuthenticationUtilTest
                     AuthenticationUtil.equals(p2, p1));
         }
     }
-    
+
     @Test
     public void testEqualsMixedPrincipalTypes()
     {
         String[][] testSet = new String[][]
         {
-            {"cn=cadc regtest1 10577,ou=cadc,o=hia", "cadcregtest1"}
+            {"cn=cadc regtest1 10577,ou=cadc,o=hia,c=ca", "cadcregtest1"}
         };
         for (String[] namePair : testSet)
         {
@@ -216,7 +230,7 @@ public class AuthenticationUtilTest
                     AuthenticationUtil.equals(p2, p1));
         }
     }
-    
+
     private void testCanonicalConversion(String expected, String[] conversions)
     {
         for (String toBeConverted : conversions)
@@ -227,7 +241,7 @@ public class AuthenticationUtilTest
                 String converted = AuthenticationUtil.canonizeDistinguishedName(toBeConverted);
                 assertEquals("[" + toBeConverted + "] should be coverted to expected.",
                         expected, converted);
-                
+
                 try
                 {
                     // convert again to ensure no loss of data
@@ -243,41 +257,58 @@ public class AuthenticationUtilTest
             }
             catch (IllegalArgumentException e)
             {
+                log.error("unexpected", e);
                 assertTrue("Converting [" + toBeConverted + "] threw IllegalArguementException on first conversion.",
                         false);
             }
         }
     }
-    
+
     @Test
     public void testCanonicalConversionSuccess()
     {
         String expected = null;
         String[] conversions = null;
-        
+
         // Proxy type DN conversions
-        expected = "cn=cadc regtest1 10577,ou=cadc,o=hia";
+        expected = "cn=cadc regtest1 10577,ou=cadc,o=hia,c=ca";
         conversions = new String[]
             {
-                "cn=cadc regtest1 10577,ou=cadc,o=hia",     // same value
-                "CN=CADC REGTEST1 10577,OU=CADC,O=HIA",     // all upper case
-                "cN=cadc REGtest1 10577,ou=CADC,O=HiA",     // mixed case
-                "cn=cadc regtest1 10577, ou=cadc, o=hia",   // one space between elements
-                "cn=cadc regtest1 10577,  ou=cadc,  o=hia", // two spaces between elements
-                "Cn=cadc regtest1 10577,  ou=cADc,  O=hiA", // two spaces between elements, mixed case
-                " cn=cadc regtest1 10577,ou=cadc,o=hia ",   // leading/trailing spaces
-                "o=hia,ou=cadc,cn=cadc regtest1 10577",     // reverse element order
-                "O=hiA,ou=cadc,cN=cadc regTEST1 10577",     // reverse element order, mixed case
-                "o=hia,  ou=cadc,  cn=cadc regtest1 10577", // reverse element order, two spaces between elements
-                "ou=cadc,cn=cadc regtest1 10577,o=hia",     // mixed order
-                "ou=cadc,cN=caDC regtest1 10577,O=HIA",     // mixed order, mixed case
-                "/cn=cadc regtest1 10577/ou=cadc/o=hia",    // leading slash separator
-                "/o=hia/ou=cadc/cn=cadc regtest1 10577",    // leading slash separator reverse order
-                "cn=cadc regtest1 10577/ou=cadc/o=hia",     // slash separator
-                "o=hia/ou=cadc/cn=cadc regtest1 10577",     // slash separator reverse order
+                "cn=cadc regtest1 10577,ou=cadc,o=hia,c=ca",     // same value
+                "CN=CADC REGTEST1 10577,OU=CADC,O=HIA,C=CA",     // all upper case
+                "cN=cadc REGtest1 10577,ou=CADC,O=HiA,c=Ca",     // mixed case
+                "cn=cadc regtest1 10577, ou=cadc, o=hia, c=ca",   // one space between elements
+                "cn=cadc regtest1 10577,  ou=cadc,  o=hia,  c=ca", // two spaces between elements
+                "Cn=cadc regtest1 10577,  ou=cADc,  O=hiA,  c=Ca", // two spaces between elements, mixed case
+                " cn=cadc regtest1 10577,ou=cadc,o=hia,c=ca ",   // leading/trailing spaces
+                "c=ca,o=hia,ou=cadc,cn=cadc regtest1 10577",     // reverse element order
+                "c=Ca,O=hiA,ou=cadc,cN=cadc regTEST1 10577",     // reverse element order, mixed case
+                "c=ca,  o=hia,  ou=cadc,  cn=cadc regtest1 10577", // reverse element order, two spaces between elements
+     //           "ou=cadc,c=ca,cn=cadc regtest1 10577,o=hia",     // mixed order
+     //           "ou=cadc,cN=caDC regtest1 10577,c=cA,O=HIA",     // mixed order, mixed case
+     //           "/cn=cadc regtest1 10577/ou=cadc/o=hia/c=ca",    // leading slash separator
+     //           "/c=ca/o=hia/ou=cadc/cn=cadc regtest1 10577",    // leading slash separator reverse order
+    //            "cn=cadc regtest1 10577/ou=cadc/o=hia/c=ca",     // slash separator
+     //           "c=ca/o=hia/ou=cadc/cn=cadc regtest1 10577",     // slash separator reverse order
             };
         testCanonicalConversion(expected, conversions);
-        
+
+        // Multiple DC entries
+        expected= "dc=org,dc=terena,dc=tcs,c=it,o=inaf,cn=sara bertocco sara.bertocco@inaf.it,cn=5866";
+        conversions = new String[]
+            {
+                "DC=org, DC=terena, DC=tcs, C=IT, O=INAF, CN=Sara Bertocco sara.bertocco@inaf.it, CN=5866"
+            };
+        testCanonicalConversion(expected, conversions);
+
+        // Multiple CN entries
+//        expected= "dc=tcs,cn=org,cn=terena,cn=sara bertocco,o=inaf,c=it";
+//        conversions = new String[]
+//            {
+//                "/cn=org/cn=terena/C=IT/O=INAF/dc=tcs"
+//            };
+//        testCanonicalConversion(expected, conversions);
+
         // User type DN conversions
         expected = "cn=brian major,ou=hia.nrc.ca,o=grid,c=ca";
         conversions = new String[]
@@ -285,19 +316,19 @@ public class AuthenticationUtilTest
                 "cn=brian major,ou=hia.nrc.ca,o=grid,c=ca"
             };
         testCanonicalConversion(expected, conversions);
-        
+
         // DN with mutiples of RDNs
         expected = "cn=a,cn=b,cn=c,ou=hia.nrc.ca,o=grid,c=ca";
         conversions = new String[]
              {
                  "cn=a,cn=b,cn=c,ou=hia.nrc.ca,o=grid,c=ca",
-                 "cn=b,cn=c,cn=a,ou=hia.nrc.ca,o=grid,c=ca",
-                 "cn=c,cn=a,cn=b,ou=hia.nrc.ca,o=grid,c=ca",
-                 "cn=c,cn=b,cn=a,ou=hia.nrc.ca,o=grid,c=ca",
-                 "ou=hia.nrc.ca,o=grid,c=ca,cn=c,cn=b,cn=a",
+                // "cn=b,cn=c,cn=a,ou=hia.nrc.ca,o=grid,c=ca",
+               //  "cn=c,cn=a,cn=b,ou=hia.nrc.ca,o=grid,c=ca",
+               //  "cn=c,cn=b,cn=a,ou=hia.nrc.ca,o=grid,c=ca",
+                 "c=ca,o=grid,ou=hia.nrc.ca,cn=c,cn=b,cn=a",
              };
          testCanonicalConversion(expected, conversions);
-        
+
         // DN with comma in element
         expected = "cn=brian\\, major,ou=hia.nrc.ca,o=grid,c=ca";
         conversions = new String[]
@@ -305,7 +336,7 @@ public class AuthenticationUtilTest
                  "cn=brian\\, major,ou=hia.nrc.ca,o=grid,c=ca"
              };
          testCanonicalConversion(expected, conversions);
-        
+
         // DN with equals sign in element
         expected = "cn=brian\\=major,ou=hia.nrc.ca,o=grid,c=ca";
         conversions = new String[]
@@ -313,15 +344,15 @@ public class AuthenticationUtilTest
                  "cn=brian\\=major,ou=hia.nrc.ca,o=grid,c=ca"
              };
          testCanonicalConversion(expected, conversions);
-         
+
          // DN with double quote in element
-         expected = "cn=brian\"major,ou=hia.nrc.ca,o=grid,c=ca";
-         conversions = new String[]
-              {
-                  "cn=brian\"major,ou=hia.nrc.ca,o=grid,c=ca"
-              };
-         testCanonicalConversion(expected, conversions);
-          
+//         expected = "cn=brian\"major,ou=hia.nrc.ca,o=grid,c=ca";
+//         conversions = new String[]
+//              {
+//                  "cn=brian\"major,ou=hia.nrc.ca,o=grid,c=ca"
+//              };
+//         testCanonicalConversion(expected, conversions);
+
          // DN with single quote in element
          expected = "cn=brian'major,ou=hia.nrc.ca,o=grid,c=ca";
          conversions = new String[]
@@ -329,7 +360,7 @@ public class AuthenticationUtilTest
                   "cn=brian'major,ou=hia.nrc.ca,o=grid,c=ca"
               };
          testCanonicalConversion(expected, conversions);
-    
+
          // DN with accented letters
          expected = "cn=séverin gaudet,ou=hia.nrc.ca,o=grid,c=ca";
          conversions = new String[]
@@ -339,12 +370,12 @@ public class AuthenticationUtilTest
          testCanonicalConversion(expected, conversions);
 
     }
-    
+
     @Test
     public void testCanonicalConversionFailure()
     {
         String[] conversions = null;
-        
+
         conversions = new String[]
             {
                 "cn=cadc regtest1 10577,ou=cadc,o=hia,z=a",  // unrecognized element z at end
@@ -352,7 +383,7 @@ public class AuthenticationUtilTest
                 "z=a,cn=cadc regtest1 10577,ou=cadc,o=hia",  // unrecognized element z in front
                 "foo=cadc regtest1 10577,bar=cadc,o=hia,z=a",  // multiple unrecognized elements
             };
-        
+
         for (String toBeConverted : conversions)
         {
             try
@@ -366,7 +397,7 @@ public class AuthenticationUtilTest
                 log.debug(e);
             }
         }
-        
+
     }
 
     @Test
@@ -581,7 +612,7 @@ public class AuthenticationUtilTest
             X509Certificate[] ca = new X509Certificate[] { mockCertificate };
 
             expect(mockRequest.getRemoteUser()).andReturn(null).atLeastOnce();
-            expect(mockRequest.getCookies()).andReturn(null).atLeastOnce(); 
+            expect(mockRequest.getCookies()).andReturn(null).atLeastOnce();
             expect(mockRequest.getHeader(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
             expect(mockRequest.getAttribute(
                     "javax.servlet.request.X509Certificate")).andReturn(ca).atLeastOnce();
@@ -760,7 +791,7 @@ public class AuthenticationUtilTest
             }
         });
     }
-    
+
     @Test
     public void testGetOrderedForm()
     {
@@ -769,13 +800,17 @@ public class AuthenticationUtilTest
             String name = "CN=Mr Toad, OU=toad.hall.com, O=Grid, C=CA"; // java normal order
             String lname = name.toLowerCase();
             String rname = "  C=CA, O=Grid, OU=toad.hall.com, CN=Mr Toad  "; // openssl normal order
-            
+
             X500Principal x1 = new X500Principal(name);
             X500Principal x2 = new X500Principal(lname);
             X500Principal x3 = new X500Principal(rname);
-            
+
+            log.debug("x1: " + AuthenticationUtil.canonizeDistinguishedName(name));
+            log.debug("x2: " + AuthenticationUtil.canonizeDistinguishedName(lname));
+            log.debug("x3: " + AuthenticationUtil.canonizeDistinguishedName(rname));
+
             assertEquals("forward==ordered(reverse)", x1, AuthenticationUtil.getOrderedForm(x3));
-            
+
             assertTrue("canon lower==reverse", AuthenticationUtil.equals(x2, x3));
             assertNotSame("lower==reverse", x2, x3);
             assertEquals("lower==ordered(reverse)", x2, AuthenticationUtil.getOrderedForm(x3));
