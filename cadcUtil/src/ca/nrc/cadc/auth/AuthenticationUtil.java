@@ -417,10 +417,9 @@ public class AuthenticationUtil
 
     /**
      * Re-order the pairs in the X500 distinguished name to standard order. This method
-     * causes the pairs to be ordered such that the user parts are first and the country (C)
-     * is last in the string form of the distinguished name. If the DN does not have a C type
-     * RDN it will not be flipped.
-     *
+     * causes the pairs to be ordered such that the user parts (CN) is first and the country (C)
+     * is last in the string form of the distinguished name. 
+     * 
      * @param p
      * @return ordered principal, possibly the argument if re-order not required
      */
@@ -433,10 +432,16 @@ public class AuthenticationUtil
             LdapName dn = new LdapName(up);
             List<Rdn> rdns = dn.getRdns();
             Rdn left = rdns.get(rdns.size() - 1); // LDAP order from right-left
-            StringBuffer sb = new StringBuffer();
-            if ( "C".equalsIgnoreCase(left.getType()) )
+            Rdn right = rdns.get(0);
+            //boolean cnOnLeft = "CN".equalsIgnoreCase(left.getType());
+            boolean cOnleft = "C".equalsIgnoreCase(left.getType());
+            boolean cnOnRight = "CN".equalsIgnoreCase(right.getType());
+            //boolean cOnRight = "C".equalsIgnoreCase(right.getType());
+            boolean flip = (cnOnRight || cOnleft);
+            
+            StringBuilder sb = new StringBuilder();
+            if ( flip )
             {
-                // flip
                 for (Rdn r : rdns) // writing in normal order is actually flipping LDAP order
                 {
                     sb.append(r.toString());
@@ -445,10 +450,9 @@ public class AuthenticationUtil
             }
             else
             {
-                // don't flip
-                for (int i=0; i<rdns.size(); i++)
+                for (int i=rdns.size()-1; i>= 0; i--)
                 {
-                    sb.append(rdns.get(rdns.size() - (i + 1)));
+                    sb.append(rdns.get(i));
                     sb.append(",");
                 }
             }

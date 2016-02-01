@@ -34,12 +34,42 @@
 package ca.nrc.cadc.auth;
 
 
+import ca.nrc.cadc.util.Log4jInit;
+import ca.nrc.cadc.util.RSASignatureGeneratorValidatorTest;
+import ca.nrc.cadc.util.RsaSignatureGenerator;
+import java.io.File;
+import org.apache.log4j.Level;
+import org.junit.After;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import org.junit.Before;
 
 
 public class SSOCookieManagerTest
 {    
+    static
+    {
+        Log4jInit.setLevel("ca.nrc.cadc.auth", Level.INFO);
+    }
+    
+    File pubFile, privFile;
+    
+    @Before
+    public void initKeys() throws Exception
+    {
+        String keysDir = RSASignatureGeneratorValidatorTest.getCompleteKeysDirectoryName();
+        RsaSignatureGenerator.genKeyPair(keysDir);
+        privFile = new File(keysDir, RsaSignatureGenerator.PRIV_KEY_FILE_NAME);
+        pubFile = new File(keysDir, RsaSignatureGenerator.PUB_KEY_FILE_NAME);
+    }
+    
+    @After
+    public void cleanupKeys() throws Exception
+    {
+        pubFile.delete();
+        privFile.delete();
+    }
+    
     @Test
     public void roundTrip() throws Exception
     {

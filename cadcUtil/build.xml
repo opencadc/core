@@ -104,6 +104,7 @@
 
     <target name="setup-test">
         <copy file="test/src/resources/MultiSchemeHandler.properties" todir="${build}/test/class"/>
+        <copy file="test/src/resources/DelegationToken.properties" todir="${build}/test/class"/>
         <copy file="test/src/resources/foo.xsd" todir="${build}/test/class"/>
         <copy file="test/src/resources/bar.xsd" todir="${build}/test/class"/>
         <copy overwrite="true" file="${env.CADC_PREFIX}/etc/proxy.pem" tofile="${build}/test/class/proxy.pem" />

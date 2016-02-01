@@ -34,6 +34,9 @@
 package ca.nrc.cadc.auth;
 
 
+import ca.nrc.cadc.util.RSASignatureGeneratorValidatorTest;
+import ca.nrc.cadc.util.RsaSignatureGenerator;
+import java.io.File;
 import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
@@ -46,11 +49,31 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
 import org.easymock.EasyMock;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 
 public class ServletPrincipalExtractorTest
 {    
+    File pubFile, privFile;
+    
+    @Before
+    public void initKeys() throws Exception
+    {
+        String keysDir = RSASignatureGeneratorValidatorTest.getCompleteKeysDirectoryName();
+        RsaSignatureGenerator.genKeyPair(keysDir);
+        privFile = new File(keysDir, RsaSignatureGenerator.PRIV_KEY_FILE_NAME);
+        pubFile = new File(keysDir, RsaSignatureGenerator.PUB_KEY_FILE_NAME);
+    }
+    
+    @After
+    public void cleanupKeys() throws Exception
+    {
+        pubFile.delete();
+        privFile.delete();
+    }
+    
     @Test
     public void testCookie() throws Exception
     {

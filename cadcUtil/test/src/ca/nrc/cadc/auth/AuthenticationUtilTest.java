@@ -293,21 +293,23 @@ public class AuthenticationUtilTest
             };
         testCanonicalConversion(expected, conversions);
 
-        // Multiple DC entries
-        expected= "dc=org,dc=terena,dc=tcs,c=it,o=inaf,cn=sara bertocco sara.bertocco@inaf.it,cn=5866";
+        // C is in the middle so CN causes flip
+        expected= "cn=joe user,o=groupb,c=it,dc=foo,dc=example,dc=org";
         conversions = new String[]
             {
-                "DC=org, DC=terena, DC=tcs, C=IT, O=INAF, CN=Sara Bertocco sara.bertocco@inaf.it, CN=5866"
+                "CN=joe user, O=GroupB, C=it, DC=foo, DC=example, DC=org",
+                "DC=org, DC=example, DC=foo, C=IT, O=GroupB, CN=Joe User"
             };
         testCanonicalConversion(expected, conversions);
-
-        // Multiple CN entries
-//        expected= "dc=tcs,cn=org,cn=terena,cn=sara bertocco,o=inaf,c=it";
-//        conversions = new String[]
-//            {
-//                "/cn=org/cn=terena/C=IT/O=INAF/dc=tcs"
-//            };
-//        testCanonicalConversion(expected, conversions);
+        
+        // no CN so C causes the flip
+        expected= "ou=joe user,dc=foo,c=ca";
+        conversions = new String[]
+            {
+                "OU=joe user, DC=foo, C=ca",
+                "C=ca, DC=foo, OU=Joe User"
+            };
+        testCanonicalConversion(expected, conversions);
 
         // User type DN conversions
         expected = "cn=brian major,ou=hia.nrc.ca,o=grid,c=ca";
@@ -322,9 +324,6 @@ public class AuthenticationUtilTest
         conversions = new String[]
              {
                  "cn=a,cn=b,cn=c,ou=hia.nrc.ca,o=grid,c=ca",
-                // "cn=b,cn=c,cn=a,ou=hia.nrc.ca,o=grid,c=ca",
-               //  "cn=c,cn=a,cn=b,ou=hia.nrc.ca,o=grid,c=ca",
-               //  "cn=c,cn=b,cn=a,ou=hia.nrc.ca,o=grid,c=ca",
                  "c=ca,o=grid,ou=hia.nrc.ca,cn=c,cn=b,cn=a",
              };
          testCanonicalConversion(expected, conversions);
