@@ -286,8 +286,6 @@ public class LogControlServlet extends HttpServlet
     public void doPost(HttpServletRequest request, HttpServletResponse response)
         throws ServletException, IOException
 	{
-        Subject subject = AuthenticationUtil.getSubject(request);
-        logger.debug(subject.toString());
 
         try
         {

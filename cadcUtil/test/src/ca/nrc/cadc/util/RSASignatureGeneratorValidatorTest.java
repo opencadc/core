@@ -49,11 +49,14 @@ import java.security.KeyPairGenerator;
 import java.util.Date;
 import java.util.MissingResourceException;
 import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 import org.junit.Test;
 
 public class RSASignatureGeneratorValidatorTest
 {
+    private static final Logger log = Logger.getLogger(RSASignatureGeneratorValidatorTest.class);
+    
     static
     {
         Log4jInit.setLevel("ca.nrc.cadc.util", Level.INFO);
@@ -117,7 +120,9 @@ public class RSASignatureGeneratorValidatorTest
             sg = new RsaSignatureGenerator();
             fail("Expected exception not thrown");
         }
-        catch(IllegalStateException ignore){}
+        catch(IllegalStateException ignore)
+        {
+        }
         
         out = new PrintWriter(pubFile);
         out.println("--");
@@ -160,7 +165,7 @@ public class RSASignatureGeneratorValidatorTest
         KeyPair keyPair = kpg.genKeyPair();
         char[] base64PubKey = Base64.encode(keyPair.getPublic().getEncoded());
         char[] base64PrivKey = Base64.encode(keyPair.getPrivate().getEncoded());
-        PrintWriter outpub = new PrintWriter(new BufferedWriter(new FileWriter(pubKeyFileName, true)));
+        PrintWriter outpub = new PrintWriter(new BufferedWriter(new FileWriter(pubFile, true)));
         outpub.println(RsaSignatureVerifier.PUB_KEY_START);
         outpub.println(base64PubKey);
         outpub.println(RsaSignatureVerifier.PUB_KEY_END);
@@ -174,7 +179,7 @@ public class RSASignatureGeneratorValidatorTest
                 sg.sign(new ByteArrayInputStream(testString.getBytes()))));
         
         // same as above but try to add 2 private keys
-        PrintWriter outpriv = new PrintWriter(new BufferedWriter(new FileWriter(privKeyFileName, true)));
+        PrintWriter outpriv = new PrintWriter(new BufferedWriter(new FileWriter(privFile, true)));
         outpriv.println(RsaSignatureGenerator.PRIV_KEY_START);
         outpriv.println(base64PrivKey);
         outpriv.println(RsaSignatureGenerator.PRIV_KEY_END);
@@ -184,8 +189,13 @@ public class RSASignatureGeneratorValidatorTest
             sg = new RsaSignatureGenerator();
             fail("Exception expected");
         }
-        catch(IllegalStateException ignore){}
+        catch(IllegalStateException ignore)
+        {
+            
+        }
 
+        pubFile.delete();
+        privFile.delete();
     }
 
 
@@ -197,13 +207,11 @@ public class RSASignatureGeneratorValidatorTest
      */
     public static String getCompleteKeysDirectoryName() throws Exception
     {
-        URL classLocation = 
-                RsaSignatureGenerator.class.getResource(
-                        RsaSignatureGenerator.class.getSimpleName() + ".class");
+        URL classLocation = RsaSignatureGenerator.class.getResource(
+            RsaSignatureGenerator.class.getSimpleName() + ".class");
         if (!"file".equalsIgnoreCase(classLocation.getProtocol()))
         {
-            throw new 
-            IllegalStateException("SignatureUtil class is not stored in a file.");
+            throw new IllegalStateException("SignatureUtil class is not stored in a file.");
         }
 
         File classPath = new File(URLDecoder.decode(classLocation.getPath(),

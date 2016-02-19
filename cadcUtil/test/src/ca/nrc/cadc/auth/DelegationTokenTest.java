@@ -33,6 +33,7 @@
  */
 package ca.nrc.cadc.auth;
 
+import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -51,6 +52,8 @@ import java.io.File;
 import java.io.FileWriter;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.After;
+import org.junit.Before;
 
 public class DelegationTokenTest
 {
@@ -75,15 +78,30 @@ public class DelegationTokenTest
         }
         
     }
+
+    File pubFile, privFile;
+    
+    @Before
+    public void initKeys() throws Exception
+    {
+        String keysDir = RSASignatureGeneratorValidatorTest.getCompleteKeysDirectoryName();
+        RsaSignatureGenerator.genKeyPair(keysDir);
+        privFile = new File(keysDir, RsaSignatureGenerator.PRIV_KEY_FILE_NAME);
+        pubFile = new File(keysDir, RsaSignatureGenerator.PUB_KEY_FILE_NAME);
+    }
+    
+    @After
+    public void cleanupKeys() throws Exception
+    {
+        pubFile.delete();
+        privFile.delete();
+    }
     
     @Test
     public void matches() throws Exception
     {
-        String keysDir = RSASignatureGeneratorValidatorTest.getCompleteKeysDirectoryName();
-        RsaSignatureGenerator.genKeyPair(keysDir);
-
         // configure the test scope validator
-        File config = new File(keysDir, "DelegationToken.properties");
+        File config = FileUtil.getFileFromResource("DelegationToken.properties", DelegationTokenTest.class);
         FileWriter w = new FileWriter(config);
         w.write(DelegationToken.class.getName() + ".scopeValidator = " + TestScopeValidator.class.getName());
         w.write("\n");
