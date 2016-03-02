@@ -86,6 +86,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
@@ -679,15 +680,7 @@ public class AuthenticationUtil
         }
         if (IdentityType.CADC.getValue().equalsIgnoreCase(idType))
         {
-            try
-            {
-                Integer name = new Integer(userID);
-                return new NumericPrincipal(name);
-            }
-            catch (NumberFormatException e)
-            {
-                log.warn("CADCPrincipal is non-numeric: " + userID);
-            }
+            return new NumericPrincipal(UUID.fromString(userID));
         }
         return null;
     }

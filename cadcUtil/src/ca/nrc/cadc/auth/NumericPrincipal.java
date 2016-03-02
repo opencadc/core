@@ -32,12 +32,11 @@
  ************************************************************************
  */
 
-
-
 package ca.nrc.cadc.auth;
 
 import java.io.Serializable;
 import java.security.Principal;
+import java.util.UUID;
 
 /**
  * Class that represents a numeric Principal. This is useful for
@@ -46,13 +45,13 @@ import java.security.Principal;
 public class NumericPrincipal implements Principal, Serializable
 {
     private static final long serialVersionUID = 20140625143750l;
-    private int numericID;
+    private UUID numericID;
 
     /**
      * Ctor
      * @param numericID unique identifier
      */
-    public NumericPrincipal(int numericID)
+    public NumericPrincipal(UUID numericID)
     {
         this.numericID = numericID;
     }
@@ -60,7 +59,7 @@ public class NumericPrincipal implements Principal, Serializable
     @Override
     public String getName()
     {
-        return String.valueOf(numericID);
+        return numericID.toString();
     }
 
     /* (non-Javadoc)
@@ -71,7 +70,7 @@ public class NumericPrincipal implements Principal, Serializable
     {
         final int prime = 31;
         int result = 1;
-        result = prime * result + (int) (numericID ^ (numericID >>> 32));
+        result = prime * result + numericID.hashCode();
         return result;
     }
 
@@ -94,11 +93,11 @@ public class NumericPrincipal implements Principal, Serializable
             return false;
         }
         NumericPrincipal other = (NumericPrincipal) obj;
-        if (numericID != other.numericID)
+        if (numericID.equals(other.numericID))
         {
-            return false;
+            return true;
         }
-        return true;
+        return false;
     }
        
     @Override
