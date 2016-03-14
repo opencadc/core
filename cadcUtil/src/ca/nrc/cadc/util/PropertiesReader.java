@@ -87,6 +87,8 @@ public class PropertiesReader
         if (System.getProperty(CONFIG_DIR_SYSTEM_PROPERTY) != null)
             configDir = System.getProperty(CONFIG_DIR_SYSTEM_PROPERTY);
 
+        log.debug("Reading from config dir: " + configDir);
+
         if (!configDir.endsWith("/"))
             configDir = configDir + "/";
 
