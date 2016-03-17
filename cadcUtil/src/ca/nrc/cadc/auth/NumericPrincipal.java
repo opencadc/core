@@ -103,7 +103,19 @@ public class NumericPrincipal implements Principal, Serializable
     @Override
     public String toString()
     {
-        return getClass().getSimpleName() + "[" + getName() + "]";
+        StringBuilder sb = new StringBuilder();
+        sb.append(getClass().getSimpleName());
+        sb.append("[");
+        if (numericID.getMostSignificantBits() == 0L)
+        {
+            sb.append(numericID.getLeastSignificantBits());
+        }
+        else
+        {
+            sb.append(getName());
+        }
+        sb.append("]");
+        return sb.toString();
     }
 
 }
