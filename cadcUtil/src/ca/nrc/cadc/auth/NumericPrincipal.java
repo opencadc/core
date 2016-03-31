@@ -24,10 +24,10 @@
  *
  *
  * @author adriand
- * 
+ *
  * @version $Revision: $
- * 
- * 
+ *
+ *
  ****  C A N A D I A N   A S T R O N O M Y   D A T A   C E N T R E  *****
  ************************************************************************
  */
@@ -55,11 +55,16 @@ public class NumericPrincipal implements Principal, Serializable
     {
         this.numericID = numericID;
     }
-    
+
     @Override
     public String getName()
     {
         return numericID.toString();
+    }
+
+    public UUID getUUID()
+    {
+        return numericID;
     }
 
     /* (non-Javadoc)
@@ -99,7 +104,7 @@ public class NumericPrincipal implements Principal, Serializable
         }
         return false;
     }
-       
+
     @Override
     public String toString()
     {
