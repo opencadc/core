@@ -62,6 +62,11 @@ public class NumericPrincipal implements Principal, Serializable
         return numericID.toString();
     }
 
+    public UUID getUUID()
+    {
+        return numericID;
+    }
+
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
