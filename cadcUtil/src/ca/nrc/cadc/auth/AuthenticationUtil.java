@@ -419,8 +419,8 @@ public class AuthenticationUtil
     /**
      * Re-order the pairs in the X500 distinguished name to standard order. This method
      * causes the pairs to be ordered such that the user parts (CN) is first and the country (C)
-     * is last in the string form of the distinguished name. 
-     * 
+     * is last in the string form of the distinguished name.
+     *
      * @param p
      * @return ordered principal, possibly the argument if re-order not required
      */
@@ -439,7 +439,7 @@ public class AuthenticationUtil
             boolean cnOnRight = "CN".equalsIgnoreCase(right.getType());
             //boolean cOnRight = "C".equalsIgnoreCase(right.getType());
             boolean flip = (cnOnRight || cOnleft);
-            
+
             StringBuilder sb = new StringBuilder();
             if ( flip )
             {
@@ -523,18 +523,45 @@ public class AuthenticationUtil
             return false;
         }
 
+        return AuthenticationUtil.compare(p1, p2) == 0;
+    }
+
+    /**
+     * Compare two principals
+     */
+    public static int compare(Principal p1, Principal p2)
+    {
+        if (p1 == null || p2 == null)
+        {
+            throw new IllegalArgumentException("Cannot compare null objects");
+        }
+
         if (p1 instanceof X500Principal)
         {
             if (p2 instanceof X500Principal)
             {
                 String converted1 = canonizeDistinguishedName(p1.getName());
                 String converted2 = canonizeDistinguishedName(p2.getName());
-                return converted1.equals(converted2);
+                return converted1.compareTo(converted2);
             }
-            return false;
         }
 
-        return !(p2 instanceof X500Principal) && p1.equals(p2);
+        if (p1 instanceof HttpPrincipal)
+        {
+            if (p2 instanceof HttpPrincipal)
+            {
+                HttpPrincipal h1 = (HttpPrincipal) p1;
+                HttpPrincipal h2 = (HttpPrincipal) p2;
+                return h1.toString().compareTo(h2.toString());
+            }
+        }
+
+        if (p1.getClass().equals(p2.getClass()))
+        {
+            return p1.getName().compareTo(p2.getName());
+        }
+
+        return p1.getClass().getName().compareTo(p2.getClass().getName());
     }
 
     /**
