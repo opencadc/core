@@ -69,17 +69,17 @@
 
 package ca.nrc.cadc.log;
 
-import java.security.Principal;
-import java.util.Iterator;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.Set;
 
 import javax.security.auth.Subject;
+import javax.security.auth.x500.X500Principal;
+
+import org.apache.log4j.Logger;
 
 import ca.nrc.cadc.auth.HttpPrincipal;
 import ca.nrc.cadc.util.StringUtil;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import org.apache.log4j.Logger;
 
 /**
  * Class to be used by web services to log at INFO level the start and
@@ -102,11 +102,11 @@ public abstract class WebServiceLogInfo
     protected String path;
 
     protected Boolean success;
-    
+
     public String user;
-    
+
     protected String proxyUser;
-    
+
     protected String from;
 
     protected Long time;
@@ -246,11 +246,18 @@ public abstract class WebServiceLogInfo
         {
             if (subject != null)
             {
-                final Set<HttpPrincipal> principals = subject.getPrincipals(HttpPrincipal.class);
-                if (!principals.isEmpty())
+                final Set<HttpPrincipal> httpPrincipals = subject.getPrincipals(HttpPrincipal.class);
+                if (!httpPrincipals.isEmpty())
                 {
-                    HttpPrincipal principal = principals.iterator().next();
+                    HttpPrincipal principal = httpPrincipals.iterator().next();
                     this.proxyUser = principal.getProxyUser();
+                    return principal.getName();
+                }
+
+                final Set<X500Principal> x500Principals = subject.getPrincipals(X500Principal.class);
+                if (!x500Principals.isEmpty())
+                {
+                    X500Principal principal = x500Principals.iterator().next();
                     return principal.getName();
                 }
             }
