@@ -134,8 +134,6 @@ public class ProfilerTest
             Thread.sleep(10L);
             p.checkpoint("testSilent-def");
             
-            Assert.assertEquals(3, p.numOps);
-            
             logBuffer.flush();
             List<String[]> out = extractProfilerLogs(logBuffer.toString());
             Assert.assertEquals(0, out.size());
@@ -174,8 +172,6 @@ public class ProfilerTest
             Thread.sleep(10L);
             p.checkpoint("testEnabledAfterCreated-def2");
             
-            Assert.assertEquals(6, p.numOps);
-            
             logBuffer.flush();
             List<String[]> out = extractProfilerLogs(logBuffer.toString());
             Assert.assertEquals(3, out.size());
@@ -208,8 +204,6 @@ public class ProfilerTest
             p.checkpoint("testEnabled-abc2");
             Thread.sleep(10L);
             p.checkpoint("testEnabled-def2");
-            
-            Assert.assertEquals(3, p.numOps);
             
             logBuffer.flush();
             List<String[]> out = extractProfilerLogs(logBuffer.toString());

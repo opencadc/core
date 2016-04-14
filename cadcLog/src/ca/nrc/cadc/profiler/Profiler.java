@@ -86,20 +86,17 @@ import org.apache.log4j.Logger;
 public class Profiler 
 {
     private static final Logger log = Logger.getLogger(Profiler.class);
-    
-    private long nanos;
-    long numOps = 0L;
-    
+
+    private long startTime;
+    private long totalTime;
+
     protected String caller;
-    
-    protected String op;
-    
-    protected long time;
-    
+
     public Profiler(Class caller)
     {
         this.caller = caller.getSimpleName();
-        this.nanos = System.nanoTime();
+        this.startTime = System.nanoTime();
+        totalTime = 0L;
     }
     
     /**
@@ -110,12 +107,10 @@ public class Profiler
      */
     public void checkpoint(String op)
     {
-        numOps++;
-        
-        long nt = System.nanoTime();
-        this.op = op;
-        
-        this.time = (nt - nanos)/1000000L;
+        long now = System.nanoTime();
+        long delta = (now - startTime)/1000000L;
+        this.totalTime += delta;
+        this.startTime = now;
         
         if (log.isInfoEnabled())
         {
@@ -126,15 +121,15 @@ public class Profiler
             sb.append(",").append("\"op\"");
             sb.append(":");
             sb.append("\"").append(op).append("\"");
-            sb.append(",").append("\"time\"");
+            sb.append(",").append("\"delta\"");
             sb.append(":");
-            sb.append(Long.toString(time));
+            sb.append(Long.toString(delta));
+            sb.append(",").append("\"total\"");
+            sb.append(":");
+            sb.append(Long.toString(totalTime));
             sb.append("}");
             log.info(sb.toString());
         }
-
-        this.time = 0;
-        this.op = null;
-        this.nanos = nt;
     }
+
 }
