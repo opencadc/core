@@ -109,8 +109,6 @@ public class Profiler
     {
         long now = System.nanoTime();
         long delta = (now - startTime)/1000000L;
-        this.totalTime += delta;
-        this.startTime = now;
         
         if (log.isInfoEnabled())
         {
@@ -121,15 +119,28 @@ public class Profiler
             sb.append(",").append("\"op\"");
             sb.append(":");
             sb.append("\"").append(op).append("\"");
-            sb.append(",").append("\"delta\"");
+            if (totalTime > 0)
+            {
+                sb.append(",").append("\"delta\"");
+                sb.append(":");
+                sb.append(Long.toString(delta));
+            }
+            sb.append(",").append("\"time\"");
             sb.append(":");
-            sb.append(Long.toString(delta));
-            sb.append(",").append("\"total\"");
-            sb.append(":");
-            sb.append(Long.toString(totalTime));
+            if (totalTime > 0)
+            {
+                sb.append(Long.toString(totalTime));
+            }
+            else
+            {
+                sb.append(Long.toString(delta));
+            }
             sb.append("}");
             log.info(sb.toString());
         }
+
+        this.totalTime += delta;
+        this.startTime = now;
     }
 
 }
