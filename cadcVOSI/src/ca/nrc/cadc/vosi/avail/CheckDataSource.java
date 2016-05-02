@@ -93,6 +93,7 @@ public class CheckDataSource implements CheckResource
     private String dataSourceName;
     private DataSource dataSource;
     private String testSQL;
+    private boolean expectResults = true;
 
     /**
      * Constructor to check a DataSource.
@@ -119,6 +120,13 @@ public class CheckDataSource implements CheckResource
         this.dataSourceName = dataSourceName;
         this.testSQL = testSQL;
     }
+    
+    public CheckDataSource(String dataSourceName, String testSQL, boolean expectResults)
+    {
+        this.dataSourceName = dataSourceName;
+        this.testSQL = testSQL;
+        this.expectResults = expectResults;
+    }
 
     @Override
     public void check()
@@ -135,8 +143,16 @@ public class CheckDataSource implements CheckResource
             }
             con = dataSource.getConnection();
             st = con.createStatement();
-            rs = st.executeQuery(testSQL);
-            rs.next(); // just check the result set, but don't care if there are any rows
+            if (expectResults)
+            {
+                log.debug("test for results");
+                rs = st.executeQuery(testSQL);
+                rs.next(); // just check the result set, but don't care if there are any rows
+            }
+            else
+            {
+                st.execute(testSQL);
+            }
             log.debug("test succeeded: " + dataSourceName + " (" + testSQL + ")");
         }
         catch(NamingException e)
@@ -146,6 +162,7 @@ public class CheckDataSource implements CheckResource
         }
         catch (SQLException e)
         {
+            log.debug("test failed: " + dataSourceName + " (" + testSQL + ")", e);
             log.warn("test failed: " + dataSourceName + " (" + testSQL + ")");
             throw new CheckException("DataSource is not usable: " + dataSourceName, e);
         }
