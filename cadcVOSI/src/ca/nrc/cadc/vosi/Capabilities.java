@@ -3,12 +3,12 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2010.                            (c) 2010.
+*  (c) 2009.                            (c) 2009.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*
+*                                       
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*
+*                                       
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*
+*                                       
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*
+*                                       
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*
+*                                       
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -62,109 +62,42 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
+*  $Revision: 4 $
 *
 ************************************************************************
 */
 
 package ca.nrc.cadc.vosi;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.Namespace;
 
 
 /**
- * Minimal implementation of the Capabilities model in VOResource 1.0.
- * 
- * resourceIdentifier is a base URI which identifies a service provided by 
- * the managed authority, e.g. ivoa://cadc.nrc.ca/vospacev2.1. 
- * 
- * capability represents a general function of the service, usually in terms
- * of a standard service protocol (e.g. SIA), but not necessarily. A service 
- * can have many capabilities associated with it, each reflecting a
- * different aspect of the functionality it provides.
- * 
- * @author yeunga
+ * @author zhangsa
+ *
  */
 public class Capabilities
 {
-    private static Logger log = Logger.getLogger(Capabilities.class);
-
-    private URI resourceIdentifier;
-    private List<Capability> capabilities;
+    private List<Capability> _caps;
 
     /**
-     * Constructor. 
-     * @throws URISyntaxException 
+     * @param host
+     * @param context
+     * @param standardID
+     * @param resourceName
+     * @param role
      */
-    public Capabilities(final URI resourceID) 
-    		throws URISyntaxException
+    public Capabilities(List<Capability> caps)
     {
-    	validateResourceID(resourceID);
-
-        this.resourceIdentifier = new URI(resourceID.toString());
-        this.capabilities = new ArrayList<Capability>();
+        _caps = caps;
     }
     
-    /**
-     * Find the resource identifier associated with the capabilities.
-     * 
-     * @return associated resource identifier
-     */
-    public URI getResourceIdentifier() 
+    public Document toXmlDocument()
     {
-		try 
-		{
-			return new URI(this.resourceIdentifier.toString());
-		} 
-		catch (URISyntaxException e) 
-		{
-			// Checked at construction time, so should not happen.
-			throw new RuntimeException(e);
-		}
-	}
-
-    /**
-     * Find all associated capabilities.
-     * 
-     * @return all associated capabilities.
-     */
-	public List<Capability> getCapabilities() 
-	{
-		return this.capabilities;
-	}
-	
-	/**
-	 * Find the capability associated with the specified standard identifier.
-	 * 
-	 * @param standardID standard identifier for the required capability
-	 * @return capability found or null if not found
-	 */
-	public Capability findCapability(final URI standardID)
-	{
-		for (Capability cap : this.capabilities)
-		{
-			if (cap.hasAttribute(standardID))
-			{
-				return cap;
-			}
-		}
-		
-		return null;
-	}
-	
-	/**
-	 * Produce an XML document
-	 */
-	public Document toXmlDocument()
-	{
         Namespace xsi = Namespace.getNamespace("xsi", VOSI.XSI_NS_URI);
         Namespace cap = Namespace.getNamespace("vosi", VOSI.CAPABILITIES_NS_URI);
         Namespace vod = Namespace.getNamespace("vod", VOSI.VODATASERVICE_NS_URI);
@@ -177,20 +110,20 @@ public class Capabilities
         Document document = new Document();
         document.addContent(eleCapabilities);
 
-        for (Capability capability : this.capabilities)
+        for (Capability capability : this._caps)
         {
             eleCapabilities.addContent(capability.toXmlElement(xsi, cap, vod));
         }
-        
         return document;
-	}
-	
-	private void validateResourceID(final URI resourceID)
-	{
-		if (resourceID == null)
-		{
-			String msg = "resource identifier for a Capabilities object cannot be null.";
-			throw new IllegalArgumentException(msg);
-		}
-	}
+    }
+
+    public List<Capability> getCaps()
+    {
+        return _caps;
+    }
+
+    public void setCaps(List<Capability> caps)
+    {
+        _caps = caps;
+    }
 }

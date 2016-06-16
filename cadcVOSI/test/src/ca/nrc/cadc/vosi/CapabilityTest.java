@@ -3,12 +3,12 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2009.                            (c) 2009.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*
+*                                       
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*
+*                                       
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*
+*                                       
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*
+*                                       
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*
+*                                       
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -62,104 +62,101 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
+*  $Revision: 4 $
 *
 ************************************************************************
 */
 
 package ca.nrc.cadc.vosi;
 
-
 import ca.nrc.cadc.util.Log4jInit;
-import java.net.URI;
-import java.util.List;
+import ca.nrc.cadc.xml.XmlUtil;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
+import org.jdom2.Document;
+import org.jdom2.output.Format;
+import org.jdom2.output.XMLOutputter;
+import org.junit.Before;
 import org.junit.Test;
 
-/**
- *
- * @author yeunga
- */
-public class CapabilityTest 
-{
-    private static final Logger log = Logger.getLogger(CapabilityTest.class);
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-    private String ACCESS_URL = "http://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/tap/availability";
-    private String ACCESS_URL_2 = "https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/tap/capabilities";
-    private String ACCESS_URL_3 = "http://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/tap/sync";
-    private String STANDARD_ID = "ivo://ivo.net/std/tap#sync-v1.1";
-    
+/**
+ * @author zhangsa
+ *
+ */
+public class CapabilityTest
+{
+    private static Logger log = Logger.getLogger(CapabilityTest.class);
     static
     {
-        Log4jInit.setLevel("ca.nrc.cadc.vosi", Level.INFO);
+        Log4jInit.setLevel("ca.nrc.cadc.vosi", Level.DEBUG);
     }
-    
-    public CapabilityTest() { }
-    
-    @Test
-    public void testNullStandardID()
+
+    String schemaResource1 = VOSI.CAPABILITIES_SCHEMA;
+    String schemaNSKey1 = VOSI.CAPABILITIES_NS_URI;
+
+    String schemaNSKey2 = VOSI.VORESOURCE_NS_URI;
+    String schemaResource2 =  VOSI.VORESOURCE_SCHEMA;
+
+    String schemaNSKey3 = VOSI.VODATASERVICE_NS_URI;
+    String schemaResource3 = VOSI.VODATASERVICE_SCHEMA;
+
+    Map<String, String> schemaNSMap;
+
+    /**
+     * @throws java.lang.Exception
+     */
+    //@Before
+    public void setUp() throws Exception
     {
-        try
-        {
-            new Interface(null);
-            Assert.fail("expected IllegalArgumentException");
-        }
-        catch(IllegalArgumentException ex)
-        {
-        	// expected
-        }
-        catch(Throwable t)
-        {
-            Assert.fail("unexpected t: " + t);
-        }
+        schemaNSMap = new HashMap<String, String>();
+        schemaNSMap.put(schemaNSKey1, XmlUtil.getResourceUrlString(schemaResource1, CapabilityTest.class));
+        schemaNSMap.put(schemaNSKey2, XmlUtil.getResourceUrlString(schemaResource2, CapabilityTest.class));
+        schemaNSMap.put(schemaNSKey3, XmlUtil.getResourceUrlString(schemaResource3, CapabilityTest.class));
     }
-    
+
     @Test
-    public void testConstruction()
+    public void testCapabilities() throws Exception
     {
-    	try
-    	{
-    		Capability cap = new Capability(new URI(STANDARD_ID));
-    		URI standardID = cap.getStandardID();
-    		Assert.assertNotNull("accessURL should not be null", standardID);
-    		Assert.assertEquals("accessURL is corrupted", STANDARD_ID, standardID.toString());
-    		Assert.assertNotNull("interfaces should not be null", cap.getInterfaces());
-    		Assert.assertEquals("interfaces should be empty", 0, cap.getInterfaces().size());
-    	}
-    	catch (Throwable t)
-    	{
-            log.error("unexpected exception", t);
-            Assert.fail("unexpected exception: " + t);
-    	}
-    }
-    
-    @Test
-    public void testInterfaces()
-    {
-    	try
-    	{
-    		// construct an Capability object
-    		Capability cap = new Capability(new URI(STANDARD_ID));
-    		List<Interface> interfaces = cap.getInterfaces();
-    		
-    		// test correct interface is added
-    		interfaces.add(new Interface(new URI(ACCESS_URL)));
-    		Assert.assertEquals("interfaces should have one entry", 1, interfaces.size());
-    		Interface[] intfArray = interfaces.toArray(new Interface[interfaces.size()]);
-    		Assert.assertEquals("interface contains a different access URL", ACCESS_URL, intfArray[0].getAccessURL().toString());
-    		
-    		// test correct number of security methods are added 
-    		interfaces.add(new Interface(new URI(ACCESS_URL_2)));
-    		Assert.assertEquals("interfaces should have one entry", 2, interfaces.size());
-    		interfaces.add(new Interface(new URI(ACCESS_URL_3)));
-    		Assert.assertEquals("interfaces should have one entry", 3, interfaces.size());
-    	}
-    	catch (Throwable t)
-    	{
-            log.error("unexpected exception", t);
-    		Assert.fail("unexpected exception: " + t);
-    	}
+    	// alinga-- commented out references to previous Capability and Capbilities classes
+        List<Capability> capList = new ArrayList<Capability>();
+        // no trailing slash on context url
+//        Capability cap1 = new Capability("http://example.com/myApp", "ivo://ivoa.net/std/VOSI#capability", "capabilities", null);
+//        capList.add(cap1);
+        // with trailing slash on context url
+//        Capability cap2 = new Capability("http://example.com/myApp/", "ivo://ivoa.net/std/VOSI#availability", "availability", null);
+//        capList.add(cap2);
+        // with a role
+//        Capability cap3 = new Capability("http://example.com/myApp/", "ivo://ivoa.net/std/Something", "something", "std");
+//        capList.add(cap3);
+
+        //Capabilities caps = new Capabilities(capList);
+        //Document doc = caps.toXmlDocument();
+
+        XMLOutputter xop = new XMLOutputter(Format.getPrettyFormat());
+        Writer stringWriter = new StringWriter();
+//        xop.output(doc, stringWriter);
+        String xmlString = stringWriter.toString();
+        
+        //StringReader reader = new StringReader(xmlString);
+        //XmlUtil.buildDocument(reader, schemaNSMap);
+        CapabilitiesParser cp = new CapabilitiesParser();
+        Document doc2 = cp.parse(new StringReader(xmlString));
+
+        // these xpath tests are somewhat brittle as a change in the prefix in Capabilities.java
+        // would require a change here
+        // TODO: find the prefix by examining the xmlns attributes of the root element
+//        TestUtil.assertXmlNode(doc, "/vosi:capabilities", VOSI.NS_PREFIX, VOSI.CAPABILITIES_NS_URI);
+//        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability[@standardID='ivo://ivoa.net/std/VOSI#capability']", VOSI.NS_PREFIX, VOSI.CAPABILITIES_NS_URI);
+//        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability[@standardID='ivo://ivoa.net/std/VOSI#availability']", VOSI.NS_PREFIX, VOSI.CAPABILITIES_NS_URI);
+//        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability[@standardID='ivo://ivoa.net/std/Something']", VOSI.NS_PREFIX, VOSI.CAPABILITIES_NS_URI);
+//        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability/interface/accessURL[.='http://example.com/myApp/availability']", VOSI.NS_PREFIX, VOSI.CAPABILITIES_NS_URI);
     }
 }
