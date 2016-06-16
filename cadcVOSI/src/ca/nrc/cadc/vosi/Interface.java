@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2010.                            (c) 2010.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -69,97 +69,126 @@
 
 package ca.nrc.cadc.vosi;
 
-
-import ca.nrc.cadc.util.Log4jInit;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.List;
-import org.apache.log4j.Level;
+
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Test;
+import org.jdom2.Attribute;
+import org.jdom2.Element;
+import org.jdom2.Namespace;
+
 
 /**
- *
+ * Minimal implementation of the Interface model in VOResource 1.0.
+ * 
+ * accessURL is the URL (or base URL) that a client uses to access the service.  
+ * If multiple accessURL is provided, each URL should point to a functionally
+ * identical or "mirror" installation of the same service and administered 
+ * by the same publisher. Currently we only support one accessURL.
+ * 
+ * securityMethod is the mechanism the client must employ to gain secure 
+ * access to the service.
+ * 
+ * 
  * @author yeunga
  */
-public class CapabilityTest 
+public class Interface
 {
-    private static final Logger log = Logger.getLogger(CapabilityTest.class);
+    private static Logger log = Logger.getLogger(Interface.class);
 
-    private String ACCESS_URL = "http://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/tap/availability";
-    private String ACCESS_URL_2 = "https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/tap/capabilities";
-    private String ACCESS_URL_3 = "http://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/tap/sync";
-    private String STANDARD_ID = "ivo://ivo.net/std/tap#sync-v1.1";
+    // Use List to preserve order
+    private URI accessURL;
+    private List<URI> securityMethods;
     
-    static
+    // TODO: determine what we want to do with role and use, 
+    //       for now hardcode it to "std"
+    private String role = "std";
+
+    /**
+     * Constructor. 
+     * @throws URISyntaxException 
+     */
+    public Interface(final URI accessURL) 
+    		throws URISyntaxException
     {
-        Log4jInit.setLevel("ca.nrc.cadc.vosi", Level.INFO);
+    	validateAccessURL(accessURL);
+    	
+    	// TODO: check that each entry in a list is unique?
+        this.accessURL = new URI(accessURL.toString());
+        this.securityMethods = new ArrayList<URI>();
     }
     
-    public CapabilityTest() { }
-    
-    @Test
-    public void testNullStandardID()
+    public URI getAccessURL() 
     {
-        try
+		try 
+		{
+			return new URI(this.accessURL.toString());
+		} 
+		catch (URISyntaxException e) 
+		{
+			// Should not happen since it has been checked at construction time.
+			throw new RuntimeException(e);
+		}
+	}
+
+
+	public List<URI> getSecurityMethods() 
+	{
+		return this.securityMethods;
+	}
+	
+	public boolean useSecurityMethod(final URI securityMethod)
+	{
+		for (URI sm : this.securityMethods)
+		{
+			if (sm.toString().equals(securityMethod.toString()))
+			{
+				return true;
+			}
+		}
+		
+		return false;
+	}
+    
+    public Element toXmlElement(Namespace xsi, Namespace cap, Namespace vod)
+    {
+        Element eleInterface = new Element("interface");
+        
+    	// set Interface attributes
+        Attribute attType = new Attribute("type", vod.getPrefix() + ":ParamHTTP", xsi);
+        eleInterface.setAttribute(attType);            
+        if (this.role != null)
         {
-            new Interface(null);
-            Assert.fail("expected IllegalArgumentException");
+            eleInterface.setAttribute("role", this.role);
         }
-        catch(IllegalArgumentException ex)
+ 
+        // accessURL element
+        Element eleAccessURL = new Element("accessURL");
+        eleInterface.addContent(eleAccessURL);            
+        // TODO: determine if we can hardcode "use" to "full"
+        eleAccessURL.setAttribute("use", "full");
+        eleAccessURL.setText(this.accessURL.toString());
+   
+        // securityMethod elements
+        for (URI securityMethod : this.securityMethods)
         {
-        	// expected
+        	Element eleSecurityMethod = new Element("securityMethod");
+            Attribute attribute = new Attribute("standardID", securityMethod.toString());
+            eleSecurityMethod.setAttribute(attribute);
+        	eleInterface.addContent(eleSecurityMethod);
         }
-        catch(Throwable t)
-        {
-            Assert.fail("unexpected t: " + t);
-        }
+        
+        return eleInterface;
     }
-    
-    @Test
-    public void testConstruction()
-    {
-    	try
-    	{
-    		Capability cap = new Capability(new URI(STANDARD_ID));
-    		URI standardID = cap.getStandardID();
-    		Assert.assertNotNull("accessURL should not be null", standardID);
-    		Assert.assertEquals("accessURL is corrupted", STANDARD_ID, standardID.toString());
-    		Assert.assertNotNull("interfaces should not be null", cap.getInterfaces());
-    		Assert.assertEquals("interfaces should be empty", 0, cap.getInterfaces().size());
-    	}
-    	catch (Throwable t)
-    	{
-            log.error("unexpected exception", t);
-            Assert.fail("unexpected exception: " + t);
-    	}
-    }
-    
-    @Test
-    public void testInterfaces()
-    {
-    	try
-    	{
-    		// construct an Capability object
-    		Capability cap = new Capability(new URI(STANDARD_ID));
-    		List<Interface> interfaces = cap.getInterfaces();
-    		
-    		// test correct interface is added
-    		interfaces.add(new Interface(new URI(ACCESS_URL)));
-    		Assert.assertEquals("interfaces should have one entry", 1, interfaces.size());
-    		Interface[] intfArray = interfaces.toArray(new Interface[interfaces.size()]);
-    		Assert.assertEquals("interface contains a different access URL", ACCESS_URL, intfArray[0].getAccessURL().toString());
-    		
-    		// test correct number of security methods are added 
-    		interfaces.add(new Interface(new URI(ACCESS_URL_2)));
-    		Assert.assertEquals("interfaces should have one entry", 2, interfaces.size());
-    		interfaces.add(new Interface(new URI(ACCESS_URL_3)));
-    		Assert.assertEquals("interfaces should have one entry", 3, interfaces.size());
-    	}
-    	catch (Throwable t)
-    	{
-            log.error("unexpected exception", t);
-    		Assert.fail("unexpected exception: " + t);
-    	}
-    }
+	
+	private void validateAccessURL(final URI accessURL)
+	{
+		if (accessURL == null)
+		{
+			String msg = "access URL for an Interface object cannot be null.";
+			throw new IllegalArgumentException(msg);
+		}
+	}
 }

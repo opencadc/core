@@ -163,14 +163,18 @@ public class CapabilitiesServlet extends HttpServlet
             paramValue = this.getInitParameter(resourceName);
             standardID = Util.getStringPartBefore(paramValue, space);
             role = Util.getStringPartAfter(paramValue, space);
-            capability = new Capability(hostContext, standardID, resourceName, role);
-            caps.add(capability);
+            // TODO: s1849 fix the commented out statements below which refer to 
+            //       the previous Capability class
+//            capability = new Capability(hostContext, standardID, resourceName, role);
+//            caps.add(capability);
         }
 
-        Capabilities capabilities = new Capabilities(caps);
-        Document document = capabilities.toXmlDocument();
+        // TODO: s1849 fix the commented out statements below which refer to 
+        //       the previous Capability class
+//        Capabilities capabilities = new Capabilities(caps);
+//        Document document = capabilities.toXmlDocument();
         XMLOutputter xop = new XMLOutputter(Format.getPrettyFormat());
         response.setContentType("text/xml");
-        xop.output(document, response.getOutputStream());
+//        xop.output(document, response.getOutputStream());
     }
 }

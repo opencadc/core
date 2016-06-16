@@ -82,28 +82,28 @@ import org.junit.Test;
  *
  * @author yeunga
  */
-public class CapabilityTest 
+public class CapabilitiesTest 
 {
-    private static final Logger log = Logger.getLogger(CapabilityTest.class);
+    private static final Logger log = Logger.getLogger(CapabilitiesTest.class);
 
-    private String ACCESS_URL = "http://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/tap/availability";
-    private String ACCESS_URL_2 = "https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/tap/capabilities";
-    private String ACCESS_URL_3 = "http://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/tap/sync";
     private String STANDARD_ID = "ivo://ivo.net/std/tap#sync-v1.1";
+    private String STANDARD_ID_2 = "ivo://ivo.net/std/tap#async-v1.1";
+    private String STANDARD_ID_3= "ivo://ivo.net/std/tap#tables-v1.1";
+    private String RESOURCE_ID = "ivo://cadc.nrc.ca/tap";
     
     static
     {
         Log4jInit.setLevel("ca.nrc.cadc.vosi", Level.INFO);
     }
     
-    public CapabilityTest() { }
+    public CapabilitiesTest() { }
     
     @Test
-    public void testNullStandardID()
+    public void testNullResourceID()
     {
         try
         {
-            new Interface(null);
+            new Capability(null);
             Assert.fail("expected IllegalArgumentException");
         }
         catch(IllegalArgumentException ex)
@@ -121,12 +121,12 @@ public class CapabilityTest
     {
     	try
     	{
-    		Capability cap = new Capability(new URI(STANDARD_ID));
-    		URI standardID = cap.getStandardID();
-    		Assert.assertNotNull("accessURL should not be null", standardID);
-    		Assert.assertEquals("accessURL is corrupted", STANDARD_ID, standardID.toString());
-    		Assert.assertNotNull("interfaces should not be null", cap.getInterfaces());
-    		Assert.assertEquals("interfaces should be empty", 0, cap.getInterfaces().size());
+    		Capabilities caps = new Capabilities(new URI(RESOURCE_ID));
+    		URI resourceID = caps.getResourceIdentifier();
+    		Assert.assertNotNull("accessURL should not be null", resourceID);
+    		Assert.assertEquals("resource identifier is corrupted", RESOURCE_ID, resourceID.toString());
+    		Assert.assertNotNull("capabilities should not be null", caps.getCapabilities());
+    		Assert.assertEquals("capabilities should be empty", 0, caps.getCapabilities().size());
     	}
     	catch (Throwable t)
     	{
@@ -136,25 +136,25 @@ public class CapabilityTest
     }
     
     @Test
-    public void testInterfaces()
+    public void testCapabilities()
     {
     	try
     	{
-    		// construct an Capability object
-    		Capability cap = new Capability(new URI(STANDARD_ID));
-    		List<Interface> interfaces = cap.getInterfaces();
+    		// construct a Capabilities object
+    		Capabilities capabilities = new Capabilities(new URI(RESOURCE_ID));
+    		List<Capability> caps = capabilities.getCapabilities();
     		
-    		// test correct interface is added
-    		interfaces.add(new Interface(new URI(ACCESS_URL)));
-    		Assert.assertEquals("interfaces should have one entry", 1, interfaces.size());
-    		Interface[] intfArray = interfaces.toArray(new Interface[interfaces.size()]);
-    		Assert.assertEquals("interface contains a different access URL", ACCESS_URL, intfArray[0].getAccessURL().toString());
+    		// test correct capability is added
+    		caps.add(new Capability(new URI(STANDARD_ID)));
+    		Assert.assertEquals("capability list should have one entry", 1, caps.size());
+    		Capability[] capArray = caps.toArray(new Capability[caps.size()]);
+    		Assert.assertEquals("capability list contains a different capability", STANDARD_ID, capArray[0].getStandardID().toString());
     		
-    		// test correct number of security methods are added 
-    		interfaces.add(new Interface(new URI(ACCESS_URL_2)));
-    		Assert.assertEquals("interfaces should have one entry", 2, interfaces.size());
-    		interfaces.add(new Interface(new URI(ACCESS_URL_3)));
-    		Assert.assertEquals("interfaces should have one entry", 3, interfaces.size());
+    		// test correct number of capability are added 
+    		caps.add(new Capability(new URI(STANDARD_ID_2)));
+    		Assert.assertEquals("capability list should have one entry", 2, caps.size());
+    		caps.add(new Capability(new URI(STANDARD_ID_3)));
+    		Assert.assertEquals("capability list should have one entry", 3, caps.size());
     	}
     	catch (Throwable t)
     	{

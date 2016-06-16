@@ -147,7 +147,9 @@
 
             <test name="ca.nrc.cadc.vosi.AvailabilityClientTest"/>
             <test name="ca.nrc.cadc.vosi.AvailabilityTest"/>
+	        <test name="ca.nrc.cadc.vosi.InterfaceTest"/>
 	        <test name="ca.nrc.cadc.vosi.CapabilityTest"/>
+	        <test name="ca.nrc.cadc.vosi.CapabilitiesTest"/>
             <test name="ca.nrc.cadc.vosi.avail.CheckDataSourceTest"/>
             <test name="ca.nrc.cadc.vosi.avail.CheckWebServiceTest"/>
             <test name="ca.nrc.cadc.vosi.avail.CheckURLTest"/>

@@ -70,6 +70,7 @@
 package ca.nrc.cadc.vosi;
 
 
+import ca.nrc.cadc.auth.AuthMethod;
 import ca.nrc.cadc.util.Log4jInit;
 import java.net.URI;
 import java.util.List;
@@ -82,24 +83,21 @@ import org.junit.Test;
  *
  * @author yeunga
  */
-public class CapabilityTest 
+public class InterfaceTest 
 {
-    private static final Logger log = Logger.getLogger(CapabilityTest.class);
+    private static final Logger log = Logger.getLogger(InterfaceTest.class);
 
     private String ACCESS_URL = "http://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/tap/availability";
-    private String ACCESS_URL_2 = "https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/tap/capabilities";
-    private String ACCESS_URL_3 = "http://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/tap/sync";
-    private String STANDARD_ID = "ivo://ivo.net/std/tap#sync-v1.1";
     
     static
     {
         Log4jInit.setLevel("ca.nrc.cadc.vosi", Level.INFO);
     }
     
-    public CapabilityTest() { }
+    public InterfaceTest() { }
     
     @Test
-    public void testNullStandardID()
+    public void testNullAccessURL()
     {
         try
         {
@@ -121,12 +119,12 @@ public class CapabilityTest
     {
     	try
     	{
-    		Capability cap = new Capability(new URI(STANDARD_ID));
-    		URI standardID = cap.getStandardID();
-    		Assert.assertNotNull("accessURL should not be null", standardID);
-    		Assert.assertEquals("accessURL is corrupted", STANDARD_ID, standardID.toString());
-    		Assert.assertNotNull("interfaces should not be null", cap.getInterfaces());
-    		Assert.assertEquals("interfaces should be empty", 0, cap.getInterfaces().size());
+    		Interface intf = new Interface(new URI(ACCESS_URL));
+    		URI accessURL = intf.getAccessURL();
+    		Assert.assertNotNull("accessURL should not be null", accessURL);
+    		Assert.assertEquals("accessURL is corrupted", ACCESS_URL, accessURL.toString());
+    		Assert.assertNotNull("securityMethods should not be null", intf.getSecurityMethods());
+    		Assert.assertEquals("securityMethods should be empty", 0, intf.getSecurityMethods().size());
     	}
     	catch (Throwable t)
     	{
@@ -136,25 +134,25 @@ public class CapabilityTest
     }
     
     @Test
-    public void testInterfaces()
+    public void testSecurityMethods()
     {
     	try
     	{
-    		// construct an Capability object
-    		Capability cap = new Capability(new URI(STANDARD_ID));
-    		List<Interface> interfaces = cap.getInterfaces();
+    		// construct an Interface object
+    		Interface intf = new Interface(new URI(ACCESS_URL));
+    		List<URI> securityMethods = intf.getSecurityMethods();
     		
-    		// test correct interface is added
-    		interfaces.add(new Interface(new URI(ACCESS_URL)));
-    		Assert.assertEquals("interfaces should have one entry", 1, interfaces.size());
-    		Interface[] intfArray = interfaces.toArray(new Interface[interfaces.size()]);
-    		Assert.assertEquals("interface contains a different access URL", ACCESS_URL, intfArray[0].getAccessURL().toString());
+    		// test correct security method type is added
+    		securityMethods.add(AuthMethod.ANON.getSecurityMethod());
+    		Assert.assertEquals("securityMethods should have one entry", 1, securityMethods.size());
+    		URI[] smArray = securityMethods.toArray(new URI[securityMethods.size()]);
+    		Assert.assertTrue("should be an anonymous security method", smArray[0].toString().contains("anon"));
     		
     		// test correct number of security methods are added 
-    		interfaces.add(new Interface(new URI(ACCESS_URL_2)));
-    		Assert.assertEquals("interfaces should have one entry", 2, interfaces.size());
-    		interfaces.add(new Interface(new URI(ACCESS_URL_3)));
-    		Assert.assertEquals("interfaces should have one entry", 3, interfaces.size());
+    		securityMethods.add(AuthMethod.CERT.getSecurityMethod());
+    		Assert.assertEquals("securityMethods should have one entry", 2, securityMethods.size());
+    		securityMethods.add(AuthMethod.COOKIE.getSecurityMethod());
+    		Assert.assertEquals("securityMethods should have one entry", 3, securityMethods.size());
     	}
     	catch (Throwable t)
     	{

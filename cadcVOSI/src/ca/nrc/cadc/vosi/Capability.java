@@ -3,12 +3,12 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2010.                            (c) 2010.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -62,105 +62,126 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 4 $
+*  $Revision: 5 $
 *
 ************************************************************************
 */
 
 package ca.nrc.cadc.vosi;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.log4j.Logger;
 import org.jdom2.Attribute;
 import org.jdom2.Element;
 import org.jdom2.Namespace;
 
 
 /**
- * @author zhangsa
- *
+ * Minimal implementation of the IVOA Capability model in VOResource 1.0.
+ * 
+ * standardID is a URI which represents a service standard, e.g. ivo://ivoa.net/std/TAP
+ * 
+ * interface specifies how the capability can be accessed. At least one interface
+ * must be provided. If more than one is provided, each interface should provide
+ * an alternative interface for accessing essentially the same underlying
+ * capability. The interfaces can differ in their overall type or in the
+ * supported input parameters or output products.
+ * 
+ * @author yeunga
  */
 public class Capability
 {
-    private String _hostContext;
-    private String _standardID;
-    private String _resourceName;
-    private String _role = null;
+    private static Logger log = Logger.getLogger(Capability.class);
+
+    // Use List to preserve the order.
+    private URI standardID;
+    private List<Interface> interfaces;
 
     /**
-     * @param host
-     * @param context
-     * @param standardID
-     * @param resourceName
-     * @param role
+     * Constructor. 
+     * @throws URISyntaxException 
      */
-    public Capability(String context, String standardID, String resourceName, String role)
+    public Capability(final URI standardID) 
+    		throws URISyntaxException
     {
-        super();
-        _hostContext = context;
-        _standardID = standardID;
-        _resourceName = resourceName;
-        _role = role;
+    	validateStandardID(standardID);
+
+    	// TODO: check that each entry in a list is unique?
+        this.standardID = new URI(standardID.toString());
+        this.interfaces = new ArrayList<Interface>();
     }
     
-    public Element toXmlElement(Namespace xsi, Namespace cap, Namespace vor)
+    public URI getStandardID() 
+    {
+		try 
+		{
+			return new URI(this.standardID.toString());
+		} 
+		catch (URISyntaxException e) 
+		{
+			// Checked at construction time, so should not happen.
+			throw new RuntimeException(e);
+		}
+	}
+
+	public List<Interface> getInterfaces() 
+	{
+		return this.interfaces;
+	}
+	
+	public boolean hasAttribute(final URI standardID)
+	{
+		if (this.standardID.toString().equals(standardID.toString()))
+		{
+			return true;
+		}
+		
+		return false;
+	}
+	
+	public Interface findInterface(final URI securityMethod)
+	{
+		for (Interface intf : this.interfaces)
+		{
+			if (intf.useSecurityMethod(securityMethod))
+			{
+				return intf;
+			}
+		}
+		
+		return null;
+	}
+    
+	/**
+	 * Produce an 
+	 * @param xsi
+	 * @param cap
+	 * @param vod
+	 * @return
+	 */
+    public Element toXmlElement(Namespace xsi, Namespace cap, Namespace vod)
     {
         Element eleCapability = new Element("capability");
-        eleCapability.setAttribute("standardID", _standardID);
+        eleCapability.setAttribute("standardID", this.standardID.toString());
         
-        Element eleInterface = new Element("interface");
-        eleCapability.addContent(eleInterface);
-
-        Attribute attType = new Attribute("type", vor.getPrefix() + ":ParamHTTP", xsi);
-        eleInterface.setAttribute(attType);
-        if (_role != null)
-            eleInterface.setAttribute("role", _role);
-        
-        Element eleAccessURL = new Element("accessURL");
-        eleInterface.addContent(eleAccessURL);
-        
-        eleAccessURL.setAttribute("use", "full");
-        eleAccessURL.setText(_hostContext + _resourceName);
+        for (Interface intf : this.interfaces)
+        {
+        	eleCapability.addContent(intf.toXmlElement(xsi, cap, vod));
+        }
         
         return eleCapability;
     }
-    
-    public String getHostContext()
-    {
-        return _hostContext;
-    }
-
-    public void setHostContext(String context)
-    {
-        _hostContext = context;
-    }
-
-    public String getStandardID()
-    {
-        return _standardID;
-    }
-
-    public void setStandardID(String standardID)
-    {
-        _standardID = standardID;
-    }
-
-    public String getResourceName()
-    {
-        return _resourceName;
-    }
-
-    public void setResourceName(String resourceName)
-    {
-        _resourceName = resourceName;
-    }
-
-    public String getRole()
-    {
-        return _role;
-    }
-
-    public void setRole(String role)
-    {
-        _role = role;
-    }
-
+	
+	private void validateStandardID(final URI standardID)
+	{
+		if (standardID == null)
+		{
+			String msg = "standard identifier for a Capability object cannot be null.";
+			throw new IllegalArgumentException(msg);
+		}
+	}
 }
