@@ -84,8 +84,6 @@ public class VOSI
 {
     public static final String NS_PREFIX = "vosi";
 	
-    public static final String XSI_NS_URI = "http://www.w3.org/2001/XMLSchema-instance";
-    
     public static final String XLINK_NS_URI = "http://www.w3.org/1999/xlink";
     
     public static final String AVAILABILITY_NS_URI = "http://www.ivoa.net/xml/VOSIAvailability/v1.0";
@@ -93,8 +91,6 @@ public class VOSI
     public static final String CAPABILITIES_NS_URI = "http://www.ivoa.net/xml/VOSICapabilities/v1.0";
 
     public static final String TABLES_NS_URI = "http://www.ivoa.net/xml/VOSITables/v1.0";
-
-    public static final String VODATASERVICE_NS_URI = "http://www.ivoa.net/xml/VODataService/v1.1";
 
     public static final String VORESOURCE_NS_URI = "http://www.ivoa.net/xml/VOResource/v1.0";
     

@@ -69,6 +69,7 @@
 
 package ca.nrc.cadc.vosi;
 
+import ca.nrc.cadc.reg.client.RegistryClient;
 import ca.nrc.cadc.util.Log4jInit;
 import ca.nrc.cadc.xml.XmlUtil;
 import org.apache.log4j.Level;
@@ -76,7 +77,6 @@ import org.apache.log4j.Logger;
 import org.jdom2.Document;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.StringReader;
@@ -105,7 +105,7 @@ public class CapabilityTest
     String schemaNSKey2 = VOSI.VORESOURCE_NS_URI;
     String schemaResource2 =  VOSI.VORESOURCE_SCHEMA;
 
-    String schemaNSKey3 = VOSI.VODATASERVICE_NS_URI;
+    String schemaNSKey3 = RegistryClient.VODATASERVICE_NS_URI;
     String schemaResource3 = VOSI.VODATASERVICE_SCHEMA;
 
     Map<String, String> schemaNSMap;

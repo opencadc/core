@@ -75,6 +75,9 @@ import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.Namespace;
 
+import ca.nrc.cadc.reg.client.RegistryClient;
+import ca.nrc.cadc.xml.XmlUtil;
+
 
 /**
  * @author zhangsa
@@ -98,9 +101,9 @@ public class Capabilities
     
     public Document toXmlDocument()
     {
-        Namespace xsi = Namespace.getNamespace("xsi", VOSI.XSI_NS_URI);
+        Namespace xsi = XmlUtil.XSI_NS; 
         Namespace cap = Namespace.getNamespace("vosi", VOSI.CAPABILITIES_NS_URI);
-        Namespace vod = Namespace.getNamespace("vod", VOSI.VODATASERVICE_NS_URI);
+        Namespace vod = RegistryClient.VODATASERVICE_NS;
 
         Element eleCapabilities = new Element("capabilities", cap);
         eleCapabilities.addNamespaceDeclaration(xsi);

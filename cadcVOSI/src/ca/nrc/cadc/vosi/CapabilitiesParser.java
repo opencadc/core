@@ -69,6 +69,7 @@
 
 package ca.nrc.cadc.vosi;
 
+import ca.nrc.cadc.reg.client.RegistryClient;
 import ca.nrc.cadc.xml.XmlUtil;
 import org.apache.log4j.Logger;
 import org.jdom2.Document;
@@ -125,8 +126,8 @@ public class CapabilitiesParser
             url = XmlUtil.getResourceUrlString(VOSI.VODATASERVICE_SCHEMA, CapabilitiesParser.class);
             if (url != null)
             {
-                log.debug(VOSI.VODATASERVICE_NS_URI + " -> " + url);
-                schemaMap.put(VOSI.VODATASERVICE_NS_URI, url);
+                log.debug(RegistryClient.VODATASERVICE_NS_URI + " -> " + url);
+                schemaMap.put(RegistryClient.VODATASERVICE_NS_URI, url);
             }
             else
                 log.warn("failed to find resource: " + VOSI.VODATASERVICE_SCHEMA);
@@ -143,8 +144,8 @@ public class CapabilitiesParser
             url = XmlUtil.getResourceUrlString(VOSI.XSI_SCHEMA, CapabilitiesParser.class);
             if (url != null)
             {
-                log.debug(VOSI.XSI_NS_URI + " -> " + url);
-                schemaMap.put(VOSI.XSI_NS_URI, url);
+                log.debug(XmlUtil.XSI_NS_URI + " -> " + url);
+                schemaMap.put(XmlUtil.XSI_NS_URI, url);
             }
             else
                 log.warn("failed to find resource: " + VOSI.XLINK_SCHEMA);

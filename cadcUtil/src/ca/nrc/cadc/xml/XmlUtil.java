@@ -100,7 +100,8 @@ public class XmlUtil
     private static Logger log = Logger.getLogger(XmlUtil.class);
     public static final String PARSER = "org.apache.xerces.parsers.SAXParser";
     private static final String GRAMMAR_POOL = "org.apache.xerces.parsers.XMLGrammarCachingConfiguration";
-    public static final Namespace XSI_NS = Namespace.getNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance");
+    public static final String XSI_NS_URI = "http://www.w3.org/2001/XMLSchema-instance";    
+    public static final Namespace XSI_NS = Namespace.getNamespace("xsi", XSI_NS_URI);
 
     /**
      * Deprecated convenience method.
