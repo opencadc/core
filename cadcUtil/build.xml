@@ -91,12 +91,20 @@
     <property name="jars" value="${ext.lib}/servlet-api.jar:${ext.lib}/log4j.jar:${ext.lib}/jdom2.jar:${ext.lib}/spring.jar:${ext.lib}/json.jar" />
     <property name="resources.dir" value="test/resources/" />
   
-    <target name="build" depends="compile">
+    <target name="build" depends="compile,resources">
         <jar jarfile="${build}/lib/${project}.jar"
                     basedir="${build}/class"
                     update="no">
                 <include name="ca/nrc/cadc/**" />
         </jar>
+    </target>
+
+    <target name="resources">
+        <copy todir="${build}/class">
+            <fileset dir="src/resources">
+                <include name="**.xsd" />
+            </fileset>
+        </copy>
     </target>
 
     <!-- JAR files needed to run the test suite -->
