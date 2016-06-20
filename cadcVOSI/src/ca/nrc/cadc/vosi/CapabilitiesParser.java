@@ -105,59 +105,59 @@ public class CapabilitiesParser
             this.schemaMap = new HashMap<String,String>();
             String url;
 
-            url = XmlUtil.getResourceUrlString(VOSI.CAPABILITIES_SCHEMA, CapabilitiesParser.class);
+            url = XmlUtil.getResourceUrlString(RegistryClient.CAPABILITIES_SCHEMA, CapabilitiesParser.class);
             if (url != null)
             {
-                log.debug(VOSI.CAPABILITIES_NS_URI + " -> " + url);
-                schemaMap.put(VOSI.CAPABILITIES_NS_URI, url);
+                log.debug(RegistryClient.CAPABILITIES_NS_URI + " -> " + url);
+                schemaMap.put(RegistryClient.CAPABILITIES_NS_URI, url);
             }
             else
-                log.warn("failed to find resource: " + VOSI.CAPABILITIES_SCHEMA);
+                log.warn("failed to find resource: " + RegistryClient.CAPABILITIES_SCHEMA);
 
-            url = XmlUtil.getResourceUrlString(VOSI.VORESOURCE_SCHEMA, CapabilitiesParser.class);
+            url = XmlUtil.getResourceUrlString(RegistryClient.VORESOURCE_SCHEMA, CapabilitiesParser.class);
             if (url != null)
             {
-                log.debug(VOSI.VORESOURCE_NS_URI + " -> " + url);
-                schemaMap.put(VOSI.VORESOURCE_NS_URI, url);
+                log.debug(RegistryClient.VORESOURCE_NS_URI + " -> " + url);
+                schemaMap.put(RegistryClient.VORESOURCE_NS_URI, url);
             }
             else
-                log.warn("failed to find resource: " + VOSI.VORESOURCE_SCHEMA);
+                log.warn("failed to find resource: " + RegistryClient.VORESOURCE_SCHEMA);
 
-            url = XmlUtil.getResourceUrlString(VOSI.VODATASERVICE_SCHEMA, CapabilitiesParser.class);
+            url = XmlUtil.getResourceUrlString(RegistryClient.VODATASERVICE_SCHEMA, CapabilitiesParser.class);
             if (url != null)
             {
                 log.debug(RegistryClient.VODATASERVICE_NS_URI + " -> " + url);
                 schemaMap.put(RegistryClient.VODATASERVICE_NS_URI, url);
             }
             else
-                log.warn("failed to find resource: " + VOSI.VODATASERVICE_SCHEMA);
+                log.warn("failed to find resource: " + RegistryClient.VODATASERVICE_SCHEMA);
             
-            url = XmlUtil.getResourceUrlString(VOSI.STC_SCHEMA, CapabilitiesParser.class);
+            url = XmlUtil.getResourceUrlString(RegistryClient.STC_SCHEMA, CapabilitiesParser.class);
             if (url != null)
             {
-                log.debug(VOSI.STC_NS_URI + " -> " + url);
-                schemaMap.put(VOSI.STC_NS_URI, url);
+                log.debug(RegistryClient.STC_NS_URI + " -> " + url);
+                schemaMap.put(RegistryClient.STC_NS_URI, url);
             }
             else
-                log.warn("failed to find resource: " + VOSI.STC_SCHEMA);
+                log.warn("failed to find resource: " + RegistryClient.STC_SCHEMA);
 
-            url = XmlUtil.getResourceUrlString(VOSI.XSI_SCHEMA, CapabilitiesParser.class);
+            url = XmlUtil.getResourceUrlString(XmlUtil.XSI_SCHEMA, CapabilitiesParser.class);
             if (url != null)
             {
                 log.debug(XmlUtil.XSI_NS_URI + " -> " + url);
                 schemaMap.put(XmlUtil.XSI_NS_URI, url);
             }
             else
-                log.warn("failed to find resource: " + VOSI.XLINK_SCHEMA);
+                log.warn("failed to find resource: " + RegistryClient.XLINK_SCHEMA);
             
-            url = XmlUtil.getResourceUrlString(VOSI.XLINK_SCHEMA, CapabilitiesParser.class);
+            url = XmlUtil.getResourceUrlString(RegistryClient.XLINK_SCHEMA, CapabilitiesParser.class);
             if (url != null)
             {
-                log.debug(VOSI.XLINK_NS_URI + " -> " + url);
-                schemaMap.put(VOSI.XLINK_NS_URI, url);
+                log.debug(RegistryClient.XLINK_NS_URI + " -> " + url);
+                schemaMap.put(RegistryClient.XLINK_NS_URI, url);
             }
             else
-                log.warn("failed to find resource: " + VOSI.XLINK_SCHEMA);
+                log.warn("failed to find resource: " + RegistryClient.XLINK_SCHEMA);
         }
     }
     

@@ -102,6 +102,7 @@ public class XmlUtil
     private static final String GRAMMAR_POOL = "org.apache.xerces.parsers.XMLGrammarCachingConfiguration";
     public static final String XSI_NS_URI = "http://www.w3.org/2001/XMLSchema-instance";    
     public static final Namespace XSI_NS = Namespace.getNamespace("xsi", XSI_NS_URI);
+    public static final String XSI_SCHEMA = "XMLSchema.xsd";
 
     /**
      * Deprecated convenience method.

@@ -102,7 +102,7 @@ public class Capabilities
     public Document toXmlDocument()
     {
         Namespace xsi = XmlUtil.XSI_NS; 
-        Namespace cap = Namespace.getNamespace("vosi", VOSI.CAPABILITIES_NS_URI);
+        Namespace cap = Namespace.getNamespace("vosi", RegistryClient.CAPABILITIES_NS_URI);
         Namespace vod = RegistryClient.VODATASERVICE_NS;
 
         Element eleCapabilities = new Element("capabilities", cap);
