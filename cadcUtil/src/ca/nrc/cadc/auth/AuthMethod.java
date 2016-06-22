@@ -92,7 +92,7 @@ public enum AuthMethod
         try
         {
             SEC_MAP.put(ANON, new URI("ivo://ivoa.net/sso#anon"));
-            SEC_MAP.put(CERT, new URI("ivo://ivoa.net/sso#tls-with-certficate"));
+            SEC_MAP.put(CERT, new URI("ivo://ivoa.net/sso#tls-with-certificate"));
             SEC_MAP.put(COOKIE, new URI("ivo://ivoa.net/sso#cookie"));
             SEC_MAP.put(PASSWORD, new URI("http://www.w3.org/Protocols/HTTP/1.0/spec.html#BasicAA"));
             SEC_MAP.put(TOKEN, new URI("ivo://cadc.nrc.ca/auth#delegation-token"));
