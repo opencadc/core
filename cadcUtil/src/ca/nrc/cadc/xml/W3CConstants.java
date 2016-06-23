@@ -67,66 +67,40 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.vosi;
+package ca.nrc.cadc.xml;
 
-import java.util.List;
+import java.net.URI;
 
-import org.jdom2.Document;
-import org.jdom2.Element;
+import org.apache.log4j.Logger;
 import org.jdom2.Namespace;
 
-import ca.nrc.cadc.reg.XMLConstants;
-import ca.nrc.cadc.xml.W3CConstants;
-
-
 /**
- * @author zhangsa
+ * XmlUtil  class for use with JDOM-2.
+ * @author yeunga
  *
  */
-public class Capabilities
+public class W3CConstants
 {
-    private List<Capability> _caps;
+    private static Logger log = Logger.getLogger(W3CConstants.class);
 
-    /**
-     * @param host
-     * @param context
-     * @param standardID
-     * @param resourceName
-     * @param role
-     */
-    public Capabilities(List<Capability> caps)
-    {
-        _caps = caps;
-    }
+    public static final URI XSI_NS_URI;
     
-    public Document toXmlDocument()
+    static 
     {
-        Namespace xsi = W3CConstants.XSI_NS; 
-        Namespace cap = XMLConstants.VODATASERVICE_NS;
-        Namespace vod = XMLConstants.VODATASERVICE_NS;
-
-        Element eleCapabilities = new Element("capabilities", cap);
-        eleCapabilities.addNamespaceDeclaration(xsi);
-        eleCapabilities.addNamespaceDeclaration(cap);
-        eleCapabilities.addNamespaceDeclaration(vod);
-
-        Document document = new Document();
-        document.addContent(eleCapabilities);
-
-        for (Capability capability : this._caps)
+        try 
         {
-            eleCapabilities.addContent(capability.toXmlElement(xsi, cap, vod));
+        	XSI_NS_URI = URI.create("http://www.w3.org/2001/XMLSchema-instance");
+        } 
+        catch(IllegalArgumentException bug)
+        {
+            throw new RuntimeException("BUG: invalid URI string in static constants", bug);
         }
-        return document;
-    }
+        catch(NullPointerException bug)
+        {
+            throw new RuntimeException("BUG: null URI string in static constants", bug);
+        }
+    }    
 
-    public List<Capability> getCaps()
-    {
-        return _caps;
-    }
-
-    public void setCaps(List<Capability> caps)
-    {
-        _caps = caps;
-    }
+    public static final String XSI_SCHEMA = "XMLSchema.xsd";
+    public static final Namespace XSI_NS = Namespace.getNamespace("xsi", XSI_NS_URI.toString());
 }

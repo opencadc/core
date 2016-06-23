@@ -69,7 +69,7 @@
 
 package ca.nrc.cadc.vosi;
 
-import ca.nrc.cadc.reg.client.RegistryClient;
+import ca.nrc.cadc.reg.XMLConstants;
 import ca.nrc.cadc.xml.XmlUtil;
 import org.apache.log4j.Logger;
 import org.jdom2.Document;
@@ -79,7 +79,6 @@ import org.jdom2.input.SAXBuilder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -102,62 +101,7 @@ public class CapabilitiesParser
     {
         if (enableSchemaValidation)
         {
-            this.schemaMap = new HashMap<String,String>();
-            String url;
-
-            url = XmlUtil.getResourceUrlString(RegistryClient.CAPABILITIES_SCHEMA, CapabilitiesParser.class);
-            if (url != null)
-            {
-                log.debug(RegistryClient.CAPABILITIES_NS_URI + " -> " + url);
-                schemaMap.put(RegistryClient.CAPABILITIES_NS_URI, url);
-            }
-            else
-                log.warn("failed to find resource: " + RegistryClient.CAPABILITIES_SCHEMA);
-
-            url = XmlUtil.getResourceUrlString(RegistryClient.VORESOURCE_SCHEMA, CapabilitiesParser.class);
-            if (url != null)
-            {
-                log.debug(RegistryClient.VORESOURCE_NS_URI + " -> " + url);
-                schemaMap.put(RegistryClient.VORESOURCE_NS_URI, url);
-            }
-            else
-                log.warn("failed to find resource: " + RegistryClient.VORESOURCE_SCHEMA);
-
-            url = XmlUtil.getResourceUrlString(RegistryClient.VODATASERVICE_SCHEMA, CapabilitiesParser.class);
-            if (url != null)
-            {
-                log.debug(RegistryClient.VODATASERVICE_NS_URI + " -> " + url);
-                schemaMap.put(RegistryClient.VODATASERVICE_NS_URI, url);
-            }
-            else
-                log.warn("failed to find resource: " + RegistryClient.VODATASERVICE_SCHEMA);
-            
-            url = XmlUtil.getResourceUrlString(RegistryClient.STC_SCHEMA, CapabilitiesParser.class);
-            if (url != null)
-            {
-                log.debug(RegistryClient.STC_NS_URI + " -> " + url);
-                schemaMap.put(RegistryClient.STC_NS_URI, url);
-            }
-            else
-                log.warn("failed to find resource: " + RegistryClient.STC_SCHEMA);
-
-            url = XmlUtil.getResourceUrlString(XmlUtil.XSI_SCHEMA, CapabilitiesParser.class);
-            if (url != null)
-            {
-                log.debug(XmlUtil.XSI_NS_URI + " -> " + url);
-                schemaMap.put(XmlUtil.XSI_NS_URI, url);
-            }
-            else
-                log.warn("failed to find resource: " + RegistryClient.XLINK_SCHEMA);
-            
-            url = XmlUtil.getResourceUrlString(RegistryClient.XLINK_SCHEMA, CapabilitiesParser.class);
-            if (url != null)
-            {
-                log.debug(RegistryClient.XLINK_NS_URI + " -> " + url);
-                schemaMap.put(RegistryClient.XLINK_NS_URI, url);
-            }
-            else
-                log.warn("failed to find resource: " + RegistryClient.XLINK_SCHEMA);
+            this.schemaMap = XMLConstants.getSchemaMap();
         }
     }
     
