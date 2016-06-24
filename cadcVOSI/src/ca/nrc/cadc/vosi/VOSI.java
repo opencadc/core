@@ -86,6 +86,11 @@ public class VOSI
 	
     public static final String AVAILABILITY_NS_URI = "http://www.ivoa.net/xml/VOSIAvailability/v1.0";
     
+    public static final String TABLES_NS_URI = "http://www.ivoa.net/xml/VOSITables/v1.0";
+
+
     public static final String AVAILABILITY_SCHEMA = "VOSIAvailability-v1.0.xsd";
+
+    public static final String TABLES_SCHEMA = "VOSITables-v1.0.xsd";
 
 }

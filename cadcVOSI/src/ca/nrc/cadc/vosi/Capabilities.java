@@ -102,7 +102,7 @@ public class Capabilities
     public Document toXmlDocument()
     {
         Namespace xsi = W3CConstants.XSI_NS; 
-        Namespace cap = XMLConstants.VODATASERVICE_NS;
+        Namespace cap = XMLConstants.CAPABILITIES_NS;
         Namespace vod = XMLConstants.VODATASERVICE_NS;
 
         Element eleCapabilities = new Element("capabilities", cap);

@@ -101,10 +101,9 @@ public class CapabilitiesParser
     {
         if (enableSchemaValidation)
         {
-            this.schemaMap = XMLConstants.getSchemaMap();
+            this.schemaMap = XMLConstants.SCHEMA_URL_MAP;
         }
     }
-    
     /**
      * Add an additional schema to the parser configuration. This is needed if the VOSI-capabilities
      * uses an extension schema for xsi:type.

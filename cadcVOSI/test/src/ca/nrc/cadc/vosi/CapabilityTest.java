@@ -99,14 +99,14 @@ public class CapabilityTest
         Log4jInit.setLevel("ca.nrc.cadc.vosi", Level.DEBUG);
     }
 
-    String schemaResource1 = XMLConstants.getSchema(XMLConstants.CAPABILITIES_NS_URI);
-    String schemaNSKey1 = XMLConstants.CAPABILITIES_NS_URI.toString();
+    String schemaResource1 = XMLConstants.getSchema(XMLConstants.VOSICAPABILITIES_10_NS_URI);
+    String schemaNSKey1 = XMLConstants.VOSICAPABILITIES_10_NS_URI.toString();
 
-    String schemaNSKey2 = XMLConstants.VORESOURCE_NS_URI.toString();
-    String schemaResource2 =  XMLConstants.getSchema(XMLConstants.VORESOURCE_NS_URI);
+    String schemaNSKey2 = XMLConstants.VORESOURCE_10_NS_URI.toString();
+    String schemaResource2 =  XMLConstants.getSchema(XMLConstants.VORESOURCE_10_NS_URI);
 
-    String schemaNSKey3 = XMLConstants.VODATASERVICE_NS_URI.toString();
-    String schemaResource3 = XMLConstants.getSchema(XMLConstants.VODATASERVICE_NS_URI);
+    String schemaNSKey3 = XMLConstants.VODATASERVICE_11_NS_URI.toString();
+    String schemaResource3 = XMLConstants.getSchema(XMLConstants.VODATASERVICE_11_NS_URI);
 
     Map<String, String> schemaNSMap;
 
@@ -152,10 +152,10 @@ public class CapabilityTest
         // these xpath tests are somewhat brittle as a change in the prefix in Capabilities.java
         // would require a change here
         // TODO: find the prefix by examining the xmlns attributes of the root element
-        TestUtil.assertXmlNode(doc, "/vosi:capabilities", VOSI.NS_PREFIX, XMLConstants.CAPABILITIES_NS_URI.toString());
-        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability[@standardID='ivo://ivoa.net/std/VOSI#capability']", VOSI.NS_PREFIX, XMLConstants.CAPABILITIES_NS_URI.toString());
-        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability[@standardID='ivo://ivoa.net/std/VOSI#availability']", VOSI.NS_PREFIX, XMLConstants.CAPABILITIES_NS_URI.toString());
-        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability[@standardID='ivo://ivoa.net/std/Something']", VOSI.NS_PREFIX, XMLConstants.CAPABILITIES_NS_URI.toString());
-        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability/interface/accessURL[.='http://example.com/myApp/availability']", VOSI.NS_PREFIX, XMLConstants.CAPABILITIES_NS_URI.toString());
+        TestUtil.assertXmlNode(doc, "/vosi:capabilities", VOSI.NS_PREFIX, XMLConstants.VOSICAPABILITIES_10_NS_URI.toString());
+        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability[@standardID='ivo://ivoa.net/std/VOSI#capability']", VOSI.NS_PREFIX, XMLConstants.VOSICAPABILITIES_10_NS_URI.toString());
+        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability[@standardID='ivo://ivoa.net/std/VOSI#availability']", VOSI.NS_PREFIX, XMLConstants.VOSICAPABILITIES_10_NS_URI.toString());
+        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability[@standardID='ivo://ivoa.net/std/Something']", VOSI.NS_PREFIX, XMLConstants.VOSICAPABILITIES_10_NS_URI.toString());
+        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability/interface/accessURL[.='http://example.com/myApp/availability']", VOSI.NS_PREFIX, XMLConstants.VOSICAPABILITIES_10_NS_URI.toString());
     }
 }

@@ -96,6 +96,7 @@
                     basedir="${build}/class"
                     update="no">
                 <include name="ca/nrc/cadc/**" />
+                <include name="**.xsd" />
         </jar>
     </target>
 
