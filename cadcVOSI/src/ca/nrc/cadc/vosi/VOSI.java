@@ -69,6 +69,8 @@
 
 package ca.nrc.cadc.vosi;
 
+import org.jdom2.Namespace;
+
 /**
  * VOSI constants. Actually, this class contains more than VOSI constants: it also
  * includes other commonly used IVOA schema constants. For each schema, there is a
@@ -92,5 +94,8 @@ public class VOSI
     public static final String AVAILABILITY_SCHEMA = "VOSIAvailability-v1.0.xsd";
 
     public static final String TABLES_SCHEMA = "VOSITables-v1.0.xsd";
+    
+    
+    public static final Namespace TABLES_NS = Namespace.getNamespace(NS_PREFIX, TABLES_NS_URI);
 
 }
