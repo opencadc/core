@@ -65,7 +65,15 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- *
+ * Tests the capabilities of a service. 
+ * Note: 
+ * 1. The tests require a capabilities file of the service under test
+ *    to be in <user.home>/config/capabilities/<authority, e.g. cadc.nrc.ca>/<service, e.g. tap>
+ * 2. The capabilities standard ID (Standards.VOSI_CAPABILITIES_URI) 
+ *    is used by the tests.
+ * 3. The accessURL of the associated capability should point to the 
+ *    server under test, for example your test vm or rc server
+ * 
  * @author yeunga
  */
 public class CapabilitiesTest
