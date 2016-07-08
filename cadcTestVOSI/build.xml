@@ -94,16 +94,12 @@
     <property name="cadcUtil" value="${lib}/cadcUtil.jar" />
     <property name="libjars" value="${cadcReg}:${cadcUtil}" />
     <!-- jars from external lib -->
-    <property name="jdom2" value="${ext.lib}/jdom2.jar"/>
     <property name="junit" value="${ext.lib}/junit.jar"/>
     <property name="log4j" value="${ext.lib}/log4j.jar"/>
-    <property name="xerces" value="${ext.lib}/xerces.jar"/>
-    <property name="extjars" value="${jdom2}:${junit}:${log4j}:${exerces}" />
+    <property name="extjars" value="${junit}:${log4j}" />
     <!-- jars from external dev lib -->
-    <property name="httpunit" value="${ext.dev}/httpunit.jar"/>
-    <property name="devjars" value="${httpunit}" />
 
-    <property name="jars" value="${libjars}:${extjars}:${devjars}" />
+    <property name="jars" value="${libjars}:${extjars}" />
 
     <target name="build" depends="cadcTestVOSI" />
 
