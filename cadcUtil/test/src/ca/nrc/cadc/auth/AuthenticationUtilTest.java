@@ -820,4 +820,31 @@ public class AuthenticationUtilTest
             fail("unexpected exception: " + unexpected);
         }
     }
+
+    @Test
+    public void getGetAuthMethods()
+    {
+        try
+        {
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            fail("unexpected exception: " + unexpected);
+        }
+    }
+
+    @Test
+    public void testGetAuthMethodForPrincipal()
+    {
+        try
+        {
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            fail("unexpected exception: " + unexpected);
+        }
+    }
+
 }
