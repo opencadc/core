@@ -8,7 +8,7 @@
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -69,9 +69,13 @@
 
 package ca.nrc.cadc.vosi;
 
-import ca.nrc.cadc.reg.XMLConstants;
-import ca.nrc.cadc.util.Log4jInit;
-import ca.nrc.cadc.xml.XmlUtil;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jdom2.Document;
@@ -79,13 +83,8 @@ import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 import org.junit.Test;
 
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import ca.nrc.cadc.reg.XMLConstants;
+import ca.nrc.cadc.util.Log4jInit;
 
 /**
  * @author zhangsa
@@ -99,15 +98,6 @@ public class CapabilityTest
         Log4jInit.setLevel("ca.nrc.cadc.vosi", Level.DEBUG);
     }
 
-    String schemaResource1 = XMLConstants.getSchema(XMLConstants.VOSICAPABILITIES_10_NS_URI);
-    String schemaNSKey1 = XMLConstants.VOSICAPABILITIES_10_NS_URI.toString();
-
-    String schemaNSKey2 = XMLConstants.VORESOURCE_10_NS_URI.toString();
-    String schemaResource2 =  XMLConstants.getSchema(XMLConstants.VORESOURCE_10_NS_URI);
-
-    String schemaNSKey3 = XMLConstants.VODATASERVICE_11_NS_URI.toString();
-    String schemaResource3 = XMLConstants.getSchema(XMLConstants.VODATASERVICE_11_NS_URI);
-
     Map<String, String> schemaNSMap;
 
     /**
@@ -116,10 +106,7 @@ public class CapabilityTest
     //@Before
     public void setUp() throws Exception
     {
-        schemaNSMap = new HashMap<String, String>();
-        schemaNSMap.put(schemaNSKey1, XmlUtil.getResourceUrlString(schemaResource1, CapabilityTest.class));
-        schemaNSMap.put(schemaNSKey2, XmlUtil.getResourceUrlString(schemaResource2, CapabilityTest.class));
-        schemaNSMap.put(schemaNSKey3, XmlUtil.getResourceUrlString(schemaResource3, CapabilityTest.class));
+        schemaNSMap = XMLConstants.SCHEMA_MAP;
     }
 
     @Test
@@ -143,7 +130,7 @@ public class CapabilityTest
         Writer stringWriter = new StringWriter();
         xop.output(doc, stringWriter);
         String xmlString = stringWriter.toString();
-        
+
         //StringReader reader = new StringReader(xmlString);
         //XmlUtil.buildDocument(reader, schemaNSMap);
         CapabilitiesParser cp = new CapabilitiesParser();

@@ -69,54 +69,55 @@
 
 package ca.nrc.cadc.vosi;
 
-import ca.nrc.cadc.reg.XMLConstants;
-import ca.nrc.cadc.xml.XmlUtil;
-import org.apache.log4j.Logger;
-import org.jdom2.Document;
-import org.jdom2.JDOMException;
-import org.jdom2.input.SAXBuilder;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+import org.jdom2.Document;
+import org.jdom2.JDOMException;
+import org.jdom2.input.SAXBuilder;
+
+import ca.nrc.cadc.reg.XMLConstants;
+import ca.nrc.cadc.xml.XmlUtil;
+
 /**
  * Parser to setup the schema map for parsing a VOSI-capabilities document.
- * 
+ *
  * @author pdowler
  */
-public class CapabilitiesParser 
+public class CapabilitiesParser
 {
     private static final Logger log = Logger.getLogger(CapabilitiesParser.class);
-    
+
     protected Map<String,String> schemaMap;
-    
+
     public CapabilitiesParser()
     {
         this(true);
     }
-    
+
     public CapabilitiesParser(boolean enableSchemaValidation)
     {
         if (enableSchemaValidation)
         {
-            this.schemaMap = XMLConstants.SCHEMA_URL_MAP;
+            this.schemaMap = XMLConstants.SCHEMA_MAP;
         }
     }
     /**
      * Add an additional schema to the parser configuration. This is needed if the VOSI-capabilities
      * uses an extension schema for xsi:type.
-     * 
+     *
      * @param namespace
-     * @param schemaLocation 
+     * @param schemaLocation
      */
     public void addSchemaLocation(String namespace, String schemaLocation)
     {
         log.debug("addSchemaLocation: " + namespace + " -> " + schemaLocation);
         schemaMap.put(namespace, schemaLocation);
     }
-    
+
     public Document parse(Reader rdr)
         throws IOException, JDOMException
     {
