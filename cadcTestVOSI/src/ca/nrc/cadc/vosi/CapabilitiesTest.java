@@ -157,7 +157,7 @@ public class CapabilitiesTest
     	RegistryClient rc = new RegistryClient();
     	try 
     	{
-    		URL serviceURL = rc.getServiceURL(resourceIdentifier, Standards.VOSI_CAPABILITIES_URI, AuthMethod.ANON);
+    		URL serviceURL = rc.getServiceURL(resourceIdentifier, Standards.VOSI_CAPABILITIES, AuthMethod.ANON);
             Assert.assertNotNull(serviceURL);
             log.debug("serviceURL=" + serviceURL);    	
             
@@ -186,11 +186,11 @@ public class CapabilitiesTest
 			Assert.assertTrue("Incorrect number of capabilities", capList.size() > 3);
 			
 			// get the capability associated with the standard ID
-			Capability cap = caps.findCapability(Standards.VOSI_CAPABILITIES_URI);
+			Capability cap = caps.findCapability(Standards.VOSI_CAPABILITIES);
 			Assert.assertNotNull(cap);
 			
 			// get the interface associated with the securityMethod
-			Interface intf = cap.findInterface(AuthMethod.ANON.getSecurityMethod());
+			Interface intf = cap.findInterface(Standards.getSecurityMethod(AuthMethod.ANON));
 			Assert.assertNotNull(intf);
 			
 			// get the accessURL associated with the interface
