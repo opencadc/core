@@ -139,10 +139,10 @@ public class CapabilityTest
         // these xpath tests are somewhat brittle as a change in the prefix in Capabilities.java
         // would require a change here
         // TODO: find the prefix by examining the xmlns attributes of the root element
-        TestUtil.assertXmlNode(doc, "/vosi:capabilities", VOSI.NS_PREFIX, XMLConstants.VOSICAPABILITIES_10_NS_URI.toString());
-        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability[@standardID='ivo://ivoa.net/std/VOSI#capability']", VOSI.NS_PREFIX, XMLConstants.VOSICAPABILITIES_10_NS_URI.toString());
-        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability[@standardID='ivo://ivoa.net/std/VOSI#availability']", VOSI.NS_PREFIX, XMLConstants.VOSICAPABILITIES_10_NS_URI.toString());
-        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability[@standardID='ivo://ivoa.net/std/Something']", VOSI.NS_PREFIX, XMLConstants.VOSICAPABILITIES_10_NS_URI.toString());
-        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability/interface/accessURL[.='http://example.com/myApp/availability']", VOSI.NS_PREFIX, XMLConstants.VOSICAPABILITIES_10_NS_URI.toString());
+        TestUtil.assertXmlNode(doc, "/vosi:capabilities", VOSI.NS_PREFIX, XMLConstants.VOSICAPABILITIES_10_NS.toString());
+        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability[@standardID='ivo://ivoa.net/std/VOSI#capability']", VOSI.NS_PREFIX, XMLConstants.VOSICAPABILITIES_10_NS.toString());
+        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability[@standardID='ivo://ivoa.net/std/VOSI#availability']", VOSI.NS_PREFIX, XMLConstants.VOSICAPABILITIES_10_NS.toString());
+        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability[@standardID='ivo://ivoa.net/std/Something']", VOSI.NS_PREFIX, XMLConstants.VOSICAPABILITIES_10_NS.toString());
+        TestUtil.assertXmlNode(doc, "/vosi:capabilities/capability/interface/accessURL[.='http://example.com/myApp/availability']", VOSI.NS_PREFIX, XMLConstants.VOSICAPABILITIES_10_NS.toString());
     }
 }
