@@ -129,7 +129,7 @@ public class CapabilitiesTest
     private void getCapabilitiesFromServer(final URL accessURL) 
     		throws IOException, URISyntaxException
     {
-		CapabilitiesReader capReader = new CapabilitiesReader(accessURL.toURI());
+		CapabilitiesReader capReader = new CapabilitiesReader();
 		InputStream inStream = accessURL.openStream();
 		
     	try
