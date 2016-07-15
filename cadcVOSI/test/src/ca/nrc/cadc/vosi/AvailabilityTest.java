@@ -8,7 +8,7 @@
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -69,10 +69,19 @@
 
 package ca.nrc.cadc.vosi;
 
-import ca.nrc.cadc.date.DateUtil;
-import ca.nrc.cadc.util.Log4jInit;
-import ca.nrc.cadc.xml.XmlUtil;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.Map;
+
 import junit.framework.Assert;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jdom2.Document;
@@ -81,12 +90,9 @@ import org.jdom2.output.XMLOutputter;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.util.*;
+import ca.nrc.cadc.date.DateUtil;
+import ca.nrc.cadc.util.Log4jInit;
+import ca.nrc.cadc.xml.XmlUtil;
 
 /**
  * @author zhangsa
@@ -94,7 +100,7 @@ import java.util.*;
  */
 public class AvailabilityTest
 {
-    private static Logger log = Logger.getLogger(CapabilityTest.class);
+    private static Logger log = Logger.getLogger(AvailabilityTest.class);
     static
     {
         Log4jInit.setLevel("ca.nrc.cadc.vosi", Level.INFO);
@@ -158,7 +164,7 @@ public class AvailabilityTest
         String xmlString = stringWriter.toString();
         StringReader reader = new StringReader(xmlString);
         XmlUtil.buildDocument(reader, schemaMap);
-        
+
         TestUtil.assertXmlNode(doc, "/vosi:availability", VOSI.NS_PREFIX, VOSI.AVAILABILITY_NS_URI);
         TestUtil.assertXmlNode(doc, "/vosi:availability/vosi:available[.='false']", VOSI.NS_PREFIX, VOSI.AVAILABILITY_NS_URI);
         TestUtil.assertNoXmlNode(doc, "/vosi:availability/vosi:upSince", VOSI.NS_PREFIX, VOSI.AVAILABILITY_NS_URI);
@@ -166,7 +172,7 @@ public class AvailabilityTest
         TestUtil.assertNoXmlNode(doc, "/vosi:availability/vosi:backAt", VOSI.NS_PREFIX, VOSI.AVAILABILITY_NS_URI);
         TestUtil.assertNoXmlNode(doc, "/vosi:availability/vosi:note", VOSI.NS_PREFIX, VOSI.AVAILABILITY_NS_URI);
     }
-    
+
     @Test
     public void testAvailabilityRoundTrip() throws Exception
     {
@@ -176,19 +182,19 @@ public class AvailabilityTest
         c2.add(Calendar.MONTH, 1);
         c3.add(Calendar.MONTH, 2);
         AvailabilityStatus status1 = new AvailabilityStatus(false, c1.getTime(), c2.getTime(), c3.getTime(), "status message");
-        
+
         Availability availability = new Availability(status1);
         Document doc = availability.toXmlDocument();
-        
+
         availability = new Availability(doc);
         AvailabilityStatus status2 = availability.fromXmlDocument(doc);
-        
+
         Assert.assertEquals("is available", status1.isAvailable(), status2.isAvailable());
         Assert.assertEquals("up since", status1.getUpSince(), status2.getUpSince());
         Assert.assertEquals("down at", status1.getDownAt(), status2.getDownAt());
         Assert.assertEquals("back at", status1.getBackAt(), status2.getBackAt());
         Assert.assertEquals("note", status1.getNote(), status2.getNote());
-        
+
     }
 
 }
