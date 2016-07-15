@@ -1,5 +1,6 @@
 package ca.nrc.cadc.vosi;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
@@ -14,7 +15,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.jdom2.Document;
 import org.jdom2.Element;
@@ -61,7 +61,16 @@ public class CapabilitiesServlet extends HttpServlet
             URL resURL = config.getServletContext().getResource(str);
             CapabilitiesReader cr = new CapabilitiesReader(true);
             InputStream in = resURL.openStream();
-            String xml = IOUtils.toString(in);
+
+            ByteArrayOutputStream result = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = in.read(buffer)) != -1)
+            {
+                result.write(buffer, 0, length);
+            }
+            String xml = result.toString("UTF-8");
+
             // validate
             cr.read(xml);
             this.staticCapabilities = xml;
