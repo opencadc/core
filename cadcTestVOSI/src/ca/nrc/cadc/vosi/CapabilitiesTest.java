@@ -85,7 +85,7 @@ public class CapabilitiesTest
     
     static
     {
-        Log4jInit.setLevel("ca.nrc.cadc", Level.DEBUG);
+        Log4jInit.setLevel("ca.nrc.cadc", Level.INFO);
         
     	// get resourceIdentifier from system property
         String resourceIdentifierName = CapabilitiesTest.class.getName() + ".resourceIdentifier";
