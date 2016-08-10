@@ -80,6 +80,9 @@ public class ObjectUtil
     /**
      * Set the value of the field 'name' to be 'value' on object 'object'.
      *
+     * This method will set the field in any superclasses that the object
+     * may inherit too.
+     *
      * @param object The object to modify
      * @param value The value for the field
      * @param name The name of the field to set
@@ -88,23 +91,28 @@ public class ObjectUtil
      */
     public static void setField(Object object, Object value, String name)
     {
-        try
+        ReflectiveOperationException firstError = null;
+        Class<? extends Object> clazz = object.getClass();
+        while (clazz != null)
         {
-            Field field = object.getClass().getDeclaredField(name);
-            field.setAccessible(true);
-            field.set(object, value);
+            try
+            {
+                Field field = clazz.getDeclaredField(name);
+                field.setAccessible(true);
+                field.set(object, value);
+                clazz = null;
+                firstError = null;
+            }
+            catch (ReflectiveOperationException e)
+            {
+                // try the superclass
+                firstError = e;
+                clazz = clazz.getSuperclass();
+            }
         }
-        catch (NoSuchFieldException e)
+        if (firstError != null)
         {
-            final String error = object.getClass().getSimpleName() +
-                " field " + name + "not found";
-            throw new RuntimeException(error, e);
-        }
-        catch (IllegalAccessException e)
-        {
-            final String error = "unable to update " + name + " in " +
-                object.getClass().getSimpleName();
-            throw new RuntimeException(error, e);
+            throw new RuntimeException("failed to set field value", firstError);
         }
     }
 
