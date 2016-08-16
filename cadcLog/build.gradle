@@ -7,41 +7,7 @@ buildscript {
 plugins {
     id "java"
     id "maven"
-    id "maven-publish"
     id "com.jfrog.bintray" version "1.7.1"
-}
-
-version = '1.0'
-group = 'opencadc'
-
-publishing {
-    publications {
-        OpenCADCPublication(MavenPublication) {
-            from components.java
-        }
-    }
-}
-
-bintray {
-    user = "${bintray_user}"
-    key = "${bintray_api_key}"
-
-    pkg {
-        repo = 'software'
-        userOrg = group
-        name = project.name
-        websiteUrl = 'http://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca'
-        issueTrackerUrl = 'https://github.com/opencadc/core/issues'
-        vcsUrl = 'https://github.com/opencadc/core.git'
-        githubRepo = 'opencadc/core'
-        licenses = ['AGPL-V3']
-
-        version {
-          name = project.version
-        }
-    }
-
-    publications = ['OpenCADCPublication']
 }
 
 repositories {
