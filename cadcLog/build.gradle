@@ -13,6 +13,9 @@ plugins {
 repositories {
     jcenter()
     mavenLocal()
+    maven {
+        url  "http://dl.bintray.com/opencadc/software"
+    }
 }
 
 dependencies {
