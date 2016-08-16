@@ -1,0 +1,63 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+}
+
+plugins {
+    id "java"
+    id "maven"
+    id "maven-publish"
+    id "com.jfrog.bintray" version "1.7.1"
+}
+
+version = '1.0'
+group = 'opencadc'
+
+publishing {
+    publications {
+        OpenCADCPublication(MavenPublication) {
+            from components.java
+        }
+    }
+}
+
+bintray {
+    user = "${bintray_user}"
+    key = "${bintray_api_key}"
+
+    pkg {
+        repo = 'software'
+        userOrg = group
+        name = project.name
+        websiteUrl = 'http://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca'
+        issueTrackerUrl = 'https://github.com/opencadc/core/issues'
+        vcsUrl = 'https://github.com/opencadc/core.git'
+        githubRepo = 'opencadc/core'
+        licenses = ['AGPL-V3']
+
+        version {
+          name = project.version
+        }
+    }
+
+    publications = ['OpenCADCPublication']
+}
+
+repositories {
+    jcenter()
+    mavenLocal()
+}
+
+dependencies {
+    compile group: 'log4j', name: 'log4j', version: '1.2.+'
+    compile group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.+'
+    compile group: 'org.json', name: 'json', version: '20160212'
+    compile group: 'xerces', name: 'xercesImpl', version: '2.+'
+    compile group: 'org.jdom', name: 'jdom2', version: '2.+'
+    compile group: 'org.springframework', name: 'spring-jdbc', version: '4.2.7.RELEASE'
+
+    testCompile group: 'junit', name: 'junit', version: '4.+'
+    testCompile group: 'org.easymock', name: 'easymock', version: '3.+'
+    testCompile group: 'org.skyscreamer', name: 'jsonassert', version: '1.+'
+}
