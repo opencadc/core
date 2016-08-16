@@ -1,13 +1,6 @@
-buildscript {
-    repositories {
-        jcenter()
-    }
-}
-
 plugins {
     id "java"
     id "maven"
-    id "com.jfrog.bintray" version "1.7.1"
 }
 
 repositories {
