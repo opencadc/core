@@ -1,0 +1,8 @@
+language: java
+jdk:
+  - oraclejdk8
+env:
+  - MODULE_DIR=cadcUtil
+  - MODULE_DIR=cadcLog
+script: cd $MODULE_DIR && gradle assemble && gradle check
+

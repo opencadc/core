@@ -1,0 +1,18 @@
+plugins {
+    id "java"
+    id "maven"
+    id "war"
+}
+
+repositories {
+    jcenter()
+    mavenLocal()
+}
+
+version = '1.0'
+
+dependencies {
+    compile group: 'log4j', name: 'log4j', version: '1.2.+'
+    compile group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.+'
+    compile 'opencadc:cadcLog:1.0'
+}
