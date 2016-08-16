@@ -4,5 +4,5 @@ jdk:
 env:
   - MODULE_DIR=cadcUtil
   - MODULE_DIR=cadcLog
-script: cd $TEST_DIR && gradle assemble && gradle check
+script: cd $MODULE_DIR && gradle assemble && gradle check
 
