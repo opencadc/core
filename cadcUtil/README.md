@@ -3,9 +3,6 @@ This is the OpenCADC utility library.
 It includes classes that are very general purpose and used in multiple other OpenCADC
 projects. 
 
-Build status:
-<a href="https://travis-ci.org/at88mph/core/cadcUtil"><img src="https://travis-ci.org/at88mph/core/cadcUtil.svg?branch=master" /></a>
-
 
 * Note about the SSL support in ca.nrc.cadc.auth
 
