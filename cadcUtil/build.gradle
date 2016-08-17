@@ -8,6 +8,7 @@ repositories {
     mavenLocal()
 }
 
+sourceCompatibility = 1.7
 version = '1.0.1'
 
 dependencies {
