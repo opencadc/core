@@ -313,8 +313,13 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier
         System.out.println("Done");
     }
     
-    
     public static void genKeyPair(String directory) 
+        throws FileNotFoundException
+    { 
+        genKeyPair(new File(directory));
+    }
+    
+    public static void genKeyPair(File directory) 
         throws FileNotFoundException
     {      
         // generate the certs

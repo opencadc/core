@@ -84,7 +84,9 @@ public class DelegationTokenTest
     @Before
     public void initKeys() throws Exception
     {
-        String keysDir = RSASignatureGeneratorValidatorTest.getCompleteKeysDirectoryName();
+        File config = FileUtil.getFileFromResource("DelegationToken.properties", DelegationTokenTest.class);
+        File keysDir = config.getParentFile();
+        //String keysDir = RSASignatureGeneratorValidatorTest.getCompleteKeysDirectoryName();
         RsaSignatureGenerator.genKeyPair(keysDir);
         privFile = new File(keysDir, RsaSignatureGenerator.PRIV_KEY_FILE_NAME);
         pubFile = new File(keysDir, RsaSignatureGenerator.PUB_KEY_FILE_NAME);
