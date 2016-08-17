@@ -1,6 +1,6 @@
 language: java
 jdk:
   - openjdk7
-  - openjdk8
+  - oraclejdk8
 script: for mod in cadcUtil cadcLog cadcTestServlet; do cd $mod; gradle assemble check install; cd ..; done
 
