@@ -1,8 +1,6 @@
 language: java
 jdk:
-  - oraclejdk8
-env:
-  - MODULE_DIR=cadcUtil
-  - MODULE_DIR=cadcLog
-script: cd $MODULE_DIR && gradle assemble && gradle check
+  - openjdk7
+  - openjdk8
+script: for mod in cadcUtil cadcLog cadcTestServlet; do cd $mod; gradle assemble check install; cd ..; done
 
