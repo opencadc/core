@@ -84,7 +84,7 @@ public class NetrcAuthenticatorTest
 {
     private static Logger log = Logger.getLogger(NetrcAuthenticatorTest.class);
 
-    static String NETRC = "test/testNetrcFile";
+    static String NETRC = "src/test/resources/testNetrcFile";
     // content of above file
     static String HOST = "www.example.com";
     static String USER = "MyUserName";
