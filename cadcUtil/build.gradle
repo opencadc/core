@@ -9,6 +9,9 @@ repositories {
 }
 
 sourceCompatibility = 1.7
+
+group = 'opencadc'
+
 version = '1.0.1'
 
 dependencies {
