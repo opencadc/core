@@ -1,7 +1,6 @@
 plugins {
-    id "java"
-    id "maven"
-    id "war"
+    id 'war'
+    id 'maven'
 }
 
 repositories {
@@ -14,12 +13,13 @@ repositories {
 
 sourceCompatibility = 1.7
 
-group = 'opencadc'
+group = 'org.opencadc'
 
 version = '1.0'
 
 dependencies {
     compile group: 'log4j', name: 'log4j', version: '1.2.+'
     compile group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.+'
-    compile 'opencadc:cadcLog:1.0'
+    compile 'org.opencadc:cadc-util:1.+'
+    compile 'org.opencadc:cadc-log:1.+'
 }

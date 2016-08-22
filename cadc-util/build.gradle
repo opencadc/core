@@ -1,6 +1,8 @@
 plugins {
-    id "java"
-    id "maven"
+    id 'java'
+    id 'maven'
+    id 'maven-publish'
+    id 'com.jfrog.bintray' version '1.7.1'
 }
 
 repositories {
@@ -10,9 +12,9 @@ repositories {
 
 sourceCompatibility = 1.7
 
-group = 'opencadc'
+group = 'org.opencadc'
 
-version = '1.0.1'
+version = '1.0'
 
 dependencies {
     compile group: 'log4j', name: 'log4j', version: '1.2.+'
