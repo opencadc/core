@@ -257,7 +257,7 @@ public abstract class HttpTransfer implements Runnable
 
 
     /**
-     * Enable retry (maxRetries > 0) and set the maximum number of times
+     * Enable retry (maxRetries &gt; 0) and set the maximum number of times
      * to retry before failing. The default is to retry only when the server
      * says to do so (e.g. 503 + Retry-After).
      *
@@ -274,9 +274,10 @@ public abstract class HttpTransfer implements Runnable
      * to maxRetries times. The retryDelay (in seconds) is scaled by a factor of two
      * for each subsequent retry (eg, 2, 4, 8, ...) in cases where the server response
      * does not provide a retry delay.
-     * </p><p>
+     * <p>
      * The default reason is RetryReason.SERVER.
-     *
+     * </p>
+     * 
      * @param maxRetries number of times to retry, 0 or negative to disable retry
      * @param retryDelay delay in seconds before retry
      * @param reason
@@ -295,12 +296,13 @@ public abstract class HttpTransfer implements Runnable
      * the IO loop and also wrap BufferedInputStream and BufferedOutputStream
      * around the underlying InputStream and OutputStream (if they are not already
      * buffered).
-     * </p><p>
+     * <p>
      * Note: The buffer size can also be set with the system property
      * <code>ca.nrc.cadc.net.HttpTransfer.bufferSize</code> which is an integer
      * number of bytes. The value may be specified in KB by appending 'k' or MB by
      * appending 'm' (e.g. 16k or 2m).
-     *
+     * </p>
+     * 
      * @param bufferSize
      */
     public void setBufferSize(int bufferSize)
@@ -425,7 +427,10 @@ public abstract class HttpTransfer implements Runnable
 
     /**
      *  Determine if the failure was transient according to the config options.
-     * @throws TransietnExceptuion to cause retry
+     * @param code status code
+     * @param msg message
+     * @param conn connection
+     * @throws TransientException to cause retry
      */
     protected void checkTransient(int code, String msg, HttpURLConnection conn)
         throws TransientException

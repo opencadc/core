@@ -82,8 +82,9 @@ import java.util.regex.Pattern;
  * Useful utility methods dealing with Strings.  Not terribly Object Oriented
  * as this class contains no state or identity, but it's nice not having to
  * write this stuff over and over.
- * <p/>
+ * <p>
  * Thanks to Rod Johnson for contributing.
+ * </p>
  */
 public class StringUtil
 {
@@ -106,18 +107,20 @@ public class StringUtil
 
     /**
      * Check if a String has text. More specifically, returns <code>true</code>
-     * if the string not <code>null<code>, it's <code>length is > 0</code>, and
+     * if the string not <code>null</code>, it's <code>length is &gt; 0</code>, and
      * it has at least one non-whitespace character.
-     * <p><pre>
+     * <p>
+     * <pre>
      * StringUtil.hasText(null) = false
      * StringUtil.hasText("") = false
      * StringUtil.hasText(" ") = false
      * StringUtil.hasText("12345") = true
      * StringUtil.hasText(" 12345 ") = true
      * </pre>
+     * 
      *
      * @param str the String to check, may be null
-     * @return <code>true</code> if the String is not null, length > 0,
+     * @return <code>true</code> if the String is not null, length &gt; 0,
      * and not whitespace only
      * @see Character#isWhitespace
      */
@@ -153,7 +156,7 @@ public class StringUtil
             return str;
         }
 
-        StringBuffer buf = new StringBuffer(str);
+        StringBuilder buf = new StringBuilder(str);
         while ((buf.length() > 0) &&
                Character.isWhitespace(buf.charAt(0)))
         {
@@ -177,7 +180,7 @@ public class StringUtil
             return str;
         }
 
-        StringBuffer buf = new StringBuffer(str);
+        StringBuilder buf = new StringBuilder(str);
         while ((buf.length() > 0) &&
                Character.isWhitespace(buf.charAt(buf.length() - 1)))
         {
@@ -355,7 +358,7 @@ public class StringUtil
     }
 
     /**
-     * Get a string which is the N-time repeat of the input string, i.e. repeat("ab", 3) => "ababab".
+     * Get a string which is the N-time repeat of the input string, i.e. repeat("ab", 3) =&gt; "ababab".
      *
      * @param str
      * @param num

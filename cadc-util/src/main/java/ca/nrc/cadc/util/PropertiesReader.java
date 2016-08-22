@@ -76,7 +76,7 @@ public class PropertiesReader
      *    value of this property as the directory.
      * 2) Otherwise, the file will be read from ${user.home}/config/
      *
-     * @param fileName The file in which to read.
+     * @param filename The file in which to read.
      */
     public PropertiesReader(String filename)
     {

@@ -80,9 +80,10 @@ import java.util.TimeZone;
 
 /**
  * Date conversion utility.
- * </p><p>
+ * <p>
  * WARNING: The underlying SimpleDateFormat instances are NOT thread safe.
- *
+ * </p>
+ * 
  * @version $Version$
  * @author pdowler
  */
@@ -137,9 +138,10 @@ public class DateUtil
      * If the time zone is null it defaults to UTC for ISO8601_DATE_FORMAT_Z,
      * ISO8601_DATE_FORMAT_MSZ, and IVOA_DATE_FORMAT and must be UTC for the
      * first two of these.
-     * </p><p>
+     * <p>
      * WARNING: The underlying SimpleDateFormat instance is NOT thread safe.
-     *
+     * </p>
+     * 
      * @param format
      * @param tz
      * @return

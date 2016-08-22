@@ -112,7 +112,7 @@ import org.apache.log4j.Logger;
  * manipulation of keys.
  * 
  * For example, an ssh private key is converted to PEM TKCS#8 with command:
- * openssl pkcs8 -topk8 -nocrypt -in <ssh priv key>
+ * openssl pkcs8 -topk8 -nocrypt -in &lt;ssh priv key&gt;
  * 
  * This class also provides a main method that can be invoked to generate
  * a set of RSA keys and save them in the MessageRSA.keys file in the

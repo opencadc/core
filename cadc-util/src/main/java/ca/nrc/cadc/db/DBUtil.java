@@ -169,7 +169,6 @@ public class DBUtil
      * @param dataSourceName
      * @param config
      * @throws NamingException
-     * @see getJNDIDataSource(String)
      */
     public static void createJNDIDataSource(String dataSourceName, ConnectionConfig config)
         throws NamingException

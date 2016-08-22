@@ -86,7 +86,8 @@ public interface QueueUpdater
     /**
      * Update the content list. This method is called within a synchronized block so
      * does not have to worry about concurrent modifications of the queue while iterating.
-     * @param list
+     * @param list content of the queue
+     * @return  true if content modified
      */
     boolean update(List list);
 }

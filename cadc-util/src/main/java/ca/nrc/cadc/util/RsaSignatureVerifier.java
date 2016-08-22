@@ -106,7 +106,7 @@ import org.apache.log4j.Logger;
  * manipulation of keys.
  * 
  * For example, an ssh public key is converted to a PEM TKCS#1 with the command:
- * ssh-keygen -f <ssh pub key> -e -m pkcs8. 
+ * ssh-keygen -f &lt;ssh pub key&gt; -e -m pkcs8. 
  * 
  * @author adriand
  * 

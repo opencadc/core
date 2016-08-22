@@ -93,11 +93,11 @@ public interface IdentityManager
 
     /**
      * Convert the specified subject into an arbitrary object. This is the reverse
-     * of toSubject(owner). The persistable object must capture the identity (the
+     * of toSubject(owner). The persistent object must capture the identity (the
      * principal from the subject) but generally does not capture the credentials.
      *
      * @param subject
-     * @return arbitary owner object to be persisted
+     * @return arbitrary owner object to be persisted
      */
     Object toOwner(Subject subject);
 
@@ -106,7 +106,7 @@ public interface IdentityManager
      * returned by toOwner(Subject);
      *
      * @see java.sql.Types
-     * @see java.sql.PreparedStatement.setObject(int,Object,int)
+     * @see java.sql.PreparedStatement
      * @return a valid SQL type for use with a PreparedStatement
      */
     int getOwnerType();
@@ -116,7 +116,6 @@ public interface IdentityManager
      * owner. This should normally be an X509 distinguished name if IVOA
      * single-sign-on has been implemented.
      *
-     * @see VOS.PROPERTY_URI_CREATOR
      * @param subject
      * @return string representation of the owner (principal)
      */

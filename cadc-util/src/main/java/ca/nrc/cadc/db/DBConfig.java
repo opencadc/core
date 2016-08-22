@@ -87,12 +87,16 @@ import java.util.StringTokenizer;
 /**
  * Reads username/password pairs and (optionally) JDBC driver and connection URL data
  * from the ${user.home}/.dbrc file. The format of this file is:
- * </p></pre>
+ *
+ * <pre>
  * $server $database $username $password [$driver $url]
  * </pre>
+ * 
+ * <p>
  * To remove redundancy, one can have one line to list the driver and url for all
  * connections to a server with a line like:
- * </p></pre>
+ * </p>
+ * <pre>
  * $server * $username $password $driver $url
  * </pre>
  *
@@ -203,23 +207,25 @@ public class DBConfig implements Serializable
 		}
 	}
 
-	/**
-	 * Get the connection configuration for the specified server and database.
-	 *
-	 * @throws NoSuchElementException if the server and database are found, usually because they
-	 *	are missing from the .dbrc file
-	 *
-	 * @return populated ConnectionConfig object
-	 */
-	public ConnectionConfig getConnectionConfig(String server, String database)
-		throws NoSuchElementException
-	{
-		ConnectionConfig cc = find(server, database);
-		if (cc != null)
-			return cc;
-		throw new NoSuchElementException("connecting to '" + server + "/" +
-                                         database + "' not supported");
-	}
+    /**
+     * Get the connection configuration for the specified server and database.
+     *
+     * @param server server name from .dbrc file
+     * @param database database name from .dbrc file
+     * @throws NoSuchElementException if the server and database are found, usually because they
+     *	are missing from the .dbrc file
+     *
+     * @return populated ConnectionConfig object
+     */
+    public ConnectionConfig getConnectionConfig(String server, String database)
+            throws NoSuchElementException
+    {
+            ConnectionConfig cc = find(server, database);
+            if (cc != null)
+                    return cc;
+            throw new NoSuchElementException("connecting to '" + server + "/" +
+                                     database + "' not supported");
+    }
 
     /**
      * TODO - This is very implementation specific, there must be a better way!
@@ -234,13 +240,13 @@ public class DBConfig implements Serializable
      * JDBC URL contains a db2 String, so it's dependant on the URL containing
      * the characters 'db2'.
      *
-     * @param server
-     * @param db
+     * @param server server name from .dbrc file
+     * @param database database name from .dbrc file
      * @return True if this URL is a db2 one, False otherwise.
      */
-    public boolean isDB2(final String server, final String db)
+    public boolean isDB2(final String server, final String database)
     {
-        return getJDBCURL(server, db).indexOf("db2") >= 0;
+        return getJDBCURL(server, database).indexOf("db2") >= 0;
     }
 
     /**
@@ -256,13 +262,13 @@ public class DBConfig implements Serializable
      * JDBC URL contains a sybase String, so it's dependant on the URL containing
      * the characters 'sybase'.
      *
-     * @param server
-     * @param db
+     * @param server server name from .dbrc file
+     * @param database database name from .dbrc file
      * @return True if this URL is a sybase one, False otherwise.
      */
-    public boolean isSybase(final String server, final String db)
+    public boolean isSybase(final String server, final String database)
     {
-        return getJDBCURL(server, db).indexOf("sybase") >= 0;
+        return getJDBCURL(server, database).indexOf("sybase") >= 0;
     }
 
     /**

@@ -82,27 +82,29 @@ import java.util.LinkedList;
  */
 public class Queue
 {
-	protected LinkedList<Object> list;
+    protected LinkedList<Object> list;
 
-	public Queue()
-	{
-		this.list = new LinkedList<Object>();
-	}
+    public Queue()
+    {
+            this.list = new LinkedList<Object>();
+    }
 
-	/**
-	 * Add an object to the bottom of the queue.
-	 */
-	public synchronized void push(Object obj)
-	{
-	    list.addLast(obj);  // add at the back
-	    this.notify();      // wake up one waiting thread
-	}
+    /**
+     * Add an object to the bottom of the queue.
+     * @param obj item to push
+     */
+    public synchronized void push(Object obj)
+    {
+        list.addLast(obj);  // add at the back
+        this.notify();      // wake up one waiting thread
+    }
 
     /**
      * Look at the first object. This method blocks until an
      * object becomes available.
      *
      * @return the object from the front of the queue
+     * @throws java.lang.InterruptedException if blocking is interrupted
      */
     public synchronized Object peek()
         throws InterruptedException
@@ -112,20 +114,25 @@ public class Queue
         return list.getFirst();
     }
     
-	/**
-	 * Get the first object. This method blocks until an
-	 * object becomes available.
-	 *
-	 * @return the object from the front of the queue
-	 */
-	public synchronized Object pop()
-		throws InterruptedException
-	{
-	    while (list.size() == 0)
-	        wait();
+    /**
+     * Get the first object. This method blocks until an
+     * object becomes available.
+     *
+     * @return the object from the front of the queue
+     * @throws java.lang.InterruptedException if blocking is interrupted
+     */
+    public synchronized Object pop()
+            throws InterruptedException
+    {
+        while (list.size() == 0)
+            wait();
         return list.removeFirst();
-	}
+    }
 
+    /**
+     * @param qu queue updater to invoke
+     * @return value from QueueUpdater.update
+     */
     public synchronized boolean update(QueueUpdater qu)
     {
         boolean ret = qu.update(list);
@@ -134,19 +141,19 @@ public class Queue
         return ret;
     }
     
-	/**
-	 * This method is not particularly thread safe in the sense
-	 * that it could return true and then a call to pop() could
-	 * subsequently block if another thread grabs the object first.
-	 * This method is useful if only one thread is taking objects
-	 * out (for transferring objects between threads, for instance).
-	 *
-	 * @return true if there is at least one object stored
-	 */
-	public synchronized boolean isEmpty()
-	{
-		return list.isEmpty();
-	}
+    /**
+     * This method is not particularly thread safe in the sense
+     * that it could return true and then a call to pop() could
+     * subsequently block if another thread grabs the object first.
+     * This method is useful if only one thread is taking objects
+     * out (for transferring objects between threads, for instance).
+     *
+     * @return true if there is at least one object stored
+     */
+    public synchronized boolean isEmpty()
+    {
+            return list.isEmpty();
+    }
 }
 
 // end of Queue.java

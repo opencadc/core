@@ -97,7 +97,6 @@ public class NetUtil
      * on the same or a configured host. It is intended to support SchemeHandler implementations, 
      * but may have other uses. This method checks five (5) different places in order; the 
      * first one that produces a server name is returned.
-     * </p>
      * <pre>
      * 1. system property constructed with the name of the specified class + .serverName
      * 2. system property constructed with the name of the package of the specified class + .serverName
@@ -284,7 +283,7 @@ public class NetUtil
      * Obtain the Domain Name from the given URL.  An inappropriate URL will
      * throw an Exception.
      *
-     * @param stringURL           The URL string to parse from.
+     * @param url           The URL string to parse from.
      * @return              String domain name.
      * @throws IOException  If anything goes awry during URL handling.
      */

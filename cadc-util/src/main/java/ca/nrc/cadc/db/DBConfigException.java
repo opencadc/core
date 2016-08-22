@@ -81,7 +81,7 @@ public class DBConfigException extends RuntimeException
     /**
      * Constrcutor with default message suitable for failure to load JDBC driver.
      *
-     * @param cause
+     * @param cause upstream throwable
      */
     public DBConfigException(Throwable cause)
     {
@@ -89,10 +89,10 @@ public class DBConfigException extends RuntimeException
     }
 
     /**
-     * Standard exceptino constructor.
+     * Standard exception constructor.
      *
-     * @param msg
-     * @param cause
+     * @param msg error message
+     * @param cause upstream throwable
      */
     public DBConfigException(String msg, Throwable cause)
     {

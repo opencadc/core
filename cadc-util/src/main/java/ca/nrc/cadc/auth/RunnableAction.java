@@ -72,7 +72,7 @@ package ca.nrc.cadc.auth;
 import java.security.PrivilegedAction;
 
 /**
- * Simple wrapper to run a regular Runnable using Subject.doAs(Subject,PrivilegedAction<T>).
+ * Simple wrapper to run a regular Runnable using Subject.doAs(Subject,PrivilegedAction).
  * 
  * @author pdowler
  */
@@ -86,6 +86,11 @@ public class RunnableAction implements PrivilegedAction<Object>
     }
     private RunnableAction() { }
 
+    /**
+     *
+     * @return
+     */
+    @Override
     public Object run()
     {
         action.run();

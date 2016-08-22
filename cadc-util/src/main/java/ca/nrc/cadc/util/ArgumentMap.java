@@ -75,13 +75,12 @@ import java.util.Set;
 
 /**
  * Simple command-line argument utility that takes all arguments of the
- * form --key=value and stores them in a map of key->value. As a shortcut,
+ * form --key=value and stores them in a map of key=value. As a shortcut,
  * --key is equivalent to --key=<em>true</em>, where <em>true</em> is the
  * String representation of Boolean.TRUE. Arguments that start with a single
  * dash (-) are always mapped to Boolean.TRUE, whether or not they contain
  * an = sign.
- * </p>
- * <p>
+ * 
  * As an added bonus/complexity, the character sequence %% can be used to delimit
  * values that would otherwise be split up by the invoking shell.
  *

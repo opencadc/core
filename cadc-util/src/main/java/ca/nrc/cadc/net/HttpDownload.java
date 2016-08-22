@@ -171,16 +171,18 @@ public class HttpDownload extends HttpTransfer
 
     /**
      * Constructor. If the user agent string is not supplied, a default value will be generated.
-     * </p><p>
+     * <p>
      * The src URL cannot be null. If the protocol is https, this class will get the current Subject from
      * the AccessControlContext and use the Certificate(s) and PrivateKey(s) found there to set up an
      * SSLSocketFactory. This is required if ther server requests that the client authenticate itself.
-     * </p><p>
+     * </p>
+     * <p>
      * The dest File cannot be null. If dest is a directory, the downloaded
      * file will be saved in that directory and the filename will be determined from the HTTP headers or
      * URL. If dest is an existing file or it does not exist but it's parent is a directory, dest will
      * be used directly.
-     *
+     * </p>
+     * 
      * @param userAgent user-agent string to report in HTTP headers
      * @param src URL to read
      * @param dest file or directory to write to
@@ -223,13 +225,15 @@ public class HttpDownload extends HttpTransfer
 
     /**
      * Constructor. If the user agent string is not supplied, a default value will be generated.
-     * </p><p>
+     * <p>
      * The src URL cannot be null. If the protocol is https, this class will get the current Subject from
      * the AccessControlContext and use the Certificate(s) and PrivateKey(s) found there to set up an
      * SSLSocketFactory. This is required if ther server requests that the client authenticate itself.
-     * </p><p>
+     * </p>
+     * <p>
      * The dest output stream cannot be null.
-     *
+     * </p>
+     * 
      * @param userAgent user-agent string to report in HTTP headers
      * @param src URL to read
      * @param dest output stream to write to

@@ -268,13 +268,14 @@ public class AuthenticationUtil
      * PrincipalExtractor interface is used to extract the authentication information
      * from the incoming request. An implementation for plain servlet environment is provided
      * here and a Restlet implementation is currently included in the cadcUWS library.
-     * </p><p>
+     * <p>
      * This method tries to detect the use of a proxy certificate and add the Principal
      * representing the real identity of the user by comparing the subject and issuer fields
      * of the certificate and using the issuer principal when the certificate is self-signed.
      * If the user has connected anonymously, the returned Subject will have no
      * principals and no credentials, but should be safe to use with Subject.doAs(...).
-     * </p><p>
+     * </p>
+     * <p>
      * This method will also try to load an implementation of the Authenticator interface
      * and use it to process the Subject before return. By default, it will try to load a
      * class named <code>ca.nrc.cadc.auth.AuthenticatorImpl</code>. Applications may override
@@ -579,12 +580,12 @@ public class AuthenticationUtil
     /**
      * Given two principal objects, return true if they represent
      * the same identity.
-     * <p/>
+     * <p>
      * The equality is defined by each principal type through the
      * equal method, with the exception of X500Principals: if the
      * principals are instances of X500Principal, the
      * cannonical form of their names are compared.
-     * <p/>
+     * </p>
      * Two null principals are considered equal.
      *
      * @param p1 Principal object 1.
@@ -646,8 +647,9 @@ public class AuthenticationUtil
 
     /**
      * Perform extended canonization operation on a distinguished name.
-     * <p/>
+     * <p>
      * This method will convert the DN to a format that:
+     * </p>
      * <ul>
      * <li>Is all lower case.</li>
      * <li>RDNs are separated by commas and no spaces.</li>
@@ -657,9 +659,11 @@ public class AuthenticationUtil
      * <li>If other RDNs exist in that are not in ORDERED_RDN_KEYS, an
      * IllegalArgumentException is thrown.
      * </ul>
-     * <p/>
+     * 
+     * <p>
      * Please see RFC#4514 for more information.
-     *
+     * </p>
+     * 
      * @param dnSrc
      * @return canonized distinguished name
      */
