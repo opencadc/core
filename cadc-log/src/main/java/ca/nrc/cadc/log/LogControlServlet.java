@@ -103,17 +103,20 @@ import ca.nrc.cadc.util.Log4jInit;
  * logging gets done, set load-on-startup to a smaller
  * whole number than is used for any other servlet
  * in the webapp.
- * </p><p>
+ * <p>
  * The initial level is set with an init-param named
  * <code>logLevel</code> and value equivalent to one of the
  * log4j levels (upper case, eg INFO).
- * </p><p>
+ * </p>
+ * <p>
  * The initially configered packages are set with an init-param
  * named <code>logLevelPackages</code> and value of whitespace-separated
  * package names.
- * </p><p>
+ * </p>
+ * <p>
  * The current configuration can be retrieved with an HTTP GET.
- * </p><p>
+ * </p>
+ * <p>
  * The configuration can be modified with an HTTP PIOST to this servlet.
  * The currently supported params are <code>level</code> (for example,
  * level=DEBUG) and <code>package</code> (for example, package=ca.nrc.cadc.log).
@@ -121,6 +124,7 @@ import ca.nrc.cadc.util.Log4jInit;
  * may specify a new package to configure
  * or a change in level for an existing package; if no packages are specified, the
  * level is changed for all previously configured packages.
+ * </p>
  */
 public class LogControlServlet extends HttpServlet
 {

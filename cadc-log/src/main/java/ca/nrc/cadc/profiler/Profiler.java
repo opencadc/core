@@ -76,10 +76,11 @@ import org.apache.log4j.Logger;
  * system. To profile a particular component, simply create a profiler and then
  * call the checkpoint method with the name of the operation just completed. The name of
  * the calling class, operation, and delta-t since the last checkpoint will be logged.
- * </p><p>
+ * <p>
  * Note: the intended use is to gradually refine profiling as needed by adding extra checkpoint
  * calls when needed. The log level of the profiler package can be changed dynamically
  * using the LogControlServlet in order to turn-on and turn-off logging of profile data.
+ * </p>
  * 
  * @author pdowler
  */
