@@ -50,7 +50,7 @@ import org.apache.log4j.PropertyConfigurator;
 
 /**
  * Utility class that initializes the logger for an application.
- * <h4>Usage</h4>
+ * <h3>Usage</h3>
  * <pre><br>public class HelloWorld<br>{</pre>
  * <pre>&nbsp;&nbsp;&nbsp; 
  * static Logger logger = Logger.getLogger(HelloWorld.class);
