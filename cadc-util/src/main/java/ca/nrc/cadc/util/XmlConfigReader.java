@@ -143,7 +143,7 @@ public class XmlConfigReader
     }
 
     /**
-     *  Looks for a configuration file named <cfgRootName>.config in the
+     *  Looks for a configuration file named &lt;cfgRootName&gt;.config in the
      * the directory specified by the system property CONFIG_DIR_PROPERTY. The 
      * method throws a IllegalArgumentException if the specified file cannot
      * be accessed.

@@ -81,13 +81,13 @@ import org.apache.log4j.PropertyConfigurator;
  * <code>LoggerUtil</code> is supposed to be called once per VM, typically in 
  * the main method. Subsequent calls lead to duplication of the logging messages.
  * Clients can call <code>isInitialized()</code> to check whether 
- * <code>LoggerUtil</code> has been intialized already.</p><p>
+ * <code>LoggerUtil</code> has been intialized already.<p></p>
  * Logging configuration can be dynamically changed at runtime using a 
  * log4j configuration file. The name of the file is 
  * <code><b><i>cfgRootName</i>.log4j.config</b></code> where 
  * <code><b><i>cfgRootName</i></b></code> is
  * usually the name of the application (project) and should reside in the same
- * directory with other config files (<code><b>$DEFAULT_CONFIG_DIR</code></b>)
+ * directory with other config files (<code><b>$DEFAULT_CONFIG_DIR</b></code>)
  * and should be set with <code>setCfgRootName()</code> before calling 
  * <code>initialize()</code>.
  * 
@@ -95,7 +95,7 @@ import org.apache.log4j.PropertyConfigurator;
  * LoggerUtil can process the following command line:
  * <tt><b>
  * [ -q|--quiet ] [ -v|--verbose ] [ -d|--debug ] [ --logfile=filename ]
- * </tt></b>
+ * </b></tt>
  * <br>where:
  * <ul>
  * <li><tt><b>-q|--quiet</b></tt>: Quiet mode. Print only the error messages to 
@@ -162,10 +162,10 @@ public class LoggerUtil
 	 * According to the CADC guidelines it sets the overall logging level to 
 	 * WARN and logging level of the logger specified by loggerName to the level 
 	 * specified by the command line arguments:<ul>
-	 *   <li>-d or -debug -> DEBUG level</li>
-	 *   <li>-v or -verbose -> INFO level</li>
-	 *   <li>empty or null -> WARN level</li>
-	 *   <li>-q or -quiet -> ERROR level</li>
+	 *   <li>-d or -debug -&gt; DEBUG level</li>
+	 *   <li>-v or -verbose -&gt; INFO level</li>
+	 *   <li>empty or null -&gt; WARN level</li>
+	 *   <li>-q or -quiet -&gt; ERROR level</li>
 	 * </ul>
 	 * This method also defines the formats of the message. If --log=fileName
 	 * option is present in the args, logging messages are sent to both the
@@ -236,10 +236,10 @@ public class LoggerUtil
 	 * level to WARN and defines the formats of the messages.</p> 
 	 * <p>At the console, messages from the logger specified by logName are
 	 * logged according to the flags in the arguments list:<ul>
-	 *   <li>-d or -debug -> DEBUG level</li>
-	 *   <li>-v or -verbose -> INFO level</li>
-	 *   <li>empty or null -> WARN level</li>
-	 *   <li>-q or -quiet -> ERROR level</li>
+	 *   <li>-d or -debug -&gt; DEBUG level</li>
+	 *   <li>-v or -verbose -&gt; INFO level</li>
+	 *   <li>empty or null -&gt; WARN level</li>
+	 *   <li>-q or -quiet -&gt; ERROR level</li>
 	 * </ul>
 	 * However, in the log file, messages from the logName logger are logged at 
 	 * the DEBUG level when -d or -debug flags are present or at the INFO level 
@@ -383,7 +383,7 @@ public class LoggerUtil
 	/**
 	 * Sets the cfgRootName for log4j. In initialize, if the cfgRootName has
 	 * been set and a cfgRootName.log4j.config file exists in the config
-	 * directory (<code><b>$DEFAULT_CONFIG_DIR</code></b>), then logging 
+	 * directory (<code><b>$DEFAULT_CONFIG_DIR</b></code>), then logging 
 	 * is dynamically configured according to this config file. Calling this
 	 * method after initialize has no effect.
 	 * @param cfgRoot log4j configuration file root name, typically the name
