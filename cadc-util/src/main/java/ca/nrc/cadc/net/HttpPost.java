@@ -70,15 +70,10 @@
 package ca.nrc.cadc.net;
 
 import ca.nrc.cadc.net.event.TransferEvent;
-import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLEncoder;
-import java.security.AccessControlException;
 import java.util.Map;
 import java.util.Set;
 
@@ -87,6 +82,20 @@ import javax.net.ssl.HttpsURLConnection;
 import org.apache.log4j.Logger;
 
 import ca.nrc.cadc.util.StringUtil;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.net.URLEncoder;
+import java.security.AccessControlException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.TreeMap;
+import java.util.UUID;
 
 /**
  * Perform an HTTP Post.
@@ -102,8 +111,12 @@ public class HttpPost extends HttpTransfer
 {
     private static Logger log = Logger.getLogger(HttpPost.class);
 
+    // a string that isn't going to be inside params or files
+    private static final String MULTIPART_BOUNDARY = UUID.randomUUID().toString();
+    private static final String LINE_FEED = "\r\n";
+    
     // request information
-    private Map<String,Object> map;
+    private Map<String,Object> paramMap;
     private String content;
     private String contentType;
     private OutputStream outputStream;
@@ -125,7 +138,7 @@ public class HttpPost extends HttpTransfer
     {
         super(true);
         this.remoteURL = url;
-        this.map = map;
+        this.paramMap = map;
         this.outputStream = outputStream;
         this.followRedirects = true;
         if (url == null)
@@ -146,7 +159,7 @@ public class HttpPost extends HttpTransfer
     {
         super(followRedirects);
         this.remoteURL = url;
-        this.map = map;
+        this.paramMap = map;
         if (url == null)
             throw new IllegalArgumentException("url cannot be null.");
         if (map == null || map.isEmpty())
@@ -242,12 +255,10 @@ public class HttpPost extends HttpTransfer
                 HttpsURLConnection sslConn = (HttpsURLConnection) conn;
                 initHTTPS(sslConn);
             }
-            
-            if (map == null)
-                doPost(conn, content, contentType);
+            if (content != null)
+                doPost(conn, contentType, content);
             else
-                doPost(conn, map);
-            
+                doPost(conn, paramMap);
         }
         catch(TransientException tex)
         {
@@ -289,34 +300,93 @@ public class HttpPost extends HttpTransfer
     private void doPost(HttpURLConnection conn, Map<String, Object> parameters)
         throws IOException, InterruptedException, TransientException
     {
-        StringBuilder content = new StringBuilder();
+        if (parameters == null)
+            parameters = new TreeMap<String,Object>(); // removes a lot of checking for null
+        
         Set<String> keys = parameters.keySet();
         Object value = null;
-        for (String key : keys)
+
+        Map<String,List<Object>> pmap = new TreeMap<String,List<Object>>();
+        Map<String,File> uploads = new TreeMap<String,File>();
+        for (Map.Entry<String,Object> me : parameters.entrySet())
         {
-            value = parameters.get(key);
-            content.append(key);
-            content.append("=");
-            content.append( URLEncoder.encode(value.toString(), "UTF-8") );
-            content.append("&");
+            String key = me.getKey();
+            value = me.getValue();
+            if (value instanceof File)
+            {
+                File u = (File) value;
+                uploads.put(key, u);
+            }
+            else if (value instanceof Collection)
+            {
+                Collection vals = (Collection) value;
+                List<Object> pmv = new ArrayList<Object>(vals.size());
+                pmv.addAll(vals);
+                pmap.put(key, pmv);
+            }
+            else
+            {
+                List<Object> pmv = new ArrayList<Object>(1);
+                pmv.add(value);
+                pmap.put(key, pmv);
+            }
         }
-        // trim off the last ampersand
-        content.setLength(content.length() - 1);
-        doPost(conn, content.toString(), "application/x-www-form-urlencoded");
+        
+        doPost(conn, pmap, uploads);
     }
     
-    private void doPost(HttpURLConnection conn, String content, String contentType)
+    private void doPost(HttpURLConnection conn, String contentType, String content)
         throws IOException, InterruptedException, TransientException
     {
         setRequestSSOCookie(conn);
         conn.setRequestMethod("POST");
-        conn.setRequestProperty("Content-Length", ""
-                + Integer.toString(content.getBytes("UTF-8").length));
-        
+        if (content != null)
+        {
+            String len = Long.toString(content.getBytes("UTF-8").length);
+            conn.setRequestProperty("Content-Length", len);
+            log.debug("POST Content-Length: " + len);
+        }
         if (contentType != null)
             conn.setRequestProperty("Content-Type", contentType);
-        else
-            conn.setRequestProperty("Content-Type", "text/plain");
+        log.debug("POST Content-Type: " + contentType);
+        
+        setRequestHeaders(conn);
+        
+        conn.setInstanceFollowRedirects(followRedirects);
+        conn.setUseCaches(false);
+        conn.setDoOutput(true);
+        conn.setDoInput(true);
+        
+        OutputStreamWriter writer = new OutputStreamWriter(conn.getOutputStream(), "UTF-8");
+        writer.write(content);
+        writer.flush();
+        writer.close();
+        
+        log.debug("POST - done: " + remoteURL.toString());
+        
+        handleResponse(conn);
+    }
+    
+    private void doPost(HttpURLConnection conn, Map<String,List<Object>> params, Map<String,File> uploads)
+        throws IOException, InterruptedException, TransientException
+    {
+        
+        String ctype = "application/x-www-form-urlencoded";
+        boolean multi = false;
+        
+        if (!uploads.isEmpty())
+        {
+            ctype = "multipart/form-data; boundary=" + MULTIPART_BOUNDARY;
+            multi = true;
+        }
+        
+        setRequestSSOCookie(conn);
+        conn.setRequestMethod("POST");
+        
+        if (ctype != null)
+            conn.setRequestProperty("Content-Type", ctype);
+        log.debug("POST Content-Type: " + ctype);
+        
         setRequestHeaders(conn);
         
         conn.setInstanceFollowRedirects(followRedirects);
@@ -324,66 +394,145 @@ public class HttpPost extends HttpTransfer
         conn.setDoOutput(true);
         conn.setDoInput(true);
 
-        log.debug("POST - writing content: " + content);
-        OutputStream ostream = conn.getOutputStream();
-        ostream.write(content.getBytes("UTF-8"));
-        ostream.flush();
-        ostream.close();
+        //log.debug("POST - writing content: " + content);
+        
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String,List<Object>> pe : params.entrySet())
+        {
+            for (Object v : pe.getValue())
+            {
+                if (multi)
+                {
+                    sb.append(LINE_FEED).append("--" + MULTIPART_BOUNDARY);
+                    sb.append(LINE_FEED).append("Content-Disposition: form-data; name=\"" + pe.getKey() + "\"");
+                    sb.append(LINE_FEED);
+                    sb.append(LINE_FEED).append(v.toString());
+                }
+                else
+                {
+                    sb.append(pe.getKey());
+                    sb.append("=");
+                    sb.append( URLEncoder.encode(v.toString(), "UTF-8") );
+                    sb.append("&");
+                    
+                }
+            }
+        }
+        
+        log.debug("params: " + sb.toString());
+        
+        OutputStreamWriter writer = new OutputStreamWriter(conn.getOutputStream(), "UTF-8");
+        writer.write(sb.toString());
+        
+        if (multi)
+        {
+            for (Map.Entry<String,File> up : uploads.entrySet())
+            {
+                writeFilePart(up.getKey(), up.getValue(), writer);
+            }
+            String end = LINE_FEED + "--" + MULTIPART_BOUNDARY + "--" + LINE_FEED;
+            writer.append(end);
+        }
+        
+        writer.flush();
+        writer.close();
+
         log.debug("POST - done: " + remoteURL.toString());
         
-        int statusCode = checkStatusCode(conn);
-        this.responseCode = statusCode;
-        
+        handleResponse(conn);
+    }
+    
+    private void handleResponse(HttpURLConnection conn)
+        throws IOException, InterruptedException, TransientException
+    {
+        //int statusCode = checkStatusCode(conn);
+        this.responseCode = conn.getResponseCode();
+        this.responseContentType = conn.getContentType();
+        this.responseContentEncoding = conn.getContentEncoding();
+            
         // check for a redirect
         String location = conn.getHeaderField("Location");
-        if ((statusCode == HttpURLConnection.HTTP_SEE_OTHER
-            || statusCode == HttpURLConnection.HTTP_MOVED_TEMP) 
+        if ((responseCode == HttpURLConnection.HTTP_SEE_OTHER
+            || responseCode == HttpURLConnection.HTTP_MOVED_TEMP) 
             && location != null)
         {
             this.redirectURL = new URL(location);
             log.debug("redirectURL: " + redirectURL);
+            return;
+        }
+        
+        // read response fully
+        InputStream istream = conn.getInputStream();
+        if (outputStream != null)
+        {
+            if (use_nio)
+                nioLoop(istream, outputStream, 2*bufferSize, 0);
+            else
+                ioLoop(istream, outputStream, 2*bufferSize, 0);
+            outputStream.flush();
         }
         else
         {
-            this.responseContentType = conn.getContentType();
-            this.responseContentEncoding = conn.getContentEncoding();
-            // otherwise get the response content
-            InputStream istream = conn.getInputStream();
-            if (outputStream != null)
+            int smallBufferSize = 512;
+            ByteArrayOutputStream byteArrayOstream = new ByteArrayOutputStream();
+            try
             {
                 if (use_nio)
-                    nioLoop(istream, outputStream, 2*bufferSize, 0);
+                    nioLoop(istream, byteArrayOstream, smallBufferSize, 0);
                 else
-                    ioLoop(istream, outputStream, 2*bufferSize, 0);
-                outputStream.flush();
+                    ioLoop(istream, byteArrayOstream, smallBufferSize, 0);
+                byteArrayOstream.flush();
+                responseBody = new String(byteArrayOstream.toByteArray(), "UTF-8");
             }
-            else
+            finally
             {
-                int smallBufferSize = 512;
-                ByteArrayOutputStream byteArrayOstream = new ByteArrayOutputStream();
-                try
+                if (byteArrayOstream != null)
                 {
-                    if (use_nio)
-                        nioLoop(istream, byteArrayOstream, smallBufferSize, 0);
-                    else
-                        ioLoop(istream, byteArrayOstream, smallBufferSize, 0);
-                    byteArrayOstream.flush();
-                    responseBody = new String(byteArrayOstream.toByteArray(), "UTF-8");
-                }
-                finally
-                {
-                    if (byteArrayOstream != null)
-                    {
-                        try { byteArrayOstream.close(); }
-                        catch(Exception ignore) { }
-                    }
+                    try { byteArrayOstream.close(); }
+                    catch(Exception ignore) { }
                 }
             }
         }
+        // map some response codes to exceptions
+        checkStatusCode(conn);
+    }
+    
+    private void writeFilePart(String fieldName, File uploadFile, Writer w)
+        throws IOException 
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append(LINE_FEED).append("--" + MULTIPART_BOUNDARY);
+        sb.append(LINE_FEED).append("Content-Disposition: form-data; name=\"" + fieldName + "\";"
+            + " filename=\"" + uploadFile.getName() + "\"");
+        sb.append(LINE_FEED);
+        sb.append(LINE_FEED);
+        
+        log.debug("file part: " + sb);
+        w.append(sb);
+        
+        FileReader r = null;
+        long len = 0;
+        try
+        {
+            r = new FileReader(uploadFile);
+            char[] buffer = new char[4096];
+            int bytesRead;
+            while ((bytesRead = r.read(buffer)) != -1) 
+            {
+                w.write(buffer, 0, bytesRead);
+                len += bytesRead;
+            }
+        }
+        finally
+        {
+            if (r != null)
+                r.close();
+        }
+        log.debug("file part length: " + len);
     }
     
     private int checkStatusCode(HttpURLConnection conn)
-    throws IOException, TransientException
+        throws IOException, TransientException
     {
         int code = conn.getResponseCode();
         log.debug("HTTP POST status: " + code + " for " + remoteURL);
@@ -393,12 +542,14 @@ public class HttpPost extends HttpTransfer
             code != HttpURLConnection.HTTP_MOVED_TEMP &&
             code != HttpURLConnection.HTTP_SEE_OTHER)
         {
+            this.responseContentType = conn.getContentType();
+            this.responseContentEncoding = conn.getContentEncoding();
             String msg = "(" + code + ") " + conn.getResponseMessage();
-            String body = NetUtil.getErrorBody(conn);
-            if (StringUtil.hasText(body))
-            {
-                msg = msg + ": " + body;
-            }
+            //String body = NetUtil.getErrorBody(conn);
+            //if (StringUtil.hasText(body))
+            //{
+            //    msg = msg + ": " + body;
+            //}
             checkTransient(code, msg, conn);
             switch(code)
             {
