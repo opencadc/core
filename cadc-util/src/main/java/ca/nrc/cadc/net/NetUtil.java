@@ -196,6 +196,7 @@ public class NetUtil
      * @param conn              The HTTP URL Connection.
      * @return                  String error body text, if any.
      * @throws IOException      If the stream cannot be obtained or read from.
+     * @deprecated 
      */
     public static String getErrorBody(HttpURLConnection conn)
             throws IOException
@@ -246,6 +247,12 @@ public class NetUtil
         }
     }
     
+    /**
+     * @deprecated 
+     * @param conn
+     * @param dest
+     * @throws IOException 
+     */
     public static void getErrorBody(HttpURLConnection conn, OutputStream dest)
             throws IOException
     {
