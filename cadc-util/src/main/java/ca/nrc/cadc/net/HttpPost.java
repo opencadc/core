@@ -449,7 +449,8 @@ public class HttpPost extends HttpTransfer
         this.responseCode = conn.getResponseCode();
         this.responseContentType = conn.getContentType();
         this.responseContentEncoding = conn.getContentEncoding();
-            
+        log.debug("handleResponse: " + responseCode + "|" + responseContentType);
+        
         // check for a redirect
         String location = conn.getHeaderField("Location");
         if ((responseCode == HttpURLConnection.HTTP_SEE_OTHER
@@ -461,8 +462,17 @@ public class HttpPost extends HttpTransfer
             return;
         }
         
+        // map some response codes to exceptions
+        checkStatusCode(conn);
+        
         // read response fully
         InputStream istream = conn.getInputStream();
+        readResponse(istream);
+    }
+    
+    private void readResponse(InputStream istream)
+        throws IOException, InterruptedException
+    {
         if (outputStream != null)
         {
             if (use_nio)
@@ -470,6 +480,7 @@ public class HttpPost extends HttpTransfer
             else
                 ioLoop(istream, outputStream, 2*bufferSize, 0);
             outputStream.flush();
+            log.debug("wrote response to supplied " + outputStream.getClass().getName());
         }
         else
         {
@@ -483,6 +494,7 @@ public class HttpPost extends HttpTransfer
                     ioLoop(istream, byteArrayOstream, smallBufferSize, 0);
                 byteArrayOstream.flush();
                 responseBody = new String(byteArrayOstream.toByteArray(), "UTF-8");
+                log.debug("captured response in local String responseBody");
             }
             finally
             {
@@ -493,8 +505,6 @@ public class HttpPost extends HttpTransfer
                 }
             }
         }
-        // map some response codes to exceptions
-        checkStatusCode(conn);
     }
     
     private void writeFilePart(String fieldName, File uploadFile, Writer w)
@@ -532,7 +542,7 @@ public class HttpPost extends HttpTransfer
     }
     
     private int checkStatusCode(HttpURLConnection conn)
-        throws IOException, TransientException
+        throws IOException, InterruptedException, TransientException
     {
         int code = conn.getResponseCode();
         log.debug("HTTP POST status: " + code + " for " + remoteURL);
@@ -545,11 +555,8 @@ public class HttpPost extends HttpTransfer
             this.responseContentType = conn.getContentType();
             this.responseContentEncoding = conn.getContentEncoding();
             String msg = "(" + code + ") " + conn.getResponseMessage();
-            //String body = NetUtil.getErrorBody(conn);
-            //if (StringUtil.hasText(body))
-            //{
-            //    msg = msg + ": " + body;
-            //}
+            InputStream istream = conn.getErrorStream();
+            readResponse(istream);
             checkTransient(code, msg, conn);
             switch(code)
             {
