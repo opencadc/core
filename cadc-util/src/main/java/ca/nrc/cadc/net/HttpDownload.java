@@ -769,8 +769,8 @@ public class HttpDownload extends HttpTransfer
             else
                 conn.setRequestMethod("GET");
 
-            int code = checkStatusCode(conn);
             processHeader(conn);
+            int code = checkStatusCode(conn);
 
             if (headOnly || (!followRedirects && redirectURL != null))
                 return;
