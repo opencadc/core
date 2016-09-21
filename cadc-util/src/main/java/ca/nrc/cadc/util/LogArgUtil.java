@@ -34,7 +34,6 @@
 
 package ca.nrc.cadc.util;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
@@ -45,7 +44,6 @@ import java.util.Date;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.PatternLayout;
-import org.apache.log4j.PropertyConfigurator;
 
 
 /**
@@ -59,7 +57,7 @@ import org.apache.log4j.PropertyConfigurator;
  * <br>
  * <br>&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; try
  * <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {
- * <br>&nbsp;&nbsp;  &nbsp;&nbsp;  &nbsp;&nbsp; &nbsp;&nbsp;  LoggerUtil.initialize(Test.class.getPackage().getName(), args);
+ * <br>&nbsp;&nbsp;  &nbsp;&nbsp;  &nbsp;&nbsp; &nbsp;&nbsp;  LogArgUtil.initialize(Test.class.getPackage().getName(), args);
  * <br>
  * <br>&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; logger.debug("Debug message");
  * <br>&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp; logger.info("Info message");
@@ -78,10 +76,10 @@ import org.apache.log4j.PropertyConfigurator;
  *  
  * <h4> Description </h4>
  * 
- * <code>LoggerUtil</code> is supposed to be called once per VM, typically in 
+ * <code>LogArgUtil</code> is supposed to be called once per VM, typically in 
  * the main method. Subsequent calls lead to duplication of the logging messages.
  * Clients can call <code>isInitialized()</code> to check whether 
- * <code>LoggerUtil</code> has been intialized already.<p></p>
+ * <code>LogArgUtil</code> has been intialized already.<p></p>
  * Logging configuration can be dynamically changed at runtime using a 
  * log4j configuration file. The name of the file is 
  * <code><b><i>cfgRootName</i>.log4j.config</b></code> where 
@@ -92,7 +90,7 @@ import org.apache.log4j.PropertyConfigurator;
  * <code>initialize()</code>.
  * 
  * <h4> Logging Flags </h4>
- * LoggerUtil can process the following command line:
+ * LogArgUtil can process the following command line:
  * <tt><b>
  * [ -q|--quiet ] [ -v|--verbose ] [ -d|--debug ] [ --logfile=filename ]
  * </b></tt>
@@ -113,7 +111,7 @@ import org.apache.log4j.PropertyConfigurator;
  * 
  *  
  */
-public class LoggerUtil
+public class LogArgUtil
 {
 	// logging related flags in the command line
 	public final static String VERBOSE_SHORT = "v";
@@ -126,16 +124,6 @@ public class LoggerUtil
 
     public final static Level DEFAULT_CONSOLE_LOGGING_LEVEL = Level.WARN;
     public final static Level DEFAULT_FILE_LOGGING_LEVEL = Level.INFO;
-    
-	// sufix for the log4j config file name
-	// Separated config file is no long encouraged. 2011-05-30, -sz 
-	private final static String SUFIX_CONFIG_FILE = ".log4j.config";
-
-	// config name for log4j config file. It is set when the client 
-	// provides the application specific prefix to be added to SUFIX_CONFIG_FILE
-    // Separated config file is no long encouraged. 2011-05-30, -sz 
-	private static String configFile;
-	private static boolean initialized = false; // true after calling initialize
 
 	/**
 	 * Returns the logging related command line flags and their description for 
@@ -225,7 +213,6 @@ public class LoggerUtil
 		{
 			initConsoleLogging(loggerNames, argMap);
 		}
-		initialized = true;
 	}
 
 	/**
@@ -321,7 +308,6 @@ public class LoggerUtil
 		}
 		else
 		{
-			runtimeConfig();
 			newLevel = Level.INFO;
 	        for (String loggerName : loggerNames)
 	            Log4jInit.setLevel(loggerName, newLevel);
@@ -335,8 +321,6 @@ public class LoggerUtil
 		Writer fileWriter = new FileWriter(fileName, append);
         for (String loggerName : loggerNames)
             Log4jInit.setLevel(loggerName, newLevel, fileWriter);
-
-		initialized = true;
 	}
 
     /**
@@ -381,31 +365,6 @@ public class LoggerUtil
 	}
 
 	/**
-	 * Sets the cfgRootName for log4j. In initialize, if the cfgRootName has
-	 * been set and a cfgRootName.log4j.config file exists in the config
-	 * directory (<code><b>$DEFAULT_CONFIG_DIR</b></code>), then logging 
-	 * is dynamically configured according to this config file. Calling this
-	 * method after initialize has no effect.
-	 * @param cfgRoot log4j configuration file root name, typically the name
-	 * of the client application or project.
-	 */
-	public static void setCfgRootName(String cfgRoot)
-	{
-		configFile = cfgRoot + SUFIX_CONFIG_FILE;
-	}
-
-	/**
-	 * Returns true if one of the initialize methods have been called yet or
-	 * false otherwise.
-	 *
-     * @return      True if it has been initialized, False otherwise.
-	 */
-	public static boolean isInitialized()
-	{	
-		return initialized;
-	}
-
-	/**
 	 * Returns the name of the log file from a given nameRoot and it can be used
 	 * as the name of the destination log file.
      *
@@ -427,12 +386,6 @@ public class LoggerUtil
 	 */
     private static synchronized Level initConsoleLogging(String[] loggerNames, ArgumentMap argMap)
     {
-        if (!initialized)
-        {
-            runtimeConfig();
-            initialized = true;
-        }
-
         Level level = DEFAULT_CONSOLE_LOGGING_LEVEL;
         if (argMap.isSet(QUIET_SHORT) || argMap.isSet(QUIET_LONG)) level = Level.ERROR;
         if (argMap.isSet(VERBOSE_SHORT) || argMap.isSet(VERBOSE_LONG)) level = Level.INFO;
@@ -454,12 +407,6 @@ public class LoggerUtil
             ArgumentMap argMap, String filename)
         throws IOException
     {
-        if (!initialized)
-        {
-            runtimeConfig();
-            initialized = true;
-        }
-
         Level level = DEFAULT_FILE_LOGGING_LEVEL;
         if (argMap.isSet(QUIET_SHORT) || argMap.isSet(QUIET_LONG)) level = Level.ERROR;
         if (argMap.isSet(VERBOSE_SHORT) || argMap.isSet(VERBOSE_LONG)) level = Level.INFO;
@@ -473,22 +420,4 @@ public class LoggerUtil
             Log4jInit.setLevel(loggerName, level, fileWriter);
     }
 
-	/**
-	 * This method checks whether a logging config file exists in the config
-	 * directory of the application. If this is
-	 * the case, the logging system dynamically takes that logging configuration
-	 * information into account. As a result, this method allows for runtime 
-	 * configuration of the logging system.
-	 */
-	private static void runtimeConfig()
-	{
-		if(configFile == null)
-			return;
-		String dir = System.getProperty(XmlConfigReader.CONFIG_DIR_PROPERTY);
-		File file = new File(dir, configFile);
-		if (file.canRead())
-		{
-			PropertyConfigurator.configure(file.getAbsolutePath());
-		}
-	}
 }
