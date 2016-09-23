@@ -61,7 +61,7 @@ public class BuilderOutputGrabberTest
 //        String[] args = {"-d", "-v"};
 //        try
 //        {
-//            LoggerUtil.initialize(
+//            LogArgUtil.initialize(
 //                    BuilderOutputGrabberTest.class.getPackage().getName(),
 //                    args);
 //        }

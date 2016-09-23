@@ -39,9 +39,9 @@ import java.io.File;
 
 
 /**
- * Test the LoggerUtil utility class.
+ * Test the LogArgUtil utility class.
  */
-public class LoggerUtilTest extends TestCase
+public class LogArgUtilTest extends TestCase
 {
     private final String LOG_PATH = "/tmp/log/1/2/3/path";
 
@@ -60,7 +60,7 @@ public class LoggerUtilTest extends TestCase
     {
         assertFalse("File Path Exists already.", new File(LOG_PATH).exists());
 
-        LoggerUtil.initialize(new String[]{"TESTLOG"}, null, LOG_PATH);
+        LogArgUtil.initialize(new String[]{"TESTLOG"}, null, LOG_PATH);
 
         assertTrue("Log File Path not Exists after initialization.", new File(LOG_PATH).exists());
     }
