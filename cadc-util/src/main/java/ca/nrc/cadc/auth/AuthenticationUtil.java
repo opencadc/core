@@ -398,6 +398,7 @@ public class AuthenticationUtil
         }
 
         Subject subject = new Subject(false, principals, publicCred, privateCred);
+        setAuthMethod(subject, AuthMethod.CERT);
         return subject; // this method for client apps only: no augment
     }
 
