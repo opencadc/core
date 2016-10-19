@@ -69,17 +69,20 @@
 
 package ca.nrc.cadc.rest;
 
-import ca.nrc.cadc.auth.AuthMethod;
-import ca.nrc.cadc.auth.AuthenticationUtil;
-import ca.nrc.cadc.io.ByteLimitExceededException;
-import ca.nrc.cadc.log.WebServiceLogInfo;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.AccessControlException;
 import java.security.PrivilegedExceptionAction;
 import java.security.cert.CertificateException;
-import javax.security.auth.Subject;
+
 import org.apache.log4j.Logger;
+
+import ca.nrc.cadc.io.ByteLimitExceededException;
+import ca.nrc.cadc.log.WebServiceLogInfo;
+import ca.nrc.cadc.net.HttpTransfer;
+import ca.nrc.cadc.net.ResourceAlreadyExistsException;
+import ca.nrc.cadc.net.ResourceNotFoundException;
+import ca.nrc.cadc.net.TransientException;
 
 /**
  *
@@ -144,10 +147,26 @@ public abstract class RestAction  implements PrivilegedExceptionAction<Object>
             logInfo.setSuccess(true);
             handleException(ex, 400, "invalid input: " + path, true);
         }
+        catch(ResourceNotFoundException ex)
+        {
+            logInfo.setSuccess(true);
+            handleException(ex, 404, "not found: " + path, false);
+        }
+        catch(ResourceAlreadyExistsException ex)
+        {
+            logInfo.setSuccess(true);
+            handleException(ex, 409, "already exists: " + path, false);
+        }
         catch(ByteLimitExceededException ex)
         {
             logInfo.setSuccess(true);
             handleException(ex, 413, "too large: " + path, false);
+        }
+        catch(TransientException ex)
+        {
+            logInfo.setSuccess(true);
+            syncOutput.setHeader(HttpTransfer.SERVICE_RETRY, ex.getRetryDelay());
+            handleException(ex, 503, "temporarily unavailable: " + path, false);
         }
         catch(RuntimeException unexpected)
         {
@@ -205,6 +224,23 @@ public abstract class RestAction  implements PrivilegedExceptionAction<Object>
             log.error("unexpected situation: SyncOutput is open", ex);
     }
     
+    /**
+     * Implemented by subclass
+     * 
+     * The following exceptions, when thrown by this function, are
+     * automatically mapped into HTTP errors by RestAction class:
+     *  
+     *  java.lang.IllegalArgumentException -> 400
+     *  java.security.AccessControlException -> 403
+     *  java.security.cert.CertificateException -> 403
+     *  ca.nrc.cadc.net.ResourceNotFoundException -> 404
+     *  ca.nrc.cadc.net.ResourceAlreadyExistsException -> 409
+     *  ca.nrc.cadc.io.ByteLimitExceededException -> 413
+     *  ca.nrc.cadc.net.TransientException -> 503
+     *  java.lang.RuntimeException -> 500
+     *  java.lang.Error -> 500
+     * @throws Exception
+     */
     public abstract void doAction()
         throws Exception;
 
