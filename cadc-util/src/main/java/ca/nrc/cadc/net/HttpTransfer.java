@@ -110,6 +110,13 @@ import java.security.NoSuchAlgorithmException;
 public abstract class HttpTransfer implements Runnable
 {
     private static Logger log = Logger.getLogger(HttpTransfer.class);
+
+    /**
+     * Not documented in HttpURLConnection.  Represents a locked resource,
+     * which primarily relates to WebDAV.
+     */
+    static final int HTTP_LOCKED = 423;
+
     public static String DEFAULT_USER_AGENT;
     public static final String CADC_CONTENT_LENGTH_HEADER = "X-CADC-Content-Length";
     public static final String CADC_STREAM_HEADER = "X-CADC-Stream";
