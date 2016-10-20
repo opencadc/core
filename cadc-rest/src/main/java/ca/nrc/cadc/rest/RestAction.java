@@ -230,15 +230,15 @@ public abstract class RestAction  implements PrivilegedExceptionAction<Object>
      * The following exceptions, when thrown by this function, are
      * automatically mapped into HTTP errors by RestAction class:
      *  
-     *  java.lang.IllegalArgumentException -> 400
-     *  java.security.AccessControlException -> 403
-     *  java.security.cert.CertificateException -> 403
-     *  ca.nrc.cadc.net.ResourceNotFoundException -> 404
-     *  ca.nrc.cadc.net.ResourceAlreadyExistsException -> 409
-     *  ca.nrc.cadc.io.ByteLimitExceededException -> 413
-     *  ca.nrc.cadc.net.TransientException -> 503
-     *  java.lang.RuntimeException -> 500
-     *  java.lang.Error -> 500
+     *  java.lang.IllegalArgumentException : 400
+     *  java.security.AccessControlException : 403
+     *  java.security.cert.CertificateException : 403
+     *  ca.nrc.cadc.net.ResourceNotFoundException : 404
+     *  ca.nrc.cadc.net.ResourceAlreadyExistsException : 409
+     *  ca.nrc.cadc.io.ByteLimitExceededException : 413
+     *  ca.nrc.cadc.net.TransientException : 503
+     *  java.lang.RuntimeException : 500
+     *  java.lang.Error : 500
      * @throws Exception
      */
     public abstract void doAction()
