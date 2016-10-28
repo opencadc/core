@@ -213,6 +213,7 @@ public class RestServlet extends HttpServlet
         SyncOutput out = new SyncOutput(response);
         
         WebServiceLogInfo logInfo = new ServletLogInfo(request);
+        long start = System.currentTimeMillis();
         try
         {
             Subject subject = AuthenticationUtil.getSubject(request);
@@ -243,7 +244,8 @@ public class RestServlet extends HttpServlet
         }
         finally
         {
-            log.info(logInfo.end());        	
+        	logInfo.setElapsedTime(System.currentTimeMillis() - start);
+        	log.info(logInfo.end());        	
         }
     }
 
