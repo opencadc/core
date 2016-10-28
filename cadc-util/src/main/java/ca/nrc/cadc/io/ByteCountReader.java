@@ -103,7 +103,7 @@ public class ByteCountReader extends Reader implements ByteCounter
     public int read() throws IOException
     {
         if (hasReachedLimit())
-            throw new ByteLimitExceededException(byteLimit);
+            throw new ByteLimitExceededException("byte limit exceeded", byteLimit);
 
         int value = reader.read();
         byteCount++;
@@ -114,7 +114,7 @@ public class ByteCountReader extends Reader implements ByteCounter
     public int read(char[] cbuf) throws IOException
     {
         if (hasReachedLimit())
-            throw new ByteLimitExceededException(byteLimit);
+            throw new ByteLimitExceededException("byte limit exceeded", byteLimit);
         
         int charsRead = reader.read(cbuf);
         
@@ -128,7 +128,7 @@ public class ByteCountReader extends Reader implements ByteCounter
     public int read(char[] cbuf, int off, int len) throws IOException
     {
         if (hasReachedLimit())
-            throw new ByteLimitExceededException(byteLimit);
+            throw new ByteLimitExceededException("byte limit exceeded", byteLimit);
                
         int charsRead = reader.read(cbuf, off, len);
         if (charsRead != -1)
@@ -141,7 +141,7 @@ public class ByteCountReader extends Reader implements ByteCounter
     public int read(CharBuffer target) throws IOException
     {
         if (hasReachedLimit())
-            throw new ByteLimitExceededException(byteLimit);
+            throw new ByteLimitExceededException("byte limit exceeded", byteLimit);
         
         int charsRead = reader.read(target);
         

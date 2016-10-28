@@ -145,22 +145,27 @@ public abstract class RestAction  implements PrivilegedExceptionAction<Object>
         catch(IllegalArgumentException ex)
         {
             logInfo.setSuccess(true);
-            handleException(ex, 400, "invalid input: " + path, true);
+            handleException(ex, 400, ex.getMessage(), true);
         }
         catch(ResourceNotFoundException ex)
         {
             logInfo.setSuccess(true);
-            handleException(ex, 404, "not found: " + path, false);
+            handleException(ex, 404, ex.getMessage(), false);
         }
         catch(ResourceAlreadyExistsException ex)
         {
             logInfo.setSuccess(true);
-            handleException(ex, 409, "already exists: " + path, false);
+            handleException(ex, 409, ex.getMessage(), false);
         }
         catch(ByteLimitExceededException ex)
         {
             logInfo.setSuccess(true);
-            handleException(ex, 413, "too large: " + path, false);
+            handleException(ex, 413, ex.getMessage(), false);
+        }
+        catch(UnsupportedOperationException ex)
+        {
+            logInfo.setSuccess(true);
+            handleException(ex, 400, ex.getMessage(), false);
         }
         catch(TransientException ex)
         {
