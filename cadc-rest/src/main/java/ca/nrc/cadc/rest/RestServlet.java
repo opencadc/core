@@ -96,23 +96,23 @@ public class RestServlet extends HttpServlet
 
     private static final Logger log = Logger.getLogger(RestServlet.class);
     
-    private Class<RestAction> getImpl;
-    private Class<RestAction> postImpl;
-    private Class<RestAction> putImpl;
-    private Class<RestAction> deleteImpl;
+    private RestAction getAction;
+    private RestAction postAction;
+    private RestAction putAction;
+    private RestAction deleteAction;
 
     @Override
     public void init(ServletConfig config) throws ServletException
     {
         super.init(config);
         String cname;
-        this.getImpl = loadImpl(config, "get");
-        this.postImpl = loadImpl(config, "post");
-        this.putImpl = loadImpl(config, "put");
-        this.deleteImpl = loadImpl(config, "delete");
+        this.getAction = loadAction(config, "get");
+        this.postAction = loadAction(config, "post");
+        this.putAction = loadAction(config, "put");
+        this.deleteAction = loadAction(config, "delete");
     }
     
-    private Class<RestAction> loadImpl(ServletConfig config, String method)
+    private RestAction loadAction(ServletConfig config, String method)
     {
         String cname = config.getInitParameter(method);
         if (cname != null)
@@ -121,7 +121,7 @@ public class RestServlet extends HttpServlet
             {
                 Class<RestAction> ret = (Class<RestAction>) Class.forName(cname);
                 log.info(method + ": " + cname + " [loaded]");
-                return ret;
+                return ret.newInstance();
             }
             catch(Exception ex)
             {
@@ -155,58 +155,58 @@ public class RestServlet extends HttpServlet
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
         throws IOException
     {
-        if (getImpl == null)
+        if (getAction == null)
         {
             handleUnsupportedAction("GET", response);
             return;
         }
         log.debug("doGet: " + request.getPathInfo());
-        doit(request, response, getImpl);
+        doit(request, response, getAction);
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
         throws IOException
     {
-        if (postImpl == null)
+        if (postAction == null)
         {
             handleUnsupportedAction("POST", response);
             return;
         }
         log.debug("doPost: " + request.getPathInfo());
-        doit(request, response, postImpl);
+        doit(request, response, postAction);
     }
     
     @Override
     protected void doPut(HttpServletRequest request, HttpServletResponse response)
         throws IOException
     {
-        if (putImpl == null)
+        if (putAction == null)
         {
             handleUnsupportedAction("PUT", response);
             return;
         }
         
         log.debug("doPut: " + request.getPathInfo());
-        doit(request, response, putImpl);
+        doit(request, response, putAction);
     }
 
     @Override
     protected void doDelete(HttpServletRequest request, HttpServletResponse response)
         throws IOException
     {
-        if (deleteImpl == null)
+        if (deleteAction == null)
         {
             handleUnsupportedAction("DELETE", response);
             return;
         }
         
         log.debug("doDelete: " + request.getPathInfo());
-        doit(request, response, deleteImpl);
+        doit(request, response, deleteAction);
     }
 
     
-    protected void doit(HttpServletRequest request, HttpServletResponse response,  Class<RestAction> actionClass)
+    protected void doit(HttpServletRequest request, HttpServletResponse response,  RestAction action)
         throws IOException
     {
         SyncInput in = new SyncInput(request);
@@ -219,9 +219,7 @@ public class RestServlet extends HttpServlet
             Subject subject = AuthenticationUtil.getSubject(request);
             logInfo.setSubject(subject);
             log.info(logInfo.start());
-            
-            RestAction action = actionClass.newInstance();
-            
+                        
             action.setPath(request.getPathInfo());
             action.setSyncInput(in);
             action.setSyncOutput(out);
