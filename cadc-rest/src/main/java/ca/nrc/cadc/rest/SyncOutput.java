@@ -71,6 +71,8 @@ package ca.nrc.cadc.rest;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Writer;
+
 import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Logger;
 
@@ -120,8 +122,24 @@ public class SyncOutput
         if (writer == null)
         {
             log.debug("opening writer");
-            writer = response.getWriter();
+            writer = new SafePrintWriter(response.getWriter());
         }
         return writer;
+    }
+    
+    private class SafePrintWriter extends PrintWriter
+    {
+        public SafePrintWriter(Writer out)
+        {
+            super(out);
+        }
+
+        @Override
+        public void close()
+        {
+            flush();
+            // must not let clients call close on the OutputStream!!!
+        }
+        
     }
 }
