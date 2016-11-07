@@ -136,7 +136,7 @@ public abstract class RestAction  implements PrivilegedExceptionAction<Object>
         catch(AccessControlException ex)
         {
             logInfo.setSuccess(true);
-            handleException(ex, 403, "permission denied: " + path, false);
+            handleException(ex, 403, ex.getMessage(), false);
         }
         catch(CertificateException ex)
         {
