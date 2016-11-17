@@ -218,14 +218,18 @@ public class LogControlServlet extends HttpServlet
                 Class authClass = Class.forName(authClassName);
                 if (accessGroup != null)
                 {
-                    Constructor ctor = authClass.getConstructor(String.class);
-                    if (ctor != null)
+                    try
                     {
+                        Constructor ctor = authClass.getConstructor(String.class);
                         Object o = ctor.newInstance(accessGroup);
                         groupAuthorizer = (Authorizer) o;
                     }
-                    else
+                    catch(NoSuchMethodException ex)
+                    {
                         logger.warn("authorizer " + authClassName + " has no constructor(String), ignoring accessGroup=" + accessGroup);
+                        Object o = authClass.newInstance();
+                        groupAuthorizer = (Authorizer) o;
+                    }
                 }
                 else
                 {
