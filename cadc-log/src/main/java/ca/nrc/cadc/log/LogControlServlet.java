@@ -95,6 +95,8 @@ import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.Authorizer;
 import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.util.Log4jInit;
+import java.lang.reflect.Constructor;
+import java.net.URI;
 
 
 /**
@@ -209,13 +211,32 @@ public class LogControlServlet extends HttpServlet
         String authClassName = config.getInitParameter(GROUP_AUTHORIZER);
 
         // instantiate the class if all configuration is present
-        if (accessGroup != null && authClassName != null)
+        if (authClassName != null)
         {
             try
             {
                 Class authClass = Class.forName(authClassName);
-                Object o = authClass.newInstance();
-                groupAuthorizer = (Authorizer) o;
+                if (accessGroup != null)
+                {
+                    try
+                    {
+                        Constructor ctor = authClass.getConstructor(String.class);
+                        Object o = ctor.newInstance(accessGroup);
+                        groupAuthorizer = (Authorizer) o;
+                    }
+                    catch(NoSuchMethodException ex)
+                    {
+                        logger.warn("authorizer " + authClassName + " has no constructor(String), ignoring accessGroup=" + accessGroup);
+                        Object o = authClass.newInstance();
+                        groupAuthorizer = (Authorizer) o;
+                    }
+                }
+                else
+                {
+                    // no-arg constructor
+                    Object o = authClass.newInstance();
+                    groupAuthorizer = (Authorizer) o;
+                }
             }
             catch (Exception e)
             {
