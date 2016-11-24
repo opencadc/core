@@ -70,12 +70,18 @@
 package ca.nrc.cadc.rest;
 
 import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.io.ByteLimitExceededException;
 import ca.nrc.cadc.log.ServletLogInfo;
 import ca.nrc.cadc.log.WebServiceLogInfo;
+import ca.nrc.cadc.net.ResourceAlreadyExistsException;
+import ca.nrc.cadc.net.ResourceNotFoundException;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.security.AccessControlException;
 import java.security.PrivilegedActionException;
+import java.security.cert.CertificateException;
+
 import javax.security.auth.Subject;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -208,23 +214,60 @@ public class RestServlet extends HttpServlet
     protected void doit(HttpServletRequest request, HttpServletResponse response,  RestAction action)
         throws IOException
     {
-        SyncInput in = new SyncInput(request);
-        SyncOutput out = new SyncOutput(response);
-        
         WebServiceLogInfo logInfo = new ServletLogInfo(request);
         long start = System.currentTimeMillis();
+        SyncOutput out = null;
         try
         {
+            action.setPath(request.getPathInfo());
+        	SyncInput in = new SyncInput(request, action.getInlineContentHandler());
+            out = new SyncOutput(response);
+            
             Subject subject = AuthenticationUtil.getSubject(request);
             logInfo.setSubject(subject);
             log.info(logInfo.start());
                         
-            action.setPath(request.getPathInfo());
             action.setSyncInput(in);
             action.setSyncOutput(out);
             action.setLogInfo(logInfo);
 
             doit(subject, action);
+        }
+        catch(AccessControlException ex)
+        {
+            logInfo.setSuccess(true);
+            logInfo.setMessage(ex.getMessage());
+            handleException(out, response, ex, 403, ex.getMessage(), false);
+        }
+        catch(CertificateException ex)
+        {
+        	String message = "permission denied -- reason: invalid proxy certficate";
+            logInfo.setMessage(message);
+            handleException(out, response, ex, 403, message, true);
+        }
+        catch(IllegalArgumentException ex)
+        {
+            logInfo.setSuccess(true);
+            logInfo.setMessage(ex.getMessage());
+            handleException(out, response, ex, 400, ex.getMessage(), true);
+        }
+        catch(ResourceNotFoundException ex)
+        {
+            logInfo.setSuccess(true);
+            logInfo.setMessage(ex.getMessage());
+            handleException(out, response, ex, 404, ex.getMessage(), false);
+        }
+        catch(ResourceAlreadyExistsException ex)
+        {
+            logInfo.setSuccess(true);
+            logInfo.setMessage(ex.getMessage());
+            handleException(out, response, ex, 409, ex.getMessage(), false);
+        }
+        catch(ByteLimitExceededException ex)
+        {
+            logInfo.setSuccess(true);
+            logInfo.setMessage(ex.getMessage() + ex.getLimit());
+            handleException(out, response, ex, 413, ex.getMessage(), false);
         }
         catch(IOException ex)
         {
@@ -269,6 +312,51 @@ public class RestServlet extends HttpServlet
                     throw new RuntimeException(pex.getCause());
             }
         }
+    }
+    
+    /**
+     * Add message to logInfo, print stack trace in debug level, and try to send a
+     * response to output. If the output stream has not been opened already, set the 
+     * response code and write the message in text/plain. Optionally write a full 
+     * except5ion stack trace to output (showExceptions = true).
+     * 
+     * @param ex
+     * @param code
+     * @param message
+     * @param showExceptions
+     * @throws IOException 
+     */
+    protected void handleException(SyncOutput syncOutput, HttpServletResponse response, 
+    		Throwable ex, int code, String message, boolean showExceptions)
+            throws IOException
+    {
+        log.debug(message, ex);
+        if (syncOutput == null)
+        	syncOutput = new SyncOutput(response);
+        
+        if (!syncOutput.isOpen())
+        {
+            syncOutput.setCode(code);
+            syncOutput.setHeader("Content-Type", "text/plain");
+            PrintWriter w = syncOutput.getWriter();
+            w.println(message);
+
+            if (showExceptions)
+            {
+                w.println(ex.toString());
+                Throwable cause = ex.getCause();
+                while (cause != null)
+                {
+                    w.print("cause: ");
+                    w.println(cause.toString());
+                    cause = cause.getCause();
+                }
+            }
+
+            w.flush();
+        }
+        else
+            log.error("unexpected situation: SyncOutput is open", ex);
     }
 
     private void handleUnexpected(SyncOutput out, Throwable t)

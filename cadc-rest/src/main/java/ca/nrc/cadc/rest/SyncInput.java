@@ -72,12 +72,19 @@ package ca.nrc.cadc.rest;
 import ca.nrc.cadc.util.CaseInsensitiveStringComparator;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import javax.servlet.http.HttpServletRequest;
+
+import org.apache.commons.fileupload.FileItemIterator;
+import org.apache.commons.fileupload.FileItemStream;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.fileupload.util.Streams;
 import org.apache.log4j.Logger;
 
 /**
@@ -90,11 +97,16 @@ public class SyncInput
 
     protected HttpServletRequest request;
     protected BufferedReader reader;
+    private Map<String, Object> content = new TreeMap<>(new CaseInsensitiveStringComparator());
     private Map<String,List<String>> params = new TreeMap<String,List<String>>(new CaseInsensitiveStringComparator());
 
-    public SyncInput(HttpServletRequest request)
+    private InlineContentHandler inlineContentHandler;
+
+    public SyncInput(HttpServletRequest request, InlineContentHandler handler)
+    	throws IOException
     {
         this.request = request;
+        this.inlineContentHandler = handler;
         buildParamMap();
     }
 
@@ -144,6 +156,11 @@ public class SyncInput
         return null;
     }
 
+    public Object getContent(String name)
+    {
+    	return content.get(name);
+    }
+    
     /**
      * Get all request parameter values.
      * 
@@ -154,23 +171,88 @@ public class SyncInput
     {
         return params.get(name);
     }
-
-
-    private void buildParamMap()
+    
+    private void buildParamMap() throws IOException
     {
-        Enumeration<String> e = request.getParameterNames();
-        while ( e.hasMoreElements() )
+        if (request.getMethod().equals("GET"))
         {
-            String key = e.nextElement();
-            List<String> vals = new ArrayList<String>();
-            String[] ss = request.getParameterValues(key);
-            for (String s : ss)
+            Enumeration<String> names = request.getParameterNames();
+            while (names.hasMoreElements())
             {
-                vals.add(s);
-                log.debug(key + " = " + s);
+                String name = names.nextElement();
+                processParameter(name, request.getParameterValues(name));
             }
-            log.debug(key + ": " + vals.size());
-            params.put(key, vals);
         }
+        else
+        {
+            String contentType = request.getContentType();
+            if (contentType != null)
+            {
+                int i = contentType.indexOf(';');
+                if (i > 0)
+                    contentType = contentType.substring(0, i);
+            }
+            log.debug("Content-Type: " + contentType);
+            if (contentType != null && contentType.equalsIgnoreCase(RestAction.URLENCODED))
+            {
+                Enumeration<String> names = request.getParameterNames();
+                while (names.hasMoreElements())
+                {
+                    String name = names.nextElement();
+                    processParameter(name, request.getParameterValues(name));
+                }
+            }
+            else if (contentType != null && contentType.startsWith(RestAction.MULTIPART))
+            {
+            	try
+            	{
+	                ServletFileUpload upload = new ServletFileUpload();
+	                FileItemIterator itemIterator = upload.getItemIterator(request);
+	                processMultiPart(itemIterator);
+            	}
+            	catch(FileUploadException ex)
+            	{
+            		throw new IOException("Failed to process " + RestAction.MULTIPART, ex);
+            	}
+            }
+            else
+            {
+                processStream(null, contentType, request.getInputStream());
+            }
+        }
+    }
+
+    private void processParameter(String name, String[] values)
+    {
+    	this.params.put(name, Arrays.asList(values));
+    }
+
+    private void processMultiPart(FileItemIterator itemIterator)
+        throws FileUploadException, IOException
+    {
+        while (itemIterator.hasNext())
+        {
+            FileItemStream item = itemIterator.next();
+            String name = item.getFieldName();
+            InputStream stream = item.openStream();
+            if (item.isFormField())
+                processParameter(name, new String[] { Streams.asString(stream) });
+            else
+                processStream(name, item.getContentType(), stream);
+        }
+    }
+
+    private void processStream(String name, String contentType, InputStream inputStream)
+        throws IOException
+    {
+    	if (inlineContentHandler == null)
+    	{
+    		log.warn("request includes inline content and inlne content handler is null");
+    		// TODO: Need to figure if we need to process the stream to completion
+    		return;
+    	}
+    	
+        InlineContentHandler.Content c = inlineContentHandler.accept(name, contentType, inputStream);
+        content.put(c.name, c.value);
     }
 }

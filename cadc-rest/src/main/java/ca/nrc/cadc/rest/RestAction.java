@@ -97,10 +97,21 @@ public abstract class RestAction  implements PrivilegedExceptionAction<Object>
     protected WebServiceLogInfo logInfo;
     protected String path;
     
+    public static final String TEXT_XML = "text/xml";
+    public static final String URLENCODED = "application/x-www-form-urlencoded";
+    public static final String MULTIPART = "multipart/form-data";
+    
     protected RestAction() 
     { 
         super();
     }
+    
+    /**
+     * Create inline content handler to process non-form data in a multipart request.
+     * Null return value is allowed if the service nerver expects non-form data or wants to ignore non-form data. 
+     * @return
+     */
+    abstract protected InlineContentHandler getInlineContentHandler();
     
     public void setLogInfo(WebServiceLogInfo logInfo)
     {
