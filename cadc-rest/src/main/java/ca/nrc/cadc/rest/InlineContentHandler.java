@@ -75,7 +75,7 @@ import java.io.InputStream;
 
 /**
  * 
- * @author jburke
+ * @author yeunga
  */
 public interface InlineContentHandler
 {
@@ -87,8 +87,7 @@ public interface InlineContentHandler
      * @param inputStream containing the data.
      * @throws InlineContentException for errors storing the data.
      * @throws IOException for errors reading the InputStream.
-     * @throws RuntimeException for processing errors.
-     * @return URL to the data, or null it the data is not stored.
+     * @return Content inline content.
      */
     Content accept(String name, String contentType, InputStream inputStream)
         throws InlineContentException, IOException;
