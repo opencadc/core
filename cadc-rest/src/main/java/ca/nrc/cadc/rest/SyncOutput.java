@@ -74,6 +74,7 @@ import java.io.PrintWriter;
 import java.io.Writer;
 
 import javax.servlet.http.HttpServletResponse;
+
 import org.apache.log4j.Logger;
 
 /**
@@ -83,7 +84,7 @@ import org.apache.log4j.Logger;
 public class SyncOutput
 {
     private static final Logger log = Logger.getLogger(SyncOutput.class);
-    
+
     protected HttpServletResponse response;
     protected PrintWriter writer;
 
@@ -96,11 +97,14 @@ public class SyncOutput
     {
         return (writer != null);
     }
-    
+
     public void setCode(int code)
     {
         if (writer != null)
+        {
+            log.warn("Writer already open, not setting response code to: " + code);
             return;
+        }
 
         response.setStatus(code);
     }
@@ -108,8 +112,11 @@ public class SyncOutput
     public void setHeader(String key, Object value)
     {
         if (writer != null)
+        {
+            log.warn("Writer already open, not setting header: " + key + " to: " + value);
             return;
-        
+        }
+
         if (value == null)
             response.setHeader(key, null);
         else
@@ -126,7 +133,7 @@ public class SyncOutput
         }
         return writer;
     }
-    
+
     private class SafePrintWriter extends PrintWriter
     {
         public SafePrintWriter(Writer out)
@@ -137,9 +144,8 @@ public class SyncOutput
         @Override
         public void close()
         {
-            flush();
-            // must not let clients call close on the OutputStream!!!
+            // must not let clients call close on the OutputStream
         }
-        
+
     }
 }

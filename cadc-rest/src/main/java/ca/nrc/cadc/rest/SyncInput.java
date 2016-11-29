@@ -69,7 +69,6 @@
 
 package ca.nrc.cadc.rest;
 
-import ca.nrc.cadc.util.CaseInsensitiveStringComparator;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -78,6 +77,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.fileupload.FileItemIterator;
@@ -87,11 +87,13 @@ import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.fileupload.util.Streams;
 import org.apache.log4j.Logger;
 
+import ca.nrc.cadc.util.CaseInsensitiveStringComparator;
+
 /**
  *
  * @author pdowler
  */
-public class SyncInput 
+public class SyncInput
 {
     private static final Logger log = Logger.getLogger(SyncInput.class);
 
@@ -107,11 +109,9 @@ public class SyncInput
     {
         this.request = request;
         this.inlineContentHandler = handler;
-        buildParamMap();
     }
 
-    public BufferedReader getReader()
-        throws IOException
+    public BufferedReader getReader() throws IOException
     {
         if (reader == null)
         {
@@ -125,7 +125,7 @@ public class SyncInput
     {
         return (reader != null);
     }
-    
+
     public String getProtocol()
     {
         return request.getScheme();
@@ -133,7 +133,7 @@ public class SyncInput
 
     /**
      * Get a request header value.
-     * 
+     *
      * @param name
      * @return
      */
@@ -144,7 +144,7 @@ public class SyncInput
 
     /**
      * Get a request parameter value.
-     * 
+     *
      * @param name
      * @return
      */
@@ -160,10 +160,10 @@ public class SyncInput
     {
     	return content.get(name);
     }
-    
+
     /**
      * Get all request parameter values.
-     * 
+     *
      * @param name
      * @return
      */
@@ -171,10 +171,12 @@ public class SyncInput
     {
         return params.get(name);
     }
-    
-    private void buildParamMap() throws IOException
+
+    public void init() throws IOException
     {
-        if (request.getMethod().equals("GET"))
+        if (request.getMethod().equals("GET") ||
+                request.getMethod().equals("HEAD") ||
+                request.getMethod().equals("DELETE"))
         {
             Enumeration<String> names = request.getParameterNames();
             while (names.hasMoreElements())
@@ -251,7 +253,7 @@ public class SyncInput
     		// TODO: Need to figure if we need to process the stream to completion
     		return;
     	}
-    	
+
         InlineContentHandler.Content c = inlineContentHandler.accept(name, contentType, inputStream);
         content.put(c.name, c.value);
     }

@@ -69,18 +69,10 @@
 
 package ca.nrc.cadc.rest;
 
-import ca.nrc.cadc.auth.AuthenticationUtil;
-import ca.nrc.cadc.io.ByteLimitExceededException;
-import ca.nrc.cadc.log.ServletLogInfo;
-import ca.nrc.cadc.log.WebServiceLogInfo;
-import ca.nrc.cadc.net.ResourceAlreadyExistsException;
-import ca.nrc.cadc.net.ResourceNotFoundException;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.AccessControlException;
 import java.security.PrivilegedActionException;
-import java.security.cert.CertificateException;
 
 import javax.security.auth.Subject;
 import javax.servlet.ServletConfig;
@@ -88,12 +80,17 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import org.apache.log4j.Logger;
+
+import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.log.ServletLogInfo;
+import ca.nrc.cadc.log.WebServiceLogInfo;
 
 /**
  * Very simple RESTful servlet that loads a separate RestAction subclass for each
  * supported HTTP action: get, post, put, delete.
- * 
+ *
  * @author pdowler
  */
 public class RestServlet extends HttpServlet
@@ -101,11 +98,12 @@ public class RestServlet extends HttpServlet
     private static final long serialVersionUID = 201211071520L;
 
     private static final Logger log = Logger.getLogger(RestServlet.class);
-    
+
     private RestAction getAction;
     private RestAction postAction;
     private RestAction putAction;
     private RestAction deleteAction;
+    private RestAction headAction;
 
     @Override
     public void init(ServletConfig config) throws ServletException
@@ -115,8 +113,9 @@ public class RestServlet extends HttpServlet
         this.postAction = loadAction(config, "post");
         this.putAction = loadAction(config, "put");
         this.deleteAction = loadAction(config, "delete");
+        this.headAction = loadAction(config, "head");
     }
-    
+
     private RestAction loadAction(ServletConfig config, String method)
     {
         String cname = config.getInitParameter(method);
@@ -141,10 +140,10 @@ public class RestServlet extends HttpServlet
     /**
      * The default error response when a RestAction is not configured for a requested
      * HTTP action is status code 400 and text/plain error message.
-     * 
+     *
      * @param action
      * @param response
-     * @throws IOException 
+     * @throws IOException
      */
     protected void handleUnsupportedAction(String action, HttpServletResponse response)
         throws IOException
@@ -155,7 +154,7 @@ public class RestServlet extends HttpServlet
         w.println("unsupported: HTTP " + action);
         w.flush();
     }
-    
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
         throws IOException
@@ -181,7 +180,7 @@ public class RestServlet extends HttpServlet
         log.debug("doPost: " + request.getPathInfo());
         doit(request, response, postAction);
     }
-    
+
     @Override
     protected void doPut(HttpServletRequest request, HttpServletResponse response)
         throws IOException
@@ -191,7 +190,7 @@ public class RestServlet extends HttpServlet
             handleUnsupportedAction("PUT", response);
             return;
         }
-        
+
         log.debug("doPut: " + request.getPathInfo());
         doit(request, response, putAction);
     }
@@ -205,12 +204,26 @@ public class RestServlet extends HttpServlet
             handleUnsupportedAction("DELETE", response);
             return;
         }
-        
+
         log.debug("doDelete: " + request.getPathInfo());
         doit(request, response, deleteAction);
     }
 
-    
+    @Override
+    protected void doHead(HttpServletRequest request, HttpServletResponse response)
+        throws IOException
+    {
+        if (headAction == null)
+        {
+            handleUnsupportedAction("HEAD", response);
+            return;
+        }
+
+        log.debug("doHead: " + request.getPathInfo());
+        doit(request, response, headAction);
+    }
+
+
     protected void doit(HttpServletRequest request, HttpServletResponse response,  RestAction action)
         throws IOException
     {
@@ -219,14 +232,16 @@ public class RestServlet extends HttpServlet
         SyncOutput out = null;
         try
         {
-            action.setPath(request.getPathInfo());
-        	SyncInput in = new SyncInput(request, action.getInlineContentHandler());
-            out = new SyncOutput(response);
-            
             Subject subject = AuthenticationUtil.getSubject(request);
             logInfo.setSubject(subject);
             log.info(logInfo.start());
-                        
+
+            action.setPath(request.getPathInfo());
+
+        	InlineContentHandler handler = action.getInlineContentHandler();
+        	SyncInput in = new SyncInput(request, handler);
+        	out = new SyncOutput(response);
+
             action.setSyncInput(in);
             action.setSyncOutput(out);
             action.setLogInfo(logInfo);
@@ -235,46 +250,18 @@ public class RestServlet extends HttpServlet
         }
         catch(AccessControlException ex)
         {
+            // return a 401 instead of a 403 here.  At this level, it
+            // usually means wrong credentials such as invalid delegation
+            // token, cookie, etc...
             logInfo.setSuccess(true);
             logInfo.setMessage(ex.getMessage());
-            handleException(out, response, ex, 403, ex.getMessage(), false);
-        }
-        catch(CertificateException ex)
-        {
-        	String message = "permission denied -- reason: invalid proxy certficate";
-            logInfo.setMessage(message);
-            handleException(out, response, ex, 403, message, true);
+            handleException(out, response, ex, 401, ex.getMessage(), false);
         }
         catch(IllegalArgumentException ex)
         {
             logInfo.setSuccess(true);
             logInfo.setMessage(ex.getMessage());
             handleException(out, response, ex, 400, ex.getMessage(), true);
-        }
-        catch(ResourceNotFoundException ex)
-        {
-            logInfo.setSuccess(true);
-            logInfo.setMessage(ex.getMessage());
-            handleException(out, response, ex, 404, ex.getMessage(), false);
-        }
-        catch(ResourceAlreadyExistsException ex)
-        {
-            logInfo.setSuccess(true);
-            logInfo.setMessage(ex.getMessage());
-            handleException(out, response, ex, 409, ex.getMessage(), false);
-        }
-        catch(ByteLimitExceededException ex)
-        {
-            logInfo.setSuccess(true);
-            logInfo.setMessage(ex.getMessage() + ex.getLimit());
-            handleException(out, response, ex, 413, ex.getMessage(), false);
-        }
-        catch(IOException ex)
-        {
-            logInfo.setSuccess(false);
-            logInfo.setMessage(ex.getMessage());
-            log.debug("caught: " + ex);
-            throw ex;
         }
         catch(Throwable t)
         {
@@ -285,7 +272,7 @@ public class RestServlet extends HttpServlet
         finally
         {
         	logInfo.setElapsedTime(System.currentTimeMillis() - start);
-        	log.info(logInfo.end());        	
+        	log.info(logInfo.end());
         }
     }
 
@@ -313,27 +300,29 @@ public class RestServlet extends HttpServlet
             }
         }
     }
-    
+
     /**
      * Add message to logInfo, print stack trace in debug level, and try to send a
-     * response to output. If the output stream has not been opened already, set the 
-     * response code and write the message in text/plain. Optionally write a full 
+     * response to output. If the output stream has not been opened already, set the
+     * response code and write the message in text/plain. Optionally write a full
      * except5ion stack trace to output (showExceptions = true).
-     * 
+     *
      * @param ex
      * @param code
      * @param message
      * @param showExceptions
-     * @throws IOException 
+     * @throws IOException
      */
-    protected void handleException(SyncOutput syncOutput, HttpServletResponse response, 
+    protected void handleException(SyncOutput syncOutput, HttpServletResponse response,
     		Throwable ex, int code, String message, boolean showExceptions)
             throws IOException
     {
+
         log.debug(message, ex);
+
         if (syncOutput == null)
         	syncOutput = new SyncOutput(response);
-        
+
         if (!syncOutput.isOpen())
         {
             syncOutput.setCode(code);

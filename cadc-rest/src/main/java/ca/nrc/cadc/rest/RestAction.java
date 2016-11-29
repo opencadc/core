@@ -91,28 +91,47 @@ import ca.nrc.cadc.net.TransientException;
 public abstract class RestAction  implements PrivilegedExceptionAction<Object>
 {
     private static final Logger log = Logger.getLogger(RestAction.class);
-    
+
     protected SyncInput syncInput;
     protected SyncOutput syncOutput;
     protected WebServiceLogInfo logInfo;
     protected String path;
-    
+
     public static final String TEXT_XML = "text/xml";
     public static final String URLENCODED = "application/x-www-form-urlencoded";
     public static final String MULTIPART = "multipart/form-data";
-    
-    protected RestAction() 
-    { 
+
+    protected RestAction()
+    {
         super();
     }
-    
+
     /**
      * Create inline content handler to process non-form data in a multipart request.
-     * Null return value is allowed if the service nerver expects non-form data or wants to ignore non-form data. 
+     * Null return value is allowed if the service nerver expects non-form data or wants to ignore non-form data.
      * @return
      */
     abstract protected InlineContentHandler getInlineContentHandler();
-    
+
+    /**
+     * Implemented by subclass
+     *
+     * The following exceptions, when thrown by this function, are
+     * automatically mapped into HTTP errors by RestAction class:
+     *
+     *  java.lang.IllegalArgumentException : 400
+     *  java.security.AccessControlException : 403
+     *  java.security.cert.CertificateException : 403
+     *  ca.nrc.cadc.net.ResourceNotFoundException : 404
+     *  ca.nrc.cadc.net.ResourceAlreadyExistsException : 409
+     *  ca.nrc.cadc.io.ByteLimitExceededException : 413
+     *  ca.nrc.cadc.net.TransientException : 503
+     *  java.lang.RuntimeException : 500
+     *  java.lang.Error : 500
+     * @throws Exception
+     */
+    public abstract void doAction() throws Exception;
+
     public void setLogInfo(WebServiceLogInfo logInfo)
     {
         this.logInfo = logInfo;
@@ -127,7 +146,7 @@ public abstract class RestAction  implements PrivilegedExceptionAction<Object>
     {
         this.syncOutput = syncOutput;
     }
-    
+
     public void setPath(String path)
     {
         if (path != null && path.charAt(0) == '/')
@@ -141,80 +160,98 @@ public abstract class RestAction  implements PrivilegedExceptionAction<Object>
         try
         {
             logInfo.setSuccess(false);
+            if (syncInput != null)
+            {
+                syncInput.init();
+            }
+
             doAction();
+
             logInfo.setSuccess(true);
+            if (syncOutput.isOpen())
+            {
+                syncOutput.setCode(200); // ok
+            }
         }
         catch(AccessControlException ex)
         {
             logInfo.setSuccess(true);
-            handleException(ex, 403, ex.getMessage(), false);
+            handleException(ex, 403, ex.getMessage(), false, false);
         }
         catch(CertificateException ex)
         {
-            handleException(ex, 403, "permission denied -- reason: invalid proxy certficate", true);
+            handleException(ex, 403, "permission denied -- reason: invalid proxy certficate", false, true);
         }
         catch(IllegalArgumentException ex)
         {
             logInfo.setSuccess(true);
-            handleException(ex, 400, ex.getMessage(), true);
+            handleException(ex, 400, ex.getMessage(), false, true);
         }
         catch(ResourceNotFoundException ex)
         {
             logInfo.setSuccess(true);
-            handleException(ex, 404, ex.getMessage(), false);
+            handleException(ex, 404, ex.getMessage(), false, false);
         }
         catch(ResourceAlreadyExistsException ex)
         {
             logInfo.setSuccess(true);
-            handleException(ex, 409, ex.getMessage(), false);
+            handleException(ex, 409, ex.getMessage(), false, false);
         }
         catch(ByteLimitExceededException ex)
         {
             logInfo.setSuccess(true);
-            handleException(ex, 413, ex.getMessage(), false);
+            handleException(ex, 413, ex.getMessage(), false, false);
         }
         catch(UnsupportedOperationException ex)
         {
             logInfo.setSuccess(true);
-            handleException(ex, 400, ex.getMessage(), false);
+            handleException(ex, 400, ex.getMessage(), false, false);
         }
         catch(TransientException ex)
         {
             logInfo.setSuccess(true);
             syncOutput.setHeader(HttpTransfer.SERVICE_RETRY, ex.getRetryDelay());
-            handleException(ex, 503, "temporarily unavailable: " + path, false);
+            handleException(ex, 503, "temporarily unavailable: " + path, true, false);
         }
         catch(RuntimeException unexpected)
         {
             logInfo.setSuccess(false);
-            handleException(unexpected, 500, "unexpected failure: " + path + " " + path, true);
+            handleException(unexpected, 500, "unexpected failure: " + path + " " + path, true, true);
         }
         catch(Error unexpected)
         {
             logInfo.setSuccess(false);
-            handleException(unexpected, 500, "unexpected error: " + path + " " + path, true);
+            handleException(unexpected, 500, "unexpected error: " + path + " " + path, true, true);
         }
-        
+
         return null;
     }
-    
+
     /**
      * Add message to logInfo, print stack trace in debug level, and try to send a
-     * response to output. If the output stream has not been opened already, set the 
-     * response code and write the message in text/plain. Optionally write a full 
+     * response to output. If the output stream has not been opened already, set the
+     * response code and write the message in text/plain. Optionally write a full
      * except5ion stack trace to output (showExceptions = true).
-     * 
+     *
      * @param ex
      * @param code
      * @param message
      * @param showExceptions
-     * @throws IOException 
+     * @throws IOException
      */
-    protected void handleException(Throwable ex, int code, String message, boolean showExceptions)
+    protected void handleException(
+        Throwable ex, int code, String message, boolean showStackTrace, boolean showExceptions)
             throws IOException
     {
         logInfo.setMessage(message);
-        log.debug(message, ex);
+        if (showStackTrace)
+        {
+            log.error(message, ex);
+        }
+        else
+        {
+            log.debug(message, ex);
+        }
         if (!syncOutput.isOpen())
         {
             syncOutput.setCode(code);
@@ -233,31 +270,9 @@ public abstract class RestAction  implements PrivilegedExceptionAction<Object>
                     cause = cause.getCause();
                 }
             }
-
-            w.flush();
         }
         else
             log.error("unexpected situation: SyncOutput is open", ex);
     }
-    
-    /**
-     * Implemented by subclass
-     * 
-     * The following exceptions, when thrown by this function, are
-     * automatically mapped into HTTP errors by RestAction class:
-     *  
-     *  java.lang.IllegalArgumentException : 400
-     *  java.security.AccessControlException : 403
-     *  java.security.cert.CertificateException : 403
-     *  ca.nrc.cadc.net.ResourceNotFoundException : 404
-     *  ca.nrc.cadc.net.ResourceAlreadyExistsException : 409
-     *  ca.nrc.cadc.io.ByteLimitExceededException : 413
-     *  ca.nrc.cadc.net.TransientException : 503
-     *  java.lang.RuntimeException : 500
-     *  java.lang.Error : 500
-     * @throws Exception
-     */
-    public abstract void doAction()
-        throws Exception;
 
 }
