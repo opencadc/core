@@ -69,9 +69,12 @@
 
 package ca.nrc.cadc.util;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.log4j.Logger;
 
 /**
  * Simple command-line argument utility that takes all arguments of the
@@ -90,22 +93,14 @@ import java.util.Set;
 public class ArgumentMap
 {
     @SuppressWarnings("unchecked")
-    private Map map;
-    private boolean verbose;
+    private Map<String,Object> map = new HashMap<>();
+    private List<String> pos = new ArrayList<>();
 
     public ArgumentMap(String[] args)
     {
-        this(args, false);
-    }
-
-    @SuppressWarnings("unchecked")
-    public ArgumentMap(String[] args, boolean verbose)
-    {
         this.map = new HashMap();
-        this.verbose = verbose;
         for (int i = 0; i < args.length; i++)
         {
-            imsg(args[i]);
             String key = null;
             String str = null;
             Object value = null;
@@ -138,12 +133,11 @@ public class ArgumentMap
                             }
                             else
                             {
-                                StringBuffer sb = new StringBuffer(str);
+                                StringBuilder sb = new StringBuilder(str);
                                 boolean done = false;
                                 while (i + 1 < args.length && !done)
                                 {
                                     i++;
-                                    imsg(args[i]);
                                     if (args[i].endsWith("%%"))
                                     {
                                         str = args[i].substring(0, args[i].length() - 2);
@@ -162,7 +156,7 @@ public class ArgumentMap
                 }
                 catch (Exception ignorable)
                 {
-                    imsg(" skipping: " + ignorable.toString());
+                    //log.debug(" skipping: " + ignorable.toString());
                 }
             }
             else if (args[i].startsWith("-"))
@@ -174,17 +168,20 @@ public class ArgumentMap
                 }
                 catch (Exception ignorable)
                 {
-                    imsg(" skipping: " + ignorable.toString());
+                    //log.debug(" skipping: " + ignorable.toString());
                 }
             }
-
+            else
+            {
+                pos.add(args[i]);
+                //log.debug("pos: " + args[i]);
+            }
             if (key != null && value != null)
             {
-                imsg("adding " + key + "->" + value);
+                //log.debug("map: " + key + "->" + value);
                 Object old_value = map.put(key, value);
-                if (old_value != null) imsg(" (old mapping removed: " + key + " : " + old_value + ")");
+                //if (old_value != null) log.debug(" (old mapping removed: " + key + " : " + old_value + ")");
             }
-            imsg3();
         }
     }
 
@@ -193,6 +190,11 @@ public class ArgumentMap
         Object obj = map.get(key);
         if (obj != null) return obj.toString();
         return null;
+    }
+    
+    public List<String> getPositionalArgs()
+    {
+        return pos;
     }
 
     public boolean isSet(String key)
@@ -205,30 +207,4 @@ public class ArgumentMap
     {
         return map.keySet();
     }
-
-    private void imsg(String s)
-    {
-        if (verbose) System.out.println("[ArgumentMap] " + s);
-    }
-
-    @SuppressWarnings("unused")
-    private void imsg1(String s)
-    {
-        if (verbose) System.out.print("[ArgumentMap] " + s);
-    }
-
-    @SuppressWarnings("unused")
-    private void imsg2(String s)
-    {
-        if (verbose) System.out.print(s);
-    }
-
-    private void imsg3()
-    {
-        if (verbose) System.out.println();
-    }
-
 }
-
-// end of ArgumentMap.java
-
