@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2016.                            (c) 2016.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -70,7 +70,7 @@
 package ca.nrc.cadc.rest;
 
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.OutputStream;
 import java.security.AccessControlException;
 import java.security.PrivilegedExceptionAction;
 import java.security.cert.CertificateException;
@@ -88,7 +88,7 @@ import ca.nrc.cadc.net.TransientException;
  *
  * @author pdowler
  */
-public abstract class RestAction  implements PrivilegedExceptionAction<Object>
+public abstract class RestAction implements PrivilegedExceptionAction<Object>
 {
     private static final Logger log = Logger.getLogger(RestAction.class);
 
@@ -256,20 +256,24 @@ public abstract class RestAction  implements PrivilegedExceptionAction<Object>
         {
             syncOutput.setCode(code);
             syncOutput.setHeader("Content-Type", "text/plain");
-            PrintWriter w = syncOutput.getWriter();
-            w.println(message);
+
+            OutputStream os = syncOutput.getOutputStream();
+            StringBuilder sb = new StringBuilder();
+            sb.append(message);
 
             if (showExceptions)
             {
-                w.println(ex.toString());
+                sb.append(ex.toString()).append("\n");
                 Throwable cause = ex.getCause();
                 while (cause != null)
                 {
-                    w.print("cause: ");
-                    w.println(cause.toString());
+                    sb.append("cause: ");
+                    sb.append(cause.toString()).append("\n");
                     cause = cause.getCause();
                 }
             }
+
+            os.write(sb.toString().getBytes());
         }
         else
             log.error("unexpected situation: SyncOutput is open", ex);

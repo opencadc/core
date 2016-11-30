@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2016.                            (c) 2016.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -70,6 +70,7 @@
 package ca.nrc.cadc.rest;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.security.AccessControlException;
 import java.security.PrivilegedActionException;
@@ -327,22 +328,23 @@ public class RestServlet extends HttpServlet
         {
             syncOutput.setCode(code);
             syncOutput.setHeader("Content-Type", "text/plain");
-            PrintWriter w = syncOutput.getWriter();
-            w.println(message);
+            OutputStream os = syncOutput.getOutputStream();
+            StringBuilder sb = new StringBuilder();
+            sb.append(message);
 
             if (showExceptions)
             {
-                w.println(ex.toString());
+                sb.append(ex.toString()).append("\n");
                 Throwable cause = ex.getCause();
                 while (cause != null)
                 {
-                    w.print("cause: ");
-                    w.println(cause.toString());
+                    sb.append("cause: ");
+                    sb.append(cause.toString()).append("\n");
                     cause = cause.getCause();
                 }
             }
 
-            w.flush();
+            os.write(sb.toString().getBytes());
         }
         else
             log.error("unexpected situation: SyncOutput is open", ex);
@@ -358,8 +360,8 @@ public class RestServlet extends HttpServlet
 
         out.setCode(500); // internal server error
         out.setHeader("Content-Type", "text/plain");
-        PrintWriter w = out.getWriter();
-        w.println("unexpected exception: " + t);
-        w.flush();
+        OutputStream os = out.getOutputStream();
+        String message = "unexpected exception: " + t;
+        os.write(message.getBytes());
     }
 }

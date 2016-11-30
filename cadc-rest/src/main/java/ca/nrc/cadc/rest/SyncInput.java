@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2016.                            (c) 2016.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -69,7 +69,6 @@
 
 package ca.nrc.cadc.rest;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -98,7 +97,6 @@ public class SyncInput
     private static final Logger log = Logger.getLogger(SyncInput.class);
 
     protected HttpServletRequest request;
-    protected BufferedReader reader;
     private Map<String, Object> content = new TreeMap<>(new CaseInsensitiveStringComparator());
     private Map<String,List<String>> params = new TreeMap<String,List<String>>(new CaseInsensitiveStringComparator());
 
@@ -109,21 +107,6 @@ public class SyncInput
     {
         this.request = request;
         this.inlineContentHandler = handler;
-    }
-
-    public BufferedReader getReader() throws IOException
-    {
-        if (reader == null)
-        {
-            log.debug("opening reader");
-            reader = request.getReader();
-        }
-        return reader;
-    }
-
-    public boolean isOpen()
-    {
-        return (reader != null);
     }
 
     public String getProtocol()
