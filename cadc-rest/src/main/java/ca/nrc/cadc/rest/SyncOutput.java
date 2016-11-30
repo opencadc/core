@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2016.                            (c) 2016.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -69,9 +69,12 @@
 
 package ca.nrc.cadc.rest;
 
+import java.io.FilterOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.OutputStream;
+
 import javax.servlet.http.HttpServletResponse;
+
 import org.apache.log4j.Logger;
 
 /**
@@ -81,9 +84,9 @@ import org.apache.log4j.Logger;
 public class SyncOutput
 {
     private static final Logger log = Logger.getLogger(SyncOutput.class);
-    
+
     protected HttpServletResponse response;
-    protected PrintWriter writer;
+    protected OutputStream outputStream;
 
     public SyncOutput(HttpServletResponse response)
     {
@@ -92,36 +95,53 @@ public class SyncOutput
 
     public boolean isOpen()
     {
-        return (writer != null);
+        return (outputStream != null);
     }
-    
+
     public void setCode(int code)
     {
-        if (writer != null)
+        if (outputStream != null)
+        {
+            log.warn("OutputStream already open, not setting response code to: " + code);
             return;
-
+        }
         response.setStatus(code);
     }
 
     public void setHeader(String key, Object value)
     {
-        if (writer != null)
+        if (outputStream != null)
+        {
+            log.warn("OutputStream already open, not setting header: " + key + " to: " + value);
             return;
-        
+        }
+
         if (value == null)
             response.setHeader(key, null);
         else
             response.setHeader(key, value.toString());
     }
 
-    public PrintWriter getWriter()
+    public OutputStream getOutputStream()
         throws IOException
     {
-        if (writer == null)
+        if (outputStream == null)
         {
-            log.debug("opening writer");
-            writer = response.getWriter();
+            log.debug("First open of output stream");
+            outputStream = new SafeOutputStream(response.getOutputStream());
         }
-        return writer;
+        return outputStream;
+    }
+
+    private class SafeOutputStream extends FilterOutputStream
+    {
+        SafeOutputStream(OutputStream ostream) { super(ostream); }
+
+        @Override
+        public void close()
+            throws IOException
+        {
+            // cannot close service output streams
+        }
     }
 }

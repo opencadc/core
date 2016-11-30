@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2016.                            (c) 2016.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -69,25 +69,29 @@
 
 package ca.nrc.cadc.rest;
 
-import ca.nrc.cadc.auth.AuthenticationUtil;
-import ca.nrc.cadc.log.ServletLogInfo;
-import ca.nrc.cadc.log.WebServiceLogInfo;
-
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.security.AccessControlException;
 import java.security.PrivilegedActionException;
+
 import javax.security.auth.Subject;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import org.apache.log4j.Logger;
+
+import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.log.ServletLogInfo;
+import ca.nrc.cadc.log.WebServiceLogInfo;
 
 /**
  * Very simple RESTful servlet that loads a separate RestAction subclass for each
  * supported HTTP action: get, post, put, delete.
- * 
+ *
  * @author pdowler
  */
 public class RestServlet extends HttpServlet
@@ -95,24 +99,25 @@ public class RestServlet extends HttpServlet
     private static final long serialVersionUID = 201211071520L;
 
     private static final Logger log = Logger.getLogger(RestServlet.class);
-    
-    private Class<RestAction> getImpl;
-    private Class<RestAction> postImpl;
-    private Class<RestAction> putImpl;
-    private Class<RestAction> deleteImpl;
+
+    private RestAction getAction;
+    private RestAction postAction;
+    private RestAction putAction;
+    private RestAction deleteAction;
+    private RestAction headAction;
 
     @Override
     public void init(ServletConfig config) throws ServletException
     {
         super.init(config);
-        String cname;
-        this.getImpl = loadImpl(config, "get");
-        this.postImpl = loadImpl(config, "post");
-        this.putImpl = loadImpl(config, "put");
-        this.deleteImpl = loadImpl(config, "delete");
+        this.getAction = loadAction(config, "get");
+        this.postAction = loadAction(config, "post");
+        this.putAction = loadAction(config, "put");
+        this.deleteAction = loadAction(config, "delete");
+        this.headAction = loadAction(config, "head");
     }
-    
-    private Class<RestAction> loadImpl(ServletConfig config, String method)
+
+    private RestAction loadAction(ServletConfig config, String method)
     {
         String cname = config.getInitParameter(method);
         if (cname != null)
@@ -121,7 +126,7 @@ public class RestServlet extends HttpServlet
             {
                 Class<RestAction> ret = (Class<RestAction>) Class.forName(cname);
                 log.info(method + ": " + cname + " [loaded]");
-                return ret;
+                return ret.newInstance();
             }
             catch(Exception ex)
             {
@@ -136,10 +141,10 @@ public class RestServlet extends HttpServlet
     /**
      * The default error response when a RestAction is not configured for a requested
      * HTTP action is status code 400 and text/plain error message.
-     * 
+     *
      * @param action
      * @param response
-     * @throws IOException 
+     * @throws IOException
      */
     protected void handleUnsupportedAction(String action, HttpServletResponse response)
         throws IOException
@@ -150,90 +155,114 @@ public class RestServlet extends HttpServlet
         w.println("unsupported: HTTP " + action);
         w.flush();
     }
-    
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
         throws IOException
     {
-        if (getImpl == null)
+        if (getAction == null)
         {
             handleUnsupportedAction("GET", response);
             return;
         }
         log.debug("doGet: " + request.getPathInfo());
-        doit(request, response, getImpl);
+        doit(request, response, getAction);
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
         throws IOException
     {
-        if (postImpl == null)
+        if (postAction == null)
         {
             handleUnsupportedAction("POST", response);
             return;
         }
         log.debug("doPost: " + request.getPathInfo());
-        doit(request, response, postImpl);
+        doit(request, response, postAction);
     }
-    
+
     @Override
     protected void doPut(HttpServletRequest request, HttpServletResponse response)
         throws IOException
     {
-        if (putImpl == null)
+        if (putAction == null)
         {
             handleUnsupportedAction("PUT", response);
             return;
         }
-        
+
         log.debug("doPut: " + request.getPathInfo());
-        doit(request, response, putImpl);
+        doit(request, response, putAction);
     }
 
     @Override
     protected void doDelete(HttpServletRequest request, HttpServletResponse response)
         throws IOException
     {
-        if (deleteImpl == null)
+        if (deleteAction == null)
         {
             handleUnsupportedAction("DELETE", response);
             return;
         }
-        
+
         log.debug("doDelete: " + request.getPathInfo());
-        doit(request, response, deleteImpl);
+        doit(request, response, deleteAction);
     }
 
-    
-    protected void doit(HttpServletRequest request, HttpServletResponse response,  Class<RestAction> actionClass)
+    @Override
+    protected void doHead(HttpServletRequest request, HttpServletResponse response)
         throws IOException
     {
-        SyncInput in = new SyncInput(request);
-        SyncOutput out = new SyncOutput(response);
-        
+        if (headAction == null)
+        {
+            handleUnsupportedAction("HEAD", response);
+            return;
+        }
+
+        log.debug("doHead: " + request.getPathInfo());
+        doit(request, response, headAction);
+    }
+
+
+    protected void doit(HttpServletRequest request, HttpServletResponse response,  RestAction action)
+        throws IOException
+    {
         WebServiceLogInfo logInfo = new ServletLogInfo(request);
+        long start = System.currentTimeMillis();
+        SyncOutput out = null;
         try
         {
             Subject subject = AuthenticationUtil.getSubject(request);
             logInfo.setSubject(subject);
             log.info(logInfo.start());
-            
-            RestAction action = actionClass.newInstance();
-            
+
             action.setPath(request.getPathInfo());
+
+        	InlineContentHandler handler = action.getInlineContentHandler();
+        	SyncInput in = new SyncInput(request, handler);
+        	out = new SyncOutput(response);
+
             action.setSyncInput(in);
             action.setSyncOutput(out);
             action.setLogInfo(logInfo);
 
             doit(subject, action);
         }
-        catch(IOException ex)
+        catch(AccessControlException ex)
         {
-            logInfo.setSuccess(false);
+            // return a 401 instead of a 403 here.  At this level, it
+            // usually means wrong credentials such as invalid delegation
+            // token, cookie, etc...
+            logInfo.setSuccess(true);
             logInfo.setMessage(ex.getMessage());
-            log.debug("caught: " + ex);
-            throw ex;
+            handleException(out, response, ex, 401, ex.getMessage(), false);
+        }
+        catch(IllegalArgumentException ex)
+        {
+            logInfo.setSuccess(true);
+            logInfo.setMessage(ex.getMessage());
+            handleException(out, response, ex, 400, ex.getMessage(), true);
         }
         catch(Throwable t)
         {
@@ -243,7 +272,8 @@ public class RestServlet extends HttpServlet
         }
         finally
         {
-            log.info(logInfo.end());        	
+        	logInfo.setElapsedTime(System.currentTimeMillis() - start);
+        	log.info(logInfo.end());
         }
     }
 
@@ -272,6 +302,54 @@ public class RestServlet extends HttpServlet
         }
     }
 
+    /**
+     * Add message to logInfo, print stack trace in debug level, and try to send a
+     * response to output. If the output stream has not been opened already, set the
+     * response code and write the message in text/plain. Optionally write a full
+     * except5ion stack trace to output (showExceptions = true).
+     *
+     * @param ex
+     * @param code
+     * @param message
+     * @param showExceptions
+     * @throws IOException
+     */
+    protected void handleException(SyncOutput syncOutput, HttpServletResponse response,
+    		Throwable ex, int code, String message, boolean showExceptions)
+            throws IOException
+    {
+
+        log.debug(message, ex);
+
+        if (syncOutput == null)
+        	syncOutput = new SyncOutput(response);
+
+        if (!syncOutput.isOpen())
+        {
+            syncOutput.setCode(code);
+            syncOutput.setHeader("Content-Type", "text/plain");
+            OutputStream os = syncOutput.getOutputStream();
+            StringBuilder sb = new StringBuilder();
+            sb.append(message);
+
+            if (showExceptions)
+            {
+                sb.append(ex.toString()).append("\n");
+                Throwable cause = ex.getCause();
+                while (cause != null)
+                {
+                    sb.append("cause: ");
+                    sb.append(cause.toString()).append("\n");
+                    cause = cause.getCause();
+                }
+            }
+
+            os.write(sb.toString().getBytes());
+        }
+        else
+            log.error("unexpected situation: SyncOutput is open", ex);
+    }
+
     private void handleUnexpected(SyncOutput out, Throwable t)
         throws IOException
     {
@@ -282,8 +360,8 @@ public class RestServlet extends HttpServlet
 
         out.setCode(500); // internal server error
         out.setHeader("Content-Type", "text/plain");
-        PrintWriter w = out.getWriter();
-        w.println("unexpected exception: " + t);
-        w.flush();
+        OutputStream os = out.getOutputStream();
+        String message = "unexpected exception: " + t;
+        os.write(message.getBytes());
     }
 }

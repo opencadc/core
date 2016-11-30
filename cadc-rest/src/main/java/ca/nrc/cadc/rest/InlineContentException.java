@@ -67,91 +67,18 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.auth;
+package ca.nrc.cadc.rest;
 
-import java.security.Principal;
-import java.sql.Types;
-import java.util.HashSet;
-import java.util.Set;
-import javax.security.auth.Subject;
-import javax.security.auth.x500.X500Principal;
-
-/**
- * Implementation of IdentityManager that uses the X500Principal as the
- * definitive identifying object in a subject. Use this class if you
- * want to store the X509 distinguished name and be able to reconstruct
- * the subject from it later. Other principals and credentials in the
- * callers Subject will not be saved and restored: only a single
- * X500Principal (the first one found).
- * 
- * @author pdowler
- */
-public class X500IdentityManager implements IdentityManager
+public class InlineContentException extends RuntimeException
 {
-
-    /**
-     * @return Types.VARCHAR
-     */
-    public int getOwnerType()
+    public InlineContentException(String message)
     {
-        return Types.VARCHAR;
+        super(message);
     }
 
-    /**
-     * This method gets the distinguished name from toOwnerString and massages it
-     * for persistence: canonical form and convert to lower case.
-     *
-     * @param subject
-     * @return persistable distinguished name or null if there is no
-     *         X500Principal in the subject
-     */
-    public Object toOwner(Subject subject)
+    public InlineContentException(String message, Throwable cause)
     {
-        String dn = toOwnerString(subject);
-        if (dn != null)
-            return AuthenticationUtil.canonizeDistinguishedName(dn);
-        return dn;
-    }
-
-    /**
-     * This implementation finds the distinguished name from the first X500Principal.
-     * 
-     * @param subject
-     * @return distinguished name or null if there is no X500Principal in the subject
-     */
-    public String toOwnerString(Subject subject)
-    {
-        if (subject != null)
-        {
-            Set<Principal> principals = subject.getPrincipals();
-            for (Principal principal : principals)
-            {
-                if (principal instanceof X500Principal)
-                {
-                    return principal.getName();
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Create a subject from the specified owner object. It is assumed the owner
-     * object is a  string form of an X500 distinguished name.
-     * @param owner
-     * @return a subject with an X500Principal inside
-     */
-    public Subject toSubject(Object owner)
-    {
-        try
-        {
-            String str = (String) owner;
-            X500Principal p = new X500Principal(str);
-            Set<Principal> pset = new HashSet<Principal>();
-            pset.add(p);
-            return new Subject(false,pset,new HashSet(), new HashSet());
-        }
-        finally { }
+        super(message, cause);
     }
 
 }

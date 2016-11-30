@@ -67,91 +67,42 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.auth;
+package ca.nrc.cadc.rest;
 
-import java.security.Principal;
-import java.sql.Types;
-import java.util.HashSet;
-import java.util.Set;
-import javax.security.auth.Subject;
-import javax.security.auth.x500.X500Principal;
+import java.io.IOException;
+import java.io.InputStream;
+
 
 /**
- * Implementation of IdentityManager that uses the X500Principal as the
- * definitive identifying object in a subject. Use this class if you
- * want to store the X509 distinguished name and be able to reconstruct
- * the subject from it later. Other principals and credentials in the
- * callers Subject will not be saved and restored: only a single
- * X500Principal (the first one found).
- * 
- * @author pdowler
+ * Services implementing this rest framework must use an
+ * implementation of this InlineContentHandler to receive
+ * any data sent to the service.  The data may be received
+ * in name/value pairs or as an unnamed blob the inputstream.
+ *
+ * @author yeunga
  */
-public class X500IdentityManager implements IdentityManager
+public interface InlineContentHandler
 {
-
     /**
-     * @return Types.VARCHAR
-     */
-    public int getOwnerType()
-    {
-        return Types.VARCHAR;
-    }
-
-    /**
-     * This method gets the distinguished name from toOwnerString and massages it
-     * for persistence: canonical form and convert to lower case.
+     * Access the data in the InputStream.
      *
-     * @param subject
-     * @return persistable distinguished name or null if there is no
-     *         X500Principal in the subject
+     * For multipart POST requests, the accept method will be
+     * called once for each data part.
+     *
+     * @param name of the data part.
+     * @param contentType MIME type of the data.
+     * @param inputStream containing the data.
+     * @throws InlineContentException for errors storing the data.
+     * @throws IOException for errors reading the InputStream.
+     * @return Content inline content.
      */
-    public Object toOwner(Subject subject)
-    {
-        String dn = toOwnerString(subject);
-        if (dn != null)
-            return AuthenticationUtil.canonizeDistinguishedName(dn);
-        return dn;
-    }
+    Content accept(String name, String contentType, InputStream inputStream)
+        throws InlineContentException, IOException;
 
-    /**
-     * This implementation finds the distinguished name from the first X500Principal.
-     * 
-     * @param subject
-     * @return distinguished name or null if there is no X500Principal in the subject
-     */
-    public String toOwnerString(Subject subject)
+    public static class Content
     {
-        if (subject != null)
-        {
-            Set<Principal> principals = subject.getPrincipals();
-            for (Principal principal : principals)
-            {
-                if (principal instanceof X500Principal)
-                {
-                    return principal.getName();
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Create a subject from the specified owner object. It is assumed the owner
-     * object is a  string form of an X500 distinguished name.
-     * @param owner
-     * @return a subject with an X500Principal inside
-     */
-    public Subject toSubject(Object owner)
-    {
-        try
-        {
-            String str = (String) owner;
-            X500Principal p = new X500Principal(str);
-            Set<Principal> pset = new HashSet<Principal>();
-            pset.add(p);
-            return new Subject(false,pset,new HashSet(), new HashSet());
-        }
-        finally { }
+    	public String name;
+    	public Object value;
     }
 
 }

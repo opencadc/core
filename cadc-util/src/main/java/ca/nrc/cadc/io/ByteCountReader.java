@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2016.                            (c) 2016.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,7 +62,7 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 4 $
+*  $Revision: 5 $
 *
 ************************************************************************
 */
@@ -103,7 +103,7 @@ public class ByteCountReader extends Reader implements ByteCounter
     public int read() throws IOException
     {
         if (hasReachedLimit())
-            throw new ByteLimitExceededException(byteLimit);
+            throw new ByteLimitExceededException("byte limit exceeded", byteLimit);
 
         int value = reader.read();
         byteCount++;
@@ -114,7 +114,7 @@ public class ByteCountReader extends Reader implements ByteCounter
     public int read(char[] cbuf) throws IOException
     {
         if (hasReachedLimit())
-            throw new ByteLimitExceededException(byteLimit);
+            throw new ByteLimitExceededException("byte limit exceeded", byteLimit);
         
         int charsRead = reader.read(cbuf);
         
@@ -128,7 +128,7 @@ public class ByteCountReader extends Reader implements ByteCounter
     public int read(char[] cbuf, int off, int len) throws IOException
     {
         if (hasReachedLimit())
-            throw new ByteLimitExceededException(byteLimit);
+            throw new ByteLimitExceededException("byte limit exceeded", byteLimit);
                
         int charsRead = reader.read(cbuf, off, len);
         if (charsRead != -1)
@@ -141,7 +141,7 @@ public class ByteCountReader extends Reader implements ByteCounter
     public int read(CharBuffer target) throws IOException
     {
         if (hasReachedLimit())
-            throw new ByteLimitExceededException(byteLimit);
+            throw new ByteLimitExceededException("byte limit exceeded", byteLimit);
         
         int charsRead = reader.read(target);
         
