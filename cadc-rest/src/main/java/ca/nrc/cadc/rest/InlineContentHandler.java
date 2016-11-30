@@ -74,15 +74,22 @@ import java.io.InputStream;
 
 
 /**
- * 
+ * Services implementing this rest framework must use an
+ * implementation of this InlineContentHandler to receive
+ * any data sent to the service.  The data may be received
+ * in name/value pairs or as an unnamed blob the inputstream.
+ *
  * @author yeunga
  */
 public interface InlineContentHandler
 {
     /**
-     * Processes the data in the InputStream.
+     * Access the data in the InputStream.
      *
-     * @param name of the data header.
+     * For multipart POST requests, the accept method will be
+     * called once for each data part.
+     *
+     * @param name of the data part.
      * @param contentType MIME type of the data.
      * @param inputStream containing the data.
      * @throws InlineContentException for errors storing the data.
@@ -91,7 +98,7 @@ public interface InlineContentHandler
      */
     Content accept(String name, String contentType, InputStream inputStream)
         throws InlineContentException, IOException;
-    
+
     public static class Content
     {
     	public String name;

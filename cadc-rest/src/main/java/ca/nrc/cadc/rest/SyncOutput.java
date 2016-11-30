@@ -133,7 +133,6 @@ public class SyncOutput
         return outputStream;
     }
 
-
     private class SafeOutputStream extends FilterOutputStream
     {
         SafeOutputStream(OutputStream ostream) { super(ostream); }
