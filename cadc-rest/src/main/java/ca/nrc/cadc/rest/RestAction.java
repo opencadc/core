@@ -97,7 +97,6 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object>
     protected WebServiceLogInfo logInfo;
     protected String path;
 
-    public static final String TEXT_XML = "text/xml";
     public static final String URLENCODED = "application/x-www-form-urlencoded";
     public static final String MULTIPART = "multipart/form-data";
 
