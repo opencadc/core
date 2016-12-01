@@ -102,7 +102,8 @@ public class SyncOutput
     {
         if (outputStream != null)
         {
-            log.warn("OutputStream already open, not setting response code to: " + code);
+            IllegalStateException e = new IllegalStateException();
+            log.warn("OutputStream already open, not setting response code to: " + code, e);
             return;
         }
         response.setStatus(code);
@@ -112,7 +113,8 @@ public class SyncOutput
     {
         if (outputStream != null)
         {
-            log.warn("OutputStream already open, not setting header: " + key + " to: " + value);
+            IllegalStateException e = new IllegalStateException();
+            log.warn("OutputStream already open, not setting header: " + key + " to: " + value, e);
             return;
         }
 
