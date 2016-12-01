@@ -100,11 +100,11 @@ public class RestServlet extends HttpServlet
 
     private static final Logger log = Logger.getLogger(RestServlet.class);
 
-    private RestAction getAction;
-    private RestAction postAction;
-    private RestAction putAction;
-    private RestAction deleteAction;
-    private RestAction headAction;
+    private Class<RestAction> getAction;
+    private Class<RestAction> postAction;
+    private Class<RestAction> putAction;
+    private Class<RestAction> deleteAction;
+    private Class<RestAction> headAction;
 
     @Override
     public void init(ServletConfig config) throws ServletException
@@ -117,7 +117,7 @@ public class RestServlet extends HttpServlet
         this.headAction = loadAction(config, "head");
     }
 
-    private RestAction loadAction(ServletConfig config, String method)
+    private Class<RestAction> loadAction(ServletConfig config, String method)
     {
         String cname = config.getInitParameter(method);
         if (cname != null)
@@ -126,7 +126,7 @@ public class RestServlet extends HttpServlet
             {
                 Class<RestAction> ret = (Class<RestAction>) Class.forName(cname);
                 log.info(method + ": " + cname + " [loaded]");
-                return ret.newInstance();
+                return ret;
             }
             catch(Exception ex)
             {
@@ -224,8 +224,7 @@ public class RestServlet extends HttpServlet
         doit(request, response, headAction);
     }
 
-
-    protected void doit(HttpServletRequest request, HttpServletResponse response,  RestAction action)
+    protected void doit(HttpServletRequest request, HttpServletResponse response,  Class<RestAction> actionClass)
         throws IOException
     {
         WebServiceLogInfo logInfo = new ServletLogInfo(request);
@@ -236,6 +235,8 @@ public class RestServlet extends HttpServlet
             Subject subject = AuthenticationUtil.getSubject(request);
             logInfo.setSubject(subject);
             log.info(logInfo.start());
+
+            RestAction action = actionClass.newInstance();
 
             action.setPath(request.getPathInfo());
 
@@ -248,6 +249,14 @@ public class RestServlet extends HttpServlet
             action.setLogInfo(logInfo);
 
             doit(subject, action);
+        }
+        catch(InstantiationException | IllegalAccessException ex)
+        {
+            // problem creating the action
+            logInfo.setSuccess(false);
+            String message = "Could not instantiate " + actionClass + ". " + ex.getMessage();
+            logInfo.setMessage(message);
+            handleException(out, response, ex, 500, message, true);
         }
         catch(AccessControlException ex)
         {
