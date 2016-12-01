@@ -167,10 +167,6 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object>
             doAction();
 
             logInfo.setSuccess(true);
-            if (syncOutput.isOpen())
-            {
-                syncOutput.setCode(200); // ok
-            }
         }
         catch(AccessControlException ex)
         {
