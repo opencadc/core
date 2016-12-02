@@ -237,13 +237,9 @@ public class RestServlet extends HttpServlet
             log.info(logInfo.start());
 
             RestAction action = actionClass.newInstance();
-
-            action.setPath(request.getPathInfo());
-
-        	InlineContentHandler handler = action.getInlineContentHandler();
-        	SyncInput in = new SyncInput(request, handler);
-        	out = new SyncOutput(response);
-
+            InlineContentHandler handler = action.getInlineContentHandler();
+            SyncInput in = new SyncInput(request, handler);
+            out = new SyncOutput(response);
             action.setSyncInput(in);
             action.setSyncOutput(out);
             action.setLogInfo(logInfo);

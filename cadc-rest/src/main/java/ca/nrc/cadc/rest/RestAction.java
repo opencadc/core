@@ -85,7 +85,8 @@ import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.net.TransientException;
 
 /**
- *
+ * Base REST action class.
+ * 
  * @author pdowler
  */
 public abstract class RestAction implements PrivilegedExceptionAction<Object>
@@ -95,7 +96,6 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object>
     protected SyncInput syncInput;
     protected SyncOutput syncOutput;
     protected WebServiceLogInfo logInfo;
-    protected String path;
 
     public static final String URLENCODED = "application/x-www-form-urlencoded";
     public static final String MULTIPART = "multipart/form-data";
@@ -106,8 +106,10 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object>
     }
 
     /**
-     * Create inline content handler to process non-form data in a multipart request.
-     * Null return value is allowed if the service nerver expects non-form data or wants to ignore non-form data.
+     * Create inline content handler to process non-form data. Non-form data could 
+     * be a document or part of a multi-part request). Null return value is allowed 
+     * if the service never expects non-form data or wants to ignore non-form data.
+     * 
      * @return
      */
     abstract protected InlineContentHandler getInlineContentHandler();
@@ -144,13 +146,6 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object>
     public void setSyncOutput(SyncOutput syncOutput)
     {
         this.syncOutput = syncOutput;
-    }
-
-    public void setPath(String path)
-    {
-        if (path != null && path.charAt(0) == '/')
-            path = path.substring(1);
-        this.path = path;
     }
 
     public Object run()
@@ -206,17 +201,17 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object>
         {
             logInfo.setSuccess(true);
             syncOutput.setHeader(HttpTransfer.SERVICE_RETRY, ex.getRetryDelay());
-            handleException(ex, 503, "temporarily unavailable: " + path, true, false);
+            handleException(ex, 503, "temporarily unavailable: " + syncInput.getPath(), true, false);
         }
         catch(RuntimeException unexpected)
         {
             logInfo.setSuccess(false);
-            handleException(unexpected, 500, "unexpected failure: " + path + " " + path, true, true);
+            handleException(unexpected, 500, "unexpected failure: " + syncInput.getPath(), true, true);
         }
         catch(Error unexpected)
         {
             logInfo.setSuccess(false);
-            handleException(unexpected, 500, "unexpected error: " + path + " " + path, true, true);
+            handleException(unexpected, 500, "unexpected error: " + syncInput.getPath(), true, true);
         }
 
         return null;

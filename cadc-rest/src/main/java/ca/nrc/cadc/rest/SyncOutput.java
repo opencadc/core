@@ -85,8 +85,8 @@ public class SyncOutput
 {
     private static final Logger log = Logger.getLogger(SyncOutput.class);
 
-    protected HttpServletResponse response;
-    protected OutputStream outputStream;
+    private final HttpServletResponse response;
+    private OutputStream outputStream;
 
     public SyncOutput(HttpServletResponse response)
     {
