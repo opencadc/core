@@ -96,11 +96,11 @@ public class SyncInput
 {
     private static final Logger log = Logger.getLogger(SyncInput.class);
 
-    protected HttpServletRequest request;
-    private Map<String, Object> content = new TreeMap<>(new CaseInsensitiveStringComparator());
-    private Map<String,List<String>> params = new TreeMap<String,List<String>>(new CaseInsensitiveStringComparator());
-
-    private InlineContentHandler inlineContentHandler;
+    private final HttpServletRequest request;
+    private final InlineContentHandler inlineContentHandler;
+    
+    private final Map<String, Object> content = new TreeMap<>(new CaseInsensitiveStringComparator());
+    private final Map<String,List<String>> params = new TreeMap<>(new CaseInsensitiveStringComparator());
 
     public SyncInput(HttpServletRequest request, InlineContentHandler handler)
     	throws IOException
@@ -112,6 +112,32 @@ public class SyncInput
     public String getProtocol()
     {
         return request.getScheme();
+    }
+    
+    /**
+     * Get the path up to the rest binding.
+     * 
+     * @return 
+     */
+    public String getContextPath()
+    {
+        String ret = request.getContextPath();
+        if (ret.charAt(0) == '/')
+            ret = ret.substring(1);
+        return ret;
+    }
+    
+    /**
+     * Get the request path after the rest binding.
+     * 
+     * @return 
+     */
+    public String getPath()
+    {
+        String ret = request.getPathInfo();
+        if (ret.charAt(0) == '/')
+            ret = ret.substring(1);
+        return ret;
     }
 
     /**
