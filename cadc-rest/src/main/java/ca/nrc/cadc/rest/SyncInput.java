@@ -122,6 +122,8 @@ public class SyncInput
     public String getContextPath()
     {
         String ret = request.getContextPath();
+        if (ret == null)
+            return ret;
         if (ret.charAt(0) == '/')
             ret = ret.substring(1);
         return ret;
@@ -135,6 +137,8 @@ public class SyncInput
     public String getPath()
     {
         String ret = request.getPathInfo();
+        if (ret == null)
+            return ret;
         if (ret.charAt(0) == '/')
             ret = ret.substring(1);
         return ret;
