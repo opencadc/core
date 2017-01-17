@@ -25,10 +25,11 @@ dependencies {
 
     compile 'org.jdom:jdom2:2.+'
     compile 'com.helger:ph-schematron:4.2.0'
+    compile 'net.sf.saxon:Saxon-HE:[9.6,)'
 
     runtime 'org.slf4j:slf4j-api:[1.7,)'
     runtime 'org.slf4j:slf4j-log4j12:[1.7,)'
-    runtime 'net.sf.saxon:Saxon-HE:[9.5,)'
+    
     
     testCompile 'junit:junit:4.+' 
 }

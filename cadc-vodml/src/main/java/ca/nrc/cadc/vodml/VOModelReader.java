@@ -69,9 +69,7 @@ package ca.nrc.cadc.vodml;
 
 import ca.nrc.cadc.xml.W3CConstants;
 import ca.nrc.cadc.xml.XmlUtil;
-import com.helger.commons.error.list.IErrorList;
 import com.helger.schematron.ISchematronResource;
-import com.helger.schematron.SchematronHelper;
 import com.helger.schematron.xslt.SchematronResourceSCH;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -83,7 +81,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.logging.Level;
 import javax.xml.transform.stream.StreamSource;
 import org.apache.log4j.Logger;
 import org.jdom2.Document;
@@ -122,10 +119,11 @@ public class VOModelReader
         {
             schemaMap = new TreeMap<>();
             String vodmlSchemaLoc = XmlUtil.getResourceUrlString(VODML_SCHEMA, VOModelReader.class);
+            log.debug("schemaMap: " + VODML_NS + " -> " + vodmlSchemaLoc);
             schemaMap.put(VODML_NS, vodmlSchemaLoc);
-            log.info("schemaMap: " + VODML_NS + " -> " + vodmlSchemaLoc);
             
             String w3cSchemaURL = XmlUtil.getResourceUrlString(W3CConstants.XSI_SCHEMA, VOModelReader.class);
+            log.debug("schemaMap: " + W3CConstants.XSI_SCHEMA + " -> " + w3cSchemaURL);
             schemaMap.put(W3CConstants.XSI_NS_URI.toString(), w3cSchemaURL);
         }
         this.schematronVal = schematronVal;
@@ -144,11 +142,11 @@ public class VOModelReader
         SAXBuilder builder = XmlUtil.createBuilder(schemaMap);
         Document doc = builder.build(in);
         if (schematronVal)
-            validate(doc);
+            validateSchematron(doc);
         return doc;
     }
     
-    private void validate(Document doc)
+    private void validateSchematron(Document doc)
         throws IOException, SchematronValidationException
     {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
