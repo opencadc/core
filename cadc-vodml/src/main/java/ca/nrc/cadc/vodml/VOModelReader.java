@@ -107,13 +107,14 @@ public class VOModelReader
 
     private Map<String,String> schemaMap;
     private boolean schematronVal;
+    private boolean logWarnings;
     
     public VOModelReader() 
     { 
-        this(true, true); 
+        this(true, true, false); 
     }
     
-    public VOModelReader(boolean schemaVal, boolean schematronVal)
+    public VOModelReader(boolean schemaVal, boolean schematronVal, boolean logWarnings)
     {
         if (schemaVal)
         {
@@ -127,6 +128,7 @@ public class VOModelReader
             schemaMap.put(W3CConstants.XSI_NS_URI.toString(), w3cSchemaURL);
         }
         this.schematronVal = schematronVal;
+        this.logWarnings = logWarnings;
     }
     
     public Document read(InputStream in) 
@@ -188,7 +190,11 @@ public class VOModelReader
             log.debug("[" + i + "," + o.getClass().getName() + "] " + o);
             if (o instanceof FailedAssert)
             {
-                emsgs.add("[" + emsgs.size() + 1 + "] " + o);
+                FailedAssert fa = (FailedAssert) o;
+                if ("error".equalsIgnoreCase(fa.getFlag()))
+                    emsgs.add("[" + emsgs.size() + 1 + "] " + o);
+                else if (logWarnings && "warning".equalsIgnoreCase(fa.getFlag()))
+                    log.warn(fa.getText());
             }
         }
 

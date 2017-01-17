@@ -104,7 +104,7 @@ public class VOModelReaderTest
             File testVODML = FileUtil.getFileFromResource(VALID_VODML_FILE, VOModelReaderTest.class);
             log.info("test VO-DML/XML doc: " + testVODML);
             
-            VOModelReader wf = new VOModelReader(false, false);
+            VOModelReader wf = new VOModelReader(false, false, false);
             Document doc = wf.read(new FileInputStream(testVODML));
             Assert.assertNotNull(doc);
             
@@ -128,7 +128,7 @@ public class VOModelReaderTest
             File testVODML = FileUtil.getFileFromResource(VALID_VODML_FILE, VOModelReaderTest.class);
             log.info("test VO-DML/XML doc: " + testVODML);
             
-            VOModelReader wf = new VOModelReader(true, false);
+            VOModelReader wf = new VOModelReader(true, false, false);
             Document doc = wf.read(new FileInputStream(testVODML));
             Assert.assertNotNull(doc);
             
@@ -152,7 +152,7 @@ public class VOModelReaderTest
             File testVODML = FileUtil.getFileFromResource(VALID_VODML_FILE, VOModelReaderTest.class);
             log.info("test VO-DML/XML doc: " + testVODML);
             
-            VOModelReader wf = new VOModelReader(true, true);
+            VOModelReader wf = new VOModelReader(true, true, false);
             Document doc = wf.read(new FileInputStream(testVODML));
             Assert.assertNotNull(doc);
         }
@@ -169,7 +169,7 @@ public class VOModelReaderTest
         }
     }
     
-    //@Test
+    @Test
     public void testSchematronInvalid()
     {
         try
@@ -177,7 +177,7 @@ public class VOModelReaderTest
             File testVODML = FileUtil.getFileFromResource(INVALID_VODML_FILE, VOModelReaderTest.class);
             log.info("test VO-DML/XML doc: " + testVODML);
             
-            VOModelReader wf = new VOModelReader(true, true);
+            VOModelReader wf = new VOModelReader(true, true, false);
             Document doc = wf.read(new FileInputStream(testVODML));
             Assert.fail("excpected SchematronValidationException, got document");
         }

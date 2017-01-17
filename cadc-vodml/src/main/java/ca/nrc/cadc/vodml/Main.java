@@ -119,7 +119,8 @@ public class Main
                 System.exit(1);
             }
             
-            VOModelReader validator = new VOModelReader();
+            boolean warn = am.isSet("warn");
+            VOModelReader validator = new VOModelReader(true, true, warn);
             for (String fname : pargs)
             {
                 try
