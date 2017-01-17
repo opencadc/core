@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vo-dml:model xmlns:vo-dml="http://www.ivoa.net/xml/VODML/v1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema">
+    <name>test</name>
+    <description>
+        test model for validator verification that includes: 
+        import ivoa, 
+        define and use primitiveType, 
+        define and use enumeration, 
+        define and extend abstract dataType, 
+        use attribute (1, 0..1, and 0..many),
+        use collection (1, 0..1, 0..many)
+    </description>
+    <title>Test Model</title>
+    <version>1.0</version>
+    <lastModified>2017-01-16T01:02:03</lastModified>
+    
+    <import>
+        <name>ivoa</name>
+        <url>https://volute.g-vo.org/svn/trunk/projects/dm/vo-dml/models/ivoa/IVOA.vo-dml.xml</url>
+        <documentationURL>https://volute.g-vo.org/svn/trunk/projects/dm/vo-dml/models/ivoa/IVOA.html</documentationURL>
+    </import>
+    
+    <!-- externally specified primtiveType -->
+    <primitiveType>
+        <vodml-id>uuid</vodml-id>
+        <name>uuid</name>
+        <description>represents a 128-bit binary ID in the canonical ascii UUID format</description>
+        <extends>
+            <vodml-ref>ivoa:string</vodml-ref>
+        </extends>
+    </primitiveType>
+        
+    <package>
+        <vodml-id>testpkg</vodml-id>
+        <name>testpkg</name>
+        <description>the main package</description>
+        
+        <enumeration>
+            <vodml-id>Words</vodml-id>
+            <name>Words</name>
+            <literal>
+                <vodml-id>Words.SCIENCE</vodml-id>
+                <name>science</name>
+                <description>science data</description>
+            </literal>
+            <literal>
+                <vodml-id>Words.CALIBRATION</vodml-id>
+                <name>calibration</name>
+                <description>calibration data</description>
+            </literal>
+        </enumeration>
+            
+        <objectType abstract="true">
+            <vodml-id>BaseClass</vodml-id>
+            <name>BaseClass</name>
+            <attribute>
+                <vodml-id>BaseClass.id</vodml-id>
+                <name>id</name>
+                <datatype>
+                    <vodml-ref>test:uuid</vodml-ref>
+                </datatype>
+                <multiplicity>
+                    <minOccurs>1</minOccurs>
+                    <maxOccurs>1</maxOccurs>
+                </multiplicity>
+            </attribute>
+            
+            <attribute>
+                <vodml-id>BaseCLass.lastModified</vodml-id>
+                <name>lastModified</name>
+                <datatype>
+                    <vodml-ref>ivoa:datetime</vodml-ref>
+                </datatype>
+                <multiplicity>
+                    <minOccurs>0</minOccurs>
+                    <maxOccurs>1</maxOccurs>
+                </multiplicity>
+            </attribute>
+        </objectType>
+        
+        <objectType abstract="true">
+            <vodml-id>Thing</vodml-id>
+            <name>Thing</name>
+            <extends>
+                <vodml-ref>test:BaseClass</vodml-ref>
+            </extends>
+
+            <attribute>
+                <vodml-id>Thing.name</vodml-id>
+                <name>name</name>
+                <datatype>
+                    <vodml-ref>ivoa:string</vodml-ref>
+                </datatype>
+                <multiplicity>
+                    <minOccurs>1</minOccurs>
+                    <maxOccurs>1</maxOccurs>
+                </multiplicity>
+            </attribute>
+            
+            <attribute>
+                <vodml-id>Thing.type</vodml-id>
+                <name>type</name>
+                <datatype>
+                    <vodml-ref>test:Words</vodml-ref>
+                </datatype>
+                <multiplicity>
+                    <minOccurs>1</minOccurs>
+                    <maxOccurs>1</maxOccurs>
+                </multiplicity>
+            </attribute>
+            
+            <attribute>
+                <vodml-id>Thing.keywords</vodml-id>
+                <name>keywords</name>
+                <datatype>
+                    <vodml-ref>ivoa:string</vodml-ref>
+                </datatype>
+                <multiplicity>
+                    <minOccurs>0</minOccurs>
+                    <maxOccurs>666</maxOccurs> <!-- would prefer unbounded -->
+                </multiplicity>
+            </attribute>
+            
+            <collection>
+                <vodml-id>Thing.pair</vodml-id>
+                <name>pair</name>
+                <datatype>
+                    <vodml-ref>test:Pair</vodml-ref>
+                </datatype>
+                <multiplicity>
+                    <minOccurs>0</minOccurs>
+                    <maxOccurs>1</maxOccurs>
+                </multiplicity>
+            </collection>
+            
+            <!-- another composition of the same type (test:Pair) is not allowed -->
+            <!--
+            <collection>
+                <vodml-id>Thing.pairs</vodml-id>
+                <name>pairs</name>
+                <datatype>
+                    <vodml-ref>test:Pair</vodml-ref>
+                </datatype>
+                <multiplicity>
+                    <minOccurs>0</minOccurs>
+                    <maxOccurs>666</maxOccurs>
+                </multiplicity>
+            </collection>
+            -->
+            <collection>
+                <vodml-id>Thing.pairs</vodml-id>
+                <name>pairs</name>
+                <datatype>
+                    <vodml-ref>test:Pair2</vodml-ref>
+                </datatype>
+                <multiplicity>
+                    <minOccurs>0</minOccurs>
+                    <maxOccurs>666</maxOccurs>
+                </multiplicity>
+            </collection>
+        </objectType>
+            
+        
+        <objectType>
+            <vodml-id>Pair</vodml-id>
+            <name>pair</name>
+            <attribute>
+                <vodml-id>Pair.v1</vodml-id>
+                <name>v1</name>
+                <datatype>
+                    <vodml-ref>ivoa:real</vodml-ref>
+                </datatype>
+                <multiplicity>
+                    <minOccurs>1</minOccurs>
+                    <maxOccurs>1</maxOccurs>
+                </multiplicity>
+            </attribute>
+            <attribute>
+                <vodml-id>Pair.v2</vodml-id>
+                <name>v2</name>
+                <datatype>
+                    <vodml-ref>ivoa:real</vodml-ref>
+                </datatype>
+                <multiplicity>
+                    <minOccurs>1</minOccurs>
+                    <maxOccurs>1</maxOccurs>
+                </multiplicity>
+            </attribute>
+        </objectType>
+        <objectType>
+            <vodml-id>Pair2</vodml-id>
+            <name>pair2</name>
+            <attribute>
+                <vodml-id>Pair2.v1</vodml-id>
+                <name>v1</name>
+                <datatype>
+                    <vodml-ref>ivoa:real</vodml-ref>
+                </datatype>
+                <multiplicity>
+                    <minOccurs>1</minOccurs>
+                    <maxOccurs>1</maxOccurs>
+                </multiplicity>
+            </attribute>
+            <attribute>
+                <vodml-id>Pair2.v2</vodml-id>
+                <name>v2</name>
+                <datatype>
+                    <vodml-ref>ivoa:real</vodml-ref>
+                </datatype>
+                <multiplicity>
+                    <minOccurs>1</minOccurs>
+                    <maxOccurs>1</maxOccurs>
+                </multiplicity>
+            </attribute>
+        </objectType>
+    </package>
+    
+</vo-dml:model>

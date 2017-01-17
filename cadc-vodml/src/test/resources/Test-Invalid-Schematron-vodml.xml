@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vo-dml:model xmlns:vo-dml="http://www.ivoa.net/xml/VODML/v1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema">
+    <name>test</name>
+    <description>test model to make sure code works</description>
+    <title>Test Model</title>
+    <version>1.0</version>
+    <lastModified>2017-01-16T01:02:03</lastModified>
+    
+    <import>
+        <name>ivoa</name>
+        <url>https://volute.g-vo.org/svn/trunk/projects/dm/vo-dml/models/ivoa/IVOA.vo-dml.xml</url>
+        <documentationURL>https://volute.g-vo.org/svn/trunk/projects/dm/vo-dml/models/ivoa/IVOA.html</documentationURL>
+    </import>
+    
+    <package>
+        <vodml-id>testpkg</vodml-id>
+        <name>testpkg</name>
+        <description>the main package</description>
+        
+        <objectType>
+            <vodml-id>InvalidClass</vodml-id>
+            <name>invalidClass</name>
+            <attribute>
+                <vodml-id>InvalidClass.id</vodml-id>
+                <name>id</name>
+                <datatype>
+                    <vodml-ref>test:NoSuchType</vodml-ref>
+                </datatype>
+                <multiplicity>
+                    <minOccurs>1</minOccurs>
+                    <maxOccurs>1</maxOccurs>
+                </multiplicity>
+            </attribute>
+        </objectType>
+    </package>
+    
+</vo-dml:model>
