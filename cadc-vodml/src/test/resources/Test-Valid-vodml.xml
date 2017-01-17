@@ -49,6 +49,33 @@
                 <description>calibration data</description>
             </literal>
         </enumeration>
+        
+        <dataType>
+            <vodml-id>Coords</vodml-id>
+            <name>coords</name>
+            <attribute>
+                <vodml-id>Coords.v1</vodml-id>
+                <name>v1</name>
+                <datatype>
+                    <vodml-ref>ivoa:real</vodml-ref>
+                </datatype>
+                <multiplicity>
+                    <minOccurs>1</minOccurs>
+                    <maxOccurs>1</maxOccurs>
+                </multiplicity>
+            </attribute>
+            <attribute>
+                <vodml-id>Coords.v2</vodml-id>
+                <name>v2</name>
+                <datatype>
+                    <vodml-ref>ivoa:real</vodml-ref>
+                </datatype>
+                <multiplicity>
+                    <minOccurs>1</minOccurs>
+                    <maxOccurs>1</maxOccurs>
+                </multiplicity>
+            </attribute>
+        </dataType>
             
         <objectType abstract="true">
             <vodml-id>BaseClass</vodml-id>
@@ -97,6 +124,7 @@
                 </multiplicity>
             </attribute>
             
+            <!-- enum -->
             <attribute>
                 <vodml-id>Thing.type</vodml-id>
                 <name>type</name>
@@ -109,6 +137,7 @@
                 </multiplicity>
             </attribute>
             
+            <!-- multiple primtive types -->
             <attribute>
                 <vodml-id>Thing.keywords</vodml-id>
                 <name>keywords</name>
@@ -121,6 +150,31 @@
                 </multiplicity>
             </attribute>
             
+            <!-- multiple datatypes -->
+            <attribute>
+                <vodml-id>Thing.things1</vodml-id>
+                <name>things2</name>
+                <datatype>
+                    <vodml-ref>test:Coords</vodml-ref>
+                </datatype>
+                <multiplicity>
+                    <minOccurs>0</minOccurs>
+                    <maxOccurs>666</maxOccurs>
+                </multiplicity>
+            </attribute>
+            <attribute>
+                <vodml-id>Thing.things2</vodml-id>
+                <name>things2</name>
+                <datatype>
+                    <vodml-ref>test:Coords</vodml-ref>
+                </datatype>
+                <multiplicity>
+                    <minOccurs>0</minOccurs>
+                    <maxOccurs>666</maxOccurs>
+                </multiplicity>
+            </attribute>
+            
+            <!-- multiple object types -->
             <collection>
                 <vodml-id>Thing.pair</vodml-id>
                 <name>pair</name>
@@ -132,35 +186,8 @@
                     <maxOccurs>1</maxOccurs>
                 </multiplicity>
             </collection>
-            
-            <!-- another composition of the same type (test:Pair) is not allowed -->
-            <!--
-            <collection>
-                <vodml-id>Thing.pairs</vodml-id>
-                <name>pairs</name>
-                <datatype>
-                    <vodml-ref>test:Pair</vodml-ref>
-                </datatype>
-                <multiplicity>
-                    <minOccurs>0</minOccurs>
-                    <maxOccurs>666</maxOccurs>
-                </multiplicity>
-            </collection>
-            -->
-            <collection>
-                <vodml-id>Thing.pairs</vodml-id>
-                <name>pairs</name>
-                <datatype>
-                    <vodml-ref>test:Pair2</vodml-ref>
-                </datatype>
-                <multiplicity>
-                    <minOccurs>0</minOccurs>
-                    <maxOccurs>666</maxOccurs>
-                </multiplicity>
-            </collection>
         </objectType>
             
-        
         <objectType>
             <vodml-id>Pair</vodml-id>
             <name>pair</name>
@@ -177,32 +204,6 @@
             </attribute>
             <attribute>
                 <vodml-id>Pair.v2</vodml-id>
-                <name>v2</name>
-                <datatype>
-                    <vodml-ref>ivoa:real</vodml-ref>
-                </datatype>
-                <multiplicity>
-                    <minOccurs>1</minOccurs>
-                    <maxOccurs>1</maxOccurs>
-                </multiplicity>
-            </attribute>
-        </objectType>
-        <objectType>
-            <vodml-id>Pair2</vodml-id>
-            <name>pair2</name>
-            <attribute>
-                <vodml-id>Pair2.v1</vodml-id>
-                <name>v1</name>
-                <datatype>
-                    <vodml-ref>ivoa:real</vodml-ref>
-                </datatype>
-                <multiplicity>
-                    <minOccurs>1</minOccurs>
-                    <maxOccurs>1</maxOccurs>
-                </multiplicity>
-            </attribute>
-            <attribute>
-                <vodml-id>Pair2.v2</vodml-id>
                 <name>v2</name>
                 <datatype>
                     <vodml-ref>ivoa:real</vodml-ref>
