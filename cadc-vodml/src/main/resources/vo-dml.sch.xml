@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron" queryBinding="xslt2"
+	xmlns:fct="localFunctions"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<sch:ns uri="http://www.ivoa.net/xml/VODML/v1.0" prefix="vo-dml"/>
+   <sch:ns prefix="fct" uri="localFunctions"/>
+   <sch:ns prefix="xsi" uri="http://www.w3.org/2001/XMLSchema-instance"/>
+
+<sch:title>Schematron VO-DML Validator</sch:title>
+
+<sch:pattern name="Unique_vodml-id">
+  <sch:rule context="vodml-id[not(../name() = 'vo-dml:model')]">
+    <sch:let name="count" value="count(./following::vodml-id[. = current()])"/>
+    <sch:assert test="$count = 0" flag="error">
+vodml-id '<sch:value-of select="."/>' is not unique, there are <sch:value-of select="$count"/> other elements with same vodml-id in this model.
+    </sch:assert>
+  </sch:rule>
+</sch:pattern>
+
+
+<sch:pattern name="Single_Inheritance">
+  <sch:rule context="objectType|dataType|enumeration|primitiveType">
+    <sch:let name="count" value="count(extends)"/>
+    <sch:assert test="$count &lt; 2" flag="error">
+ <sch:value-of select="./vodml-id"/> has more than one extends relation.
+    </sch:assert>
+  </sch:rule>
+</sch:pattern>
+
+<sch:pattern name="Unique_composition">
+  <sch:rule context="collection/datatype/vodml-ref">
+    <sch:let name="count" value="count(//collection/datatype/vodml-ref[. = current()])"/>
+    <sch:assert test="$count = 1" flag="error">
+ <sch:value-of select="."/> is used more than once, namely <sch:value-of select="$count"/> times as target of composition relation.
+ (this message will repeat itself <sch:value-of select="$count"/> times!)
+    </sch:assert>
+  </sch:rule>
+</sch:pattern>
+
+
+
+
+<!-- Check that a model import exists for a vodml-refref with prefix not equal to vodml-ref of the model. -->
+<sch:pattern name="RemoteModelImport">
+  <sch:rule context="vodml-ref[substring-before(text(),':') != '' and substring-before(text(),':') != /vo-dml:model/vodml-id]">
+    <sch:let name="prefix" value="substring-before(text(),':')"/>
+    <sch:assert test="/vo-dml:model/import/prefix = $prefix"  flag="error">
+There is no imported model corresponding to model prefix '<sch:value-of select="$prefix"/>' in this model.
+    </sch:assert>
+  </sch:rule>
+</sch:pattern>
+
+<sch:pattern name="vodml-refs">
+  <sch:rule context="objectType/attribute | dataType/attribute">
+    <sch:let name="owner" value="./vodml-id"/>
+    <sch:let name="target" value="fct:vo-dml_element(datatype/vodml-ref,/vo-dml:model)"/>
+    <sch:assert test="$target = 'primitiveType' or $target = 'dataType' or $target='enumeration'" flag="error">
+datatype <sch:value-of select="datatype/vodml-ref"/> of <sch:value-of select="$owner"/> is not a value type but a '<sch:value-of select="$target"/>'
+    </sch:assert>
+  </sch:rule>
+
+  <sch:rule context="reference">
+    <sch:let name="owner" value="./vodml-id"/>
+    <sch:let name="target" value="fct:vo-dml_element(datatype/vodml-ref,/vo-dml:model)"/>
+    <sch:assert test="$target = 'objectType'" flag="error">
+datatype <sch:value-of select="datatype/vodml-ref"/> of reference <sch:value-of select="$owner"/> is not an object type but a '<sch:value-of select="$target"/>'
+    </sch:assert>
+   </sch:rule>
+
+  <sch:rule context="objectType/collection">
+    <sch:let name="owner" value="./vodml-id"/>
+    <sch:let name="target" value="fct:vo-dml_element(datatype/vodml-ref,/vo-dml:model)"/>
+    <sch:assert test="$target = 'objectType'" flag="error">
+datatype <sch:value-of select="datatype/vodml-ref"/> of collection <sch:value-of select="$owner"/> is not an object type but a '<sch:value-of select="$target"/>'
+    </sch:assert>
+  </sch:rule>
+
+  <sch:rule context="objectType/extends">
+    <sch:let name="owner" value="../vodml-id"/>
+    <sch:let name="target" value="fct:vo-dml_element(vodml-ref,/vo-dml:model)"/>
+    <sch:assert test="$target = 'objectType'" flag="error">
+Super type <sch:value-of select="vodml-ref"/> of objectType <sch:value-of select="$owner"/> is not an object type but a '<sch:value-of select="$target"/>'
+    </sch:assert>
+  </sch:rule>
+
+  <sch:rule context="dataType/extends">
+    <sch:let name="owner" value="./vodml-id"/>
+    <sch:let name="target" value="fct:vo-dml_element(vodml-ref,/vo-dml:model)"/>
+    <sch:assert test="$target = 'dataType'" flag="error">
+Super type <sch:value-of select="vodml-ref"/> of dataType/extends <sch:value-of select="$owner"/> is not a data type but a '<sch:value-of select="$target"/>'
+    </sch:assert>
+  </sch:rule>
+
+<!-- rule implementing Attribute multiplicity to be either min=0,max=1 or min=max=positive integer-->
+<sch:rule context="attribute/multiplicity">
+  <sch:let name="owner" value="./../vodml-id"/>
+    <sch:let name="minOccurs" value="./minOccurs"/>
+    <sch:let name="maxOccurs" value="./maxOccurs"/>
+<!--   <sch:assert test="($minOccurs = '0' and $maxOccurs = '1') or (($minOccurs = $maxOccurs) and ($maxOccurs != '-1'))" flag="error">  --> 
+  <sch:assert test="number($maxOccurs) > 0 and ($minOccurs = '0' or $minOccurs = $maxOccurs)" flag="warning"> 
+Attribute <sch:value-of select="./../vodml-id"/> has multiplicity <sch:value-of select="concat($minOccurs,'..',$maxOccurs)"/> which is STRONLY DISCOURAGED.
+  </sch:assert>
+ </sch:rule>
+
+<!-- rules on subsets can be rather complex.
+A subsets element must be owned by a constraint on a type restricting a role on one of its super-types.
+The subsets constraints must identify a datatype for the inherited role that is a subtype of the type
+defined on the role.
+The owner of the constraint must be a subtype of the owner of the subsetted role.
+Problem: need not be direct subtypes, i.e. need recursion.
+The roles must be of the same type (ie.e both attributes, or references or collections).
+The roles must have same name (TBD correct?) 
+also, constraint must have n xsi:type identifying it a such.
+OR shall we create a separate roleConstraint element? on structured types only.
+-->
+  <sch:rule context="constraint[@xsi:type='vo-dml:SubsettedRole']">
+    <sch:let name="owner" value="../name()"/>
+    <sch:let name="target" value="fct:vo-dml_element(./role/vodml-ref,/vo-dml:model)"/>
+    <sch:assert test="$target" flag="error">
+Target of subsets constraint on '<sch:value-of select="../vodml-id"/>' with vodml-ref <sch:value-of select="./vodml-ref"/> can not be found
+    </sch:assert>
+<!-- 
+    <sch:assert test="$target = $owner" flag="error">
+Role '<sch:value-of select="../vodml-id"/>' with subsets relation of type '<sch:value-of select="$owner"/>' MUST have same type as subsetted role (<sch:value-of select="$target"/>)
+    </sch:assert>
+ -->
+   </sch:rule>
+  
+<!-- TODO more rules need implementing
+- objectType can only be contained in one other objecttype
+- same, including inheritance (i.e. recursive, more tricky in Schematron?)
+-...
+ -->
+
+</sch:pattern>
+
+
+
+
+    <xsl:function name="fct:vo-dml_element" as="xs:string">
+    <!--  returns name of element containing the vodml-id identified by the vodml-ref -->
+        <xsl:param name="vodml-ref"/>
+        <xsl:param name="model"/>
+
+		<xsl:variable name="prefix" select="substring-before($vodml-ref,':')"/>
+    <xsl:variable name="targetvodml-ref" select="substring-after($vodml-ref,concat($prefix,':'))"/>
+        <xsl:choose>
+            <xsl:when test="$prefix = $model/name">
+                <xsl:value-of select="$model//*[vodml-id = $targetvodml-ref]/name()"/>
+            </xsl:when>
+            <xsl:otherwise>
+            	<xsl:variable name="import" select="$model/import[name = $prefix]/url"/>
+            	<xsl:choose>
+            	<xsl:when test="$import">
+            	  <xsl:variable name="doc" select="document($import)"/>
+                  <xsl:value-of select="$doc//*[vodml-id = $targetvodml-ref]/name()"/>
+            	</xsl:when>
+            	<xsl:otherwise>
+            	<xsl:value-of select="'ERROR'"/>
+            	</xsl:otherwise>
+            	</xsl:choose>
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:function>
+
+
+
+
+</sch:schema>
