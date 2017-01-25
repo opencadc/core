@@ -30,8 +30,8 @@ vodml-id '<sch:value-of select="."/>' is not unique, there are <sch:value-of sel
 </sch:pattern>
 
 <sch:pattern name="Unique_composition">
-  <sch:rule context="collection/datatype/vodml-ref">
-    <sch:let name="count" value="count(//collection/datatype/vodml-ref[. = current()])"/>
+  <sch:rule context="composition/datatype/vodml-ref">
+    <sch:let name="count" value="count(//composition/datatype/vodml-ref[. = current()])"/>
     <sch:assert test="$count = 1" flag="error">
  <sch:value-of select="."/> is used more than once, namely <sch:value-of select="$count"/> times as target of composition relation.
  (this message will repeat itself <sch:value-of select="$count"/> times!)
@@ -69,11 +69,11 @@ datatype <sch:value-of select="datatype/vodml-ref"/> of reference <sch:value-of 
     </sch:assert>
    </sch:rule>
 
-  <sch:rule context="objectType/collection">
+  <sch:rule context="objectType/composition">
     <sch:let name="owner" value="./vodml-id"/>
     <sch:let name="target" value="fct:vo-dml_element(datatype/vodml-ref,/vo-dml:model)"/>
     <sch:assert test="$target = 'objectType'" flag="error">
-datatype <sch:value-of select="datatype/vodml-ref"/> of collection <sch:value-of select="$owner"/> is not an object type but a '<sch:value-of select="$target"/>'
+datatype <sch:value-of select="datatype/vodml-ref"/> of composition <sch:value-of select="$owner"/> is not an object type but a '<sch:value-of select="$target"/>'
     </sch:assert>
   </sch:rule>
 
@@ -110,7 +110,7 @@ The subsets constraints must identify a datatype for the inherited role that is 
 defined on the role.
 The owner of the constraint must be a subtype of the owner of the subsetted role.
 Problem: need not be direct subtypes, i.e. need recursion.
-The roles must be of the same type (ie.e both attributes, or references or collections).
+The roles must be of the same type (ie.e both attributes, or references or compositions).
 The roles must have same name (TBD correct?) 
 also, constraint must have n xsi:type identifying it a such.
 OR shall we create a separate roleConstraint element? on structured types only.
