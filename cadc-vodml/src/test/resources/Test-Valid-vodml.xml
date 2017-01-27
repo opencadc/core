@@ -8,7 +8,7 @@
         define and use enumeration, 
         define and extend abstract dataType, 
         use attribute (1, 0..1, and 0..many),
-        use collection (1, 0..1, 0..many)
+        use composition (1, 0..1, 0..many)
     </description>
     <title>Test Model</title>
     <version>1.0</version>
@@ -175,7 +175,7 @@
             </attribute>
             
             <!-- multiple object types -->
-            <collection>
+            <composition>
                 <vodml-id>Thing.pair</vodml-id>
                 <name>pair</name>
                 <datatype>
@@ -185,7 +185,7 @@
                     <minOccurs>0</minOccurs>
                     <maxOccurs>1</maxOccurs>
                 </multiplicity>
-            </collection>
+            </composition>
         </objectType>
             
         <objectType>

@@ -490,7 +490,7 @@ TBD continue based on VO-DML specification document.
               </xsd:documentation>
             </xsd:annotation>
           </xsd:element>
-            <xsd:element name="collection" type="Composition" minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="composition" type="Composition" minOccurs="0" maxOccurs="unbounded">
             <xsd:annotation>
               <xsd:documentation>
                 TODO

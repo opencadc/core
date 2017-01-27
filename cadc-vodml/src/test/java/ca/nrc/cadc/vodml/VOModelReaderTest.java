@@ -89,6 +89,7 @@ public class VOModelReaderTest
 
     private static final String VALID_VODML_FILE = "Test-Valid-vodml.xml";
     private static final String INVALID_VODML_FILE = "Test-Invalid-Schematron-vodml.xml";
+    private static final String INVALID_COMP_FILE = "Test-Invalid-composition-vodml.xml";
     
     static
     {
@@ -184,6 +185,32 @@ public class VOModelReaderTest
         catch(SchematronValidationException ex)
         {
             log.info("caught expected exception: " + ex);
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+    
+    // this test added when changing collection to composition in the XSD and SCH files
+    @Test
+    public void testInvalidComposition()
+    {
+        try
+        {
+            File testVODML = FileUtil.getFileFromResource(INVALID_COMP_FILE, VOModelReaderTest.class);
+            log.info("test VO-DML/XML doc: " + testVODML);
+            
+            VOModelReader wf = new VOModelReader(true, true, false);
+            Document doc = wf.read(new FileInputStream(testVODML));
+            Assert.fail("excpected SchematronValidationException, got document");
+        }
+        catch(SchematronValidationException ex)
+        {
+            log.info("caught expected exception: " + ex);
+            for (String s : ex.getFailures())
+                log.info("fail: " + s);
         }
         catch(Exception unexpected)
         {
