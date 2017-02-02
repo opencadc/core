@@ -127,7 +127,7 @@ public class HttpDelete extends HttpTransfer
         }
         catch (Throwable t)
         {
-            LOGGER.debug("Failed to delete node: " + t, t);
+            LOGGER.debug("Failed to delete resource.", t);
             failure = t;
         }
     }
