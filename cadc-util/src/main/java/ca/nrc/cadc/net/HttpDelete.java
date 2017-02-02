@@ -125,25 +125,24 @@ public class HttpDelete extends HttpTransfer
             final HttpURLConnection connection = connect();
             verifyDelete(connection);
         }
-        catch (IOException ex)
+        catch (Throwable t)
         {
-            LOGGER.debug("failed to get node", ex);
-            throw new IllegalStateException("failed to get node",
-                                            ex);
+            LOGGER.debug("Failed to delete resource.", t);
+            failure = t;
         }
     }
 
     /**
      * Verify the given connection can properly perform the delete.
-     * @param connection        The open connection.
-     * @throws IOException      Any errors waiting for the response code and
-     *                          message.
+     *
+     * @param connection The open connection.
+     * @throws IOException Any errors waiting for the response code and
+     *                     message.
      */
     void verifyDelete(final HttpURLConnection connection) throws IOException
     {
         final int responseCode = connection.getResponseCode();
-        final String responseMessage =
-                connection.getResponseMessage();
+        final String responseMessage = connection.getResponseMessage();
 
         switch (responseCode)
         {
@@ -169,6 +168,8 @@ public class HttpDelete extends HttpTransfer
                 throw new RuntimeException(responseMessage);
             }
 
+            case -1:
+            case HttpURLConnection.HTTP_FORBIDDEN:
             case HttpURLConnection.HTTP_UNAUTHORIZED:
             {
                 // The service SHALL throw a HTTP 401 status code including a
@@ -218,8 +219,8 @@ public class HttpDelete extends HttpTransfer
      * or any messages from the remote endpoint, it will only establish a
      * connection to use.
      *
-     * @return                  The HTTPURLConneciton instance.
-     * @throws IOException      Any connectivity issues.
+     * @return The HTTPURLConneciton instance.
+     * @throws IOException Any connectivity issues.
      */
     private HttpURLConnection connect() throws IOException
     {
