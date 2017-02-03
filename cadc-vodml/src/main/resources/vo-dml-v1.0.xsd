@@ -467,9 +467,8 @@ TBD continue based on VO-DML specification document.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:element>
-
         </xsd:sequence>
-        <xsd:attribute name="abstract" type="xsd:boolean" default="false" use="optional" />
+        <xsd:attribute name="abstract" type="xsd:boolean" use="optional" />
       </xsd:extension>
     </xsd:complexContent>
   </xsd:complexType>
@@ -749,7 +748,7 @@ TBD continue based on VO-DML specification document.
         between the target ObjectType and the owner of the reference, the "referrer".
         The referrer can be an ObjectType (typically) but also a DataType.
         The relation is
-        looser than the composition/collection relationship, acting like a
+        looser than the composition relationship, acting like a
         semantically meaningful pointer rather than indicating a component of the referrer.
         Consequently, in general many referrers can point at the same target instance,
         and ObjectType-s can
@@ -776,25 +775,25 @@ TBD continue based on VO-DML specification document.
         <xsd:annotation>
       <xsd:documentation>
           This type implements a composition relation between the parent and child ObjectTypes.
-          Its instances are ONLY used to set the "collection" field on an ObjectType.
-          It is a rule that an object type can only be the target of a single collection definition.
-          A subclass can be assigned a target to a collection if a
-        baseclass is already assigned such a target, but only if the collection is explicitly 'subsetted'.
-        A collection is assumed to be a set, i.e.
+          Its instances are ONLY used to set the composition field on an ObjectType.
+          It is a rule that an object type can only be the target of a single composition definition.
+          A subclass can be assigned a target to a composition if a
+        baseclass is already assigned such a target, but only if the composition is explicitly 'subsetted'.
+        A composition is assumed to be a set, i.e.
         a given object (as identified by its identifier!) cannot occur
-        multiple times in the collection.
-        The collection
-        may be ordered, whichi implies that the order in whichi objects have been added
+        multiple times in the composition.
+        The composition
+        may be ordered, which implies that the order in which objects have been added
         to
-        the collection is to be preserved. As clients can always do an explicit sort on any of the child objects' attributes,
+        the parent is to be preserved. As clients can always do an explicit sort on any of the child objects' attributes,
         it seems not necessary to add functionality for
-        declaring a collection is
+        declaring a composition is
         sorted on one or more attributes.
-        Through the uniqueInCollection constraint that can be assigned to attributes, a collection can impose the
-        constraint that different objects in the collection
+        Through the uniqueInCollection constraint that can be assigned to attributes, a composition can impose the
+        constraint that different objects in the composition
         must have distinct values of the
         attribute to which that constraint is assigned.
-        It would be better probably to add the capability to assign such constraints to this collection type.
+        It would be better probably to add the capability to assign such constraints to this composition type.
         This would
         also give more flexibility in for example creating explicit (named) keys, or defining
         multi-attribute uniqueness constraints.
@@ -806,7 +805,7 @@ TBD continue based on VO-DML specification document.
           <xsd:element name="isOrdered" type="xsd:boolean" default="false" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>
-                If true, this collection preserves the ordering of object insertions.
+                If true, this composition preserves the ordering of object insertions.
               </xsd:documentation>
             </xsd:annotation>
           </xsd:element>
