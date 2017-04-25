@@ -300,25 +300,8 @@ public class JsonOutputter implements Serializable
             w.print("$");
             w.print(QUOTE);
             w.print(" : ");
-            if ( isBoolean(e.getName(), sval) )
-            {
+            if ( isBoolean(e.getName(), sval) || isNumeric(e.getName(), sval) )
                 w.print(sval);
-            }
-            else if (isNumeric(e.getName(), sval))
-            {
-                final boolean isInvalidNumber = sval.trim().startsWith("0");
-                if (isInvalidNumber)
-                {
-                    w.print(QUOTE);
-                }
-
-                w.print(sval);
-
-                if (isInvalidNumber)
-                {
-                    w.print(QUOTE);
-                }
-            }
             else
             {
                 w.print(QUOTE);
