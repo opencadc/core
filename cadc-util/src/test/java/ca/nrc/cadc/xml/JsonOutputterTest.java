@@ -69,15 +69,12 @@
 package ca.nrc.cadc.xml;
 
 import ca.nrc.cadc.util.Log4jInit;
-
 import java.io.IOException;
-
 import org.jdom2.Document;
 import org.jdom2.Element;
 
 import java.io.StringWriter;
 import java.io.Writer;
-
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jdom2.Attribute;
@@ -93,45 +90,45 @@ import org.skyscreamer.jsonassert.JSONAssert;
 public class JsonOutputterTest
 {
     private static final Logger log = Logger.getLogger(JsonOutputterTest.class);
-
+    
     static
     {
         Log4jInit.setLevel("ca.nrc.cadc.xml", Level.INFO);
     }
-
+    
     private void doit(String tname, Document document, JSONObject expected)
-            throws IOException, JSONException
+        throws IOException, JSONException
     {
         final JsonOutputter jsonOut = new JsonOutputter();
         jsonOut.getListElementNames().add("items");
         jsonOut.getStringElementNames().add("item");
-
+        
         JsonInputter jsonIn = new JsonInputter();
         jsonIn.getListElementMap().put("items", "item");
-
+        
         final Writer writer = new StringWriter();
 
         jsonOut.output(document, writer);
         String actual = writer.toString();
         log.debug(tname + ":\n" + actual);
-
+        
         // verify expected json format
         final JSONObject result = new JSONObject(actual);
         JSONAssert.assertEquals(expected, result, true);
-
+        
         // verify round-trip through outputter and inputter
-
+        
         // JsonInputter does not handle namespaces correctly so disable this
         //Document doc2 = jsonIn.input(actual);
         //Writer writer2 = new StringWriter();
         //jsonOut.output(doc2, writer2);
         //String actual2 = writer2.toString();
         //log.debug(tname + ": (round-trip)\n" + actual2);
-
+        
         //final JSONObject result2 = new JSONObject(actual2);
         //JSONAssert.assertEquals(expected, result2, true);
     }
-
+    
     @Test
     public void writeEmptyList() throws Exception
     {
@@ -149,10 +146,10 @@ public class JsonOutputterTest
                                                    + "\"items\" : {"
                                                    + "\"$\" : ["
                                                    + "] } } }");
-
+        
         doit("writeEmptyList", document, expected);
     }
-
+    
     @Test
     public void writeMultiObject() throws Exception
     {
@@ -163,8 +160,7 @@ public class JsonOutputterTest
         for (int i = 0; i < 5; i++)
         {
             final Element itemElement = new Element("item");
-            itemElement.getAttributes()
-                    .add(new Attribute("i", Integer.toString(i)));
+            itemElement.getAttributes().add(new Attribute("i", Integer.toString(i)));
             itemElement.addContent(new Text(Integer.toString(i)));
             itemsElement.addContent(itemElement);
         }
@@ -188,7 +184,7 @@ public class JsonOutputterTest
                                                    + "{\"@i\" : \"3\", \"$\" : \"3\"},"
                                                    + "{\"@i\" : \"4\", \"$\" : \"4\"}"
                                                    + "] } } }");
-
+        
         doit("writeMultiObject", document, expected);
     }
 
@@ -218,10 +214,10 @@ public class JsonOutputterTest
                                                    + "{\"$\" : \"3\"},"
                                                    + "{\"$\" : \"4\"}"
                                                    + "] } }");
-
+        
         doit("writeRootArray", document, expected);
     }
-
+    
     @Test
     public void writeNamespacePrefix() throws Exception
     {
@@ -239,7 +235,7 @@ public class JsonOutputterTest
 
         final Document document = new Document();
         document.setRootElement(itemsElement);
-
+        
         final JSONObject expected = new JSONObject("{\r\n"
                                                    + "\"nsi:items\" : {"
                                                    + "\"@xmlns:nsi\": \"http://ns.items.com\","
@@ -250,10 +246,10 @@ public class JsonOutputterTest
                                                    + "{\"$\" : \"3\"},"
                                                    + "{\"$\" : \"4\"}"
                                                    + "] } }");
-
+        
         doit("writeNamespacePrefix", document, expected);
     }
-
+    
     @Test
     public void writeNamespaceNoPrefix() throws Exception
     {
@@ -281,23 +277,22 @@ public class JsonOutputterTest
                                                    + "{\"$\" : \"3\"},"
                                                    + "{\"$\" : \"4\"}"
                                                    + "] } }");
-
+        
         doit("writeNamespaceNoPrefix", document, expected);
     }
-
+    
     @Test
     public void testNamespaceOnMultipleBranches() throws Exception
     {
         Namespace ns = Namespace.getNamespace("nsi", "http://ns.items.com");
-        Namespace otherNS = Namespace
-                .getNamespace("nso", "http://ns.items.com/other");
+        Namespace otherNS = Namespace.getNamespace("nso", "http://ns.items.com/other");
         Element itemsElement = new Element("items", ns);
 
         for (int i = 0; i < 2; i++)
         {
             Element itemElement = new Element("item", ns);
             Element child = new Element("other", otherNS);
-            child.addContent("stuff" + i);
+            child.addContent("stuff"+i);
             itemElement.addContent(child);
             itemsElement.addContent(itemElement);
         }
@@ -316,55 +311,7 @@ public class JsonOutputterTest
                                                    + "  \"@xmlns:nso\" : \"http://ns.items.com/other\","
                                                    + "  \"$\" : \"stuff1\" } }"
                                                    + "] } }");
-
+        
         doit("testNamespaceOnMultipleBranches", document, expected);
-    }
-
-    @Test
-    public void writeNumericValuesBeginningWithZero() throws Exception
-    {
-        Element root = new Element("items");
-
-        for (int i = 0; i < 2; i++)
-        {
-            final Element itemElement = new Element("item");
-            final Element child = new Element("other");
-            child.addContent("stuff" + i);
-
-            itemElement.addContent(child);
-            root.addContent(itemElement);
-        }
-
-        final Element nonNumericItemElement = new Element("item");
-        final Element nonNumericChild = new Element("other");
-
-        nonNumericChild.addContent("01985");
-        nonNumericItemElement.addContent(nonNumericChild);
-        root.addContent(nonNumericItemElement);
-
-        final Element numericItemElement = new Element("item");
-        final Element numericChild = new Element("other");
-
-        numericChild.addContent("1977");
-        numericItemElement.addContent(numericChild);
-        root.addContent(numericItemElement);
-
-        final Document document = new Document();
-        document.setRootElement(root);
-
-        final JSONObject expected = new JSONObject("{"
-                                                   + "\"items\" : {"
-                                                   + "\"$\": ["
-                                                   + "{ \"other\" : {"
-                                                   + "  \"$\" : \"stuff0\" } },"
-                                                   + "{ \"other\" : {"
-                                                   + "  \"$\" : \"stuff1\" } },"
-                                                   + "{ \"other\" : {"
-                                                   + "  \"$\" : \"01985\" } },"
-                                                   + "{ \"other\" : {"
-                                                   + "  \"$\" : 1977 } }"
-                                                   + "] } }");
-
-        doit("writeNumericValuesBeginningWithZero", document, expected);
     }
 }
