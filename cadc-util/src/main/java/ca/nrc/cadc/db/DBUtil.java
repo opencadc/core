@@ -198,7 +198,7 @@ public class DBUtil
         }    
         log.debug("env: " + envContext);
         
-        DataSource ds = getDataSource(config);
+        DataSource ds = getDataSource(config, true, true);
         envContext.bind(dataSourceName, ds);
         log.debug("createDataSource: " + dataSourceName + " DONE");
     }
