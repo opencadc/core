@@ -66,7 +66,6 @@
  *
  ************************************************************************
  */
-
 package ca.nrc.cadc.auth;
 
 import java.lang.reflect.Constructor;
@@ -86,7 +85,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.UUID;
 
 import javax.naming.InvalidNameException;
@@ -101,7 +99,6 @@ import org.apache.log4j.Logger;
 import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.net.NetUtil;
 
-
 /**
  * Security utility.
  *
@@ -110,11 +107,14 @@ import ca.nrc.cadc.net.NetUtil;
  */
 public class AuthenticationUtil
 {
+
     public static final String AUTH_HEADER = "X-CADC-DelegationToken";
 
     // Mandatory support list of RDN descriptors according to RFC 4512.
     private static final String[] ORDERED_RDN_KEYS = new String[]
-            {"DC", "CN", "OU", "O", "STREET", "L", "ST", "C", "UID"};
+    {
+        "DC", "CN", "OU", "O", "STREET", "L", "ST", "C", "UID"
+    };
 
     private static final String DEFAULT_AUTH = Authenticator.class.getName() + "Impl";
 
@@ -165,47 +165,101 @@ public class AuthenticationUtil
         return ret;
     }
 
+    /**
+     * Get the AuthMethod used by the caller. This is normally only meaningful
+     * in server side applications to figure out how the caller authenticated.
+     *
+     * @param s
+     * @return
+     */
     public static AuthMethod getAuthMethod(Subject s)
     {
         if (s == null)
+        {
             return null;
+        }
         Set<AuthMethod> m = s.getPublicCredentials(AuthMethod.class);
         if (m.isEmpty())
+        {
             return null;
+        }
         return m.iterator().next();
     }
 
     private static void setAuthMethod(Subject s, AuthMethod am)
     {
         if (s == null || am == null)
+        {
             return;
+        }
         s.getPublicCredentials().add(am);
     }
 
     /**
-     * Create a Subject using the given PrincipalExtractor. An implementation of the
-     * PrincipalExtractor interface is used to extract the authentication information
-     * from the incoming request. An implementation for plain servlet environment is provided
-     * here and a Restlet implementation is currently included in the cadcUWS library.
+     * Get an AuthMethod that can be used with credentials from the specified
+     * set.
+     *
+     * @param subject the subject with credentials
+     * @return
+     */
+    public static AuthMethod getAuthMethodFromCredentials(Subject subject)
+    {
+        if (subject == null || subject.getPublicCredentials().isEmpty())
+        {
+            return AuthMethod.ANON;
+        }
+
+        // web services using CDP and command-line applications with --cert option
+        Set cert = subject.getPublicCredentials(X509CertificateChain.class);
+        if (!cert.isEmpty())
+        {
+            return AuthMethod.CERT;
+        }
+
+        // command-line applications with --netrc option
+        Set pa = subject.getPublicCredentials(PasswordCredentials.class);
+        if (!pa.isEmpty())
+        {
+            return AuthMethod.PASSWORD;
+        }
+
+        // ui applications pass cookie(s) along
+        Set sso = subject.getPublicCredentials(SSOCookieCredential.class);
+        if (!sso.isEmpty())
+        {
+            return AuthMethod.COOKIE;
+        }
+
+        return AuthMethod.ANON;
+    }
+
+    /**
+     * Create a Subject using the given PrincipalExtractor. An implementation of
+     * the PrincipalExtractor interface is used to extract the authentication
+     * information from the incoming request. An implementation for plain
+     * servlet environment is provided here and a Restlet implementation is
+     * currently included in the cadcUWS library.
      * <p>
-     * This method tries to detect the use of a proxy certificate and add the Principal
-     * representing the real identity of the user by comparing the subject and issuer fields
-     * of the certificate and using the issuer principal when the certificate is self-signed.
-     * If the user has connected anonymously, the returned Subject will have no
-     * principals and no credentials, but should be safe to use with Subject.doAs(...).
+     * This method tries to detect the use of a proxy certificate and add the
+     * Principal representing the real identity of the user by comparing the
+     * subject and issuer fields of the certificate and using the issuer
+     * principal when the certificate is self-signed. If the user has connected
+     * anonymously, the returned Subject will have no principals and no
+     * credentials, but should be safe to use with Subject.doAs(...).
      * </p>
      * <p>
-     * This method will also try to load an implementation of the Authenticator interface
-     * and use it to process the Subject before return. By default, it will try to load a
-     * class named <code>ca.nrc.cadc.auth.AuthenticatorImpl</code>. Applications may override
-     * this default class name by setting the <em>ca.nrc.cadc.auth.Authenticator</em> system
-     * property to the class name of their implementation. Note that the default implementation
-     * class does not exist in this library  so implementors can provide that exact class and
-     * then not need the system property.
+     * This method will also try to load an implementation of the Authenticator
+     * interface and use it to process the Subject before return. By default, it
+     * will try to load a class named
+     * <code>ca.nrc.cadc.auth.AuthenticatorImpl</code>. Applications may
+     * override this default class name by setting the
+     * <em>ca.nrc.cadc.auth.Authenticator</em> system property to the class name
+     * of their implementation. Note that the default implementation class does
+     * not exist in this library so implementors can provide that exact class
+     * and then not need the system property.
      * </p>
      *
-     * @param principalExtractor The PrincipalExtractor to provide
-     *                           Principals.
+     * @param principalExtractor The PrincipalExtractor to provide Principals.
      * @return A new Subject.
      */
     public static Subject getSubject(PrincipalExtractor principalExtractor)
@@ -216,11 +270,11 @@ public class AuthenticationUtil
         }
 
         final Set<Principal> principals = principalExtractor.getPrincipals();
-        final X509CertificateChain chain =
-                principalExtractor.getCertificateChain();
+        final X509CertificateChain chain
+                = principalExtractor.getCertificateChain();
         final DelegationToken token = principalExtractor.getDelegationToken();
-        final SSOCookieCredential cookie =
-                principalExtractor.getSSOCookieCredential();
+        final SSOCookieCredential cookie
+                = principalExtractor.getSSOCookieCredential();
 
         AuthMethod am = null;
 
@@ -259,7 +313,7 @@ public class AuthenticationUtil
         }
 
         final Subject subject = new Subject(false, principals, publicCred,
-                                            privateCred);
+                privateCred);
         setAuthMethod(subject, am);
         return augmentSubject(subject);
     }
@@ -276,14 +330,13 @@ public class AuthenticationUtil
         return getSubject(new ServletPrincipalExtractor(request));
     }
 
-
     /**
      * Create a subject with the specified certificate chain and private key.
      * This method constructs an X509CertificateChain and then calls
      * getSubject(X509CertificateChain).
      *
      * @param certs a non-null and non-empty certificate chain
-     * @param key   optional private key
+     * @param key optional private key
      * @return a Subject
      */
     public static Subject getSubject(X509Certificate[] certs, PrivateKey key)
@@ -297,8 +350,7 @@ public class AuthenticationUtil
      * intended for use by applications that load a certificate and key pair
      * (probably from a file).
      *
-     * @param chain The X509Certificate chain of certificates,
-     *              if any.
+     * @param chain The X509Certificate chain of certificates, if any.
      * @return An augmented Subject.
      */
     public static Subject getSubject(X509CertificateChain chain)
@@ -321,6 +373,31 @@ public class AuthenticationUtil
         return subject; // this method for client apps only: no augment
     }
 
+    /**
+     * Create a subject for username-password authentication. This method sets a
+     * global <code>java.net.Authenticator</code> instance so can only be used
+     * safely in a single application environment. It is intended for use with
+     * command-line apps using the NetrcAuthenticator.
+     *
+     * @param authenticator
+     * @return
+     */
+    public static Subject getSubject(java.net.Authenticator authenticator)
+    {
+        Set<Principal> principals = new HashSet<Principal>();
+        Set<Object> publicCred = new HashSet<Object>();
+        Set privateCred = new HashSet();
+
+        if (authenticator != null)
+        {
+            java.net.Authenticator.setDefault(authenticator);
+            publicCred.add(new PasswordCredentials()); // tag subject
+        }
+
+        Subject subject = new Subject(false, principals, publicCred, privateCred);
+        setAuthMethod(subject, AuthMethod.PASSWORD);
+        return subject; // this method for client apps only: no augment
+    }
 
     // Encode a Subject in the format:
     // Principal Class name[Principal name]
@@ -355,10 +432,10 @@ public class AuthenticationUtil
         Set<String> userids = new HashSet<String>();
         if (subject != null)
         {
-            final Set<HttpPrincipal> httpPrincipals =
-                    subject.getPrincipals(HttpPrincipal.class);
-            final Set<CookiePrincipal> cookiePrincipals =
-                    subject.getPrincipals(CookiePrincipal.class);
+            final Set<HttpPrincipal> httpPrincipals
+                    = subject.getPrincipals(HttpPrincipal.class);
+            final Set<CookiePrincipal> cookiePrincipals
+                    = subject.getPrincipals(CookiePrincipal.class);
             String userId;
 
             for (final HttpPrincipal principal : httpPrincipals)
@@ -392,7 +469,10 @@ public class AuthenticationUtil
                     return null;
                 }
                 Class c = Class.forName(s.substring(pStart, nameStart));
-                Class[] args = new Class[]{String.class};
+                Class[] args = new Class[]
+                {
+                    String.class
+                };
                 Constructor constructor = c.getDeclaredConstructor(args);
                 String name = NetUtil
                         .decode(s.substring(nameStart + 1, nameEnd));
@@ -418,9 +498,10 @@ public class AuthenticationUtil
     }
 
     /**
-     * Re-order the pairs in the X500 distinguished name to standard order. This method
-     * causes the pairs to be ordered such that the user parts (CN) is first and the country (C)
-     * is last in the string form of the distinguished name.
+     * Re-order the pairs in the X500 distinguished name to standard order. This
+     * method causes the pairs to be ordered such that the user parts (CN) is
+     * first and the country (C) is last in the string form of the distinguished
+     * name.
      *
      * @param p
      * @return ordered principal, possibly the argument if re-order not required
@@ -442,7 +523,7 @@ public class AuthenticationUtil
             boolean flip = (cnOnRight || cOnleft);
 
             StringBuilder sb = new StringBuilder();
-            if ( flip )
+            if (flip)
             {
                 for (Rdn r : rdns) // writing in normal order is actually flipping LDAP order
                 {
@@ -452,7 +533,7 @@ public class AuthenticationUtil
             }
             else
             {
-                for (int i=rdns.size()-1; i>= 0; i--)
+                for (int i = rdns.size() - 1; i >= 0; i--)
                 {
                     sb.append(rdns.get(i));
                     sb.append(",");
@@ -466,7 +547,9 @@ public class AuthenticationUtil
         {
             throw new IllegalArgumentException("invalid DN: " + p.getName(), ex);
         }
-        finally { }
+        finally
+        {
+        }
     }
 
     /**
@@ -476,10 +559,10 @@ public class AuthenticationUtil
      * @return Map of class to collection of string values.
      */
     public static <T extends Principal>
-    Map<Class<T>, Collection<String>> groupPrincipalsByType()
+            Map<Class<T>, Collection<String>> groupPrincipalsByType()
     {
-        final Map<Class<T>, Collection<String>> groupedPrincipals =
-                new HashMap<Class<T>, Collection<String>>();
+        final Map<Class<T>, Collection<String>> groupedPrincipals
+                = new HashMap<Class<T>, Collection<String>>();
 
         for (final Principal p : getCurrentSubject().getPrincipals())
         {
@@ -498,13 +581,12 @@ public class AuthenticationUtil
     }
 
     /**
-     * Given two principal objects, return true if they represent
-     * the same identity.
+     * Given two principal objects, return true if they represent the same
+     * identity.
      * <p>
-     * The equality is defined by each principal type through the
-     * equal method, with the exception of X500Principals: if the
-     * principals are instances of X500Principal, the
-     * cannonical form of their names are compared.
+     * The equality is defined by each principal type through the equal method,
+     * with the exception of X500Principals: if the principals are instances of
+     * X500Principal, the cannonical form of their names are compared.
      * </p>
      * Two null principals are considered equal.
      *
@@ -573,17 +655,17 @@ public class AuthenticationUtil
      * <ul>
      * <li>Is all lower case.</li>
      * <li>RDNs are separated by commas and no spaces.</li>
-     * <li>RDNs are in the order specified by ORDERED_RDN_KEYS.  If more
-     * than one RDN of the same key exists, these are ordered
-     * among each other by their value by String.compareTo(String another).</li>
+     * <li>RDNs are in the order specified by ORDERED_RDN_KEYS. If more than one
+     * RDN of the same key exists, these are ordered among each other by their
+     * value by String.compareTo(String another).</li>
      * <li>If other RDNs exist in that are not in ORDERED_RDN_KEYS, an
      * IllegalArgumentException is thrown.
      * </ul>
-     * 
+     *
      * <p>
      * Please see RFC#4514 for more information.
      * </p>
-     * 
+     *
      * @param dnSrc
      * @return canonized distinguished name
      */
@@ -625,18 +707,17 @@ public class AuthenticationUtil
     }
 
     /**
-     * This method checks the validity of X509Certificates associated with
-     * a subject.
+     * This method checks the validity of X509Certificates associated with a
+     * subject.
      *
      * @param subject subject holding the certificates to be validated
-     * @throws CertificateException        Null subject or no certificates found
-     * @throws CertificateNotYetValidException
-     *                                     certificate not yet valid
+     * @throws CertificateException Null subject or no certificates found
+     * @throws CertificateNotYetValidException certificate not yet valid
      * @throws CertificateExpiredException certificate is expired
      */
     public static void checkCertificates(final Subject subject)
             throws CertificateException, CertificateNotYetValidException,
-                   CertificateExpiredException
+            CertificateExpiredException
     {
         // check validity
         if (subject != null)
@@ -666,7 +747,7 @@ public class AuthenticationUtil
                 {
                     // improve the message
                     String msg = "certificate has expired (valid from "
-                                 + df.format(start) + " to " + df
+                            + df.format(start) + " to " + df
                             .format(end) + ")";
                     throw new CertificateExpiredException(msg);
                 }
@@ -674,7 +755,7 @@ public class AuthenticationUtil
                 {
                     // improve the message
                     String msg = "certificate not yet valid (valid from "
-                                 + df.format(start) + " to " + df
+                            + df.format(start) + " to " + df
                             .format(end) + ")";
                     throw new CertificateNotYetValidException(msg);
                 }
@@ -693,8 +774,8 @@ public class AuthenticationUtil
      */
     public static Subject getCurrentSubject()
     {
-        final AccessControlContext accessControlContext =
-                AccessController.getContext();
+        final AccessControlContext accessControlContext
+                = AccessController.getContext();
         return Subject.getSubject(accessControlContext);
     }
 

@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2016.                            (c) 2016.
+*  (c) 2017.                            (c) 2017.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,59 +62,26 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
 */
 
-package ca.nrc.cadc.net;
+package ca.nrc.cadc.auth;
 
-import java.io.File;
-import java.net.Authenticator;
-import java.net.PasswordAuthentication;
+
 import org.apache.log4j.Logger;
 
 /**
- *
+ * Simple placeholder credential object that can be stored in the public credential
+ * set of a Subject to indicate that a <code>java.net.Authenticator</code> has been
+ * created to provide username and password credentials when requested. This type of
+ * credential can only be used in stand-alone applications because the authenticator
+ * is a global static that is used by the entire Java VM.
+ * 
  * @author pdowler
  */
-public class NetrcAuthenticator extends Authenticator
+public class PasswordCredentials 
 {
-    private static final Logger log = Logger.getLogger(NetrcAuthenticator.class);
+    private static final Logger log = Logger.getLogger(PasswordCredentials.class);
 
-    private NetrcFile netrc;
-
-    public NetrcAuthenticator(boolean secureMode)
-    {
-        super();
-        this.netrc = new NetrcFile(secureMode);
-    }
-
-    // unit-test method
-    NetrcAuthenticator(String netrcFile)
-    {
-        super();
-        this.netrc = new NetrcFile(netrcFile);
-    }
-
-    public File getNetrcFile()
-    {
-        return netrc;
-    }
-    
-    @Override
-    protected PasswordAuthentication getPasswordAuthentication()
-    {
-        synchronized(this) // http library does not have to synchronize usage
-        {
-            log.debug("host: " + getTargetHost());
-            return netrc.getCredentials(getTargetHost(), true);
-        }
-    }
-
-    // getRequestingHost is final; this allows faking it for tests
-    protected String getTargetHost()
-    {
-        return getRequestingHost();
-    }
+    public PasswordCredentials() { }
 }
