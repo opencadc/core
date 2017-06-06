@@ -103,6 +103,9 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import ca.nrc.cadc.util.Log4jInit;
+import java.net.InetAddress;
+import java.net.PasswordAuthentication;
+import org.junit.Assert;
 
 
 /**
@@ -122,6 +125,38 @@ public class AuthenticationUtilTest
         Log4jInit.setLevel("ca.nrc.cadc.auth", Level.INFO);
     }
 
+    @Test
+    public void testCreateSubjectPassword()
+    {
+        try
+        {
+            java.net.Authenticator impl = new java.net.Authenticator() 
+            { 
+
+                @Override
+                protected PasswordAuthentication getPasswordAuthentication()
+                {
+                    return new PasswordAuthentication("foo", "bar".toCharArray());
+                }
+
+            };
+            Subject s = AuthenticationUtil.getSubject(impl);
+            
+            Assert.assertNotNull(s);
+            Assert.assertEquals(AuthMethod.PASSWORD, AuthenticationUtil.getAuthMethod(s));
+            Assert.assertEquals(AuthMethod.PASSWORD, AuthenticationUtil.getAuthMethodFromCredentials(s));
+            
+            PasswordAuthentication pa = java.net.Authenticator.requestPasswordAuthentication(InetAddress.getLocalHost(), 80, "https", "hi", "BASIC");
+            Assert.assertEquals("foo", pa.getUserName());
+            Assert.assertEquals("bar", String.valueOf(pa.getPassword()));
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }    
+    
     @Test
     public void testHttpEqualsTrue()
     {
