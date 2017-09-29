@@ -5,4 +5,6 @@ jdk:
   - openjdk7
   - oraclejdk8
 before_script: openssl s_client -CApath /etc/ssl/certs/ -connect plugins.gradle.org:443 </dev/null | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > /tmp/gradle.crt; sudo keytool -importcert -noprompt -file /tmp/gradle.crt -trustcacerts -keystore $JAVA_HOME/jre/lib/security/cacerts -alias root -storepass changeit;
-script: for mod in cadc-util cadc-log cadc-test-servlet cadc-quality; do cd $mod; gradle --info build javadoc install || break -1; cd ..; done
+script: 
+    - for mod in cadc-util cadc-log cadc-test-servlet; do cd $mod; gradle --info build javadoc install || break -1; cd ..; done
+    - if [ "$TRAVIS_JDK_VERSION" == "oraclejdk8" ] ; then cd cadc-quality; gradle --info build || exit -1; cd ..; else echo "Skipping cadc-quality"; fi

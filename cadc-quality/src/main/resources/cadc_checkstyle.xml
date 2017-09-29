@@ -8,6 +8,9 @@
     Google conding conventions with a number of checks disabled or modified (search for
     string cadc in the file to identify them)
 
+    This config file expects the suppression definition in the project directory in
+    the .checkstyle_suppressions.xml file
+
     Checkstyle configuration that checks the Google coding conventions from Google Java Style
     that can be found at https://google.github.io/styleguide/javaguide.html.
 
