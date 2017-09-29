@@ -13,8 +13,9 @@ version = '1.0'
 
 checkstyle {
     ignoreFailures = false
-    configFile = file("${projectDir}/src/main/resources/cadc-checkstyle.xml") 
+    configFile = file("${projectDir}/src/main/resources/cadc_checkstyle.xml") 
     toolVersion = '8.2'
     sourceSets = [project.sourceSets.test]
 }
 
+task install { }
