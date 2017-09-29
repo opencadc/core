@@ -1,0 +1,20 @@
+plugins {
+    id 'java'
+    id 'checkstyle'
+}
+
+repositories {
+    jcenter()
+}
+
+group = 'org.opencadc'
+
+version = '1.0'
+
+checkstyle {
+    ignoreFailures = false
+    configFile = file("${projectDir}/src/main/resources/cadc-checkstyle.xml") 
+    toolVersion = '8.2'
+    sourceSets = [project.sourceSets.test]
+}
+
