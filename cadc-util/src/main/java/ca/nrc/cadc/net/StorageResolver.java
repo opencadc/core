@@ -96,6 +96,6 @@ public interface StorageResolver
      * @param uri the URI to convert
      * @return a URL to the identified resource
      */
-    public List<URL> toURL(URI uri)
+    public URL toURL(URI uri)
         throws IllegalArgumentException;
 }
