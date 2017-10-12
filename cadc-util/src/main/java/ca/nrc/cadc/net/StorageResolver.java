@@ -82,6 +82,13 @@ import java.util.List;
 public interface StorageResolver
 {
     /**
+     * Returns the schema for the storage resolver. 
+     * 
+     * @return a String representing the schema.
+     */
+    public String getSchema();
+    
+    /**
      * Convert the specified URI to one or more URL(s). 
      * 
      * @throws IllegalArgumentException if the scheme is not equal to the value from getScheme()
