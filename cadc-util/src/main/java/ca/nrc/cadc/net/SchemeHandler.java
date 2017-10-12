@@ -89,6 +89,7 @@ public interface SchemeHandler
      * @param uri the URI to convert
      * @return a URL to the identified resource
      */
+    @Deprecated
     public List<URL> toURL(URI uri)
         throws IllegalArgumentException;
 }
