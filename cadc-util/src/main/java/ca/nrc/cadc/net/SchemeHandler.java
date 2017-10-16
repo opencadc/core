@@ -75,10 +75,13 @@ import java.net.URL;
 import java.util.List;
 
 /**
+ * @deprecated
+ * Replaced by StorageResolver.
  * Interface for handlers that convert a URI to a URL that allows retrieval.
  * 
  * @author pdowler
  */
+@Deprecated
 public interface SchemeHandler
 {
     /**
@@ -89,7 +92,6 @@ public interface SchemeHandler
      * @param uri the URI to convert
      * @return a URL to the identified resource
      */
-    @Deprecated
     public List<URL> toURL(URI uri)
         throws IllegalArgumentException;
 }
