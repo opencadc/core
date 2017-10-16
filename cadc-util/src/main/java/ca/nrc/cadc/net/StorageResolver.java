@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2016.                            (c) 2016.
+*  (c) 2017.                            (c) 2017.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,7 +62,6 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
 *
 ************************************************************************
 */
@@ -72,18 +71,21 @@ package ca.nrc.cadc.net;
 
 import java.net.URI;
 import java.net.URL;
-import java.util.List;
 
 /**
- * @deprecated
- * Replaced by StorageResolver.
  * Interface for handlers that convert a URI to a URL that allows retrieval.
  * 
  * @author pdowler
  */
-@Deprecated
-public interface SchemeHandler
+public interface StorageResolver
 {
+    /**
+     * Returns the schema for the storage resolver. 
+     * 
+     * @return a String representing the schema.
+     */
+    public String getSchema();
+    
     /**
      * Convert the specified URI to one or more URL(s). 
      * 
@@ -92,6 +94,6 @@ public interface SchemeHandler
      * @param uri the URI to convert
      * @return a URL to the identified resource
      */
-    public List<URL> toURL(URI uri)
+    public URL toURL(URI uri)
         throws IllegalArgumentException;
 }
