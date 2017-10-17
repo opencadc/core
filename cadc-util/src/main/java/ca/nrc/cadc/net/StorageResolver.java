@@ -80,11 +80,11 @@ import java.net.URL;
 public interface StorageResolver
 {
     /**
-     * Returns the schema for the storage resolver. 
+     * Returns the scheme for the storage resolver.
      * 
      * @return a String representing the schema.
      */
-    public String getSchema();
+    public String getScheme();
     
     /**
      * Convert the specified URI to one or more URL(s). 
