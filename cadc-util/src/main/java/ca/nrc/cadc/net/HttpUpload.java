@@ -409,7 +409,14 @@ public class HttpUpload extends HttpTransfer
                  wrapper.write(ostream);
 
             log.debug("OutputStream.flush");
+            long writeStart = System.currentTimeMillis();
             ostream.flush();
+            if (logIO)
+            {
+                long flushTime = System.currentTimeMillis() - writeStart;
+                writeTime += flushTime;
+                log.debug("Time (ms) to flush: " + flushTime);
+            }
             log.debug("OutputStream.flush OK");
         }
         catch(IOException ex)

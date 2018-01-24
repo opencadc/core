@@ -135,6 +135,27 @@ public class HttpTransferTest
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
+    
+    @Test
+    public void testLogIO()
+    {
+        try
+        {
+            HttpTransfer test = new TestDummy();
+            Assert.assertNull(test.getIOReadTime());
+            Assert.assertNull(test.getIOWriteTime());
+            
+            test = new TestDummy();
+            test.setLogIO(true);
+            Assert.assertNotNull(test.getIOReadTime());
+            Assert.assertNotNull(test.getIOWriteTime());
+        }
+        catch (Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
 
     @Test
     public void setRequestSSOCookie() throws Exception
