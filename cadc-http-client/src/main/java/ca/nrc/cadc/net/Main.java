@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2016.                            (c) 2016.
+*  (c) 2011.                            (c) 2011.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -69,144 +69,143 @@
 
 package ca.nrc.cadc.net;
 
-import ca.nrc.cadc.auth.SSOCookieCredential;
+
+import ca.nrc.cadc.auth.CertCmdArgUtil;
+import ca.nrc.cadc.auth.RunnableAction;
+import ca.nrc.cadc.net.event.TransferEvent;
+import ca.nrc.cadc.net.event.TransferListener;
+import ca.nrc.cadc.util.ArgumentMap;
 import ca.nrc.cadc.util.Log4jInit;
-import java.net.HttpURLConnection;
+import java.io.File;
+import java.io.FileReader;
+import java.io.LineNumberReader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.List;
+import javax.security.auth.Subject;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.easymock.EasyMock;
-import org.junit.Assert;
-import org.junit.Test;
-
-import javax.security.auth.Subject;
-import java.net.URL;
-import java.security.PrivilegedAction;
-
 
 /**
  *
  * @author pdowler
  */
-public class HttpTransferTest 
+public class Main implements TransferListener
 {
-    private static Logger log = Logger.getLogger(HttpTransferTest.class);
+    private static final Logger log = Logger.getLogger(Main.class);
 
-    static
+    public static void main(String[] args)
     {
-        Log4jInit.setLevel("ca.nrc.cadc.net", Level.INFO);
-    }
-
-    @Test
-    public void testBufferSize() throws Exception
-    {
-        log.debug("TEST: testBufferSize");
         try
         {
-            String cur = System.getProperty(HttpTransfer.class.getName() + ".bufferSize");
-            Assert.assertNull("test setup", cur);
-
-            HttpTransfer trans = new TestDummy();
-            Assert.assertEquals("default buffer size", HttpTransfer.DEFAULT_BUFFER_SIZE, trans.getBufferSize());
-
-            trans.setBufferSize(12345);
-            Assert.assertEquals("set buffer size", 12345, trans.getBufferSize());
-
-            System.setProperty(HttpTransfer.class.getName() + ".bufferSize", "16384");
-            trans = new TestDummy();
-            Assert.assertEquals("system prop buffer size (bytes)", 16384, trans.getBufferSize());
-
-            System.setProperty(HttpTransfer.class.getName() + ".bufferSize", "32k");
-            trans = new TestDummy();
-            Assert.assertEquals("system prop buffer size KB", 32*1024, trans.getBufferSize());
-
-            System.setProperty(HttpTransfer.class.getName() + ".bufferSize", "2m");
-            trans = new TestDummy();
-            Assert.assertEquals("system prop buffer size MB", 2*1024*1024, trans.getBufferSize());
-
-            // bad syntax -> default
-            System.setProperty(HttpTransfer.class.getName() + ".bufferSize", "123d");
-            trans = new TestDummy();
-            Assert.assertEquals("system prop buffer size (invalid)", HttpTransfer.DEFAULT_BUFFER_SIZE, trans.getBufferSize());
-
+            ArgumentMap am = new ArgumentMap(args);
+            if (am.isSet("h") || am.isSet("help"))
+                usage();
+            Level level = Level.WARN;
+            
+            if (am.isSet("d") || am.isSet("debug"))
+                level = Level.DEBUG;
+            else if (am.isSet("v") || am.isSet("verbose"))
+                level = Level.INFO;
+            
+            Log4jInit.setLevel("ca.nrc.cadc.net", level);
+            Log4jInit.setLevel("ca.nrc.cadc.auth", level);
+            
+            Subject s = CertCmdArgUtil.initSubject(am);
+            
+            List<String> urls = am.getPositionalArgs();
+            String fname = am.getValue("in");
+            if (fname != null)
+            {
+                File f = new File(fname);
+                LineNumberReader r = new LineNumberReader(new FileReader(fname));
+                String line = r.readLine();
+                while (line != null)
+                {
+                    String[] tokens = line.split(" ");
+                    if (tokens.length == 1)
+                        urls.add(tokens[0]);
+                    else
+                        log.info("ignoring line: " + line);
+                    line = r.readLine();
+                }
+            }
+            Main m = new Main(s, urls);
+            m.run();
         }
-        catch (Exception unexpected)
+        catch(Throwable t)
         {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
+            log.error("FAIL", t);
         }
     }
     
-    @Test
-    public void testLogIO()
+    private static void usage()
     {
-        try
-        {
-            HttpTransfer test = new TestDummy();
-            Assert.assertNull(test.getIOReadTime());
-            Assert.assertNull(test.getIOWriteTime());
-            
-            test = new TestDummy();
-            test.setLogIO(true);
-            Assert.assertNotNull(test.getIOReadTime());
-            Assert.assertNotNull(test.getIOWriteTime());
-        }
-        catch (Exception unexpected)
-        {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
+        System.out.println("usage: cadc-http-client [-v|--verbose|-d|--debug] [--in=<fname>] [<url> ...]");
+        System.out.println("         --in : file name with URLs (one per line)");
+        System.out.println("         <url> : URLs directly on the command line");
+        System.exit(1);
     }
-
-    @Test
-    public void setRequestSSOCookie() throws Exception
+    
+    private Subject subject;
+    private List<String> urls;
+    
+    private Main() { }
+    private Main(Subject s, List<String> urls)
     {
-        final HttpTransfer testSubject = new HttpTransfer(true)
+        this.subject = s;
+        this.urls = urls;
+    }
+    public void run()
+    {
+        for (String surl : urls)
         {
-            @Override
-            public void run()
+            try
             {
-
+                URL url = new URL(surl);
+                File dest = new File(System.getProperty("user.dir"));
+                HttpDownload doit = new HttpDownload(url, dest);
+                doit.setOverwrite(true);
+                doit.setTransferListener(this);
+                Subject.doAs(subject, new RunnableAction(doit));
             }
-        };
-
-        final Subject subject = new Subject();
-        subject.getPublicCredentials().add(
-                new SSOCookieCredential("VALUE_1", "en.host.com"));
-        subject.getPublicCredentials().add(
-                new SSOCookieCredential("VALUE_2", "fr.host.com"));
-        final URL testURL =
-                new URL("http://www.fr.host.com/my/path/to/file.txt");
-        final HttpURLConnection mockConnection =
-                EasyMock.createMock(HttpURLConnection.class);
-
-        EasyMock.expect(mockConnection.getURL()).andReturn(testURL).atLeastOnce();
-
-        mockConnection.setRequestProperty("Cookie", "CADC_SSO=\"VALUE_2\"");
-        EasyMock.expectLastCall().once();
-
-        EasyMock.replay(mockConnection);
-
-        Subject.doAs(subject, new PrivilegedAction<Object>()
-        {
-            @Override
-            public Object run()
+            catch(MalformedURLException ex)
             {
-                testSubject.setRequestSSOCookie(mockConnection);
-                return null;
+                log.error("invalid input URL: " + surl);
             }
-        });
-
-        EasyMock.verify(mockConnection);
-    }
-
-    private class TestDummy extends HttpTransfer
-    {
-        TestDummy() { super(true); }
-        
-        public void run()
-        {
-            throw new UnsupportedOperationException();
         }
-        
     }
+
+    @Override
+    public void transferEvent(TransferEvent te)
+    {
+        switch(te.getState())
+        {
+            case TransferEvent.CONNECTED:
+            case TransferEvent.DECOMPRESSING:
+            case TransferEvent.TRANSFERING:
+                log.debug(te);
+                break;
+            case TransferEvent.CONNECTING:
+                log.info(te.getStateLabel() + ": " + te.getURL());
+                break;
+            case TransferEvent.COMPLETED:
+                log.info(te.getStateLabel() + ": " + te.getURL() + " -> " + te.getFile());
+                break;
+            case TransferEvent.RETRYING:
+                log.warn(te.getStateLabel() + ": " + te.getURL() + " reason: " + te.getError().getMessage());
+                break;
+            case TransferEvent.FAILED:
+            case TransferEvent.CANCELLED:
+                log.error(te.getStateLabel() + ": " + te.getURL() + " reason: " + te.getError().getMessage());
+        }
+    }
+
+    @Override
+    public String getEventHeader()
+    {
+        return "";
+    }
+    
+    
 }

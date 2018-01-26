@@ -181,6 +181,9 @@ public abstract class HttpTransfer implements Runnable
     protected List<HttpRequestProperty> requestProperties;
     protected String userAgent;
     protected boolean use_nio = false; // throughput not great, needs work before use
+    protected boolean logIO = false;
+    protected long writeTime = 0L;
+    protected long readTime = 0L;
 
     protected boolean go;
     protected Thread thread;
@@ -328,6 +331,38 @@ public abstract class HttpTransfer implements Runnable
         this.userAgent = userAgent;
         if (userAgent == null)
             this.userAgent = DEFAULT_USER_AGENT;
+    }
+    
+    /**
+     * If enabled, the time spent on the buffer reading and writing will
+     * be available through getIOReadTime() and getIOWriteTime().
+     * @param logIO
+     */
+    public void setLogIO(boolean logIO)
+    {
+        this.logIO = logIO;
+    }
+    
+    /*
+     * If logIO is set to true, return the time in milliseconds spent
+     * reading from the input stream.  Otherwise, return null.
+     */
+    public Long getIOReadTime()
+    {
+        if (logIO)
+            return readTime;
+        return null;
+    }
+    
+    /*
+     * If logIO is set to true, return the time in milliseconds spent
+     * writing to the output stream.  Otherwise, return null.
+     */
+    public Long getIOWriteTime()
+    {
+        if (logIO)
+            return writeTime;
+        return null;
     }
 
     /**
@@ -603,6 +638,8 @@ public abstract class HttpTransfer implements Runnable
         throws IOException, InterruptedException
     {
         log.debug("ioLoop: using java.io with byte[] buffer size " + sz + " startingPos " + startingPos);
+        long readStart = 0;
+        long writeStart = 0;
         byte[] buf = new byte[sz];
 
         MessageDigest md5 = null;
@@ -626,21 +663,34 @@ public abstract class HttpTransfer implements Runnable
             if ( Thread.interrupted() )
                 throw new InterruptedException();
 
+            if (logIO)
+                readStart = System.currentTimeMillis();
             nb = istream.read(buf, 0, sz);
+            if (logIO)
+                readTime += System.currentTimeMillis() - readStart;
+            
             if (nb != -1)
             {
                 if (nb < sz/2)
                 {
                     // try to get more data: merges a small chunk with a
                     // subsequent one to minimise write calls
+                    if (logIO)
+                        readStart = System.currentTimeMillis();
                     nb2 = istream.read(buf, nb, sz-nb);
+                    if (logIO)
+                        readTime += System.currentTimeMillis() - readStart;
                     if (nb2 > 0)
                         nb += nb2;
                 }
                 //log.debug("write buffer: " + nb);
                 if (md5 != null)
                     md5.update(buf, 0, nb);
+                if (logIO) 
+                    writeStart = System.currentTimeMillis();
                 ostream.write(buf, 0, nb);
+                if (logIO)
+                    writeTime += System.currentTimeMillis() - writeStart;
                 tot += nb;
                 if (progressListener != null)
                     progressListener.update(nb, tot);
@@ -668,6 +718,9 @@ public abstract class HttpTransfer implements Runnable
     protected void nioLoop(InputStream istream, OutputStream ostream, int sz, long startingPos)
         throws IOException, InterruptedException
     {
+        // Note: If NIO is enabled, the logIO option should be added at
+        // the same time (see ioLoop).
+        
         log.debug("[Download] nioLoop: using java.nio with ByteBuffer size " + sz);
         // check/clear interrupted flag and throw if necessary
         if ( Thread.interrupted() )

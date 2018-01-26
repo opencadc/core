@@ -937,7 +937,16 @@ public class HttpDownload extends HttpTransfer
             }
 
             if (ostream != null)
+            {
+                long writeStart = System.currentTimeMillis();
                 ostream.flush();
+                if (logIO)
+                {
+                    long flushTime = System.currentTimeMillis() - writeStart;
+                    writeTime += flushTime;
+                    log.debug("Time (ms) to flush: " + flushTime);
+                }
+            }
 
             log.debug("download completed");
             if (destStream == null && wrapper == null) // downloading to file
