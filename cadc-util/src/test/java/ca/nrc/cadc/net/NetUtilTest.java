@@ -73,10 +73,12 @@ import ca.nrc.cadc.util.Log4jInit;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import javax.servlet.http.HttpServletRequest;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -188,6 +190,33 @@ public class NetUtilTest
         {
             Assert.fail("unexpected exception: " + unexpected);
         }
+    }
+
+    @Test
+    public void getClientIPForwarded() throws Exception {
+        final HttpServletRequest mockRequest = EasyMock.createMock(HttpServletRequest.class);
+
+        EasyMock.expect(mockRequest.getHeader(NetUtil.FORWARDED_FOR_CLIENT_IP_HEADER)).andReturn("192.168.0.3").once();
+
+        EasyMock.replay(mockRequest);
+
+        Assert.assertEquals("Wrong Client IP.", "192.168.0.3", NetUtil.getClientIP(mockRequest));
+
+        EasyMock.verify(mockRequest);
+    }
+
+    @Test
+    public void getClientIPPlain() throws Exception {
+        final HttpServletRequest mockRequest = EasyMock.createMock(HttpServletRequest.class);
+
+        EasyMock.expect(mockRequest.getHeader(NetUtil.FORWARDED_FOR_CLIENT_IP_HEADER)).andReturn(null).once();
+        EasyMock.expect(mockRequest.getRemoteAddr()).andReturn("192.169.5.5").once();
+
+        EasyMock.replay(mockRequest);
+
+        Assert.assertEquals("Wrong Client IP.", "192.169.5.5", NetUtil.getClientIP(mockRequest));
+
+        EasyMock.verify(mockRequest);
     }
 
     @Test
