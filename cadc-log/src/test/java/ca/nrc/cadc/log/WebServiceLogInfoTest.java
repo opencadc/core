@@ -71,11 +71,11 @@ package ca.nrc.cadc.log;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
 
-import junit.framework.Assert;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
+import org.junit.Assert;
 import org.junit.Test;
 
 import ca.nrc.cadc.auth.HttpPrincipal;
@@ -95,6 +95,7 @@ public class WebServiceLogInfoTest
         HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
         EasyMock.expect(request.getMethod()).andReturn("Get").once();
         EasyMock.expect(request.getPathInfo()).andReturn("/path/of/request").once();
+        EasyMock.expect(request.getHeader("X-Forwarded-For")).andReturn(null).once();
         EasyMock.expect(request.getRemoteAddr()).andReturn("192.168.0.0").once();
 
         EasyMock.replay(request);
@@ -116,6 +117,7 @@ public class WebServiceLogInfoTest
         HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
         EasyMock.expect(request.getMethod()).andReturn("Get").once();
         EasyMock.expect(request.getPathInfo()).andReturn("/path/of/request").once();
+        EasyMock.expect(request.getHeader("X-Forwarded-For")).andReturn(null).once();
         EasyMock.expect(request.getRemoteAddr()).andReturn("192.168.0.0").once();
 
         EasyMock.replay(request);
@@ -141,6 +143,7 @@ public class WebServiceLogInfoTest
         HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
         EasyMock.expect(request.getMethod()).andReturn("Get").once();
         EasyMock.expect(request.getPathInfo()).andReturn("/theJobID").once();
+        EasyMock.expect(request.getHeader("X-Forwarded-For")).andReturn(null).once();
         EasyMock.expect(request.getRemoteAddr()).andReturn("192.168.0.0").once();
 
         EasyMock.replay(request);
@@ -157,6 +160,62 @@ public class WebServiceLogInfoTest
         String end = logInfo.end();
         log.info("testPathIsJobID: " + end);
         Assert.assertEquals("Wrong end", "END: {\"method\":\"GET\",\"success\":false,\"user\":\"the user\",\"from\":\"192.168.0.0\",\"time\":1234,\"bytes\":10,\"message\":\"the message\",\"jobID\":\"theJobID\"}", end);
+        EasyMock.verify(request);
+    }
+
+    @Test
+    public void testForwardedClientIP()
+    {
+        HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
+        EasyMock.expect(request.getMethod()).andReturn("Get").once();
+        EasyMock.expect(request.getPathInfo()).andReturn("/theJobID").once();
+        EasyMock.expect(request.getHeader("X-Forwarded-For")).andReturn("192.168.0.3").once();
+
+        EasyMock.replay(request);
+
+        WebServiceLogInfo logInfo = new ServletLogInfo(request, true);
+        String start = logInfo.start();
+        log.info("testPathIsJobID: " + start);
+        Assert.assertEquals("Wrong start", "START: {\"method\":\"GET\",\"from\":\"192.168.0.3\"," +
+            "\"jobID\":\"theJobID\"}", start);
+        logInfo.setSuccess(false);
+        logInfo.setSubject(createSubject("the user", null));
+        logInfo.setElapsedTime(1234L);
+        logInfo.setBytes(10L);
+        logInfo.setMessage("the message");
+        String end = logInfo.end();
+        log.info("testPathIsJobID: " + end);
+        Assert.assertEquals("Wrong end", "END: {\"method\":\"GET\",\"success\":false,\"user\":\"the user\"," +
+            "\"from\":\"192.168.0.3\",\"time\":1234,\"bytes\":10,\"message\":\"the message\",\"jobID\":\"theJobID\"}", end);
+        EasyMock.verify(request);
+    }
+
+    @Test
+    public void testForwardedClientIPs()
+    {
+        HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
+        EasyMock.expect(request.getMethod()).andReturn("Get").once();
+        EasyMock.expect(request.getPathInfo()).andReturn("/theJobID").once();
+        EasyMock.expect(request.getHeader("X-Forwarded-For")).andReturn("192.168.1.4, 192.168.44.88, 192.168.0.3")
+                .once();
+
+        EasyMock.replay(request);
+
+        WebServiceLogInfo logInfo = new ServletLogInfo(request, true);
+        String start = logInfo.start();
+        log.info("testPathIsJobID: " + start);
+        Assert.assertEquals("Wrong start", "START: {\"method\":\"GET\",\"from\":\"192.168.1.4\"," +
+            "\"jobID\":\"theJobID\"}", start);
+        logInfo.setSuccess(false);
+        logInfo.setSubject(createSubject("the user", null));
+        logInfo.setElapsedTime(1234L);
+        logInfo.setBytes(10L);
+        logInfo.setMessage("the message");
+        String end = logInfo.end();
+        log.info("testPathIsJobID: " + end);
+        Assert.assertEquals("Wrong end", "END: {\"method\":\"GET\",\"success\":false,\"user\":\"the user\"," +
+            "\"from\":\"192.168.1.4\",\"time\":1234,\"bytes\":10,\"message\":\"the message\",\"jobID\":\"theJobID\"}",
+                            end);
         EasyMock.verify(request);
     }
 
