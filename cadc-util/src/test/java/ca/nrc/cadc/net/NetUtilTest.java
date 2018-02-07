@@ -84,110 +84,87 @@ import java.net.URL;
 
 
 /**
- *
  * @author pdowler
  */
-public class NetUtilTest 
-{
+public class NetUtilTest {
     private static Logger log = Logger.getLogger(NetUtilTest.class);
 
     @BeforeClass
-    public static void setUpBeforeClass() throws Exception
-    {
+    public static void setUpBeforeClass() throws Exception {
         Log4jInit.setLevel("ca.nrc.cadc", Level.INFO);
     }
 
     @Test
     public void testPlainString()
-        throws Exception
-    {
-        try
-        {
+        throws Exception {
+        try {
             String s1 = "abcdefghijklmnopqrstuvwxyz0123456789";
             String s2 = NetUtil.encode(s1);
             String s3 = NetUtil.decode(s2);
             log.debug(s1 + " -> " + s2 + " -> " + s3);
             Assert.assertEquals(s1, s2);
             Assert.assertEquals(s1, s3);
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
     @Test
     public void testPlainURL()
-        throws Exception
-    {
-        try
-        {
+        throws Exception {
+        try {
             String s1 = "http://www.example.com/foobar";
             String s2 = NetUtil.encode(s1);
             String s3 = NetUtil.decode(s2);
             log.debug(s1 + " -> " + s2 + " -> " + s3);
             Assert.assertNotSame(s1, s2);
             Assert.assertEquals(s1, s3);
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
     @Test
     public void testAllSpecialChars()
-        throws Exception
-    {
-        try
-        {
+        throws Exception {
+        try {
             String s1 = "`~!@#$%^&*()-_=+[]{};':\",./<>?";
             String s2 = NetUtil.encode(s1);
             String s3 = NetUtil.decode(s2);
             log.debug(s1 + " -> " + s2 + " -> " + s3);
             Assert.assertNotSame(s1, s2);
             Assert.assertEquals(s1, s3);
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
     @Test
     public void testURIWithPlusInFilename()
-        throws Exception
-    {
-        try
-        {
+        throws Exception {
+        try {
             String s1 = "scheme://authority/path/file+name.extension";
             String s2 = NetUtil.encode(s1);
             String s3 = NetUtil.decode(s2);
             log.debug(s1 + " -> " + s2 + " -> " + s3);
             Assert.assertNotSame(s1, s2);
             Assert.assertEquals(s1, s3);
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
     @Test
     public void testURIWithSpaceInFilename()
-        throws Exception
-    {
-        try
-        {
+        throws Exception {
+        try {
             String s1 = "scheme://authority/path/file name.extension";
             String s2 = NetUtil.encode(s1);
             String s3 = NetUtil.decode(s2);
             log.debug(s1 + " -> " + s2 + " -> " + s3);
             Assert.assertNotSame(s1, s2);
             Assert.assertEquals(s1, s3);
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
@@ -196,11 +173,24 @@ public class NetUtilTest
     public void getClientIPForwarded() throws Exception {
         final HttpServletRequest mockRequest = EasyMock.createMock(HttpServletRequest.class);
 
-        EasyMock.expect(mockRequest.getHeader(NetUtil.FORWARDED_FOR_CLIENT_IP_HEADER)).andReturn("192.168.0.3").once();
+        EasyMock.expect(mockRequest.getHeader(NetUtil.FORWARDED_FOR_CLIENT_IP_HEADER))
+                .andReturn("192.168.33.44, 192.168.0.3, 192.169.5.5")
+                .once();
 
         EasyMock.replay(mockRequest);
 
-        Assert.assertEquals("Wrong Client IP.", "192.168.0.3", NetUtil.getClientIP(mockRequest));
+        Assert.assertEquals("Wrong Client IP.", "192.168.33.44", NetUtil.getClientIP(mockRequest));
+
+        EasyMock.verify(mockRequest);
+
+        // Reset to re-use.
+        EasyMock.reset(mockRequest);
+
+        EasyMock.expect(mockRequest.getHeader(NetUtil.FORWARDED_FOR_CLIENT_IP_HEADER)).andReturn("192.169.5.5").once();
+
+        EasyMock.replay(mockRequest);
+
+        Assert.assertEquals("Wrong Client IP.", "192.169.5.5", NetUtil.getClientIP(mockRequest));
 
         EasyMock.verify(mockRequest);
     }
@@ -220,10 +210,9 @@ public class NetUtilTest
     }
 
     @Test
-    public void getDomainName() throws Exception
-    {
+    public void getDomainName() throws Exception {
         final String domainName1 =
-                NetUtil.getDomainName(new URL("http://www.google.com/my/path"));
+            NetUtil.getDomainName(new URL("http://www.google.com/my/path"));
         Assert.assertEquals("Domain Name should be google.com",
                             "google.com", domainName1);
 
@@ -232,12 +221,12 @@ public class NetUtilTest
                             domainName2);
 
         final String domainName3 =
-                NetUtil.getDomainName(new URL("http://user:pass@cadc.ca/path"));
+            NetUtil.getDomainName(new URL("http://user:pass@cadc.ca/path"));
         Assert.assertEquals("Domain Name should be cadc.ca", "cadc.ca",
                             domainName3);
 
         final String domainName4 =
-                NetUtil.getDomainName(new URL("http://gimli.cadc.dao.nrc.ca"));
+            NetUtil.getDomainName(new URL("http://gimli.cadc.dao.nrc.ca"));
         Assert.assertEquals("Domain Name should be cadc.dao.nrc.ca",
                             "cadc.dao.nrc.ca", domainName4);
 

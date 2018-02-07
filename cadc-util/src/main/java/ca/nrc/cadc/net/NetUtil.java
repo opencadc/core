@@ -290,7 +290,7 @@ public class NetUtil {
      * @return      String IP address.  Never null.
      */
     public static String getClientIP(final HttpServletRequest request) {
-        final String forwardedForHeader = request.getHeader(NetUtil.FORWARDED_FOR_CLIENT_IP_HEADER);
-        return StringUtil.hasText(forwardedForHeader) ? forwardedForHeader : request.getRemoteAddr();
+        final String forwardedFor = request.getHeader(NetUtil.FORWARDED_FOR_CLIENT_IP_HEADER);
+        return StringUtil.hasText(forwardedFor) ? forwardedFor.split(",")[0].trim() : request.getRemoteAddr();
     }
 }
