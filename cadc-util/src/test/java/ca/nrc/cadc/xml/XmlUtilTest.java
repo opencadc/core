@@ -70,39 +70,39 @@
 package ca.nrc.cadc.xml;
 
 import ca.nrc.cadc.util.Log4jInit;
-
 import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.log4j.Logger;
-import org.jdom2.Document;
 import org.jdom2.JDOMException;
-
 import static org.junit.Assert.*;
-
 import org.junit.Test;
 
 /**
+ *
  * @author jburke
  */
-public class XmlUtilTest {
+public class XmlUtilTest
+{
     private static Logger log = Logger.getLogger(XmlUtilTest.class);
-
-    static {
+    static
+    {
         Log4jInit.setLevel("ca.nrc.cadc", org.apache.log4j.Level.INFO);
     }
 
     String fooSchema = "foo.xsd";
     String barSchema = "bar.xsd";
 
-    public XmlUtilTest() {
+    public XmlUtilTest() 
+    {
     }
 
     @Test
-    public void testValidXml_ValidParser() throws Exception {
+    public void testValidXml_ValidParser() throws Exception
+    {
         log.debug("testValidXml_ValidParser");
-        try {
+        try
+        {
             StringBuilder xml = new StringBuilder();
             xml.append("<?xml version=\"1.0\" ?>");
             xml.append("<foons:foo xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"");
@@ -110,7 +110,9 @@ public class XmlUtilTest {
             xml.append("</foons:foo>");
 
             XmlUtil.buildDocument(xml.toString(), "http://localhost/foo.xsd", fooSchema);
-        } catch (Exception unexpected) {
+        }
+        catch (Exception unexpected)
+        {
             log.error("unexpected exception", unexpected);
             fail("unexpected exception: " + unexpected);
         }
@@ -118,21 +120,26 @@ public class XmlUtilTest {
     }
 
     @Test
-    public void testInvalidXml_ValidParser() throws Exception {
+    public void testInvalidXml_ValidParser() throws Exception
+    {
         log.debug("testInvalidXml_ValidParser");
-        try {
+        try
+        {
             StringBuilder xml = new StringBuilder();
             xml.append("<?xml version=\"1.0\" ?>");
             xml.append("<foons:bar xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"");
             xml.append("         xmlns:foons=\"http://localhost/foo.xsd\">");
             xml.append("</foons:bar>");
 
-            try {
+            try
+            {
                 XmlUtil.buildDocument(xml.toString(), "http://localhost/foo.xsd", fooSchema);
                 fail("JDOM parsing exception should have been thrown");
-            } catch (JDOMException ignore) {
             }
-        } catch (Exception unexpected) {
+            catch (JDOMException ignore) {}
+        }
+        catch (Exception unexpected)
+        {
             log.error("unexpected exception", unexpected);
             fail("unexpected exception: " + unexpected);
         }
@@ -140,21 +147,26 @@ public class XmlUtilTest {
     }
 
     @Test
-    public void testValidXml_InvalidParser() throws Exception {
+    public void testValidXml_InvalidParser() throws Exception
+    {
         log.debug("testValidXml_InvalidParser");
-        try {
+        try
+        {
             StringBuilder xml = new StringBuilder();
             xml.append("<?xml version=\"1.0\" ?>");
             xml.append("<foons:bar xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"");
             xml.append("         xmlns:foons=\"http://localhost/bar.xsd\">");
             xml.append("</foons:bar>");
 
-            try {
+            try
+            {
                 XmlUtil.buildDocument(xml.toString(), "http://localhost/foo.xsd", fooSchema);
                 fail("JDOM parsing exception should have been thrown");
-            } catch (JDOMException ignore) {
             }
-        } catch (Exception unexpected) {
+            catch (JDOMException ignore) {}
+        }
+        catch (Exception unexpected)
+        {
             log.error("unexpected exception", unexpected);
             fail("unexpected exception: " + unexpected);
         }
@@ -162,9 +174,11 @@ public class XmlUtilTest {
     }
 
     @Test
-    public void testValidXml_NoSchemaLocation() throws Exception {
+    public void testValidXml_NoSchemaLocation() throws Exception
+    {
         log.debug("testValidXml_NoSchemaLocation");
-        try {
+        try
+        {
             StringBuilder xml = new StringBuilder();
             xml.append("<?xml version=\"1.0\" ?>");
             xml.append("<foons:bar xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"");
@@ -174,12 +188,15 @@ public class XmlUtilTest {
             // MUST pass in an empty map of validation is turned off
             Map<String, String> map = new HashMap<String, String>();
 
-            try {
+            try
+            {
                 XmlUtil.buildDocument(new StringReader(xml.toString()), map);
                 fail("JDOM parsing exception should have been thrown");
-            } catch (JDOMException ignore) {
             }
-        } catch (Exception unexpected) {
+            catch (JDOMException ignore) {}
+        }
+        catch (Exception unexpected)
+        {
             log.error("unexpected exception", unexpected);
             fail("unexpected exception: " + unexpected);
         }
@@ -187,9 +204,11 @@ public class XmlUtilTest {
     }
 
     @Test
-    public void testParseWithoutSchemaValidation() {
+    public void testParseWithoutSchemaValidation()
+    {
         log.debug("testParseWithoutSchemaValidation");
-        try {
+        try
+        {
             StringBuilder xml = new StringBuilder();
             xml.append("<?xml version=\"1.0\" ?>");
             xml.append("<foons:bar xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"");
@@ -198,39 +217,19 @@ public class XmlUtilTest {
 
             // MUST pass null map to disable validation
             Map<String, String> map = null;
-            try {
+            try
+            {
                 XmlUtil.buildDocument(xml.toString());
-            } catch (JDOMException ex) {
+            }
+            catch (JDOMException ex)
+            {
                 fail("unexpected exception: " + ex);
             }
-        } catch (Exception unexpected) {
+        }
+        catch (Exception unexpected)
+        {
             log.error("unexpected exception", unexpected);
             fail("unexpected exception: " + unexpected);
         }
-    }
-
-    @Test
-    public void testHasComment() throws Exception {
-        StringBuilder xml = new StringBuilder();
-        xml.append("<?xml version=\"1.0\" ?>");
-        xml.append("<foons:bar xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"");
-        xml.append("         xmlns:foons=\"http://localhost/bar.xsd\">");
-        xml.append("</foons:bar>");
-        final Document doc = XmlUtil.buildDocument(xml.toString());
-
-        assertFalse("Should not have comment.",
-                    XmlUtil.hasCommentContaining(doc.getRootElement(), "mycomment"));
-
-        xml = new StringBuilder();
-        xml.append("<?xml version=\"1.0\" ?>");
-        xml.append("<foons:bar xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"");
-        xml.append("         xmlns:foons=\"http://localhost/bar.xsd\">");
-        xml.append("<!-- comment123 -->");
-        xml.append("</foons:bar>");
-
-        final Document docWithComment = XmlUtil.buildDocument(xml.toString());
-
-        assertTrue("Should have comment.",
-                   XmlUtil.hasCommentContaining(docWithComment.getRootElement(), "comment123"));
     }
 }
