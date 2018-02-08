@@ -76,6 +76,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.MissingResourceException;
 
@@ -291,12 +292,14 @@ public class XmlUtil {
      * @return True if one or more comments match, or False otherwise.
      */
     public static boolean hasCommentContaining(final Element element, final String commentValue) {
-        return !element.getContent(new ContentFilter(ContentFilter.COMMENT) {
+        final List<Content> comments = element.getContent(new ContentFilter(ContentFilter.COMMENT) {
             @Override
             public Content filter(final Object obj) {
                 final Content c = super.filter(obj);
                 return ((c != null) && c.getValue().contains(commentValue)) ? c : null;
             }
-        }).isEmpty();
+        });
+
+        return !comments.isEmpty();
     }
 }
