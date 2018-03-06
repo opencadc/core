@@ -47,9 +47,6 @@ public class SSOCookieCredential
 {
     private String ssoCookieValue;
     private String domain;
-
-
-
     private Date expiryDate;
     /**
      * Ctor
@@ -77,6 +74,14 @@ public class SSOCookieCredential
 
     public Date getExpiryDate() {
         return expiryDate;
+    }
+
+    public boolean isExpired() {
+        boolean expired = false;
+        if (expiryDate != null) {
+            expired = expiryDate.after(new Date());
+        }
+        return expired;
     }
 
     @Override
