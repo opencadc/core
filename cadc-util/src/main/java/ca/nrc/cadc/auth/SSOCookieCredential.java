@@ -79,7 +79,7 @@ public class SSOCookieCredential
     public boolean isExpired() {
         boolean expired = false;
         if (expiryDate != null) {
-            expired = expiryDate.after(new Date());
+            expired = expiryDate.before(new Date());
         }
         return expired;
     }
