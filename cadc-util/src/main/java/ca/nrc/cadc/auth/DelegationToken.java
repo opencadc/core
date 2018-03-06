@@ -171,7 +171,7 @@ public class DelegationToken implements Serializable
      * @return
      * @throws InvalidDelegationTokenException
      */
-    public static DelegationToken parse(String text, String requestURI)
+    public static DelegationToken  parse(String text, String requestURI)
             throws InvalidDelegationTokenException
     {
         return parse(text, requestURI, null);

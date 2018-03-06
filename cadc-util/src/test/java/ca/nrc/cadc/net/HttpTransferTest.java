@@ -70,8 +70,10 @@
 package ca.nrc.cadc.net;
 
 import ca.nrc.cadc.auth.SSOCookieCredential;
+import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.util.Log4jInit;
 import java.net.HttpURLConnection;
+import java.util.Date;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
@@ -170,10 +172,13 @@ public class HttpTransferTest
         };
 
         final Subject subject = new Subject();
+        // Make expiry date 48 hours in future
+        Date cookieExpiry = new Date();
+        cookieExpiry = new Date(cookieExpiry.getTime() + (48 * 3600 * 1000));
         subject.getPublicCredentials().add(
-                new SSOCookieCredential("VALUE_1", "en.host.com"));
+                new SSOCookieCredential("VALUE_1", "en.host.com", cookieExpiry));
         subject.getPublicCredentials().add(
-                new SSOCookieCredential("VALUE_2", "fr.host.com"));
+                new SSOCookieCredential("VALUE_2", "fr.host.com", cookieExpiry));
         final URL testURL =
                 new URL("http://www.fr.host.com/my/path/to/file.txt");
         final HttpURLConnection mockConnection =

@@ -33,9 +33,7 @@
  */
 package ca.nrc.cadc.auth;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.security.AccessControlException;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
@@ -50,7 +48,6 @@ import ca.nrc.cadc.net.NetUtil;
 import org.apache.log4j.Logger;
 
 import ca.nrc.cadc.util.ArrayUtil;
-import ca.nrc.cadc.util.RsaSignatureVerifier;
 import ca.nrc.cadc.util.StringUtil;
 
 
@@ -122,11 +119,13 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
                 SSOCookieManager ssoCookieManager = new SSOCookieManager();
                 try
                 {
-                    cookiePrincipal = ssoCookieManager.parse(
-                                    ssoCookie.getValue());
+                    DelegationToken cookieToken = ssoCookieManager.parse(
+                        ssoCookie.getValue());
+                    cookiePrincipal = cookieToken.getUser();
                     cookieCredential = new 
                             SSOCookieCredential(ssoCookie.getValue(), 
-                            NetUtil.getDomainName(request.getServerName()));
+                            NetUtil.getDomainName(request.getServerName()),
+                            cookieToken.getExpiryTime());
                 } 
                 catch (IOException e)
                 {

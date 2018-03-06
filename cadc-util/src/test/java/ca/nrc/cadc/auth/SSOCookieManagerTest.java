@@ -75,7 +75,8 @@ public class SSOCookieManagerTest
     {
         final HttpPrincipal userPrincipal = new HttpPrincipal("CADCtest");
         SSOCookieManager cm = new SSOCookieManager();
-        HttpPrincipal actualPrincipal = cm.parse(cm.generate(userPrincipal));
+        DelegationToken cookieToken = cm.parse(cm.generate(userPrincipal));
+        HttpPrincipal actualPrincipal = cookieToken.getUser();
         
         assertEquals(userPrincipal, actualPrincipal);
     }

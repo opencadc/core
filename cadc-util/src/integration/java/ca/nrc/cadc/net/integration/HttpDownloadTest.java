@@ -116,7 +116,11 @@ public class HttpDownloadTest
     private URL httpsURL;
     private URL notFoundURL;
     private File tmpDir;
-    
+
+    private Date cookieExpiry = new Date();
+    private static int HOURS = 3600 * 1000;
+
+
     /**
      * @throws java.lang.Exception
      */
@@ -126,6 +130,8 @@ public class HttpDownloadTest
         Log4jInit.setLevel("ca.nrc.cadc.net", Level.INFO);
         SSL_CERT = FileUtil.getFileFromResource(TEST_CERT_FN, HttpDownloadTest.class);
         SSL_KEY = FileUtil.getFileFromResource(TEST_KEY_FN, HttpDownloadTest.class);
+        cookieExpiry = new Date(cookieExpiry.getTime() + (48 * HOURS));
+
     }
 
     /**
@@ -664,7 +670,8 @@ public class HttpDownloadTest
             s.getPublicCredentials().add(
                     new SSOCookieCredential(
                             "CADC_SSO=test-token--do-not-delete",
-                            "cadc-ccda.hia-iha.nrc-cnrc.gc.ca"));
+                            "cadc-ccda.hia-iha.nrc-cnrc.gc.ca"),
+                            cookieExpiry);
             Subject.doAs(s, new RunnableAction(dl));
 
             Assert.assertNull("HttpDownload failed: " + dl.getThrowable(), dl.getThrowable());
@@ -706,15 +713,18 @@ public class HttpDownloadTest
             s.getPublicCredentials().add(
                     new SSOCookieCredential(
                             "CADC_SSO=token=test-token--do-not-delete", 
-                            "cadc.hia.nrc.gc.ca"));
+                            "cadc.hia.nrc.gc.ca",
+                            cookieExpiry));
             s.getPublicCredentials().add(
                     new SSOCookieCredential(
                             "CADC_SSO=token=test-token--do-not-delete", 
-                            "ccda.iha.cnrc.gc.ca"));
+                            "ccda.iha.cnrc.gc.ca",
+                            cookieExpiry));
             s.getPublicCredentials().add(
                     new SSOCookieCredential(
                             "CADC_SSO=username=cadcauthtest1|sessionID=132|token=test-token--do-not-delete", 
-                            "cadc-ccda.hia-iha.nrc-cnrc.gc.ca"));
+                            "cadc-ccda.hia-iha.nrc-cnrc.gc.ca",
+                            cookieExpiry));
             Subject.doAs(s, new RunnableAction(dl));
 
             Assert.assertNull("HttpDownload failed: " + dl.getThrowable(), dl.getThrowable());
@@ -730,7 +740,8 @@ public class HttpDownloadTest
             s.getPublicCredentials().add(
                     new SSOCookieCredential(
                             "CADC_SSO=token=test-token--do-not-delete", 
-                            "somedomain.com"));
+                            "somedomain.com",
+                            cookieExpiry));
             Subject.doAs(s, new RunnableAction(dl));
 
             Assert.assertNotNull("HttpDownload succeeded: " 
@@ -817,7 +828,8 @@ public class HttpDownloadTest
             s.getPublicCredentials().add(
                     new SSOCookieCredential(
                             "CADC_SSO=username=cadcauthtest1|sessionID=132|token=test-token--do-not-delete", 
-                            "somedomain.ca"));
+                            "somedomain.ca",
+                            cookieExpiry));
             Subject.doAs(s, new RunnableAction(dl));
 
             Assert.assertNotNull("HttpDownload succeeded: " 

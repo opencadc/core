@@ -37,6 +37,8 @@
 package ca.nrc.cadc.auth;
 
 
+import java.util.Date;
+
 /**
  * Class that stores a Single-Sign-On cookie credential. The crential can
  * be used to authenticate the user against a given domain name.
@@ -44,7 +46,11 @@ package ca.nrc.cadc.auth;
 public class SSOCookieCredential
 {
     private String ssoCookieValue;
-    private String domain; 
+    private String domain;
+
+
+
+    private Date expiryDate;
     /**
      * Ctor
      * @param cookieValue value of the cookie to be used in the header request.
@@ -52,10 +58,11 @@ public class SSOCookieCredential
      * @param domain the domain that this cookie applies to. SSO cookies
      * should only be send to URLs within this domain.
      */
-    public SSOCookieCredential(final String cookieValue, final String domain)
+    public SSOCookieCredential(final String cookieValue, final String domain, final Date expiryDate)
     {
         this.ssoCookieValue = cookieValue;
         this.domain = domain;
+        this.expiryDate = expiryDate;
     }
     
     public String getSsoCookieValue()
@@ -68,10 +75,15 @@ public class SSOCookieCredential
         return domain;
     }
 
+    public Date getExpiryDate() {
+        return expiryDate;
+    }
+
     @Override
     public String toString()
     {
-        return getClass().getSimpleName() + "[" + domain + "," + ssoCookieValue + "]";
+        return getClass().getSimpleName() + "[" + domain + "," + ssoCookieValue
+            + expiryDate.toString() +"]";
     }
     
     

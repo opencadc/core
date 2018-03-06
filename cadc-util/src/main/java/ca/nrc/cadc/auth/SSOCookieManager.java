@@ -77,7 +77,7 @@ public class SSOCookieManager
      *            and validated.
      * @throws InvalidDelegationTokenException 
      */
-    public final HttpPrincipal parse(final String value) 
+    public final DelegationToken parse(final String value)
                     throws IOException, InvalidDelegationTokenException
     {
         /*
@@ -96,7 +96,7 @@ public class SSOCookieManager
             throw new InvalidDelegationTokenException("Bad token." + value);
         }
 
-        return token.getUser();
+        return token;
     }
 
     /**
