@@ -35,12 +35,14 @@ package ca.nrc.cadc.auth;
 
 import ca.nrc.cadc.date.DateUtil;
 
+import ca.nrc.cadc.util.PropertiesReader;
 import java.io.IOException;
 import java.net.URI;
 import java.security.InvalidKeyException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-
+import java.util.List;
 
 
 /**
@@ -48,12 +50,15 @@ import java.util.Date;
  */
 public class SSOCookieManager
 {
+
     public static final String DEFAULT_SSO_COOKIE_NAME = "CADC_SSO";
 
     // For token and cookie value generation.
     public static final int SSO_COOKIE_LIFETIME_HOURS = 2 * 24; // in hours
 
     public static final URI SCOPE_URI = URI.create("sso:cadc+canfar");
+
+    public static final String SUPPORTED_DOMAINS_PROP_FILE = "SupportedDomains.properties";
 
     // Offset to add to the expiry hours.  This is mainly used to set a cookie
     // date in the past to expire it.  This can be a negative value.
@@ -148,5 +153,36 @@ public class SSOCookieManager
     public void setOffsetExpiryHours(int offsetExpiryHours)
     {
         this.offsetExpiryHours = offsetExpiryHours;
+    }
+
+    /**
+     * Generate a list of cookies based on the original credentials passed in, one for each
+     * of the supported domains.
+     *
+     * @param cookieValue
+     * @param requestedDomain
+     * @param expiryDate
+     * @return cookieList
+     */
+     public List<SSOCookieCredential> getSSOCookieCredentials(final String cookieValue, final String requestedDomain, final Date expiryDate) {
+        List<SSOCookieCredential> cookieList = new ArrayList<>();
+
+        // Make cookie with requested domain
+        SSOCookieCredential requestedCookie = new SSOCookieCredential(cookieValue, requestedDomain, expiryDate);
+        cookieList.add(requestedCookie);
+
+        // Get domain list from properties
+        PropertiesReader propReader = new PropertiesReader(SUPPORTED_DOMAINS_PROP_FILE);
+        List<String> domainValues = propReader.getPropertyValues("domains");
+        String[] domainList = domainValues.get(0).split(" ");
+
+        for (String domain: domainList) {
+            if (!domain.equals(requestedDomain)) {
+                SSOCookieCredential nextCookie = new SSOCookieCredential(cookieValue, domain, expiryDate);
+                cookieList.add(nextCookie);
+            }
+        }
+
+        return cookieList;
     }
 }

@@ -34,6 +34,7 @@
 package ca.nrc.cadc.auth;
 
 import java.security.Principal;
+import java.util.List;
 import java.util.Set;
 
 
@@ -73,5 +74,5 @@ public interface PrincipalExtractor
      * 
      * @return
      */
-    SSOCookieCredential getSSOCookieCredential();
+    List<SSOCookieCredential> getSSOCookieCredentials();
 }

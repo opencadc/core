@@ -273,8 +273,8 @@ public class AuthenticationUtil
         final X509CertificateChain chain
                 = principalExtractor.getCertificateChain();
         final DelegationToken token = principalExtractor.getDelegationToken();
-        final SSOCookieCredential cookie
-                = principalExtractor.getSSOCookieCredential();
+        final List<SSOCookieCredential> cookieList
+                = principalExtractor.getSSOCookieCredentials();
 
         AuthMethod am = null;
 
@@ -295,9 +295,11 @@ public class AuthenticationUtil
             publicCred.add(token);
             am = AuthMethod.TOKEN;
         }
-        else if (cookie != null)
+        else if (cookieList.size() != 0)
         {
-            publicCred.add(cookie);
+            for (SSOCookieCredential cookie: cookieList) {
+                publicCred.add(cookie);
+            }
             am = AuthMethod.COOKIE;
         }
         else

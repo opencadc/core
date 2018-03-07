@@ -57,7 +57,7 @@ public class PropertiesReader
     private static final Logger log = Logger.getLogger(PropertiesReader.class);
 
     private static final String DEFAULT_CONFIG_DIR = System.getProperty("user.home") + "/config/";
-    private static final String CONFIG_DIR_SYSTEM_PROPERTY = PropertiesReader.class.getName() + ".dir";
+    public static final String CONFIG_DIR_SYSTEM_PROPERTY = PropertiesReader.class.getName() + ".dir";
 
 
     private File propertiesFile;

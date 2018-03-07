@@ -37,8 +37,10 @@ import java.io.IOException;
 import java.security.AccessControlException;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.servlet.http.Cookie;
@@ -63,7 +65,7 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
 
     private X509CertificateChain chain;
     private DelegationToken token;
-    private SSOCookieCredential cookieCredential;
+    private List<SSOCookieCredential> cookieCredentialList;
     private Principal cookiePrincipal; // principal extracted from cookie
 
     private ServletPrincipalExtractor()
@@ -122,10 +124,16 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
                     DelegationToken cookieToken = ssoCookieManager.parse(
                         ssoCookie.getValue());
                     cookiePrincipal = cookieToken.getUser();
-                    cookieCredential = new 
-                            SSOCookieCredential(ssoCookie.getValue(), 
-                            NetUtil.getDomainName(request.getServerName()),
-                            cookieToken.getExpiryTime());
+                    // This needs to return the list
+                    // Q: where should this function exist?
+                    cookieCredentialList = ssoCookieManager.getSSOCookieCredentials(ssoCookie.getValue(),
+                                                NetUtil.getDomainName(request.getServerName()),
+                                                cookieToken.getExpiryTime());
+
+//                        new
+//                            SSOCookieCredential(ssoCookie.getValue(),
+//                            NetUtil.getDomainName(request.getServerName()),
+//                            cookieToken.getExpiryTime());
                 } 
                 catch (IOException e)
                 {
@@ -168,9 +176,8 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
         return token;
     }
     
-    public SSOCookieCredential getSSOCookieCredential()
-    {
-        return cookieCredential;
+    public List<SSOCookieCredential> getSSOCookieCredentials() {
+        return cookieCredentialList;
     }
 
     
