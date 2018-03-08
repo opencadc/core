@@ -124,16 +124,10 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
                     DelegationToken cookieToken = ssoCookieManager.parse(
                         ssoCookie.getValue());
                     cookiePrincipal = cookieToken.getUser();
-                    // This needs to return the list
-                    // Q: where should this function exist?
+
                     cookieCredentialList = ssoCookieManager.getSSOCookieCredentials(ssoCookie.getValue(),
                                                 NetUtil.getDomainName(request.getServerName()),
                                                 cookieToken.getExpiryTime());
-
-//                        new
-//                            SSOCookieCredential(ssoCookie.getValue(),
-//                            NetUtil.getDomainName(request.getServerName()),
-//                            cookieToken.getExpiryTime());
                 } 
                 catch (IOException e)
                 {

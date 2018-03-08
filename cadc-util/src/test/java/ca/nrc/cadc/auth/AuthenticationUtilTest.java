@@ -529,7 +529,8 @@ public class AuthenticationUtilTest
 
         // this needs to be a list of mocks.
         List<SSOCookieCredential> mockCookieCredentials = new ArrayList<>();
-        mockCookieCredentials.add(createMock(SSOCookieCredential.class));
+        final SSOCookieCredential cookie =createMock(SSOCookieCredential.class);
+        mockCookieCredentials.add(cookie);
 
         // To overcome the empty principals.
         principalSet.add(new HttpPrincipal("USER1"));
@@ -546,7 +547,7 @@ public class AuthenticationUtilTest
         expect(mockPrincipalExtractor.getSSOCookieCredentials()).andReturn(
                 mockCookieCredentials).once();
 
-        replay(mockPrincipalExtractor, mockCertChain, mockCookieCredentials);
+        replay(mockPrincipalExtractor, mockCertChain, cookie);
 
         final Subject s = AuthenticationUtil.getSubject(mockPrincipalExtractor);
 
@@ -555,7 +556,7 @@ public class AuthenticationUtilTest
         assertEquals("Wrong auth method.", AuthMethod.CERT,
                      authMethods.toArray(new AuthMethod[authMethods.size()])[0]);
 
-        verify(mockPrincipalExtractor, mockCertChain, mockCookieCredentials);
+        verify(mockPrincipalExtractor, mockCertChain, cookie);
     }
 
     @Test
@@ -567,7 +568,8 @@ public class AuthenticationUtilTest
         final Set<Principal> principalSet = new HashSet<Principal>();
         // this needs to be a list of mocks.
         List<SSOCookieCredential> mockCookieCredentials = new ArrayList<>();
-        mockCookieCredentials.add(createMock(SSOCookieCredential.class));
+        final SSOCookieCredential cookie = createMock(SSOCookieCredential.class);
+        mockCookieCredentials.add(cookie);
 
         // To overcome the empty principals.
         principalSet.add(new HttpPrincipal("USER1"));
@@ -582,9 +584,9 @@ public class AuthenticationUtilTest
                 null).once();
 
         expect(mockPrincipalExtractor.getSSOCookieCredentials()).andReturn(
-                mockCookieCredentials).once();
+                mockCookieCredentials).anyTimes();
 
-        replay(mockPrincipalExtractor, mockCookieCredentials);
+        replay(mockPrincipalExtractor, cookie);
 
         final Subject s = AuthenticationUtil.getSubject(mockPrincipalExtractor);
 
@@ -594,7 +596,7 @@ public class AuthenticationUtilTest
                      authMethods.toArray(
                              new AuthMethod[authMethods.size()])[0]);
 
-        verify(mockPrincipalExtractor, mockCookieCredentials);
+        verify(mockPrincipalExtractor, cookie);
     }
 
     @Test

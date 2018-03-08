@@ -295,7 +295,7 @@ public class AuthenticationUtil
             publicCred.add(token);
             am = AuthMethod.TOKEN;
         }
-        else if (cookieList.size() != 0)
+        else if (cookieList != null && cookieList.size() != 0)
         {
             for (SSOCookieCredential cookie: cookieList) {
                 publicCred.add(cookie);
