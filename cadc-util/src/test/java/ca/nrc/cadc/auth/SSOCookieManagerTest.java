@@ -89,19 +89,25 @@ public class SSOCookieManagerTest
     public void createCookieSet() throws Exception {
         List<SSOCookieCredential> cookieList = new ArrayList<>();
 
-        // Set properties file location.
-        System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, "./build/resources/test");
-        // get the properties
-        PropertiesReader propReader = new PropertiesReader(SSOCookieManager.SUPPORTED_DOMAINS_PROP_FILE);
-        List<String> propertyValues = propReader.getPropertyValues("domains");
-        String[] domainList = propertyValues.get(0).split(" ");
+        try {
+            // Set properties file location.
+            System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, "./build/resources/test");
+            // get the properties
+            PropertiesReader propReader = new PropertiesReader(SSOCookieManager.SUPPORTED_DOMAINS_PROP_FILE);
+            List<String> propertyValues = propReader.getPropertyValues("domains");
+            String[] domainList = propertyValues.get(0).split(" ");
 
-        Date baseTime = new Date();
-        Date cookieExpiry = new Date(baseTime.getTime() + (48 * 3600 * 1000));
-        cookieList = new SSOCookieManager().getSSOCookieCredentials("testCookie", "www.canfar.phys.uvic.ca", cookieExpiry);
+            Date baseTime = new Date();
+            Date cookieExpiry = new Date(baseTime.getTime() + (48 * 3600 * 1000));
+            cookieList = new SSOCookieManager().getSSOCookieCredentials("testCookie", "www.canfar.phys.uvic.ca", cookieExpiry);
 
-        // cookieList length should be same as domainList
-        assertEquals(cookieList.size(),domainList.length);
+            // cookieList length should be same as domainList
+            assertEquals(cookieList.size(),domainList.length);
+        }
+        finally
+        {
+            System.setProperty(PropertiesReader.class.getName() + ".dir", "");
+        }
     }
 
 }
