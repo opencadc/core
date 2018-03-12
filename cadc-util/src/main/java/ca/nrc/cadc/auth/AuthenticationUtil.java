@@ -297,9 +297,7 @@ public class AuthenticationUtil
         }
         else if (cookieList != null && cookieList.size() != 0)
         {
-            for (SSOCookieCredential cookie: cookieList) {
-                publicCred.add(cookie);
-            }
+            publicCred.addAll(cookieList);
             am = AuthMethod.COOKIE;
         }
         else

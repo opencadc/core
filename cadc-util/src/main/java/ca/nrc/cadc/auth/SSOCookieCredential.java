@@ -87,8 +87,11 @@ public class SSOCookieCredential
     @Override
     public String toString()
     {
-        return getClass().getSimpleName() + "[" + domain + "," + ssoCookieValue
-            + expiryDate.toString() +"]";
+        String returnStr = getClass().getSimpleName() + "[" + domain + "," + ssoCookieValue;
+        if (expiryDate != null) {
+            returnStr += ", " + expiryDate.toString();
+        }
+        return returnStr +"]";
     }
     
     

@@ -58,7 +58,7 @@ public class SSOCookieCredentialTest
     @Test
     public void testCookie() throws Exception
     {
-        Date baseTime = new Date(System.currentTimeMillis());
+        Date baseTime = new Date();
         Date cookieExpiry = new Date(baseTime.getTime() + (48 * MS_IN_HOUR));
         SSOCookieCredential newcookie = new SSOCookieCredential("VALUE_1", "en.host.com", cookieExpiry);
 
