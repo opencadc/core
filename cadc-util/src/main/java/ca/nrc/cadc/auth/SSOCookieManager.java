@@ -58,7 +58,7 @@ public class SSOCookieManager
 
     public static final URI SCOPE_URI = URI.create("sso:cadc+canfar");
 
-    public static final String SUPPORTED_DOMAINS_PROP_FILE = "SupportedDomains.properties";
+    public static final String SUPPORTED_DOMAINS_PROP_FILE = "Domains.properties";
 
     // Offset to add to the expiry hours.  This is mainly used to set a cookie
     // date in the past to expire it.  This can be a negative value.
