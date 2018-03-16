@@ -33,9 +33,7 @@
  */
 
 
-
 package ca.nrc.cadc.auth;
-
 
 import java.util.Date;
 
@@ -60,6 +58,19 @@ public class SSOCookieCredential
         this.ssoCookieValue = cookieValue;
         this.domain = domain;
         this.expiryDate = expiryDate;
+    }
+
+    /**
+     * Backward-compatible constructor, for usages prior to v 1.1.0 that do not need
+     * expiryDate.
+     * @param cookieValue
+     * @param domain
+     */
+    public SSOCookieCredential(final String cookieValue, final String domain)
+    {
+        this.ssoCookieValue = cookieValue;
+        this.domain = domain;
+        this.expiryDate = null;
     }
     
     public String getSsoCookieValue()
