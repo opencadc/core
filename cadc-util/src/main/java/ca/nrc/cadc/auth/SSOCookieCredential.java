@@ -68,9 +68,7 @@ public class SSOCookieCredential
      */
     public SSOCookieCredential(final String cookieValue, final String domain)
     {
-        this.ssoCookieValue = cookieValue;
-        this.domain = domain;
-        this.expiryDate = null;
+        this(cookieValue, domain, null);
     }
     
     public String getSsoCookieValue()
