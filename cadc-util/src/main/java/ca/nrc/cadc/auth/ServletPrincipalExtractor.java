@@ -33,14 +33,14 @@
  */
 package ca.nrc.cadc.auth;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.security.AccessControlException;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.servlet.http.Cookie;
@@ -50,7 +50,6 @@ import ca.nrc.cadc.net.NetUtil;
 import org.apache.log4j.Logger;
 
 import ca.nrc.cadc.util.ArrayUtil;
-import ca.nrc.cadc.util.RsaSignatureVerifier;
 import ca.nrc.cadc.util.StringUtil;
 
 
@@ -66,7 +65,7 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
 
     private X509CertificateChain chain;
     private DelegationToken token;
-    private SSOCookieCredential cookieCredential;
+    private List<SSOCookieCredential> cookieCredentialList;
     private Principal cookiePrincipal; // principal extracted from cookie
 
     private ServletPrincipalExtractor()
@@ -122,11 +121,13 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
                 SSOCookieManager ssoCookieManager = new SSOCookieManager();
                 try
                 {
-                    cookiePrincipal = ssoCookieManager.parse(
-                                    ssoCookie.getValue());
-                    cookieCredential = new 
-                            SSOCookieCredential(ssoCookie.getValue(), 
-                            NetUtil.getDomainName(request.getServerName()));
+                    DelegationToken cookieToken = ssoCookieManager.parse(
+                        ssoCookie.getValue());
+                    cookiePrincipal = cookieToken.getUser();
+
+                    cookieCredentialList = ssoCookieManager.getSSOCookieCredentials(ssoCookie.getValue(),
+                                                NetUtil.getDomainName(request.getServerName()),
+                                                cookieToken.getExpiryTime());
                 } 
                 catch (IOException e)
                 {
@@ -169,9 +170,8 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
         return token;
     }
     
-    public SSOCookieCredential getSSOCookieCredential()
-    {
-        return cookieCredential;
+    public List<SSOCookieCredential> getSSOCookieCredentials() {
+        return cookieCredentialList;
     }
 
     

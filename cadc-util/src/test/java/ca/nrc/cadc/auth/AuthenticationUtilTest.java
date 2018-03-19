@@ -84,10 +84,12 @@ import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.PrivilegedAction;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -524,8 +526,11 @@ public class AuthenticationUtilTest
         final Set<Principal> principalSet = new HashSet<Principal>();
         final X509CertificateChain mockCertChain =
                 createMock(X509CertificateChain.class);
-        final SSOCookieCredential mockCookieCredential =
-                createMock(SSOCookieCredential.class);
+
+        // this needs to be a list of mocks.
+        List<SSOCookieCredential> mockCookieCredentials = new ArrayList<>();
+        final SSOCookieCredential cookie =createMock(SSOCookieCredential.class);
+        mockCookieCredentials.add(cookie);
 
         // To overcome the empty principals.
         principalSet.add(new HttpPrincipal("USER1"));
@@ -539,10 +544,10 @@ public class AuthenticationUtilTest
         expect(mockPrincipalExtractor.getDelegationToken()).andReturn(
                 null).once();
 
-        expect(mockPrincipalExtractor.getSSOCookieCredential()).andReturn(
-                mockCookieCredential).once();
+        expect(mockPrincipalExtractor.getSSOCookieCredentials()).andReturn(
+                mockCookieCredentials).once();
 
-        replay(mockPrincipalExtractor, mockCertChain, mockCookieCredential);
+        replay(mockPrincipalExtractor, mockCertChain, cookie);
 
         final Subject s = AuthenticationUtil.getSubject(mockPrincipalExtractor);
 
@@ -551,7 +556,7 @@ public class AuthenticationUtilTest
         assertEquals("Wrong auth method.", AuthMethod.CERT,
                      authMethods.toArray(new AuthMethod[authMethods.size()])[0]);
 
-        verify(mockPrincipalExtractor, mockCertChain, mockCookieCredential);
+        verify(mockPrincipalExtractor, mockCertChain, cookie);
     }
 
     @Test
@@ -561,8 +566,10 @@ public class AuthenticationUtilTest
         final PrincipalExtractor mockPrincipalExtractor =
                 createMock(PrincipalExtractor.class);
         final Set<Principal> principalSet = new HashSet<Principal>();
-        final SSOCookieCredential mockCookieCredential =
-                createMock(SSOCookieCredential.class);
+        // this needs to be a list of mocks.
+        List<SSOCookieCredential> mockCookieCredentials = new ArrayList<>();
+        final SSOCookieCredential cookie = createMock(SSOCookieCredential.class);
+        mockCookieCredentials.add(cookie);
 
         // To overcome the empty principals.
         principalSet.add(new HttpPrincipal("USER1"));
@@ -576,10 +583,10 @@ public class AuthenticationUtilTest
         expect(mockPrincipalExtractor.getDelegationToken()).andReturn(
                 null).once();
 
-        expect(mockPrincipalExtractor.getSSOCookieCredential()).andReturn(
-                mockCookieCredential).once();
+        expect(mockPrincipalExtractor.getSSOCookieCredentials()).andReturn(
+                mockCookieCredentials).anyTimes();
 
-        replay(mockPrincipalExtractor, mockCookieCredential);
+        replay(mockPrincipalExtractor, cookie);
 
         final Subject s = AuthenticationUtil.getSubject(mockPrincipalExtractor);
 
@@ -589,7 +596,7 @@ public class AuthenticationUtilTest
                      authMethods.toArray(
                              new AuthMethod[authMethods.size()])[0]);
 
-        verify(mockPrincipalExtractor, mockCookieCredential);
+        verify(mockPrincipalExtractor, cookie);
     }
 
     @Test
@@ -608,7 +615,7 @@ public class AuthenticationUtilTest
         expect(mockPrincipalExtractor.getDelegationToken()).andReturn(
                 null).once();
 
-        expect(mockPrincipalExtractor.getSSOCookieCredential()).andReturn(
+        expect(mockPrincipalExtractor.getSSOCookieCredentials()).andReturn(
                 null).once();
 
         replay(mockPrincipalExtractor);

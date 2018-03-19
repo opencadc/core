@@ -24,7 +24,7 @@
  *
  *
  * @author jenkinsd
- * 4/20/12 - 11:05 AM
+ * 4/17/12 - 11:21 AM
  *
  *
  *
@@ -33,46 +33,42 @@
  */
 package ca.nrc.cadc.auth;
 
-import java.security.Principal;
-import java.util.List;
-import java.util.Set;
+
+import static org.junit.Assert.assertEquals;
+
+import ca.nrc.cadc.util.Log4jInit;
+import ca.nrc.cadc.util.RSASignatureGeneratorValidatorTest;
+import ca.nrc.cadc.util.RsaSignatureGenerator;
+import java.io.File;
+import java.util.Date;
+import org.apache.log4j.Level;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 
-/**
- * Object to extract principals from a given source.  Implementors are expected
- * to know how to pull Principals from their context, and provide them to the
- * caller.
- */
-public interface PrincipalExtractor
+public class SSOCookieCredentialTest
 {
-    /**
-     * Obtain a Collection of Principals from this extractor.  This should be
-     * immutable.
-     *
-     * @return      Collection of Principal instances, or empty Collection.
-     *              Never null.
-     */
-    Set<Principal> getPrincipals();
+    static int MS_IN_HOUR = 3600 * 1000;
+    static
+    {
+        Log4jInit.setLevel("ca.nrc.cadc.auth", Level.INFO);
+    }
+    
+    @Test
+    public void testCookie() throws Exception
+    {
+        Date baseTime = new Date();
+        Date cookieExpiry = new Date(baseTime.getTime() + (48 * MS_IN_HOUR));
+        SSOCookieCredential newcookie = new SSOCookieCredential("VALUE_1", "en.host.com", cookieExpiry);
 
-    /**
-     * Create and return a certificate chain from the request.
-     * 
-     * @return an X509CertficateChain or null if not authenticated via SSL
-     */
-    X509CertificateChain getCertificateChain();
-    
-    /**
-     * Create and return a DelegationToken from the request.
-     * 
-     * @return 
-     */
-    DelegationToken getDelegationToken();
-    
-    
-    /**
-     * Create and return a SSOCookieCredential from the request
-     * 
-     * @return
-     */
-    List<SSOCookieCredential> getSSOCookieCredentials();
+        assertEquals(newcookie.getExpiryDate(), cookieExpiry);
+        assertEquals(newcookie.isExpired(), false);
+
+        Date expiredDate = new Date(baseTime.getTime() - (48 * MS_IN_HOUR));
+        SSOCookieCredential expiredCookie = new SSOCookieCredential("VALUE_1", "en.host.com", expiredDate);
+
+        assertEquals(expiredCookie.getExpiryDate(), expiredDate);
+        assertEquals(expiredCookie.isExpired(), true);
+    }
 }

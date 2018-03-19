@@ -70,6 +70,7 @@
 package ca.nrc.cadc.auth;
 
 import java.security.Principal;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -98,7 +99,7 @@ public class AnonPrincipalExtractor implements PrincipalExtractor
     }
 
     @Override
-    public SSOCookieCredential getSSOCookieCredential()
+    public List<SSOCookieCredential> getSSOCookieCredentials()
     {
         return null;
     }  

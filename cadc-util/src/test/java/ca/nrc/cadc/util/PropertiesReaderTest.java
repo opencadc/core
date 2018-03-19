@@ -56,7 +56,7 @@ public class PropertiesReaderTest
         File propFile = new File("test.properties");
         try
         {
-            System.setProperty(PropertiesReader.class.getName() + ".dir", "./");
+            System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, "./");
             if (!propFile.exists())
                 propFile.createNewFile();
 

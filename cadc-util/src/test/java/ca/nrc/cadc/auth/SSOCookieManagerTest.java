@@ -35,9 +35,13 @@ package ca.nrc.cadc.auth;
 
 
 import ca.nrc.cadc.util.Log4jInit;
+import ca.nrc.cadc.util.PropertiesReader;
 import ca.nrc.cadc.util.RSASignatureGeneratorValidatorTest;
 import ca.nrc.cadc.util.RsaSignatureGenerator;
+import java.util.ArrayList;
 import java.io.File;
+import java.util.Date;
+import java.util.List;
 import org.apache.log4j.Level;
 import org.junit.After;
 import org.junit.Test;
@@ -75,9 +79,35 @@ public class SSOCookieManagerTest
     {
         final HttpPrincipal userPrincipal = new HttpPrincipal("CADCtest");
         SSOCookieManager cm = new SSOCookieManager();
-        HttpPrincipal actualPrincipal = cm.parse(cm.generate(userPrincipal));
+        DelegationToken cookieToken = cm.parse(cm.generate(userPrincipal));
+        HttpPrincipal actualPrincipal = cookieToken.getUser();
         
         assertEquals(userPrincipal, actualPrincipal);
+    }
+
+    @Test
+    public void createCookieSet() throws Exception {
+        List<SSOCookieCredential> cookieList = new ArrayList<>();
+
+        try {
+            // Set properties file location.
+            System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, "./build/resources/test");
+            // get the properties
+            PropertiesReader propReader = new PropertiesReader(SSOCookieManager.SUPPORTED_DOMAINS_PROP_FILE);
+            List<String> propertyValues = propReader.getPropertyValues("domains");
+            String[] domainList = propertyValues.get(0).split(" ");
+
+            Date baseTime = new Date();
+            Date cookieExpiry = new Date(baseTime.getTime() + (48 * 3600 * 1000));
+            cookieList = new SSOCookieManager().getSSOCookieCredentials("testCookie", "www.canfar.phys.uvic.ca", cookieExpiry);
+
+            // cookieList length should be same as domainList
+            assertEquals(cookieList.size(),domainList.length);
+        }
+        finally
+        {
+            System.setProperty(PropertiesReader.class.getName() + ".dir", "");
+        }
     }
 
 }
