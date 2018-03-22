@@ -42,14 +42,19 @@ import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
+import java.security.Principal;
 import java.util.Date;
 import ca.nrc.cadc.util.Base64;
-import ca.nrc.cadc.util.PropertiesReader;
 import ca.nrc.cadc.util.RsaSignatureGenerator;
 import ca.nrc.cadc.util.RsaSignatureVerifier;
 import ca.nrc.cadc.util.StringUtil;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
+import java.util.UUID;
+import javax.security.auth.x500.X500Principal;
 import org.apache.log4j.Logger;
 
 /**
@@ -67,9 +72,9 @@ public class DelegationToken implements Serializable
 {
     private static final Logger log = Logger.getLogger(DelegationToken.class);
 
-    private static final long serialVersionUID = 20141025143750l;
+    private static final long serialVersionUID = 20180321000000l;
 
-    private HttpPrincipal user; // identity of the user
+    private Set<Principal> identityPrincipals;
     private Date expiryTime; // expiration time of the delegation (UTC)
     private URI scope; // resources that are the object of the delegation
 
@@ -95,11 +100,17 @@ public class DelegationToken implements Serializable
      */
     public DelegationToken(HttpPrincipal user, URI scope, Date expiryTime)
     {
+        // Validation of parameter means using this() to call
+        // other constructor isn't possible.
         if (user == null)
         {
             throw new IllegalArgumentException("User identity required");
         }
-        this.user = user;
+        Set<Principal> principalSet = new HashSet<Principal>();
+        principalSet.add(user);
+
+        this.identityPrincipals = principalSet;
+
         if(expiryTime == null)
         {
             throw new IllegalArgumentException("No expiry time");
@@ -108,6 +119,27 @@ public class DelegationToken implements Serializable
         this.scope = scope;
     }
 
+    /**
+     * Constructor.
+     * @param principals - set of identity principals (http, x500, cadc)
+     * @param scope - scope of the delegation, i.e. resource that it applies to - optional
+     * @param expiryTime - the expiry date of this token (UTC)
+     */
+    public DelegationToken(Set<Principal> principals, URI scope, Date expiryTime)
+    {
+        if (principals == null || principals.size() == 0)
+        {
+            throw new IllegalArgumentException("Identity principals required (ie http, x500, cadc internal)");
+        }
+        this.identityPrincipals = principals;
+
+        if(expiryTime == null)
+        {
+            throw new IllegalArgumentException("No expiry time");
+        }
+        this.expiryTime = expiryTime;
+        this.scope = scope;
+    }
 
     /**
      * Serializes and signs the object into a string of attribute-value pairs.
@@ -140,20 +172,33 @@ public class DelegationToken implements Serializable
     private static StringBuilder getContent(DelegationToken token)
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("userid");
+
+        sb.append("expirytime");
         sb.append(VALUE_DELIM);
-        sb.append(token.getUser().getName());
-        if (StringUtil.hasText(token.getUser().getProxyUser()))
+        sb.append(token.getExpiryTime().getTime());
+
+        // Add all available identity principals to the content
+        for (Principal prin: token.identityPrincipals) {
+            sb.append(FIELD_DELIM);
+            if (prin.getClass() == HttpPrincipal.class) {
+                sb.append("userid");
+            } else if (prin.getClass() == X500Principal.class) {
+                sb.append("x500");
+            } else if (prin.getClass() == NumericPrincipal.class) {
+                sb.append("cadc");
+            }
+            sb.append(VALUE_DELIM);
+            sb.append(prin.getName());
+        }
+        HttpPrincipal user = token.getUser();
+        if (StringUtil.hasText(user.getProxyUser()))
         {
             sb.append(FIELD_DELIM);
             sb.append("proxyuser");
             sb.append(VALUE_DELIM);
-            sb.append(token.getUser().getProxyUser());
+            sb.append(user.getProxyUser());
         }
-        sb.append(FIELD_DELIM);
-        sb.append("expirytime");
-        sb.append(VALUE_DELIM);
-        sb.append(token.getExpiryTime().getTime());
+
         if (token.getScope() != null)
         {
             sb.append(FIELD_DELIM);
@@ -190,6 +235,7 @@ public class DelegationToken implements Serializable
     {
         String[] fields = text.split(FIELD_DELIM);
         String userid = null;
+        Set<Principal> principalSet = new HashSet<>();
         String proxyUser = null;
         Date expirytime = null;
         URI scope = null;
@@ -208,6 +254,14 @@ public class DelegationToken implements Serializable
                 {
                     proxyUser = value;
                 }
+                if (key.matches("x500")) {
+                    principalSet.add(new X500Principal(value));
+                }
+                // Treating CADC principal as a NumericPrincipal
+                if (key.equalsIgnoreCase("cadc")) {
+                    principalSet.add(new NumericPrincipal(UUID.fromString(value)));
+                }
+
                 if (key.equalsIgnoreCase("expirytime"))
                 {
                     expirytime = new Date(Long.valueOf(value));
@@ -221,9 +275,16 @@ public class DelegationToken implements Serializable
                     signature = value;
                 }
             }
+
+            // Construct HttpPrincipal
+            if (userid != null && proxyUser != null) {
+                principalSet.add(new HttpPrincipal(userid, proxyUser));
+            } else if (userid != null) {
+                principalSet.add(new HttpPrincipal(userid));
+            } // Should no HttpPrincipal generation be flagged here?
             
         }
-        catch(NumberFormatException ex)
+        catch (NumberFormatException ex)
         {
             throw new InvalidDelegationTokenException("invalid numeric field", ex);
         }
@@ -253,9 +314,8 @@ public class DelegationToken implements Serializable
         
         // validate signature
         DelegationToken result = 
-                new DelegationToken(new HttpPrincipal(userid, proxyUser), 
-                        scope, expirytime);
-        
+                new DelegationToken(principalSet, scope, expirytime);
+
         try
         {
             RsaSignatureVerifier su = new RsaSignatureVerifier();
@@ -301,11 +361,22 @@ public class DelegationToken implements Serializable
         return new ScopeValidator();
     }
 
-    public HttpPrincipal getUser()
-    {
-        return user;
+    public Set<Principal> getIdentityPrincipals() {
+        return identityPrincipals;
     }
 
+    public HttpPrincipal getUser() {
+        return getPrincipalByClass(HttpPrincipal.class);
+    }
+
+    public <T extends Principal> T getPrincipalByClass(Class clazz) {
+        for (Principal prin : this.identityPrincipals) {
+            if (prin.getClass() == clazz) {
+                return (T)prin;
+            }
+        }
+        return null;
+    }
 
     public Date getExpiryTime()
     {
@@ -317,6 +388,8 @@ public class DelegationToken implements Serializable
         return scope;
     }
 
+    // TODO: update this
+    @Override
     public String toString()
     {
         StringBuilder sb = new StringBuilder();

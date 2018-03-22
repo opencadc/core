@@ -39,14 +39,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.net.URI;
+import java.security.Principal;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.TimeZone;
 
+import java.util.UUID;
+import javax.security.auth.x500.X500Principal;
 import org.junit.Test;
 
-import ca.nrc.cadc.util.RSASignatureGeneratorValidatorTest;
 import ca.nrc.cadc.util.RsaSignatureGenerator;
 import java.io.File;
 import java.io.FileWriter;
@@ -109,7 +112,7 @@ public class DelegationTokenTest
         w.write("\n");
         w.flush();
         w.close();
-        
+
         // round trip test with signature
        
         HttpPrincipal userid = new HttpPrincipal("someuser");
@@ -150,6 +153,37 @@ public class DelegationTokenTest
                 actToken.getExpiryTime());
         assertEquals("Scope not the same", expToken.getScope(),
                 actToken.getScope());
+
+        // round trip test without signature and principal with proxy user
+        Set<Principal> testPrincipals = new HashSet<>();
+        testPrincipals.add(new HttpPrincipal("someuser", "someproxyuser"));
+        testPrincipals.add(new X500Principal("CN=JBP,OU=nrc-cnrc.gc.ca,O=grid,C=CA"));
+
+        // CADC identity
+        UUID testUUID = UUID.randomUUID();
+        testPrincipals.add(new NumericPrincipal(testUUID));
+
+        scope = new URI("foo:bar");
+        duration = 10; // h
+        expiry = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+        expiry.add(Calendar.HOUR, duration);
+        expToken = new DelegationToken(testPrincipals, scope, expiry.getTime());
+
+        token = DelegationToken.format(expToken);
+        log.debug("valid token: " + token);
+        actToken = DelegationToken.parse(token, null);
+
+        assertEquals("User id not the same", expToken.getUser(),
+            actToken.getUser());
+        assertEquals("Expiry time not the same", expToken.getExpiryTime(),
+            actToken.getExpiryTime());
+        assertEquals("Scope not the same", expToken.getScope(),
+            actToken.getScope());
+        assertEquals("x509 principal not the same", expToken.getPrincipalByClass(X500Principal.class),
+            actToken.getPrincipalByClass(X500Principal.class));
+        assertEquals("CADC principal not the same", expToken.getPrincipalByClass(NumericPrincipal.class),
+            actToken.getPrincipalByClass(NumericPrincipal.class));
+
         
         // invalid scope
         try
