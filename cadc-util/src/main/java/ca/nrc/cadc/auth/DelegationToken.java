@@ -179,14 +179,18 @@ public class DelegationToken implements Serializable
 
         // Add all available identity principals to the content
         for (Principal prin: token.identityPrincipals) {
-            sb.append(FIELD_DELIM);
+            String tmpKey = "";
             if (prin.getClass() == HttpPrincipal.class) {
-                sb.append("userid");
+                tmpKey = "userid";
             } else if (prin.getClass() == X500Principal.class) {
-                sb.append("x500");
+                tmpKey = "x500";
             } else if (prin.getClass() == NumericPrincipal.class) {
-                sb.append("cadc");
+                tmpKey = "cadc";
+            } else {
+                continue;
             }
+            sb.append(FIELD_DELIM);
+            sb.append(tmpKey);
             sb.append(VALUE_DELIM);
             sb.append(prin.getName());
         }
@@ -206,6 +210,7 @@ public class DelegationToken implements Serializable
             sb.append(VALUE_DELIM);
             sb.append(token.getScope());
         }
+        log.info("getContent: " + sb);
         return sb;
     }
 

@@ -39,10 +39,13 @@ import ca.nrc.cadc.util.PropertiesReader;
 import java.io.IOException;
 import java.net.URI;
 import java.security.InvalidKeyException;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 
 /**
@@ -122,8 +125,24 @@ public class SSOCookieManager
     public final String generate(final HttpPrincipal principal) 
             throws InvalidKeyException, IOException
     {
+        Set<Principal> principalSet = new HashSet<>();
+        principalSet.add(principal);
+        return generate(principalSet);
+    }
+
+    /**
+     * Generate a new cookie value for the set of Principals.
+     *
+     * @param principalSet The HttpPrincipal to generate the value from.
+     * @return string of the value.  never null.
+     * @throws IOException Any errors with writing and generation.
+     * @throws InvalidKeyException Signing key is invalid
+     */
+    public final String generate(final Set<Principal> principalSet)
+        throws InvalidKeyException, IOException
+    {
         DelegationToken token =
-                new DelegationToken(principal, SCOPE_URI, getExpirationDate());
+            new DelegationToken(principalSet, SCOPE_URI, getExpirationDate());
         return DelegationToken.format(token);
     }
 
