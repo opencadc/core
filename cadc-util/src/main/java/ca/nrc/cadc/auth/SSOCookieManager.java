@@ -41,6 +41,7 @@ import java.net.URI;
 import java.security.InvalidKeyException;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
@@ -61,7 +62,7 @@ public class SSOCookieManager
 
     public static final URI SCOPE_URI = URI.create("sso:cadc+canfar");
 
-    public static final String SUPPORTED_DOMAINS_PROP_FILE = "domains.properties";
+    public static final String DOMAINS_PROP_FILE = "domains.properties";
 
     // Offset to add to the expiry hours.  This is mainly used to set a cookie
     // date in the past to expire it.  This can be a negative value.
@@ -122,12 +123,46 @@ public class SSOCookieManager
      * @throws IOException Any errors with writing and generation.
      * @throws InvalidKeyException Signing key is invalid
      */
-    public final String generate(final HttpPrincipal principal) 
+    public final String generate(final HttpPrincipal principal, URI scope)
             throws InvalidKeyException, IOException
     {
         Set<Principal> principalSet = new HashSet<>();
         principalSet.add(principal);
-        return generate(principalSet);
+        return generate(principalSet, scope);
+    }
+
+    /**
+     * Generate a new cookie value for the set of Principals, scope and expiryDate.
+     * Sets a default scope and expiry if either not supplied
+     * @param principalSet
+     * @param scope
+     * @param expiryDate
+     * @return
+     * @throws InvalidKeyException
+     * @throws IOException
+     */
+    public final String generate(final Set<Principal> principalSet, URI scope, Date expiryDate, List<String> domains)
+        throws InvalidKeyException, IOException
+    {
+        if (scope == null) {
+            scope = SCOPE_URI;
+        }
+        if (expiryDate == null) {
+            expiryDate = getExpirationDate();
+        }
+        List<String> domainList = null;
+        if (domains == null) {
+            // get list of domains from AccessControl.properties
+            // Get domain list from properties
+            PropertiesReader propReader = new PropertiesReader(DOMAINS_PROP_FILE);
+            List<String> domainValues = propReader.getPropertyValues("domains");
+            if (domainValues != null && (domainValues.size() > 0)) {
+                domainList = Arrays.asList(domainValues.get(0).split(" "));
+            }
+        }
+        DelegationToken token =
+            new DelegationToken(principalSet, scope, expiryDate, domainList);
+        return DelegationToken.format(token);
     }
 
     /**
@@ -138,12 +173,10 @@ public class SSOCookieManager
      * @throws IOException Any errors with writing and generation.
      * @throws InvalidKeyException Signing key is invalid
      */
-    public final String generate(final Set<Principal> principalSet)
+    public final String generate(final Set<Principal> principalSet, URI scope)
         throws InvalidKeyException, IOException
     {
-        DelegationToken token =
-            new DelegationToken(principalSet, SCOPE_URI, getExpirationDate());
-        return DelegationToken.format(token);
+        return generate(principalSet, scope, getExpirationDate(), null);
     }
 
     /**
@@ -180,28 +213,21 @@ public class SSOCookieManager
      *
      * @param cookieValue
      * @param requestedDomain
-     * @param expiryDate
      * @return cookieList
      */
-     public List<SSOCookieCredential> getSSOCookieCredentials(final String cookieValue, final String requestedDomain, final Date expiryDate) {
+    public List<SSOCookieCredential> getSSOCookieCredentials(final String cookieValue, final String requestedDomain)
+        throws InvalidDelegationTokenException, IOException {
+
         List<SSOCookieCredential> cookieList = new ArrayList<>();
+        DelegationToken cookieToken = DelegationToken.parse(cookieValue, requestedDomain);
 
-        // Make cookie with requested domain
-        SSOCookieCredential requestedCookie = new SSOCookieCredential(cookieValue, requestedDomain, expiryDate);
-        cookieList.add(requestedCookie);
-
-        // Get domain list from properties
-        PropertiesReader propReader = new PropertiesReader(SUPPORTED_DOMAINS_PROP_FILE);
-        List<String> domainValues = propReader.getPropertyValues("domains");
-        String[] domainList = domainValues.get(0).split(" ");
-
-        for (String domain: domainList) {
+        for (String domain: cookieToken.getDomains()) {
             if (!domain.equals(requestedDomain)) {
-                SSOCookieCredential nextCookie = new SSOCookieCredential(cookieValue, domain, expiryDate);
+                SSOCookieCredential nextCookie = new SSOCookieCredential(cookieValue, domain, cookieToken.getExpiryTime());
                 cookieList.add(nextCookie);
             }
         }
 
         return cookieList;
-    }
+     }
 }

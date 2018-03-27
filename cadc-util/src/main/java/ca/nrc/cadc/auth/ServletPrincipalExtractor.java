@@ -126,8 +126,7 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
                     cookiePrincipal = cookieToken.getUser();
 
                     cookieCredentialList = ssoCookieManager.getSSOCookieCredentials(ssoCookie.getValue(),
-                                                NetUtil.getDomainName(request.getServerName()),
-                                                cookieToken.getExpiryTime());
+                                                NetUtil.getDomainName(request.getServerName()));
                 } 
                 catch (IOException e)
                 {

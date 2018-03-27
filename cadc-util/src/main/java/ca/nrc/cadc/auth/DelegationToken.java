@@ -36,13 +36,18 @@
 
 package ca.nrc.cadc.auth;
 
+import ca.nrc.cadc.util.PropertiesReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.security.InvalidKeyException;
 import java.security.Principal;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import ca.nrc.cadc.util.Base64;
 import ca.nrc.cadc.util.RsaSignatureGenerator;
@@ -51,11 +56,13 @@ import ca.nrc.cadc.util.StringUtil;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import javax.security.auth.x500.X500Principal;
 import org.apache.log4j.Logger;
+import org.springframework.util.StringUtils;
 
 /**
  * Class that captures the information required to perform delegation (i.e.
@@ -77,6 +84,7 @@ public class DelegationToken implements Serializable
     private Set<Principal> identityPrincipals;
     private Date expiryTime; // expiration time of the delegation (UTC)
     private URI scope; // resources that are the object of the delegation
+    private List<String> domains;
 
     public static final String FIELD_DELIM = "&";
     public static final String VALUE_DELIM = "=";
@@ -98,7 +106,7 @@ public class DelegationToken implements Serializable
      * to - optional
      * @param expiryTime - the expiry date of this token (UTC)
      */
-    public DelegationToken(HttpPrincipal user, URI scope, Date expiryTime)
+    public DelegationToken(HttpPrincipal user, URI scope, Date expiryTime, List<String> domains)
     {
         // Validation of parameter means using this() to call
         // other constructor isn't possible.
@@ -117,6 +125,7 @@ public class DelegationToken implements Serializable
         }
         this.expiryTime = expiryTime;
         this.scope = scope;
+        this.domains = domains;
     }
 
     /**
@@ -124,8 +133,9 @@ public class DelegationToken implements Serializable
      * @param principals - set of identity principals (http, x500, cadc)
      * @param scope - scope of the delegation, i.e. resource that it applies to - optional
      * @param expiryTime - the expiry date of this token (UTC)
+     * @param domains - list of domains that this token could be used for
      */
-    public DelegationToken(Set<Principal> principals, URI scope, Date expiryTime)
+    public DelegationToken(Set<Principal> principals, URI scope, Date expiryTime, List<String> domains)
     {
         if (principals == null || principals.size() == 0)
         {
@@ -139,6 +149,9 @@ public class DelegationToken implements Serializable
         }
         this.expiryTime = expiryTime;
         this.scope = scope;
+
+
+        this.domains = domains;
     }
 
     /**
@@ -210,6 +223,16 @@ public class DelegationToken implements Serializable
             sb.append(VALUE_DELIM);
             sb.append(token.getScope());
         }
+
+        if (token.getDomains() != null) {
+            for (String domain : token.getDomains()) {
+                sb.append(FIELD_DELIM);
+                sb.append("domain");
+                sb.append(VALUE_DELIM);
+                sb.append(domain);
+            }
+        }
+
         log.info("getContent: " + sb);
         return sb;
     }
@@ -245,6 +268,7 @@ public class DelegationToken implements Serializable
         Date expirytime = null;
         URI scope = null;
         String signature = null;
+        List<String> domains = new ArrayList<>();
         try
         {
             for (String field : fields)
@@ -278,6 +302,10 @@ public class DelegationToken implements Serializable
                 if (key.equalsIgnoreCase("signature"))
                 {
                     signature = value;
+                }
+                if (key.equalsIgnoreCase("domain"))
+                {
+                    domains.add(value);
                 }
             }
 
@@ -318,8 +346,7 @@ public class DelegationToken implements Serializable
         }
         
         // validate signature
-        DelegationToken result = 
-                new DelegationToken(principalSet, scope, expirytime);
+        DelegationToken result = new DelegationToken(principalSet, scope, expirytime, domains);
 
         try
         {
@@ -392,6 +419,11 @@ public class DelegationToken implements Serializable
     {
         return scope;
     }
+
+    public List<String> getDomains() {
+        return domains;
+    }
+
 
     // TODO: update this
     @Override

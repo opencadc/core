@@ -36,18 +36,22 @@ package ca.nrc.cadc.auth;
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 import java.net.URI;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
 
 import java.util.UUID;
 import javax.security.auth.x500.X500Principal;
+import org.junit.Assert;
 import org.junit.Test;
 
 import ca.nrc.cadc.util.RsaSignatureGenerator;
@@ -114,13 +118,19 @@ public class DelegationTokenTest
         w.close();
 
         // round trip test with signature
-       
+
+        List<String> domainList = new ArrayList<>();
+        domainList.add("www.canfar.phys.uvic.ca");
+        domainList.add("www.cadc.hia.nrc.gc.ca");
+        domainList.add("www.ccda.iha.cnrc.gc.ca");
+        domainList.add("www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca");
+
         HttpPrincipal userid = new HttpPrincipal("someuser");
         URI scope = new URI("foo:bar");
         int duration = 10; // h
         Calendar expiry = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         expiry.add(Calendar.HOUR, duration);
-        DelegationToken expToken = new DelegationToken(userid, scope, expiry.getTime());
+        DelegationToken expToken = new DelegationToken(userid, scope, expiry.getTime(), domainList);
         
         String token = DelegationToken.format(expToken);
         log.debug("valid token: " + token);
@@ -132,16 +142,19 @@ public class DelegationTokenTest
                 actToken.getExpiryTime());
         assertEquals("Scope not the same", expToken.getScope(),
                 actToken.getScope());
+        assertEquals("Domain list size not the same", domainList.size(), expToken.getDomains().size());
+        for (String domain: expToken.getDomains()) {
+            Assert.assertTrue("Domain list content not the same", domainList.contains(domain));
+        }
         
         
         // round trip test without signature and principal with proxy user
-        
         userid = new HttpPrincipal("someuser", "someproxyuser");
         scope = new URI("foo:bar");
         duration = 10; // h
         expiry = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         expiry.add(Calendar.HOUR, duration);
-        expToken = new DelegationToken(userid, scope, expiry.getTime());
+        expToken = new DelegationToken(userid, scope, expiry.getTime(), null);
 
         token = DelegationToken.format(expToken);
         log.debug("valid token: " + token);
@@ -167,7 +180,7 @@ public class DelegationTokenTest
         duration = 10; // h
         expiry = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         expiry.add(Calendar.HOUR, duration);
-        expToken = new DelegationToken(testPrincipals, scope, expiry.getTime());
+        expToken = new DelegationToken(testPrincipals, scope, expiry.getTime(), null);
 
         token = DelegationToken.format(expToken);
         log.debug("valid token: " + token);
@@ -188,7 +201,7 @@ public class DelegationTokenTest
         // invalid scope
         try
         {
-            DelegationToken wrongScope = new DelegationToken(userid, new URI("bar:baz"), expiry.getTime());
+            DelegationToken wrongScope = new DelegationToken(userid, new URI("bar:baz"), expiry.getTime(), null);
             DelegationToken.parse(DelegationToken.format(wrongScope), null);
             fail("Exception expected");
         }
@@ -202,7 +215,7 @@ public class DelegationTokenTest
         // parse expired token
         try
         {
-            expToken = new DelegationToken(userid, scope, expiredDate.getTime());
+            expToken = new DelegationToken(userid, scope, expiredDate.getTime(), null);
             DelegationToken.parse(DelegationToken.format(expToken), null);
             fail("Exception expected");
         }
@@ -214,7 +227,7 @@ public class DelegationTokenTest
         //invalidate signature field
         try
         {
-            expToken = new DelegationToken(userid, scope, expiry.getTime());
+            expToken = new DelegationToken(userid, scope, expiry.getTime(), null);
             
             token = DelegationToken.format(expToken);
             CharSequence subSequence = token.subSequence(0,  token.indexOf("signature") + 10);
@@ -230,7 +243,7 @@ public class DelegationTokenTest
         // tamper with one character in the signature
         try
         {
-            expToken = new DelegationToken(userid, scope, expiry.getTime());
+            expToken = new DelegationToken(userid, scope, expiry.getTime(), null);
             
             token = DelegationToken.format(expToken);
             char toReplace = token.charAt(token.indexOf("signature") + 10);
