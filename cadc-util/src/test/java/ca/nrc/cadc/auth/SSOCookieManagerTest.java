@@ -86,7 +86,8 @@ public class SSOCookieManagerTest
         SSOCookieManager cm = new SSOCookieManager();
         DelegationToken cookieToken = cm.parse(cm.generate(userPrincipal, null));
         HttpPrincipal actualPrincipal = cookieToken.getUser();
-        
+
+        //Check principal
         assertEquals(userPrincipal, actualPrincipal);
     }
 
@@ -101,18 +102,20 @@ public class SSOCookieManagerTest
 
         Date baseTime = new Date();
         Date cookieExpiry = new Date(baseTime.getTime() + (48 * 3600 * 1000));
-        String testCookieStringDate = "expirytime=" + cookieExpiry.getTime();
+        String testCookieStringDate = DelegationToken.EXPIRY_LABEL + "=" + cookieExpiry.getTime();
 
-        String testCookieStringBody ="&userid=someuser&domain=www.canfar.phys.uvic.ca" +
-            "&domain=www.cadc.hia.nrc.gc.ca&domain=www.ccda.iha.cnrc.gc.ca" +
-            "&domain=www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca";
+        String testCookieStringBody ="&" + DelegationToken.USER_LABEL + "=someuser&" +
+            DelegationToken.DOMAIN_LABEL + "=www.canfar.phys.uvic.ca&" +
+            DelegationToken.DOMAIN_LABEL + "=www.cadc.hia.nrc.gc.ca&" +
+            DelegationToken.DOMAIN_LABEL + "=www.ccda.iha.cnrc.gc.ca&" +
+            DelegationToken.DOMAIN_LABEL + "=www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca";
 
         StringBuilder sb = new StringBuilder(testCookieStringDate + testCookieStringBody);
 
         //sign and add the signature field
         String toSign = sb.toString();
         sb.append("&");
-        sb.append("signature");
+        sb.append(DelegationToken.SIGNATURE_LABEL);
         sb.append("=");
         RsaSignatureGenerator su = new RsaSignatureGenerator();
         byte[] sig =
@@ -127,38 +130,7 @@ public class SSOCookieManagerTest
         List<SSOCookieCredential> cookieList = new ArrayList<>();
 
         try {
-//            // Set properties file location.
-//            System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, "./build/resources/test");
-//            // get the properties
-//            PropertiesReader propReader = new PropertiesReader(SSOCookieManager.DOMAINS_PROP_FILE);
-//            List<String> propertyValues = propReader.getPropertyValues("domains");
-//            List<String> domainList = Arrays.asList(propertyValues.get(0).split(" "));
-//
-//            Date baseTime = new Date();
-//            Date cookieExpiry = new Date(baseTime.getTime() + (48 * 3600 * 1000));
-//            String testCookieStringDate = "expirytime=" + cookieExpiry.getTime();
-//
-//            String testCookieStringBody ="&userid=someuser&domain=www.canfar.phys.uvic.ca" +
-//                "&domain=www.cadc.hia.nrc.gc.ca&domain=www.ccda.iha.cnrc.gc.ca" +
-//                "&domain=www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca" +
-//                "&signature=";
-//
-//            StringBuilder sb = new StringBuilder(testCookieStringDate + testCookieStringBody);
-//
-//            //sign and add the signature field
-//            String toSign = sb.toString();
-//            sb.append("&");
-//            sb.append("signature");
-//            sb.append("=");
-//            RsaSignatureGenerator su = new RsaSignatureGenerator();
-//            byte[] sig =
-//                su.sign(new ByteArrayInputStream(toSign.getBytes()));
-//            sb.append(new String(Base64.encode(sig)));
 
-
-            //                String testCookieStringBody = "&userid=someuser&domain=www.canfar.phys.uvic.ca" +
-//                "&domain=www.cadc.hia.nrc.gc.ca&domain=www.ccda.iha.cnrc.gc.ca" +
-//                "&domain=www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca&signature=test.signature";
             String cookieValue = createCookieString();
             cookieList = new SSOCookieManager().getSSOCookieCredentials(cookieValue, "www.canfar.phys.uvic.ca");
 

@@ -36,18 +36,14 @@
 
 package ca.nrc.cadc.auth;
 
-import ca.nrc.cadc.util.PropertiesReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLDecoder;
 import java.security.InvalidKeyException;
 import java.security.Principal;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import ca.nrc.cadc.util.Base64;
 import ca.nrc.cadc.util.RsaSignatureGenerator;
@@ -57,12 +53,13 @@ import ca.nrc.cadc.util.StringUtil;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import javax.security.auth.x500.X500Principal;
 import org.apache.log4j.Logger;
-import org.springframework.util.StringUtils;
 
 /**
  * Class that captures the information required to perform delegation (i.e.
@@ -82,6 +79,18 @@ public class DelegationToken implements Serializable
     private static final long serialVersionUID = 20180321000000l;
 
     private Set<Principal> identityPrincipals;
+    public static Map<String, String> principalLabels = new HashMap<String, String>() {{
+        put(X500Principal.class.getSimpleName(),"x500");
+        put(HttpPrincipal.class.getSimpleName(), "userid");
+        put(NumericPrincipal.class.getSimpleName(), "cadc");
+    }};
+    public static String PROXY_LABEL = "proxyuser";
+    public static String SCOPE_LABEL = "scope";
+    public static String DOMAIN_LABEL = "domain";
+    public static String USER_LABEL = "userid";
+    public static String EXPIRY_LABEL = "expirytime";
+    public static String SIGNATURE_LABEL = "signature";
+
     private Date expiryTime; // expiration time of the delegation (UTC)
     private URI scope; // resources that are the object of the delegation
     private List<String> domains;
@@ -114,10 +123,8 @@ public class DelegationToken implements Serializable
         {
             throw new IllegalArgumentException("User identity required");
         }
-        Set<Principal> principalSet = new HashSet<Principal>();
-        principalSet.add(user);
 
-        this.identityPrincipals = principalSet;
+        this.addPrincipal(user);
 
         if(expiryTime == null)
         {
@@ -125,12 +132,13 @@ public class DelegationToken implements Serializable
         }
         this.expiryTime = expiryTime;
         this.scope = scope;
-        this.domains = domains;
+
+        this.setDomains(domains);
     }
 
     /**
      * Constructor.
-     * @param principals - set of identity principals (http, x500, cadc)
+     * @param principals - sorted set of identity principals (http, x500, cadc)
      * @param scope - scope of the delegation, i.e. resource that it applies to - optional
      * @param expiryTime - the expiry date of this token (UTC)
      * @param domains - list of domains that this token could be used for
@@ -141,17 +149,17 @@ public class DelegationToken implements Serializable
         {
             throw new IllegalArgumentException("Identity principals required (ie http, x500, cadc internal)");
         }
-        this.identityPrincipals = principals;
 
         if(expiryTime == null)
         {
             throw new IllegalArgumentException("No expiry time");
         }
+
+        this.addPrincipals(principals);
         this.expiryTime = expiryTime;
         this.scope = scope;
 
-
-        this.domains = domains;
+        this.setDomains(domains);
     }
 
     /**
@@ -170,8 +178,9 @@ public class DelegationToken implements Serializable
 
         //sign and add the signature field
         String toSign = sb.toString();
+        log.debug("string to be signed: " + toSign);
         sb.append(FIELD_DELIM);
-        sb.append("signature");
+        sb.append(SIGNATURE_LABEL);
         sb.append(VALUE_DELIM);
         RsaSignatureGenerator su = new RsaSignatureGenerator();
         byte[] sig =
@@ -186,19 +195,15 @@ public class DelegationToken implements Serializable
     {
         StringBuilder sb = new StringBuilder();
 
-        sb.append("expirytime");
-        sb.append(VALUE_DELIM);
+        sb.append(EXPIRY_LABEL + VALUE_DELIM);
         sb.append(token.getExpiryTime().getTime());
 
         // Add all available identity principals to the content
+        // guarantee order
         for (Principal prin: token.identityPrincipals) {
             String tmpKey = "";
-            if (prin.getClass() == HttpPrincipal.class) {
-                tmpKey = "userid";
-            } else if (prin.getClass() == X500Principal.class) {
-                tmpKey = "x500";
-            } else if (prin.getClass() == NumericPrincipal.class) {
-                tmpKey = "cadc";
+            if (principalLabels.containsKey(prin.getClass().getSimpleName())) {
+                tmpKey = principalLabels.get(prin.getClass().getSimpleName());
             } else {
                 continue;
             }
@@ -211,7 +216,7 @@ public class DelegationToken implements Serializable
         if (StringUtil.hasText(user.getProxyUser()))
         {
             sb.append(FIELD_DELIM);
-            sb.append("proxyuser");
+            sb.append(PROXY_LABEL);
             sb.append(VALUE_DELIM);
             sb.append(user.getProxyUser());
         }
@@ -219,7 +224,7 @@ public class DelegationToken implements Serializable
         if (token.getScope() != null)
         {
             sb.append(FIELD_DELIM);
-            sb.append("scope");
+            sb.append(SCOPE_LABEL);
             sb.append(VALUE_DELIM);
             sb.append(token.getScope());
         }
@@ -227,13 +232,13 @@ public class DelegationToken implements Serializable
         if (token.getDomains() != null) {
             for (String domain : token.getDomains()) {
                 sb.append(FIELD_DELIM);
-                sb.append("domain");
+                sb.append(DOMAIN_LABEL);
                 sb.append(VALUE_DELIM);
                 sb.append(domain);
             }
         }
 
-        log.info("getContent: " + sb);
+        log.debug("getContent: " + sb);
         return sb;
     }
 
@@ -273,37 +278,40 @@ public class DelegationToken implements Serializable
         {
             for (String field : fields)
             {
+
                 String key = field.substring(0, field.indexOf(VALUE_DELIM));
                 String value = field.substring(field.indexOf(VALUE_DELIM) + 1);
-                if (key.equalsIgnoreCase("userid"))
+                log.debug("key = value: " + key + "=" + value);
+
+                if (key.equalsIgnoreCase(principalLabels.get(HttpPrincipal.class.getSimpleName())))
                 {
                     userid = value;
                 }
-                if (key.equalsIgnoreCase("proxyuser"))
+                if (key.equalsIgnoreCase(PROXY_LABEL))
                 {
                     proxyUser = value;
                 }
-                if (key.matches("x500")) {
+                if (key.matches(principalLabels.get(X500Principal.class.getSimpleName()))) {
                     principalSet.add(new X500Principal(value));
                 }
                 // Treating CADC principal as a NumericPrincipal
-                if (key.equalsIgnoreCase("cadc")) {
+                if (key.equalsIgnoreCase(principalLabels.get(NumericPrincipal.class.getSimpleName()))) {
                     principalSet.add(new NumericPrincipal(UUID.fromString(value)));
                 }
 
-                if (key.equalsIgnoreCase("expirytime"))
+                if (key.equalsIgnoreCase(EXPIRY_LABEL))
                 {
                     expirytime = new Date(Long.valueOf(value));
                 }
-                if (key.equalsIgnoreCase("scope"))
+                if (key.equalsIgnoreCase(SCOPE_LABEL))
                 {
                     scope = new URI(value);
                 }
-                if (key.equalsIgnoreCase("signature"))
+                if (key.equalsIgnoreCase(SIGNATURE_LABEL))
                 {
                     signature = value;
                 }
-                if (key.equalsIgnoreCase("domain"))
+                if (key.equalsIgnoreCase(DOMAIN_LABEL))
                 {
                     domains.add(value);
                 }
@@ -327,7 +335,7 @@ public class DelegationToken implements Serializable
         }
 
         if (signature == null)
-            throw new InvalidDelegationTokenException("Missing signature");
+            throw new InvalidDelegationTokenException("missing signature");
 
         // validate expiry
         if (expirytime == null)
@@ -344,28 +352,32 @@ public class DelegationToken implements Serializable
                 sv = getScopeValidator();
             sv.verifyScope(scope, requestURI);
         }
-        
-        // validate signature
-        DelegationToken result = new DelegationToken(principalSet, scope, expirytime, domains);
 
+        // validate signature
         try
         {
             RsaSignatureVerifier su = new RsaSignatureVerifier();
-            String str = DelegationToken.getContent(result).toString();
+            String signatureSplitter = FIELD_DELIM + DelegationToken.SIGNATURE_LABEL + "=";
+            String[] cookieNSignature = text.split(signatureSplitter);
+            log.debug("string to be verified" + cookieNSignature[0]);
             boolean valid = su.verify(
-                new ByteArrayInputStream(str.getBytes()),
-                    Base64.decode(signature));
-            if (valid)
-                return result;
-            log.debug("invalid token: " + str);
+                new ByteArrayInputStream(cookieNSignature[0].getBytes()),
+                Base64.decode(signature));
+
+            if (!valid) {
+                log.error("invalid signature: " + text);
+                throw new InvalidDelegationTokenException("cannot verify signature");
+            }
 
         }
         catch(Exception ex)
         {
             log.debug("failed to verify DelegationToken signature", ex);
+            throw new InvalidDelegationTokenException("cannot verify signature", ex);
         }
 
-        throw new InvalidDelegationTokenException("Cannot verify signature");
+        return new DelegationToken(principalSet, scope, expirytime, domains);
+
     }
 
     private static ScopeValidator getScopeValidator()
@@ -393,9 +405,7 @@ public class DelegationToken implements Serializable
         return new ScopeValidator();
     }
 
-    public Set<Principal> getIdentityPrincipals() {
-        return identityPrincipals;
-    }
+
 
     public HttpPrincipal getUser() {
         return getPrincipalByClass(HttpPrincipal.class);
@@ -425,24 +435,61 @@ public class DelegationToken implements Serializable
     }
 
 
-    // TODO: update this
+    // TODO: update this to include principals
     @Override
     public String toString()
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("DelegationToken(user=");
+        sb.append("DelegationToken(" + USER_LABEL + "=");
         if (StringUtil.hasText(getUser().getProxyUser()))
         {
-            sb.append(",proxyUser=");
+            sb.append("," + PROXY_LABEL + "=");
             sb.append(getUser().getProxyUser());
         }
         sb.append(getUser());
-        sb.append(",scope=");
+        sb.append("," + SCOPE_LABEL + "=");
         sb.append(getScope());
         sb.append(",startTime=");
         sb.append(getExpiryTime());
+
+        for (String domain: domains) {
+            sb.append(","+ DOMAIN_LABEL + "=" + domain);
+        }
         sb.append(")");
         return sb.toString();
     }
+
+    private void setDomains(List<String> domains) {
+        if (domains != null) {
+            if (this.domains == null) {
+                this.domains = new ArrayList<>();
+            }
+            this.domains.addAll(domains);
+        }
+    }
+
+    private void addPrincipal(Principal p) {
+        if (p != null) {
+            Set<Principal> pSet = new HashSet<>();
+            pSet.add(p);
+            addPrincipals(pSet);
+        }
+    }
+
+    private void addPrincipals(Set<Principal> principals) {
+        if (principals != null) {
+            if (this.identityPrincipals == null) {
+                this.identityPrincipals = new HashSet<>();
+            }
+
+            this.identityPrincipals.addAll(principals);
+        }
+    }
+
+    public Set<Principal> getIdentityPrincipals() {
+        return identityPrincipals;
+    }
+
+
 
 }

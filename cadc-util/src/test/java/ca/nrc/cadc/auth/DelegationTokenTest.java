@@ -35,8 +35,9 @@ package ca.nrc.cadc.auth;
 
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
+
+import static java.lang.Character.toLowerCase;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 import java.net.URI;
@@ -230,7 +231,7 @@ public class DelegationTokenTest
             expToken = new DelegationToken(userid, scope, expiry.getTime(), null);
             
             token = DelegationToken.format(expToken);
-            CharSequence subSequence = token.subSequence(0,  token.indexOf("signature") + 10);
+            CharSequence subSequence = token.subSequence(10, token.length());
             DelegationToken.parse(subSequence.toString(), null);
             fail("Exception expected");
         }
@@ -247,14 +248,9 @@ public class DelegationTokenTest
             
             token = DelegationToken.format(expToken);
             char toReplace = token.charAt(token.indexOf("signature") + 10);
-            if (toReplace != 'A')
-            {
-                token = token.replace(token.charAt(token.indexOf("signature") + 10), 'A');
-            }
-            else
-            {
-                token = token.replace(token.charAt(token.indexOf("signature") + 10), 'B');
-            }
+            token = token.substring(0, token.length() - 1);
+                token = token + "A";
+
             DelegationToken.parse(token, null);
             fail("Exception expected");
         }

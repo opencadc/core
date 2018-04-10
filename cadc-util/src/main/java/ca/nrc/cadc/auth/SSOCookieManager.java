@@ -184,7 +184,7 @@ public class SSOCookieManager
      *
      * @return      Date of expiration.  Never null.
      */
-    private Date getExpirationDate()
+    public Date getExpirationDate()
     {
         final Calendar cal = getCurrentCalendar();
         cal.add(Calendar.HOUR, (SSO_COOKIE_LIFETIME_HOURS * offsetExpiryHours));
@@ -219,15 +219,14 @@ public class SSOCookieManager
         throws InvalidDelegationTokenException, IOException {
 
         List<SSOCookieCredential> cookieList = new ArrayList<>();
-        DelegationToken cookieToken = DelegationToken.parse(cookieValue, requestedDomain);
+        DelegationToken cookieToken = DelegationToken.parse(cookieValue, requestedDomain, new CookieScopeValidator());
 
         for (String domain: cookieToken.getDomains()) {
-            if (!domain.equals(requestedDomain)) {
-                SSOCookieCredential nextCookie = new SSOCookieCredential(cookieValue, domain, cookieToken.getExpiryTime());
-                cookieList.add(nextCookie);
-            }
+            SSOCookieCredential nextCookie = new SSOCookieCredential(cookieValue, domain, cookieToken.getExpiryTime());
+            cookieList.add(nextCookie);
         }
 
         return cookieList;
      }
+
 }
