@@ -2,7 +2,7 @@
  ************************************************************************
  ****  C A N A D I A N   A S T R O N O M Y   D A T A   C E N T R E  *****
  *
- * (c) 2016.                         (c) 2016.
+ * (c) 2018.                         (c) 2018.
  * National Research Council            Conseil national de recherches
  * Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
  * All rights reserved                  Tous droits reserves
@@ -65,7 +65,8 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
     private X509CertificateChain chain;
     private DelegationToken token;
     private List<SSOCookieCredential> cookieCredentialList;
-    private Set<Principal> cookiePrincipals; // identities extracted from cookie
+    private Set<Principal> cookiePrincipals = new HashSet<>(); // identities extracted from cookie
+    private Set<Principal> principals = new HashSet<>();
 
     private ServletPrincipalExtractor()
     {
@@ -82,17 +83,24 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
         this.request = req;
         X509Certificate[] ca = (X509Certificate[])
             request.getAttribute(CERT_REQUEST_ATTRIBUTE);
-        if (!ArrayUtil.isEmpty(ca))
+
+        if (!ArrayUtil.isEmpty(ca)) {
             chain = new X509CertificateChain(Arrays.asList(ca));
+            if (chain != null) {
+                principals.add(chain.getPrincipal());
+            }
+        }
 
         // add user if they have a valid delegation token
         String tokenValue = request.getHeader(AuthenticationUtil.AUTH_HEADER);
         if ( StringUtil.hasText(tokenValue) )
         {
+
             try
             {
                 this.token = DelegationToken.parse(tokenValue, 
                         request.getRequestURI());
+
             }
             catch (InvalidDelegationTokenException ex) 
             {
@@ -106,6 +114,13 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
             }
             finally { }
         }
+
+        // add HttpPrincipal
+        final String httpUser = request.getRemoteUser();
+        if (StringUtil.hasText(httpUser)) // user from HTTP AUTH
+            principals.add(new HttpPrincipal(httpUser));
+        else if (token != null) // user from token
+            principals.add(token.getUser());
         
         Cookie[] cookies = request.getCookies();
         if (cookies == null || ArrayUtil.isEmpty(cookies))
@@ -124,6 +139,7 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
                         ssoCookie.getValue());
 
                     cookiePrincipals = cookieToken.getIdentityPrincipals();
+                    principals.addAll(cookiePrincipals);
 
                     cookieCredentialList = ssoCookieManager.getSSOCookieCredentials(ssoCookie.getValue(),
                                                 NetUtil.getDomainName(request.getServerName()));
@@ -154,8 +170,6 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
     @Override
     public Set<Principal> getPrincipals()
     {
-        Set<Principal> principals = new HashSet<Principal>();
-        addPrincipals(principals);
         return principals;
     }
 
@@ -173,47 +187,4 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
         return cookieCredentialList;
     }
 
-    
-    /**
-     * Add known principals.
-     * 
-     * @param principals 
-     */
-    protected void addPrincipals(Set<Principal> principals)
-    {
-        if (cookiePrincipals != null) {
-            log.info("adding pricipals from cookie");
-            log.info(cookiePrincipals.toString());
-            principals.addAll(cookiePrincipals);
-        } else {
-            addHTTPPrincipal(principals);
-            addX500Principal(principals);
-        }
-    }
-
-    /**
-     * Add the HTTP Principal, if it exists.
-     * 
-     * @param principals 
-     */
-    protected void addHTTPPrincipal(Set<Principal> principals)
-    {
-        // only add one HttpPrincipal, precedence order
-        final String httpUser = request.getRemoteUser();
-        if (StringUtil.hasText(httpUser)) // user from HTTP AUTH
-            principals.add(new HttpPrincipal(httpUser));
-        else if (token != null) // user from token
-            principals.add(token.getUser());
-    }
-
-    /**
-     * Add the X500 Principal, if it exists.
-     * 
-     * @param principals 
-     */
-    protected void addX500Principal(Set<Principal> principals)
-    {
-        if (chain != null)
-            principals.add(chain.getPrincipal());
-    }
 }
