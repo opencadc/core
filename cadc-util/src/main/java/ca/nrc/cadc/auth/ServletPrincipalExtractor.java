@@ -37,7 +37,6 @@ import java.io.IOException;
 import java.security.AccessControlException;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -66,7 +65,7 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
     private X509CertificateChain chain;
     private DelegationToken token;
     private List<SSOCookieCredential> cookieCredentialList;
-    private Principal cookiePrincipal; // principal extracted from cookie
+    private Set<Principal> cookiePrincipals; // identities extracted from cookie
 
     private ServletPrincipalExtractor()
     {
@@ -123,7 +122,8 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
                 {
                     DelegationToken cookieToken = ssoCookieManager.parse(
                         ssoCookie.getValue());
-                    cookiePrincipal = cookieToken.getUser();
+
+                    cookiePrincipals = cookieToken.getIdentityPrincipals();
 
                     cookieCredentialList = ssoCookieManager.getSSOCookieCredentials(ssoCookie.getValue(),
                                                 NetUtil.getDomainName(request.getServerName()));
@@ -181,8 +181,14 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
      */
     protected void addPrincipals(Set<Principal> principals)
     {
-        addHTTPPrincipal(principals);
-        addX500Principal(principals);
+        if (cookiePrincipals != null) {
+            log.info("adding pricipals from cookie");
+            log.info(cookiePrincipals.toString());
+            principals.addAll(cookiePrincipals);
+        } else {
+            addHTTPPrincipal(principals);
+            addX500Principal(principals);
+        }
     }
 
     /**
@@ -196,8 +202,6 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
         final String httpUser = request.getRemoteUser();
         if (StringUtil.hasText(httpUser)) // user from HTTP AUTH
             principals.add(new HttpPrincipal(httpUser));
-        else if (cookiePrincipal != null) // user from cookie
-            principals.add(cookiePrincipal);
         else if (token != null) // user from token
             principals.add(token.getUser());
     }

@@ -405,8 +405,7 @@ public class DelegationToken implements Serializable
         return new ScopeValidator();
     }
 
-
-
+    // user is wrong name
     public HttpPrincipal getUser() {
         return getPrincipalByClass(HttpPrincipal.class);
     }
