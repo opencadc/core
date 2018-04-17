@@ -133,6 +133,22 @@ public class SSOCookieManager
     }
 
     /**
+     * Backward-compatible generate function.
+     * @param principal
+     * @return
+     * @throws InvalidKeyException
+     * @throws IOException
+     */
+    public final String generate(final HttpPrincipal principal)
+        throws InvalidKeyException, IOException
+    {
+        Set<Principal> principalSet = new HashSet<>();
+        principalSet.add(principal);
+        return generate(principalSet, null);
+    }
+
+
+    /**
      * Generate a new cookie value for the set of Principals, scope and expiryDate.
      * Sets a default scope and expiry if either not supplied
      * @param principalSet
