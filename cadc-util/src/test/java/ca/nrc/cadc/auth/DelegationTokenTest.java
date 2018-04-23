@@ -195,7 +195,7 @@ public class DelegationTokenTest
             actToken.getScope());
         assertEquals("x509 principal not the same", expToken.getPrincipalByClass(X500Principal.class),
             actToken.getPrincipalByClass(X500Principal.class));
-        assertEquals("CADC principal not the same", expToken.getPrincipalByClass(NumericPrincipal.class),
+        assertEquals("Numeric (CADC) principal not the same", expToken.getPrincipalByClass(NumericPrincipal.class),
             actToken.getPrincipalByClass(NumericPrincipal.class));
 
         
@@ -239,8 +239,7 @@ public class DelegationTokenTest
         {
             log.debug("caught expected exception: " + expected);
         }
-        
-        
+
         // tamper with one character in the signature
         try
         {

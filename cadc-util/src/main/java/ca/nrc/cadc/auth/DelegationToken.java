@@ -36,6 +36,7 @@
 
 package ca.nrc.cadc.auth;
 
+import com.sun.scenario.effect.Identity;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.Serializable;
@@ -79,11 +80,7 @@ public class DelegationToken implements Serializable
     private static final long serialVersionUID = 20180321000000l;
 
     private Set<Principal> identityPrincipals;
-    public static Map<String, String> principalLabels = new HashMap<String, String>() {{
-        put(X500Principal.class.getSimpleName(),"x500");
-        put(HttpPrincipal.class.getSimpleName(), "userid");
-        put(NumericPrincipal.class.getSimpleName(), "cadc");
-    }};
+
     public static String PROXY_LABEL = "proxyuser";
     public static String SCOPE_LABEL = "scope";
     public static String DOMAIN_LABEL = "domain";
@@ -199,19 +196,23 @@ public class DelegationToken implements Serializable
         sb.append(token.getExpiryTime().getTime());
 
         // Add all available identity principals to the content
-        // guarantee order
-        for (Principal prin: token.identityPrincipals) {
-            String tmpKey = "";
-            if (principalLabels.containsKey(prin.getClass().getSimpleName())) {
-                tmpKey = principalLabels.get(prin.getClass().getSimpleName());
-            } else {
+        for (Principal prin: token.identityPrincipals)
+        {
+            String principalName = prin.getClass().getSimpleName();
+
+            IdentityType principalIdentity = IdentityType.principalIdentityMap.get(principalName);
+            if (principalIdentity.equals(IdentityType.ENTRY_DN))
+            {
+                // Do not add this for external use, to cookies, etc.
                 continue;
             }
+
             sb.append(FIELD_DELIM);
-            sb.append(tmpKey);
+            sb.append(principalIdentity.getValue());
             sb.append(VALUE_DELIM);
             sb.append(prin.getName());
         }
+
         HttpPrincipal user = token.getUser();
         if (StringUtil.hasText(user.getProxyUser()))
         {
@@ -230,7 +231,8 @@ public class DelegationToken implements Serializable
         }
 
         if (token.getDomains() != null) {
-            for (String domain : token.getDomains()) {
+            for (String domain : token.getDomains())
+            {
                 sb.append(FIELD_DELIM);
                 sb.append(DOMAIN_LABEL);
                 sb.append(VALUE_DELIM);
@@ -283,7 +285,7 @@ public class DelegationToken implements Serializable
                 String value = field.substring(field.indexOf(VALUE_DELIM) + 1);
                 log.debug("key = value: " + key + "=" + value);
 
-                if (key.equalsIgnoreCase(principalLabels.get(HttpPrincipal.class.getSimpleName())))
+                if (key.equalsIgnoreCase(IdentityType.USERID.getValue()))
                 {
                     userid = value;
                 }
@@ -291,11 +293,15 @@ public class DelegationToken implements Serializable
                 {
                     proxyUser = value;
                 }
-                if (key.matches(principalLabels.get(X500Principal.class.getSimpleName()))) {
+                if (key.equalsIgnoreCase(IdentityType.X500.getValue().toLowerCase()))
+                {
                     principalSet.add(new X500Principal(value));
                 }
                 // Treating CADC principal as a NumericPrincipal
-                if (key.equalsIgnoreCase(principalLabels.get(NumericPrincipal.class.getSimpleName()))) {
+                // check for both for backward cookie compatibility
+                if (key.equalsIgnoreCase(IdentityType.NUMERICID.getValue())
+                    || key.equalsIgnoreCase(IdentityType.CADC.getValue()))
+                {
                     principalSet.add(new NumericPrincipal(UUID.fromString(value)));
                 }
 
@@ -318,9 +324,11 @@ public class DelegationToken implements Serializable
             }
 
             // Construct HttpPrincipal
-            if (userid != null && proxyUser != null) {
+            if (userid != null && proxyUser != null)
+            {
                 principalSet.add(new HttpPrincipal(userid, proxyUser));
-            } else if (userid != null) {
+            } else if (userid != null)
+            {
                 principalSet.add(new HttpPrincipal(userid));
             } // Should no HttpPrincipal generation be flagged here?
             
@@ -364,7 +372,8 @@ public class DelegationToken implements Serializable
                 new ByteArrayInputStream(cookieNSignature[0].getBytes()),
                 Base64.decode(signature));
 
-            if (!valid) {
+            if (!valid)
+            {
                 log.error("invalid signature: " + text);
                 throw new InvalidDelegationTokenException("cannot verify signature");
             }
@@ -410,9 +419,12 @@ public class DelegationToken implements Serializable
         return getPrincipalByClass(HttpPrincipal.class);
     }
 
-    public <T extends Principal> T getPrincipalByClass(Class clazz) {
-        for (Principal prin : this.identityPrincipals) {
-            if (prin.getClass() == clazz) {
+    public <T extends Principal> T getPrincipalByClass(Class clazz)
+    {
+        for (Principal prin : this.identityPrincipals)
+        {
+            if (prin.getClass() == clazz)
+            {
                 return (T)prin;
             }
         }

@@ -69,6 +69,7 @@
 package ca.nrc.cadc.auth;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.Principal;
