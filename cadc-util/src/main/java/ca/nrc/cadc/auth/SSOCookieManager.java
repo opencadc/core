@@ -237,13 +237,8 @@ public class SSOCookieManager
 
         List<SSOCookieCredential> cookieList = new ArrayList<>();
         DelegationToken cookieToken = DelegationToken.parse(cookieValue, requestedDomain, new CookieScopeValidator());
-        SSOCookieCredential firstCookie = new SSOCookieCredential(cookieValue, requestedDomain, cookieToken.getExpiryTime());
-        cookieList.add(firstCookie);
 
         for (String domain: cookieToken.getDomains()) {
-            if (domain.equals(requestedDomain)) {
-                continue;
-            }
             SSOCookieCredential nextCookie = new SSOCookieCredential(cookieValue, domain, cookieToken.getExpiryTime());
             cookieList.add(nextCookie);
         }

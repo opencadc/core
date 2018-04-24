@@ -97,14 +97,6 @@ public enum IdentityType
         this.value = value;
     }
 
-    // Reverse-lookup map
-    private static final Map<String, IdentityType> lookup = new HashMap<String, IdentityType>();
-
-    static {
-        for (IdentityType d : IdentityType.values()) {
-            lookup.put(d.getValue(), d);
-        }
-    }
     public static IdentityType toValue(String s)
     {
         for (IdentityType type : values())
@@ -127,11 +119,6 @@ public enum IdentityType
     public String toString()
     {
         return this.getClass().getSimpleName() + "[" + value + "]";
-    }
-
-
-    public static IdentityType get(String identity) {
-        return lookup.get(identity);
     }
 
     public static final Map<String, IdentityType> principalIdentityMap = new HashMap<String, IdentityType>() {{

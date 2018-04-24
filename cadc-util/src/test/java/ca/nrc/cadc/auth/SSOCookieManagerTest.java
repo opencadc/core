@@ -41,12 +41,21 @@ import ca.nrc.cadc.util.RSASignatureGeneratorValidatorTest;
 import ca.nrc.cadc.util.RsaSignatureGenerator;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URI;
 import java.security.InvalidKeyException;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.io.File;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
+import javax.security.auth.x500.X500Principal;
 import org.apache.log4j.Level;
 import org.junit.After;
 import org.junit.Test;
@@ -62,7 +71,9 @@ public class SSOCookieManagerTest
     }
     
     File pubFile, privFile;
-    
+
+    List<String> domainList = new ArrayList<>();
+
     @Before
     public void initKeys() throws Exception
     {
@@ -70,6 +81,12 @@ public class SSOCookieManagerTest
         RsaSignatureGenerator.genKeyPair(keysDir);
         privFile = new File(keysDir, RsaSignatureGenerator.PRIV_KEY_FILE_NAME);
         pubFile = new File(keysDir, RsaSignatureGenerator.PUB_KEY_FILE_NAME);
+
+        domainList.add("www.canfar.phys.uvic.ca");
+        domainList.add("www.cadc.hia.nrc.gc.ca");
+        domainList.add("www.ccda.iha.cnrc.gc.ca");
+        domainList.add("www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca");
+
     }
     
     @After
@@ -80,7 +97,7 @@ public class SSOCookieManagerTest
     }
     
     @Test
-    public void roundTrip() throws Exception
+    public void roundTripMin() throws Exception
     {
         final HttpPrincipal userPrincipal = new HttpPrincipal("CADCtest");
         SSOCookieManager cm = new SSOCookieManager();
@@ -90,6 +107,35 @@ public class SSOCookieManagerTest
         //Check principal
         assertEquals(userPrincipal, actualPrincipal);
     }
+
+    @Test
+    public void roundTrip() throws Exception
+    {
+        SSOCookieManager cm = new SSOCookieManager();
+
+        // round trip test
+        Set<Principal> testPrincipals = new HashSet<>();
+        HttpPrincipal hp = new HttpPrincipal("someuser");
+        testPrincipals.add(hp);
+        X500Principal xp = new X500Principal("CN=JBP,OU=nrc-cnrc.gc.ca,O=grid,C=CA");
+        testPrincipals.add(xp);
+
+        // Pretend CADC identity
+        UUID testUUID = UUID.randomUUID();
+        testPrincipals.add(new NumericPrincipal(testUUID));
+
+        URI scope = new URI("sso:cadc+canfar");
+        String cookieValue = cm.generate(testPrincipals, scope);
+
+        DelegationToken actToken = cm.parse(cookieValue);
+
+        assertEquals("User id not the same", hp, actToken.getUser());
+        assertEquals("Scope not the same", scope, actToken.getScope());
+        assertEquals("x509 principal not the same", xp, actToken.getPrincipalByClass(X500Principal.class));
+
+        assertEquals("domain list not equal", domainList, actToken.getDomains());
+    }
+
 
     public String createCookieString() throws InvalidKeyException, IOException {
 
@@ -105,10 +151,10 @@ public class SSOCookieManagerTest
         String testCookieStringDate = DelegationToken.EXPIRY_LABEL + "=" + cookieExpiry.getTime();
 
         String testCookieStringBody ="&" + DelegationToken.USER_LABEL + "=someuser&" +
-            DelegationToken.DOMAIN_LABEL + "=www.canfar.phys.uvic.ca&" +
-            DelegationToken.DOMAIN_LABEL + "=www.cadc.hia.nrc.gc.ca&" +
-            DelegationToken.DOMAIN_LABEL + "=www.ccda.iha.cnrc.gc.ca&" +
-            DelegationToken.DOMAIN_LABEL + "=www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca";
+            DelegationToken.DOMAIN_LABEL + "=" + domainList.get(0) + "&" +
+            DelegationToken.DOMAIN_LABEL + "=" + domainList.get(1) + "&" +
+            DelegationToken.DOMAIN_LABEL + "=" + domainList.get(2) + "&" +
+            DelegationToken.DOMAIN_LABEL + "=" + domainList.get(3);
 
         StringBuilder sb = new StringBuilder(testCookieStringDate + testCookieStringBody);
 
@@ -130,12 +176,11 @@ public class SSOCookieManagerTest
         List<SSOCookieCredential> cookieList = new ArrayList<>();
 
         try {
-
             String cookieValue = createCookieString();
             cookieList = new SSOCookieManager().getSSOCookieCredentials(cookieValue, "www.canfar.phys.uvic.ca");
 
-            // cookieList length should be same as domainList
-//            assertEquals(cookieList.size(),domainList.length);
+            // cookieList length should be same as list of expected domains
+            assertEquals(cookieList.size(), domainList.size());
         }
         finally
         {

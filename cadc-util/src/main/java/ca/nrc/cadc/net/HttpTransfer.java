@@ -784,7 +784,7 @@ public abstract class HttpTransfer implements Runnable
                         // to send cookies + redirect via POST.
                         // GET (HttpDownload) works, and sends the cookies as expected.
                         if (followRedirects && "POST".equals(conn.getRequestMethod())) {
-                            throw new UnsupportedOperationException("Attempt to follow redirect with cookies.");
+                            throw new UnsupportedOperationException("Attempt to follow redirect with cookies (POST).");
                         }
 
                         String cval = SSOCookieManager.DEFAULT_SSO_COOKIE_NAME
