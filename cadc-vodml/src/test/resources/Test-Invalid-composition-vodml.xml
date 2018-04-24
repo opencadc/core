@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<vo-dml:model xmlns:vo-dml="http://www.ivoa.net/xml/VODML/v1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema">
+<vo-dml:model xmlns:vo-dml="http://www.ivoa.net/xml/VODML/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema">
     <name>test</name>
     <description>test model to make sure code works</description>
+    <identifier/>
+    <uri/>
     <title>Test Model</title>
     <version>1.0</version>
     <lastModified>2017-01-16T01:02:03</lastModified>
     
     <import>
         <name>ivoa</name>
-        <url>https://volute.g-vo.org/svn/trunk/projects/dm/vo-dml/models/ivoa/IVOA.vo-dml.xml</url>
+        <url>http://www.ivoa.net/xml/VODML/IVOA-v1.vo-dml.xml</url>
         <documentationURL>https://volute.g-vo.org/svn/trunk/projects/dm/vo-dml/models/ivoa/IVOA.html</documentationURL>
     </import>
     

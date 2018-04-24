@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-            xmlns="http://www.ivoa.net/xml/VODML/v1.0"
-            targetNamespace="http://www.ivoa.net/xml/VODML/v1.0"
-            attributeFormDefault="unqualified" elementFormDefault="unqualified">
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.ivoa.net/xml/VODML/v1" targetNamespace="http://www.ivoa.net/xml/VODML/v1" attributeFormDefault="unqualified" elementFormDefault="unqualified" version="1.0">
+<!-- Change log:
+2017-09-23: 
+- added version attribute in schema 
+- removed minor version from targetNamespace and default xmlns declaration
 
+-->
   <xsd:annotation>
     <xsd:documentation>
     
@@ -18,7 +20,7 @@ TBD continue based on VO-DML specification document.
   </xsd:annotation>
 
   <!-- +++++++++++++++++++ Begin of 'Identifier section' +++++++++++++++++++ -->
-  <xsd:simpleType name="VODMLID" >
+  <xsd:simpleType name="VODMLID">
     <xsd:annotation>
       <xsd:documentation>
           Type representing the way referable elements are identified uniquely in VO-DML.
@@ -43,7 +45,7 @@ TBD continue based on VO-DML specification document.
       </xsd:documentation>
     </xsd:annotation>
     <xsd:restriction base="xsd:string"> <!-- xsd:NCName ? -->
-      <xsd:pattern value="[a-zA-Z][a-zA-Z0-9_]*">
+      <xsd:pattern value="[a-zA-Z][a-zA-Z0-9_\-]*">
         <xsd:annotation>
           <xsd:documentation>
             A model name MUST NOT contain a semicolon.
@@ -124,7 +126,7 @@ TBD continue based on VO-DML specification document.
           </xsd:documentation>
         </xsd:annotation>
       </xsd:element>
-      <xsd:element name="name" type="VODMLName" minOccurs="1" >
+      <xsd:element name="name" type="VODMLName" minOccurs="1">
         <xsd:annotation>
           <xsd:documentation>
             The name of the model element. 
@@ -204,6 +206,27 @@ TBD continue based on VO-DML specification document.
                         The description of the model.
                     </xsd:documentation>
                 </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="identifier" type="xsd:string" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        A string holding the identifier by which the model is registered in an 
+                        IVOA compatible registry. Its structure must therefore conform to the IVOA Identifier 
+                        specification in http://www.ivoa.net/documents/IVOAIdentifiers/. 
+                        If the model is an IVOA standard, the naming authority for the identifier should be the 
+                        IVOA DM working group. 
+
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="uri" type="xsd:anyURI" minOccurs="1" maxOccurs="1">
+              <xsd:annotation>
+                <xsd:documentation>
+                Each model has an associated model URI that MUST be used to reference it, for example in ModelImports 
+                or in VOTable annotations. 
+                Dereferencing the model URI and following redirects yields the latest VO-DML for the data model
+                </xsd:documentation>
+              </xsd:annotation>
             </xsd:element>
             <xsd:element name="title" type="xsd:string" minOccurs="1" maxOccurs="1">
                 <xsd:annotation>
@@ -305,6 +328,11 @@ TBD continue based on VO-DML specification document.
                 </xsd:annotation>
             </xsd:element>
         </xsd:sequence>
+        <xsd:attribute name="version" type="xsd:string" use="optional">
+            <xsd:annotation>
+                <xsd:documentation>The major.minor version this VO-DML document.</xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
     </xsd:complexType>
 
 
@@ -327,6 +355,14 @@ TBD continue based on VO-DML specification document.
                 </xsd:documentation>
         </xsd:annotation>
       </xsd:element>
+            <xsd:element name="identifier" type="xsd:string" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        A string holding the identifier by which the imported model is registered in an 
+                        IVOA compatible registry. Must be the same value as the 'identifier' of the imported model.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
         <xsd:element name="version" type="xsd:string" minOccurs="0">
             <xsd:annotation>
                 <xsd:documentation>
@@ -468,7 +504,7 @@ TBD continue based on VO-DML specification document.
                 </xsd:annotation>
             </xsd:element>
         </xsd:sequence>
-        <xsd:attribute name="abstract" type="xsd:boolean" use="optional" />
+        <xsd:attribute name="abstract" type="xsd:boolean" use="optional"/>
       </xsd:extension>
     </xsd:complexContent>
   </xsd:complexType>
@@ -631,28 +667,6 @@ TBD continue based on VO-DML specification document.
               <xsd:documentation>
                 The multiplicity of the role (also called cardinality) indicates whether it must have a
                 value or may be without value, or possibly how many values are allowed.
-              </xsd:documentation>
-            </xsd:annotation>
-          </xsd:element>
-          <xsd:element name="subsets" type="ElementRef" minOccurs="0">
-            <xsd:annotation>
-              <xsd:documentation>
-                Represents the UML subsetted property. Indicates that a particular relation refines the definition
-                of another relation. ONly a relation inherited form a base class can
-                be subsetted. Typical usage is
-                that the base class has a
-                relation to a class A, and the subclass refines this to indicating that
-                the relation should be to a subclass of A.
-
-                The value should identify the subsetted property.
-                TBD IF we are going to use utype-s to refer to elements also inside this
-                document, we should use an
-                appropriate keyref
-              </xsd:documentation>
-              <xsd:documentation>
-                TBD this is a somewhat abstract, but very useful modeling concept.
-                It implements a very common modeling design pattern.
-                It exists in UML2.
               </xsd:documentation>
             </xsd:annotation>
           </xsd:element>
@@ -826,7 +840,7 @@ TBD continue based on VO-DML specification document.
     </xsd:annotation>
     <xsd:sequence>
       <xsd:choice>
-      <xsd:element name="minOccurs" type="xsd:nonNegativeInteger" default="0">
+      <xsd:element name="minOccurs" type="xsd:nonNegativeInteger">
         <xsd:annotation>
           <xsd:documentation>
           Lower bound on number of instances/values.
@@ -834,7 +848,7 @@ TBD continue based on VO-DML specification document.
         </xsd:annotation>
       </xsd:element>
 			</xsd:choice>
-      <xsd:element name="maxOccurs" type="xsd:int" default="1">
+      <xsd:element name="maxOccurs" type="xsd:int">
         <xsd:annotation>
           <xsd:documentation>
           When negative, unbounded.

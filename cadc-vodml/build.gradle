@@ -15,7 +15,7 @@ sourceCompatibility = 1.8
 
 group = 'org.opencadc'
 
-version = '1.0.3'
+version = '1.0.4'
 
 mainClassName = 'ca.nrc.cadc.vodml.Main'
 
