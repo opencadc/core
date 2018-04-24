@@ -69,6 +69,7 @@
 
 package ca.nrc.cadc.rest;
 
+import ca.nrc.cadc.net.NetUtil;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -87,6 +88,7 @@ import org.apache.commons.fileupload.util.Streams;
 import org.apache.log4j.Logger;
 
 import ca.nrc.cadc.util.CaseInsensitiveStringComparator;
+import java.util.Set;
 
 /**
  *
@@ -109,6 +111,14 @@ public class SyncInput
         this.inlineContentHandler = handler;
     }
 
+    public String getClientIP() {
+        return NetUtil.getClientIP(request);
+    }
+    
+    public String getRequestURI() {
+        return request.getRequestURL().toString();
+    }
+    
     public String getProtocol()
     {
         return request.getScheme();
@@ -155,6 +165,10 @@ public class SyncInput
         return request.getHeader(name);
     }
 
+    public Set<String> getParameterNames() {
+        return params.keySet();
+    }
+    
     /**
      * Get a request parameter value.
      *
@@ -169,11 +183,6 @@ public class SyncInput
         return null;
     }
 
-    public Object getContent(String name)
-    {
-    	return content.get(name);
-    }
-
     /**
      * Get all request parameter values.
      *
@@ -185,6 +194,15 @@ public class SyncInput
         return params.get(name);
     }
 
+    public Set<String> getContentNames() {
+        return content.keySet();
+    }
+    
+    public Object getContent(String name)
+    {
+    	return content.get(name);
+    }
+    
     public void init() throws IOException
     {
         if (request.getMethod().equals("GET") ||
@@ -221,13 +239,13 @@ public class SyncInput
             {
             	try
             	{
-	                ServletFileUpload upload = new ServletFileUpload();
-	                FileItemIterator itemIterator = upload.getItemIterator(request);
-	                processMultiPart(itemIterator);
+                    ServletFileUpload upload = new ServletFileUpload();
+                    FileItemIterator itemIterator = upload.getItemIterator(request);
+                    processMultiPart(itemIterator);
             	}
             	catch(FileUploadException ex)
             	{
-            		throw new IOException("Failed to process " + RestAction.MULTIPART, ex);
+                    throw new IOException("Failed to process " + RestAction.MULTIPART, ex);
             	}
             }
             else
