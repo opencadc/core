@@ -100,7 +100,6 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
             {
                 this.token = DelegationToken.parse(tokenValue, 
                         request.getRequestURI());
-
             }
             catch (InvalidDelegationTokenException ex) 
             {

@@ -112,6 +112,7 @@ public class SSOCookieManagerTest
     public void roundTrip() throws Exception
     {
         SSOCookieManager cm = new SSOCookieManager();
+        System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, "./build/resources/test");
 
         // round trip test
         Set<Principal> testPrincipals = new HashSet<>();
