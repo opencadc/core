@@ -105,6 +105,8 @@ public class RestServlet extends HttpServlet
     private Class<RestAction> putAction;
     private Class<RestAction> deleteAction;
     private Class<RestAction> headAction;
+    
+    protected String restContext;
 
     @Override
     public void init(ServletConfig config) throws ServletException
@@ -115,6 +117,7 @@ public class RestServlet extends HttpServlet
         this.putAction = loadAction(config, "put");
         this.deleteAction = loadAction(config, "delete");
         this.headAction = loadAction(config, "head");
+        this.restContext = config.getServletContext().getServletContextName()  + "." + config.getServletName();
     }
 
     private Class<RestAction> loadAction(ServletConfig config, String method)
@@ -240,6 +243,7 @@ public class RestServlet extends HttpServlet
             InlineContentHandler handler = action.getInlineContentHandler();
             SyncInput in = new SyncInput(request, handler);
             out = new SyncOutput(response);
+            action.setRestContext(restContext);
             action.setSyncInput(in);
             action.setSyncOutput(out);
             action.setLogInfo(logInfo);

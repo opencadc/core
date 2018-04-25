@@ -93,8 +93,22 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object>
 {
     private static final Logger log = Logger.getLogger(RestAction.class);
 
+    /**
+     * The REST context is a string unique to a single instance of RestServlet. It
+     * can be used to prefix log messages, JNDI key names, etc.
+     */
+    protected String restContext;
+    
+    /**
+     * Wrapper around the HTTP request.
+     */
     protected SyncInput syncInput;
+    
+    /**
+     * Wrapper around the HTTP response.
+     */
     protected SyncOutput syncOutput;
+    
     protected WebServiceLogInfo logInfo;
 
     public static final String URLENCODED = "application/x-www-form-urlencoded";
@@ -136,6 +150,10 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object>
     public void setLogInfo(WebServiceLogInfo logInfo)
     {
         this.logInfo = logInfo;
+    }
+
+    public void setRestContext(String restContext) {
+        this.restContext = restContext;
     }
 
     public void setSyncInput(SyncInput syncInput)
