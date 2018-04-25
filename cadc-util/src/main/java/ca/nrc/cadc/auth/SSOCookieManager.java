@@ -158,7 +158,7 @@ public class SSOCookieManager
      * @throws InvalidKeyException
      * @throws IOException
      */
-    public final String generate(final Set<Principal> principalSet, URI scope, Date expiryDate, List<String> domains)
+    public final String generate(final Set<Principal> principalSet, URI scope, Date expiryDate)
         throws InvalidKeyException, IOException
     {
         if (scope == null) {
@@ -168,15 +168,11 @@ public class SSOCookieManager
             expiryDate = getExpirationDate();
         }
         List<String> domainList = null;
-        if (domains == null) {
-            // get list of domains from AccessControl.properties
-            // Get domain list from properties
             PropertiesReader propReader = new PropertiesReader(DOMAINS_PROP_FILE);
             List<String> domainValues = propReader.getPropertyValues("domains");
             if (domainValues != null && (domainValues.size() > 0)) {
                 domainList = Arrays.asList(domainValues.get(0).split(" "));
             }
-        }
         DelegationToken token =
             new DelegationToken(principalSet, scope, expiryDate, domainList);
         return DelegationToken.format(token);
@@ -193,7 +189,7 @@ public class SSOCookieManager
     public final String generate(final Set<Principal> principalSet, URI scope)
         throws InvalidKeyException, IOException
     {
-        return generate(principalSet, scope, getExpirationDate(), null);
+        return generate(principalSet, scope, getExpirationDate());
     }
 
     /**

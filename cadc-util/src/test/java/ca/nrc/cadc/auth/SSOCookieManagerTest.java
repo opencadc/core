@@ -82,10 +82,10 @@ public class SSOCookieManagerTest
         privFile = new File(keysDir, RsaSignatureGenerator.PRIV_KEY_FILE_NAME);
         pubFile = new File(keysDir, RsaSignatureGenerator.PUB_KEY_FILE_NAME);
 
-        domainList.add("www.canfar.phys.uvic.ca");
-        domainList.add("www.cadc.hia.nrc.gc.ca");
-        domainList.add("www.ccda.iha.cnrc.gc.ca");
-        domainList.add("www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca");
+        domainList.add("canfar.phys.uvic.ca");
+        domainList.add("cadc.hia.nrc.gc.ca");
+        domainList.add("ccda.iha.cnrc.gc.ca");
+        domainList.add("cadc-ccda.hia-iha.nrc-cnrc.gc.ca");
 
     }
     

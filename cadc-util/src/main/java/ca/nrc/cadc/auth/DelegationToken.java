@@ -285,35 +285,34 @@ public class DelegationToken implements Serializable
                 {
                     userid = value;
                 }
-                if (key.equalsIgnoreCase(PROXY_LABEL))
+                else if (key.equalsIgnoreCase(PROXY_LABEL))
                 {
                     proxyUser = value;
                 }
-                if (key.equalsIgnoreCase(IdentityType.X500.getValue().toLowerCase()))
+                else if (key.equalsIgnoreCase(IdentityType.X500.getValue().toLowerCase()))
                 {
                     principalSet.add(new X500Principal(value));
                 }
                 // Treating CADC principal as a NumericPrincipal
                 // check for both for backward cookie compatibility
-                if (key.equalsIgnoreCase(IdentityType.NUMERICID.getValue())
+                else if (key.equalsIgnoreCase(IdentityType.NUMERICID.getValue())
                     || key.equalsIgnoreCase(IdentityType.CADC.getValue()))
                 {
                     principalSet.add(new NumericPrincipal(UUID.fromString(value)));
                 }
-
-                if (key.equalsIgnoreCase(EXPIRY_LABEL))
+                else if (key.equalsIgnoreCase(EXPIRY_LABEL))
                 {
                     expirytime = new Date(Long.valueOf(value));
                 }
-                if (key.equalsIgnoreCase(SCOPE_LABEL))
+                else if (key.equalsIgnoreCase(SCOPE_LABEL))
                 {
                     scope = new URI(value);
                 }
-                if (key.equalsIgnoreCase(SIGNATURE_LABEL))
+                else if (key.equalsIgnoreCase(SIGNATURE_LABEL))
                 {
                     signature = value;
                 }
-                if (key.equalsIgnoreCase(DOMAIN_LABEL))
+                else if (key.equalsIgnoreCase(DOMAIN_LABEL))
                 {
                     domains.add(value);
                 }
@@ -326,7 +325,7 @@ public class DelegationToken implements Serializable
             } else if (userid != null)
             {
                 principalSet.add(new HttpPrincipal(userid));
-            } // Should no HttpPrincipal generation be flagged here?
+            }
             
         }
         catch (NumberFormatException ex)
