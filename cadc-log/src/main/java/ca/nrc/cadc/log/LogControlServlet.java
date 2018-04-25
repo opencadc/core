@@ -185,9 +185,9 @@ public class LogControlServlet extends HttpServlet
     	if (webapp == null) webapp = "[?]";
 
         String thisPkg = LogControlServlet.class.getPackage().getName();
-        Log4jInit.setLevel(webapp, thisPkg, level);
+        Log4jInit.setLevel(webapp, thisPkg, Level.WARN);
         packages.add(thisPkg);
-        logger.info("log level: " + thisPkg + " =  " + level);
+        logger.warn("log level: " + thisPkg + " =  " + Level.WARN);
 
         String packageParamValues = config.getInitParameter( PACKAGES_PARAM );
         if (packageParamValues != null)
@@ -199,7 +199,6 @@ public class LogControlServlet extends HttpServlet
                 if ( pkg.length() > 0 )
                 {
                     Log4jInit.setLevel(webapp, pkg, level);
-                    logger.info("log level: " + pkg + " =  " + level);
                     if (!packages.contains(pkg))
                         packages.add(pkg);
                 }
