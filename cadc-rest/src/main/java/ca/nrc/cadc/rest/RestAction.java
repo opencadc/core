@@ -95,7 +95,8 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object>
 
     /**
      * The REST context is a string unique to a single instance of RestServlet. It
-     * can be used to prefix log messages, JNDI key names, etc.
+     * can be used to prefix log messages, JNDI key names, etc. It is not a path
+     * like one might get from SyncInput.getContextPath().
      */
     protected String restContext;
     
@@ -124,7 +125,7 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object>
      * be a document or part of a multi-part request). Null return value is allowed 
      * if the service never expects non-form data or wants to ignore non-form data.
      * 
-     * @return
+     * @return configured InlineContentHandler
      */
     abstract protected InlineContentHandler getInlineContentHandler();
 
@@ -143,7 +144,8 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object>
      *  ca.nrc.cadc.net.TransientException : 503
      *  java.lang.RuntimeException : 500
      *  java.lang.Error : 500
-     * @throws Exception
+     * 
+     * @throws Exception for standard application failure
      */
     public abstract void doAction() throws Exception;
 
@@ -241,11 +243,12 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object>
      * response code and write the message in text/plain. Optionally write a full
      * except5ion stack trace to output (showExceptions = true).
      *
-     * @param ex
-     * @param code
-     * @param message
-     * @param showExceptions
-     * @throws IOException
+     * @param ex exception to handle
+     * @param code HTTP status code
+     * @param message message body
+     * @param showStackTrace  log stack trace
+     * @param showExceptions  show exceptions in output
+     * @throws IOException if write to output fails
      */
     protected void handleException(
         Throwable ex, int code, String message, boolean showStackTrace, boolean showExceptions)

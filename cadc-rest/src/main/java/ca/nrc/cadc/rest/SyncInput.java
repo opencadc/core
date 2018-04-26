@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2016.                            (c) 2016.
+*  (c) 2018.                            (c) 2018.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -69,6 +69,7 @@
 
 package ca.nrc.cadc.rest;
 
+import ca.nrc.cadc.util.CaseInsensitiveStringComparator;
 import ca.nrc.cadc.net.NetUtil;
 import java.io.IOException;
 import java.io.InputStream;
@@ -77,22 +78,19 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
 import javax.servlet.http.HttpServletRequest;
-
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.fileupload.util.Streams;
 import org.apache.log4j.Logger;
-
-import ca.nrc.cadc.util.CaseInsensitiveStringComparator;
 import java.net.URI;
 import java.util.Set;
 
 /**
- *
+ * Wrapper around the application-server provided request.
+ * 
  * @author pdowler
  */
 public class SyncInput
@@ -112,29 +110,57 @@ public class SyncInput
         this.inlineContentHandler = handler;
     }
 
+    /**
+     * Get the real client IP address. The REST binding is split up as follows:
+     *  <pre>
+     *  requestURI = protocol :// hostname / requestPath
+     *  requestPath = contextPath / path
+     *  </pre>
+     * 
+     * @return client IP address
+     */
     public String getClientIP() {
         return NetUtil.getClientIP(request);
     }
     
-    public String getRequestPath() {
-        String uri = getRequestURI();
-        URI u = URI.create(uri);
-        return u.getPath();
-    }
-    
-    public String getRequestURI() {
-        return request.getRequestURL().toString();
-    }
-    
+    /**
+     * Get the HTTP protocol used for the request.
+     * 
+     * @return transport protocol (http or https)
+     */
     public String getProtocol()
     {
         return request.getScheme();
     }
     
     /**
-     * Get the path up to the rest binding.
+     * Get the complete request URI. This contains everything from protocol, hostname,
+     * optional port, and request path.
      * 
-     * @return 
+     * 
+     * @return complete request URI
+     */
+    public String getRequestURI() {
+        return request.getRequestURL().toString();
+    }
+    
+    /**
+     * Get the complete path in the request. This is simply the path component of
+     * the requestURI.
+     * 
+     * @return complete path
+     */
+    public String getRequestPath() {
+        String uri = getRequestURI();
+        URI u = URI.create(uri);
+        return u.getPath();
+    }
+    
+    /**
+     * Get the path up to the rest binding. This returns the base path of the
+     * REST application component with trailing slash removed.
+     * 
+     * @return context path
      */
     public String getContextPath()
     {
@@ -147,9 +173,10 @@ public class SyncInput
     }
     
     /**
-     * Get the request path after the rest binding.
+     * Get the application-specific path. This is the rest of the path after the 
+     * context path with leading slash removed.
      * 
-     * @return 
+     * @return application-specific sub-path, possibly null
      */
     public String getPath()
     {
@@ -164,23 +191,29 @@ public class SyncInput
     /**
      * Get a request header value.
      *
-     * @param name
-     * @return
+     * @param name HTTP header name
+     * @return header value, possibly null
      */
     public String getHeader(String name)
     {
         return request.getHeader(name);
     }
 
+    /**
+     * Get set of all parameters included in the request.
+     * 
+     * @return set of parameter names
+     */
     public Set<String> getParameterNames() {
         return params.keySet();
     }
     
     /**
-     * Get a request parameter value.
+     * Get a request parameter value. If there are multiple instances of the parameter,
+     * the first is returned (see getParameters).
      *
-     * @param name
-     * @return
+     * @param name name of parameter
+     * @return a value for the specified parameter name; may be null
      */
     public String getParameter(String name)
     {
@@ -193,18 +226,30 @@ public class SyncInput
     /**
      * Get all request parameter values.
      *
-     * @param name
-     * @return
+     * @param name name of parameter
+     * @return all values for the specified parameter name; may be null
      */
     public List<String> getParameters(String name)
     {
         return params.get(name);
     }
 
+    /**
+     * Get set of all names for inline content in the request. Accessing inline content 
+     * requires an InlineContentHandler.
+     * 
+     * @return set of inline content names
+     */
     public Set<String> getContentNames() {
         return content.keySet();
     }
     
+    /**
+     * Get an inline content object.
+     *
+     * @param name name of inline object
+     * @return an object for the specified content name; may be null
+     */
     public Object getContent(String name)
     {
     	return content.get(name);

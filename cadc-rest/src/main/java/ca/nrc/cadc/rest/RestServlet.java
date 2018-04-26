@@ -69,24 +69,21 @@
 
 package ca.nrc.cadc.rest;
 
+import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.log.ServletLogInfo;
+import ca.nrc.cadc.log.WebServiceLogInfo;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.security.AccessControlException;
 import java.security.PrivilegedActionException;
-
 import javax.security.auth.Subject;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import org.apache.log4j.Logger;
-
-import ca.nrc.cadc.auth.AuthenticationUtil;
-import ca.nrc.cadc.log.ServletLogInfo;
-import ca.nrc.cadc.log.WebServiceLogInfo;
 
 /**
  * Very simple RESTful servlet that loads a separate RestAction subclass for each
@@ -145,9 +142,9 @@ public class RestServlet extends HttpServlet
      * The default error response when a RestAction is not configured for a requested
      * HTTP action is status code 400 and text/plain error message.
      *
-     * @param action
-     * @param response
-     * @throws IOException
+     * @param action action label
+     * @param response servlet response object
+     * @throws IOException failure to write output
      */
     protected void handleUnsupportedAction(String action, HttpServletResponse response)
         throws IOException
@@ -317,11 +314,13 @@ public class RestServlet extends HttpServlet
      * response code and write the message in text/plain. Optionally write a full
      * except5ion stack trace to output (showExceptions = true).
      *
-     * @param ex
-     * @param code
-     * @param message
-     * @param showExceptions
-     * @throws IOException
+     * @param syncOutput output wrapper if already created
+     * @param response underlying response if syncOutput not created yet
+     * @param ex the exception to report
+     * @param code the HTTP status code
+     * @param message the error message body
+     * @param showExceptions show exception(s) in output
+     * @throws IOException failure to write to output
      */
     protected void handleException(SyncOutput syncOutput, HttpServletResponse response,
     		Throwable ex, int code, String message, boolean showExceptions)
