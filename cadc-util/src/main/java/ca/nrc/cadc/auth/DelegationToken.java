@@ -1,38 +1,71 @@
 /*
- ************************************************************************
- ****  C A N A D I A N   A S T R O N O M Y   D A T A   C E N T R E  *****
- *
- * (c) 2016.                            (c) 2016.
- * National Research Council            Conseil national de recherches
- * Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
- * All rights reserved                  Tous droits reserves
- *
- * NRC disclaims any warranties         Le CNRC denie toute garantie
- * expressed, implied, or statu-        enoncee, implicite ou legale,
- * tory, of any kind with respect       de quelque nature que se soit,
- * to the software, including           concernant le logiciel, y com-
- * without limitation any war-          pris sans restriction toute
- * ranty of merchantability or          garantie de valeur marchande
- * fitness for a particular pur-        ou de pertinence pour un usage
- * pose.  NRC shall not be liable       particulier.  Le CNRC ne
- * in any event for any damages,        pourra en aucun cas etre tenu
- * whether direct or indirect,          responsable de tout dommage,
- * special or general, consequen-       direct ou indirect, particul-
- * tial or incidental, arising          ier ou general, accessoire ou
- * from the use of the software.        fortuit, resultant de l'utili-
- *                                      sation du logiciel.
- *
- *
- * @author adriand
- *
- * @version $Revision: $
- *
- *
- ****  C A N A D I A N   A S T R O N O M Y   D A T A   C E N T R E  *****
- ************************************************************************
- */
-
-
+************************************************************************
+*******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
+**************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
+*
+*  (c) 2018.                            (c) 2018.
+*  Government of Canada                 Gouvernement du Canada
+*  National Research Council            Conseil national de recherches
+*  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
+*  All rights reserved                  Tous droits réservés
+*
+*  NRC disclaims any warranties,        Le CNRC dénie toute garantie
+*  expressed, implied, or               énoncée, implicite ou légale,
+*  statutory, of any kind with          de quelque nature que ce
+*  respect to the software,             soit, concernant le logiciel,
+*  including without limitation         y compris sans restriction
+*  any warranty of merchantability      toute garantie de valeur
+*  or fitness for a particular          marchande ou de pertinence
+*  purpose. NRC shall not be            pour un usage particulier.
+*  liable in any event for any          Le CNRC ne pourra en aucun cas
+*  damages, whether direct or           être tenu responsable de tout
+*  indirect, special or general,        dommage, direct ou indirect,
+*  consequential or incidental,         particulier ou général,
+*  arising from the use of the          accessoire ou fortuit, résultant
+*  software.  Neither the name          de l'utilisation du logiciel. Ni
+*  of the National Research             le nom du Conseil National de
+*  Council of Canada nor the            Recherches du Canada ni les noms
+*  names of its contributors may        de ses  participants ne peuvent
+*  be used to endorse or promote        être utilisés pour approuver ou
+*  products derived from this           promouvoir les produits dérivés
+*  software without specific prior      de ce logiciel sans autorisation
+*  written permission.                  préalable et particulière
+*                                       par écrit.
+*
+*  This file is part of the             Ce fichier fait partie du projet
+*  OpenCADC project.                    OpenCADC.
+*
+*  OpenCADC is free software:           OpenCADC est un logiciel libre ;
+*  you can redistribute it and/or       vous pouvez le redistribuer ou le
+*  modify it under the terms of         modifier suivant les termes de
+*  the GNU Affero General Public        la “GNU Affero General Public
+*  License as published by the          License” telle que publiée
+*  Free Software Foundation,            par la Free Software Foundation
+*  either version 3 of the              : soit la version 3 de cette
+*  License, or (at your option)         licence, soit (à votre gré)
+*  any later version.                   toute version ultérieure.
+*
+*  OpenCADC is distributed in the       OpenCADC est distribué
+*  hope that it will be useful,         dans l’espoir qu’il vous
+*  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
+*  without even the implied             GARANTIE : sans même la garantie
+*  warranty of MERCHANTABILITY          implicite de COMMERCIALISABILITÉ
+*  or FITNESS FOR A PARTICULAR          ni d’ADÉQUATION À UN OBJECTIF
+*  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
+*  General Public License for           Générale Publique GNU Affero
+*  more details.                        pour plus de détails.
+*
+*  You should have received             Vous devriez avoir reçu une
+*  a copy of the GNU Affero             copie de la Licence Générale
+*  General Public License along         Publique GNU Affero avec
+*  with OpenCADC.  If not, see          OpenCADC ; si ce n’est
+*  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
+*                                       <http://www.gnu.org/licenses/>.
+*
+*  $Revision: 5 $
+*
+************************************************************************
+*/
 
 package ca.nrc.cadc.auth;
 
@@ -42,14 +75,20 @@ import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
+import java.security.Principal;
+import java.util.ArrayList;
 import java.util.Date;
 import ca.nrc.cadc.util.Base64;
-import ca.nrc.cadc.util.PropertiesReader;
 import ca.nrc.cadc.util.RsaSignatureGenerator;
 import ca.nrc.cadc.util.RsaSignatureVerifier;
 import ca.nrc.cadc.util.StringUtil;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Properties;
+import java.util.Set;
+import java.util.UUID;
+import javax.security.auth.x500.X500Principal;
 import org.apache.log4j.Logger;
 
 /**
@@ -67,11 +106,20 @@ public class DelegationToken implements Serializable
 {
     private static final Logger log = Logger.getLogger(DelegationToken.class);
 
-    private static final long serialVersionUID = 20141025143750l;
+    private static final long serialVersionUID = 20180321000000l;
 
-    private HttpPrincipal user; // identity of the user
+    private Set<Principal> identityPrincipals;
+
+    public static String PROXY_LABEL = "proxyuser";
+    public static String SCOPE_LABEL = "scope";
+    public static String DOMAIN_LABEL = "domain";
+    public static String USER_LABEL = "userid";
+    public static String EXPIRY_LABEL = "expirytime";
+    public static String SIGNATURE_LABEL = "signature";
+
     private Date expiryTime; // expiration time of the delegation (UTC)
     private URI scope; // resources that are the object of the delegation
+    private List<String> domains;
 
     public static final String FIELD_DELIM = "&";
     public static final String VALUE_DELIM = "=";
@@ -93,21 +141,52 @@ public class DelegationToken implements Serializable
      * to - optional
      * @param expiryTime - the expiry date of this token (UTC)
      */
-    public DelegationToken(HttpPrincipal user, URI scope, Date expiryTime)
+    public DelegationToken(HttpPrincipal user, URI scope, Date expiryTime, List<String> domains)
     {
+        // Validation of parameter means using this() to call
+        // other constructor isn't possible.
         if (user == null)
         {
             throw new IllegalArgumentException("User identity required");
         }
-        this.user = user;
+
+        this.addPrincipal(user);
+
         if(expiryTime == null)
         {
             throw new IllegalArgumentException("No expiry time");
         }
         this.expiryTime = expiryTime;
         this.scope = scope;
+
+        this.setDomains(domains);
     }
 
+    /**
+     * Constructor.
+     * @param principals - sorted set of identity principals (http, x500, cadc)
+     * @param scope - scope of the delegation, i.e. resource that it applies to - optional
+     * @param expiryTime - the expiry date of this token (UTC)
+     * @param domains - list of domains that this token could be used for
+     */
+    public DelegationToken(Set<Principal> principals, URI scope, Date expiryTime, List<String> domains)
+    {
+        if (principals == null || principals.size() == 0)
+        {
+            throw new IllegalArgumentException("Identity principals required (ie http, x500, cadc internal)");
+        }
+
+        if(expiryTime == null)
+        {
+            throw new IllegalArgumentException("No expiry time");
+        }
+
+        this.addPrincipals(principals);
+        this.expiryTime = expiryTime;
+        this.scope = scope;
+
+        this.setDomains(domains);
+    }
 
     /**
      * Serializes and signs the object into a string of attribute-value pairs.
@@ -125,8 +204,9 @@ public class DelegationToken implements Serializable
 
         //sign and add the signature field
         String toSign = sb.toString();
+        log.debug("string to be signed: " + toSign);
         sb.append(FIELD_DELIM);
-        sb.append("signature");
+        sb.append(SIGNATURE_LABEL);
         sb.append(VALUE_DELIM);
         RsaSignatureGenerator su = new RsaSignatureGenerator();
         byte[] sig =
@@ -140,27 +220,56 @@ public class DelegationToken implements Serializable
     private static StringBuilder getContent(DelegationToken token)
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("userid");
-        sb.append(VALUE_DELIM);
-        sb.append(token.getUser().getName());
-        if (StringUtil.hasText(token.getUser().getProxyUser()))
+
+        sb.append(EXPIRY_LABEL + VALUE_DELIM);
+        sb.append(token.getExpiryTime().getTime());
+
+        // Add all available identity principals to the content
+        for (Principal prin: token.identityPrincipals)
+        {
+            String principalName = prin.getClass().getSimpleName();
+
+            IdentityType principalIdentity = IdentityType.principalIdentityMap.get(principalName);
+            if (principalIdentity.equals(IdentityType.ENTRY_DN))
+            {
+                // Do not add this for external use, to cookies, etc.
+                continue;
+            }
+
+            sb.append(FIELD_DELIM);
+            sb.append(principalIdentity.getValue());
+            sb.append(VALUE_DELIM);
+            sb.append(prin.getName());
+        }
+
+        HttpPrincipal user = token.getUser();
+        if (StringUtil.hasText(user.getProxyUser()))
         {
             sb.append(FIELD_DELIM);
-            sb.append("proxyuser");
+            sb.append(PROXY_LABEL);
             sb.append(VALUE_DELIM);
-            sb.append(token.getUser().getProxyUser());
+            sb.append(user.getProxyUser());
         }
-        sb.append(FIELD_DELIM);
-        sb.append("expirytime");
-        sb.append(VALUE_DELIM);
-        sb.append(token.getExpiryTime().getTime());
+
         if (token.getScope() != null)
         {
             sb.append(FIELD_DELIM);
-            sb.append("scope");
+            sb.append(SCOPE_LABEL);
             sb.append(VALUE_DELIM);
             sb.append(token.getScope());
         }
+
+        if (token.getDomains() != null) {
+            for (String domain : token.getDomains())
+            {
+                sb.append(FIELD_DELIM);
+                sb.append(DOMAIN_LABEL);
+                sb.append(VALUE_DELIM);
+                sb.append(domain);
+            }
+        }
+
+        log.debug("getContent: " + sb);
         return sb;
     }
 
@@ -190,40 +299,69 @@ public class DelegationToken implements Serializable
     {
         String[] fields = text.split(FIELD_DELIM);
         String userid = null;
+        Set<Principal> principalSet = new HashSet<>();
         String proxyUser = null;
         Date expirytime = null;
         URI scope = null;
         String signature = null;
+        List<String> domains = new ArrayList<>();
         try
         {
             for (String field : fields)
             {
+
                 String key = field.substring(0, field.indexOf(VALUE_DELIM));
                 String value = field.substring(field.indexOf(VALUE_DELIM) + 1);
-                if (key.equalsIgnoreCase("userid"))
+                log.debug("key = value: " + key + "=" + value);
+
+                if (key.equalsIgnoreCase(IdentityType.USERID.getValue()))
                 {
                     userid = value;
                 }
-                if (key.equalsIgnoreCase("proxyuser"))
+                else if (key.equalsIgnoreCase(PROXY_LABEL))
                 {
                     proxyUser = value;
                 }
-                if (key.equalsIgnoreCase("expirytime"))
+                else if (key.equalsIgnoreCase(IdentityType.X500.getValue().toLowerCase()))
+                {
+                    principalSet.add(new X500Principal(value));
+                }
+                // Treating CADC principal as a NumericPrincipal
+                // check for both for backward cookie compatibility
+                else if (key.equalsIgnoreCase(IdentityType.NUMERICID.getValue())
+                    || key.equalsIgnoreCase(IdentityType.CADC.getValue()))
+                {
+                    principalSet.add(new NumericPrincipal(UUID.fromString(value)));
+                }
+                else if (key.equalsIgnoreCase(EXPIRY_LABEL))
                 {
                     expirytime = new Date(Long.valueOf(value));
                 }
-                if (key.equalsIgnoreCase("scope"))
+                else if (key.equalsIgnoreCase(SCOPE_LABEL))
                 {
                     scope = new URI(value);
                 }
-                if (key.equalsIgnoreCase("signature"))
+                else if (key.equalsIgnoreCase(SIGNATURE_LABEL))
                 {
                     signature = value;
                 }
+                else if (key.equalsIgnoreCase(DOMAIN_LABEL))
+                {
+                    domains.add(value);
+                }
+            }
+
+            // Construct HttpPrincipal
+            if (userid != null && proxyUser != null)
+            {
+                principalSet.add(new HttpPrincipal(userid, proxyUser));
+            } else if (userid != null)
+            {
+                principalSet.add(new HttpPrincipal(userid));
             }
             
         }
-        catch(NumberFormatException ex)
+        catch (NumberFormatException ex)
         {
             throw new InvalidDelegationTokenException("invalid numeric field", ex);
         }
@@ -233,7 +371,7 @@ public class DelegationToken implements Serializable
         }
 
         if (signature == null)
-            throw new InvalidDelegationTokenException("Missing signature");
+            throw new InvalidDelegationTokenException("missing signature");
 
         // validate expiry
         if (expirytime == null)
@@ -250,30 +388,33 @@ public class DelegationToken implements Serializable
                 sv = getScopeValidator();
             sv.verifyScope(scope, requestURI);
         }
-        
+
         // validate signature
-        DelegationToken result = 
-                new DelegationToken(new HttpPrincipal(userid, proxyUser), 
-                        scope, expirytime);
-        
         try
         {
             RsaSignatureVerifier su = new RsaSignatureVerifier();
-            String str = DelegationToken.getContent(result).toString();
+            String signatureSplitter = FIELD_DELIM + DelegationToken.SIGNATURE_LABEL + "=";
+            String[] cookieNSignature = text.split(signatureSplitter);
+            log.debug("string to be verified" + cookieNSignature[0]);
             boolean valid = su.verify(
-                new ByteArrayInputStream(str.getBytes()),
-                    Base64.decode(signature));
-            if (valid)
-                return result;
-            log.debug("invalid token: " + str);
+                new ByteArrayInputStream(cookieNSignature[0].getBytes()),
+                Base64.decode(signature));
+
+            if (!valid)
+            {
+                log.error("invalid signature: " + text);
+                throw new InvalidDelegationTokenException("cannot verify signature");
+            }
 
         }
         catch(Exception ex)
         {
             log.debug("failed to verify DelegationToken signature", ex);
+            throw new InvalidDelegationTokenException("cannot verify signature", ex);
         }
 
-        throw new InvalidDelegationTokenException("Cannot verify signature");
+        return new DelegationToken(principalSet, scope, expirytime, domains);
+
     }
 
     private static ScopeValidator getScopeValidator()
@@ -301,11 +442,22 @@ public class DelegationToken implements Serializable
         return new ScopeValidator();
     }
 
-    public HttpPrincipal getUser()
-    {
-        return user;
+    // user is wrong name
+    public HttpPrincipal getUser() {
+        return getPrincipalByClass(HttpPrincipal.class);
     }
 
+    public <T extends Principal> T getPrincipalByClass(Class clazz)
+    {
+        for (Principal prin : this.identityPrincipals)
+        {
+            if (prin.getClass() == clazz)
+            {
+                return (T)prin;
+            }
+        }
+        return null;
+    }
 
     public Date getExpiryTime()
     {
@@ -317,22 +469,66 @@ public class DelegationToken implements Serializable
         return scope;
     }
 
+    public List<String> getDomains() {
+        return domains;
+    }
+
+
+    // TODO: update this to include principals
+    @Override
     public String toString()
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("DelegationToken(user=");
+        sb.append("DelegationToken(" + USER_LABEL + "=");
         if (StringUtil.hasText(getUser().getProxyUser()))
         {
-            sb.append(",proxyUser=");
+            sb.append("," + PROXY_LABEL + "=");
             sb.append(getUser().getProxyUser());
         }
         sb.append(getUser());
-        sb.append(",scope=");
+        sb.append("," + SCOPE_LABEL + "=");
         sb.append(getScope());
         sb.append(",startTime=");
         sb.append(getExpiryTime());
+
+        for (String domain: domains) {
+            sb.append(","+ DOMAIN_LABEL + "=" + domain);
+        }
         sb.append(")");
         return sb.toString();
     }
+
+    private void setDomains(List<String> domains) {
+        if (domains != null) {
+            if (this.domains == null) {
+                this.domains = new ArrayList<>();
+            }
+            this.domains.addAll(domains);
+        }
+    }
+
+    private void addPrincipal(Principal p) {
+        if (p != null) {
+            Set<Principal> pSet = new HashSet<>();
+            pSet.add(p);
+            addPrincipals(pSet);
+        }
+    }
+
+    private void addPrincipals(Set<Principal> principals) {
+        if (principals != null) {
+            if (this.identityPrincipals == null) {
+                this.identityPrincipals = new HashSet<>();
+            }
+
+            this.identityPrincipals.addAll(principals);
+        }
+    }
+
+    public Set<Principal> getIdentityPrincipals() {
+        return identityPrincipals;
+    }
+
+
 
 }

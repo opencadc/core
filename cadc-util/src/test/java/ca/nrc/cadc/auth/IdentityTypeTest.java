@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2016.                            (c) 2016.
+ *  (c) 2018.                            (c) 2018.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -97,7 +97,8 @@ public class IdentityTypeTest
         IdentityType[] expResult = new IdentityType[]
         {
             IdentityType.X500, IdentityType.OPENID, 
-            IdentityType.USERNAME, IdentityType.CADC,
+            IdentityType.USERNAME, IdentityType.USERID,
+            IdentityType.CADC, IdentityType.NUMERICID,
             IdentityType.COOKIE, IdentityType.ENTRY_DN
         };
         IdentityType[] result = IdentityType.values();
@@ -115,6 +116,8 @@ public class IdentityTypeTest
         assertEquals(IdentityType.USERNAME, IdentityType.valueOf("USERNAME"));
         assertEquals(IdentityType.CADC, IdentityType.valueOf("CADC"));
         assertEquals(IdentityType.COOKIE, IdentityType.valueOf("COOKIE"));
+        assertEquals(IdentityType.USERID, IdentityType.valueOf("USERID"));
+        assertEquals(IdentityType.NUMERICID, IdentityType.valueOf("NUMERICID"));
     }
 
     /**
@@ -132,6 +135,8 @@ public class IdentityTypeTest
         
         assertEquals(IdentityType.X500, IdentityType.toValue("X500"));
         assertEquals(IdentityType.OPENID, IdentityType.toValue("OpenID"));
+        assertEquals(IdentityType.USERID, IdentityType.toValue("userID"));
+        assertEquals(IdentityType.NUMERICID, IdentityType.toValue("numericID"));
         assertEquals(IdentityType.USERNAME, IdentityType.toValue("HTTP"));
         assertEquals(IdentityType.CADC, IdentityType.toValue("CADC"));
         assertEquals(IdentityType.COOKIE, IdentityType.toValue("sessionID"));
@@ -148,7 +153,8 @@ public class IdentityTypeTest
         assertEquals("HTTP", IdentityType.USERNAME.getValue());
         assertEquals("CADC", IdentityType.CADC.getValue());
         assertEquals("sessionID", IdentityType.COOKIE.getValue());
-
+        assertEquals("userID", IdentityType.USERID.getValue());
+        assertEquals("numericID", IdentityType.NUMERICID.getValue());
     }
 
     /**
@@ -162,6 +168,8 @@ public class IdentityTypeTest
         assertEquals("HTTP".hashCode(), IdentityType.USERNAME.checksum());
         assertEquals("CADC".hashCode(), IdentityType.CADC.checksum());
         assertEquals("sessionID".hashCode(), IdentityType.COOKIE.checksum());
+        assertEquals("userID".hashCode(), IdentityType.USERID.checksum());
+        assertEquals("numericID".hashCode(), IdentityType.NUMERICID.checksum());
     }
     
 }

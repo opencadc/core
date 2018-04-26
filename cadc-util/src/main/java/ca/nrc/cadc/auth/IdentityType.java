@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2016.                            (c) 2016.
+ *  (c) 2018.                            (c) 2018.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -68,6 +68,10 @@
  */
 package ca.nrc.cadc.auth;
 
+import java.util.HashMap;
+import java.util.Map;
+import javax.security.auth.x500.X500Principal;
+
 /**
  *
  * @author jburke
@@ -76,8 +80,13 @@ public enum IdentityType
 {
     X500("X500"),
     OPENID("OpenID"),
+    @Deprecated
     USERNAME("HTTP"),
+    USERID("userID"),
+    @Deprecated
     CADC("CADC"),
+    NUMERICID("numericID"),
+    @Deprecated
     COOKIE("sessionID"),
     ENTRY_DN("entryDN");
 
@@ -112,5 +121,13 @@ public enum IdentityType
         return this.getClass().getSimpleName() + "[" + value + "]";
     }
 
+    public static final Map<String, IdentityType> principalIdentityMap = new HashMap<String, IdentityType>() {{
+        put(X500Principal.class.getSimpleName(), IdentityType.X500);
+        put(HttpPrincipal.class.getSimpleName(), IdentityType.USERID);
+        put(NumericPrincipal.class.getSimpleName(), IdentityType.NUMERICID);
+        put(OpenIdPrincipal.class.getSimpleName(), IdentityType.OPENID);
+        put(DNPrincipal.class.getSimpleName(), IdentityType.ENTRY_DN);
+    }};
 }
+
 

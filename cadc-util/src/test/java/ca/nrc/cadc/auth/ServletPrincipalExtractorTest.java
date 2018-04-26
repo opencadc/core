@@ -86,7 +86,7 @@ public class ServletPrincipalExtractorTest
             HttpPrincipal principal = new HttpPrincipal("CADCtest");
             Calendar cal = Calendar.getInstance();
             cal.add(Calendar.HOUR, 2);
-            DelegationToken dt = new DelegationToken(principal, null, cal.getTime());
+            DelegationToken dt = new DelegationToken(principal, null, cal.getTime(), null);
             String cookieValue = DelegationToken.format(dt);
             HttpServletRequest request = createMock(HttpServletRequest.class);
             Cookie cookie = createMock(Cookie.class);
@@ -118,7 +118,7 @@ public class ServletPrincipalExtractorTest
             EasyMock.reset(cookie);
             cal = Calendar.getInstance();
 
-            dt = new DelegationToken(principal, null, cal.getTime());
+            dt = new DelegationToken(principal, null, cal.getTime(), null);
             cookieValue = DelegationToken.format(dt);
 
             request = createMock(HttpServletRequest.class);

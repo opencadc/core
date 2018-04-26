@@ -778,6 +778,15 @@ public abstract class HttpTransfer implements Runnable
                 {
                     if (conn.getURL().getHost().endsWith(cookieCred.getDomain()))
                     {
+                        // HACK ("Pat Said") - this is rather horrenous, but in the java HTTP
+                        // library, the cookie isn't sent with the redirect. But it doesn't flag it
+                        // as a problem. This flags the problem early, allows us to detect attempts
+                        // to send cookies + redirect via POST.
+                        // GET (HttpDownload) works, and sends the cookies as expected.
+                        if (followRedirects && "POST".equals(conn.getRequestMethod())) {
+                            throw new UnsupportedOperationException("Attempt to follow redirect with cookies (POST).");
+                        }
+
                         String cval = SSOCookieManager.DEFAULT_SSO_COOKIE_NAME
                                 + "=\"" + cookieCred.getSsoCookieValue() + "\"";
                         conn.setRequestProperty("Cookie", cval);
