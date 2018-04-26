@@ -162,7 +162,7 @@ public class HttpTransferTest
     @Test
     public void setRequestSSOCookie() throws Exception
     {
-        final HttpTransfer testSubject = new HttpTransfer(true)
+        final HttpTransfer testSubject = new HttpTransfer(false)
         {
             @Override
             public void run()

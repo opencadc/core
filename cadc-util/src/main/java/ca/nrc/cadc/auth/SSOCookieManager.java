@@ -1,36 +1,72 @@
 /*
- ************************************************************************
- ****  C A N A D I A N   A S T R O N O M Y   D A T A   C E N T R E  *****
- *
- * (c) 2016.                         (c) 2016.
- * National Research Council            Conseil national de recherches
- * Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
- * All rights reserved                  Tous droits reserves
- *
- * NRC disclaims any warranties         Le CNRC denie toute garantie
- * expressed, implied, or statu-        enoncee, implicite ou legale,
- * tory, of any kind with respect       de quelque nature que se soit,
- * to the software, including           concernant le logiciel, y com-
- * without limitation any war-          pris sans restriction toute
- * ranty of merchantability or          garantie de valeur marchande
- * fitness for a particular pur-        ou de pertinence pour un usage
- * pose.  NRC shall not be liable       particulier.  Le CNRC ne
- * in any event for any damages,        pourra en aucun cas etre tenu
- * whether direct or indirect,          responsable de tout dommage,
- * special or general, consequen-       direct ou indirect, particul-
- * tial or incidental, arising          ier ou general, accessoire ou
- * from the use of the software.        fortuit, resultant de l'utili-
- *                                      sation du logiciel.
- *
- *
- * @author jenkinsd
- * 4/17/12 - 10:55 AM
- *
- *
- *
- ****  C A N A D I A N   A S T R O N O M Y   D A T A   C E N T R E  *****
- ************************************************************************
- */
+************************************************************************
+*******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
+**************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
+*
+*  (c) 2018.                            (c) 2018.
+*  Government of Canada                 Gouvernement du Canada
+*  National Research Council            Conseil national de recherches
+*  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
+*  All rights reserved                  Tous droits réservés
+*
+*  NRC disclaims any warranties,        Le CNRC dénie toute garantie
+*  expressed, implied, or               énoncée, implicite ou légale,
+*  statutory, of any kind with          de quelque nature que ce
+*  respect to the software,             soit, concernant le logiciel,
+*  including without limitation         y compris sans restriction
+*  any warranty of merchantability      toute garantie de valeur
+*  or fitness for a particular          marchande ou de pertinence
+*  purpose. NRC shall not be            pour un usage particulier.
+*  liable in any event for any          Le CNRC ne pourra en aucun cas
+*  damages, whether direct or           être tenu responsable de tout
+*  indirect, special or general,        dommage, direct ou indirect,
+*  consequential or incidental,         particulier ou général,
+*  arising from the use of the          accessoire ou fortuit, résultant
+*  software.  Neither the name          de l'utilisation du logiciel. Ni
+*  of the National Research             le nom du Conseil National de
+*  Council of Canada nor the            Recherches du Canada ni les noms
+*  names of its contributors may        de ses  participants ne peuvent
+*  be used to endorse or promote        être utilisés pour approuver ou
+*  products derived from this           promouvoir les produits dérivés
+*  software without specific prior      de ce logiciel sans autorisation
+*  written permission.                  préalable et particulière
+*                                       par écrit.
+*
+*  This file is part of the             Ce fichier fait partie du projet
+*  OpenCADC project.                    OpenCADC.
+*
+*  OpenCADC is free software:           OpenCADC est un logiciel libre ;
+*  you can redistribute it and/or       vous pouvez le redistribuer ou le
+*  modify it under the terms of         modifier suivant les termes de
+*  the GNU Affero General Public        la “GNU Affero General Public
+*  License as published by the          License” telle que publiée
+*  Free Software Foundation,            par la Free Software Foundation
+*  either version 3 of the              : soit la version 3 de cette
+*  License, or (at your option)         licence, soit (à votre gré)
+*  any later version.                   toute version ultérieure.
+*
+*  OpenCADC is distributed in the       OpenCADC est distribué
+*  hope that it will be useful,         dans l’espoir qu’il vous
+*  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
+*  without even the implied             GARANTIE : sans même la garantie
+*  warranty of MERCHANTABILITY          implicite de COMMERCIALISABILITÉ
+*  or FITNESS FOR A PARTICULAR          ni d’ADÉQUATION À UN OBJECTIF
+*  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
+*  General Public License for           Générale Publique GNU Affero
+*  more details.                        pour plus de détails.
+*
+*  You should have received             Vous devriez avoir reçu une
+*  a copy of the GNU Affero             copie de la Licence Générale
+*  General Public License along         Publique GNU Affero avec
+*  with OpenCADC.  If not, see          OpenCADC ; si ce n’est
+*  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
+*                                       <http://www.gnu.org/licenses/>.
+*
+*  $Revision: 5 $
+*
+************************************************************************
+*/
+
 package ca.nrc.cadc.auth;
 
 import ca.nrc.cadc.date.DateUtil;
@@ -39,10 +75,14 @@ import ca.nrc.cadc.util.PropertiesReader;
 import java.io.IOException;
 import java.net.URI;
 import java.security.InvalidKeyException;
+import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 
 /**
@@ -58,7 +98,7 @@ public class SSOCookieManager
 
     public static final URI SCOPE_URI = URI.create("sso:cadc+canfar");
 
-    public static final String SUPPORTED_DOMAINS_PROP_FILE = "domains.properties";
+    public static final String DOMAINS_PROP_FILE = "ac-domains.properties";
 
     // Offset to add to the expiry hours.  This is mainly used to set a cookie
     // date in the past to expire it.  This can be a negative value.
@@ -104,6 +144,7 @@ public class SSOCookieManager
         return token;
     }
 
+
     /**
      * Generate a new cookie value for the given HttpPrincipal.
      * Format of the value is:
@@ -119,12 +160,72 @@ public class SSOCookieManager
      * @throws IOException Any errors with writing and generation.
      * @throws InvalidKeyException Signing key is invalid
      */
-    public final String generate(final HttpPrincipal principal) 
+    public final String generate(final HttpPrincipal principal, URI scope)
             throws InvalidKeyException, IOException
     {
+        Set<Principal> principalSet = new HashSet<>();
+        principalSet.add(principal);
+        return generate(principalSet, scope);
+    }
+
+    /**
+     * Backward-compatible generate function.
+     * @param principal
+     * @return
+     * @throws InvalidKeyException
+     * @throws IOException
+     */
+    public final String generate(final HttpPrincipal principal)
+        throws InvalidKeyException, IOException
+    {
+        Set<Principal> principalSet = new HashSet<>();
+        principalSet.add(principal);
+        return generate(principalSet, null);
+    }
+
+
+    /**
+     * Generate a new cookie value for the set of Principals, scope and expiryDate.
+     * Sets a default scope and expiry if either not supplied
+     * @param principalSet
+     * @param scope
+     * @param expiryDate
+     * @return
+     * @throws InvalidKeyException
+     * @throws IOException
+     */
+    public final String generate(final Set<Principal> principalSet, URI scope, Date expiryDate)
+        throws InvalidKeyException, IOException
+    {
+        if (scope == null) {
+            scope = SCOPE_URI;
+        }
+        if (expiryDate == null) {
+            expiryDate = getExpirationDate();
+        }
+        List<String> domainList = null;
+            PropertiesReader propReader = new PropertiesReader(DOMAINS_PROP_FILE);
+            List<String> domainValues = propReader.getPropertyValues("domains");
+            if (domainValues != null && (domainValues.size() > 0)) {
+                domainList = Arrays.asList(domainValues.get(0).split(" "));
+            }
         DelegationToken token =
-                new DelegationToken(principal, SCOPE_URI, getExpirationDate());
+            new DelegationToken(principalSet, scope, expiryDate, domainList);
         return DelegationToken.format(token);
+    }
+
+    /**
+     * Generate a new cookie value for the set of Principals.
+     *
+     * @param principalSet The HttpPrincipal to generate the value from.
+     * @return string of the value.  never null.
+     * @throws IOException Any errors with writing and generation.
+     * @throws InvalidKeyException Signing key is invalid
+     */
+    public final String generate(final Set<Principal> principalSet, URI scope)
+        throws InvalidKeyException, IOException
+    {
+        return generate(principalSet, scope, getExpirationDate());
     }
 
     /**
@@ -132,7 +233,7 @@ public class SSOCookieManager
      *
      * @return      Date of expiration.  Never null.
      */
-    private Date getExpirationDate()
+    public Date getExpirationDate()
     {
         final Calendar cal = getCurrentCalendar();
         cal.add(Calendar.HOUR, (SSO_COOKIE_LIFETIME_HOURS * offsetExpiryHours));
@@ -160,29 +261,21 @@ public class SSOCookieManager
      * of the supported domains.
      *
      * @param cookieValue
-     * @param requestedDomain
-     * @param expiryDate
+     * @param requestURI
      * @return cookieList
      */
-     public List<SSOCookieCredential> getSSOCookieCredentials(final String cookieValue, final String requestedDomain, final Date expiryDate) {
+    public List<SSOCookieCredential> getSSOCookieCredentials(final String cookieValue, final String requestURI)
+        throws InvalidDelegationTokenException, IOException {
+
         List<SSOCookieCredential> cookieList = new ArrayList<>();
+        DelegationToken cookieToken = DelegationToken.parse(cookieValue, requestURI, new CookieScopeValidator());
 
-        // Make cookie with requested domain
-        SSOCookieCredential requestedCookie = new SSOCookieCredential(cookieValue, requestedDomain, expiryDate);
-        cookieList.add(requestedCookie);
-
-        // Get domain list from properties
-        PropertiesReader propReader = new PropertiesReader(SUPPORTED_DOMAINS_PROP_FILE);
-        List<String> domainValues = propReader.getPropertyValues("domains");
-        String[] domainList = domainValues.get(0).split(" ");
-
-        for (String domain: domainList) {
-            if (!domain.equals(requestedDomain)) {
-                SSOCookieCredential nextCookie = new SSOCookieCredential(cookieValue, domain, expiryDate);
-                cookieList.add(nextCookie);
-            }
+        for (String domain: cookieToken.getDomains()) {
+            SSOCookieCredential nextCookie = new SSOCookieCredential(cookieValue, domain, cookieToken.getExpiryTime());
+            cookieList.add(nextCookie);
         }
 
         return cookieList;
-    }
+     }
+
 }
