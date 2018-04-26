@@ -88,6 +88,7 @@ import org.apache.commons.fileupload.util.Streams;
 import org.apache.log4j.Logger;
 
 import ca.nrc.cadc.util.CaseInsensitiveStringComparator;
+import java.net.URI;
 import java.util.Set;
 
 /**
@@ -113,6 +114,12 @@ public class SyncInput
 
     public String getClientIP() {
         return NetUtil.getClientIP(request);
+    }
+    
+    public String getRequestPath() {
+        String uri = getRequestURI();
+        URI u = URI.create(uri);
+        return u.getPath();
     }
     
     public String getRequestURI() {
