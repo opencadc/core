@@ -281,8 +281,8 @@ public class RestServlet extends HttpServlet
         }
         finally
         {
-        	logInfo.setElapsedTime(System.currentTimeMillis() - start);
-        	log.info(logInfo.end());
+            logInfo.setElapsedTime(System.currentTimeMillis() - start);
+            log.info(logInfo.end());
         }
     }
 
