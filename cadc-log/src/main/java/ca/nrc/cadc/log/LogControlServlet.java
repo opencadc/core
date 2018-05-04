@@ -71,32 +71,28 @@
 package ca.nrc.cadc.log;
 
 
+import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.auth.Authorizer;
+import ca.nrc.cadc.net.TransientException;
+import ca.nrc.cadc.util.Log4jInit;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Constructor;
 import java.security.AccessControlException;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
-
 import javax.security.auth.Subject;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-
-import ca.nrc.cadc.auth.AuthenticationUtil;
-import ca.nrc.cadc.auth.Authorizer;
-import ca.nrc.cadc.net.TransientException;
-import ca.nrc.cadc.util.Log4jInit;
-import java.lang.reflect.Constructor;
-import java.net.URI;
 
 
 /**
@@ -189,7 +185,7 @@ public class LogControlServlet extends HttpServlet
         packages.add(thisPkg);
         logger.warn("log level: " + thisPkg + " =  " + Level.WARN);
 
-        String packageParamValues = config.getInitParameter( PACKAGES_PARAM );
+        String packageParamValues = config.getInitParameter(PACKAGES_PARAM);
         if (packageParamValues != null)
         {
             StringTokenizer stringTokenizer = new StringTokenizer(packageParamValues, " \n\t\r", false);
@@ -198,6 +194,7 @@ public class LogControlServlet extends HttpServlet
                 String pkg = stringTokenizer.nextToken();
                 if ( pkg.length() > 0 )
                 {
+                    logger.warn(pkg + ": " + level);
                     Log4jInit.setLevel(webapp, pkg, level);
                     if (!packages.contains(pkg))
                         packages.add(pkg);
@@ -244,8 +241,8 @@ public class LogControlServlet extends HttpServlet
         }
 
         // these are here to help detect problems with logging setup
-        logger.info("init complete");
-        logger.debug("init complete -- YOU SHOULD NEVER SEE THIS MESSAGE");
+        logger.warn("init complete");
+        logger.info("init: YOU SHOULD NEVER SEE THIS MESSAGE -- " + thisPkg + " should not be included in " + PACKAGES_PARAM);
     }
 
     /**
@@ -371,7 +368,7 @@ public class LogControlServlet extends HttpServlet
             boolean track = (dnt == null);
             for (String p : pkgs)
             {
-                logger.info("setLevel: " + p + " -> " + level);
+                logger.warn("setLevel: " + p + " -> " + level);
                 Log4jInit.setLevel(p, level);
                 if (!packages.contains(p) && track)
                     packages.add(p);
@@ -381,7 +378,7 @@ public class LogControlServlet extends HttpServlet
         {
             for (String p : packages)
             {
-                logger.info("setLevel: " + p + " -> " + level);
+                logger.warn("setLevel: " + p + " -> " + level);
                 Log4jInit.setLevel(p, level);
             }
         }
