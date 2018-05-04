@@ -4,7 +4,11 @@
     xmlns:xs="http://www.w3.org/2001/XMLSchema" 
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
-<sch:ns uri="http://www.ivoa.net/xml/VODML/v1.0" prefix="vo-dml"/>
+<!-- Change log:
+2017-09-23:
+- changed namespace uri to vo-dml schema t use major version only.
+ -->
+<sch:ns uri="http://www.ivoa.net/xml/VODML/v1" prefix="vo-dml"/>
    <sch:ns prefix="fct" uri="localFunctions"/>
    <sch:ns prefix="xsi" uri="http://www.w3.org/2001/XMLSchema-instance"/>
 
@@ -118,8 +122,12 @@ OR shall we create a separate roleConstraint element? on structured types only.
   <sch:rule context="constraint[@xsi:type='vo-dml:SubsettedRole']">
     <sch:let name="owner" value="../name()"/>
     <sch:let name="target" value="fct:vo-dml_element(./role/vodml-ref,/vo-dml:model)"/>
+    <sch:let name="dtype" value="fct:vo-dml_element(./datatype/vodml-ref,/vo-dml:model)"/>
     <sch:assert test="$target" flag="error">
-Target of subsets constraint on '<sch:value-of select="../vodml-id"/>' with vodml-ref <sch:value-of select="./vodml-ref"/> can not be found
+Target role of subsets constraint on '<sch:value-of select="../vodml-id"/>' with vodml-ref <sch:value-of select="./role/vodml-ref"/> can not be found
+    </sch:assert>
+    <sch:assert test="$dtype" flag="error">
+Target datatype of subsets constraint on '<sch:value-of select="../vodml-id"/>' with vodml-ref <sch:value-of select="./datatype/vodml-ref"/> can not be found
     </sch:assert>
 <!-- 
     <sch:assert test="$target = $owner" flag="error">

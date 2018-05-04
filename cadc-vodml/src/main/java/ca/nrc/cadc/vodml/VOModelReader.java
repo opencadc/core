@@ -63,7 +63,7 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.vodml;
 
@@ -94,35 +94,32 @@ import org.oclc.purl.dsdl.svrl.SchematronOutputType;
  * org.jdom2.Document object aso it is only good for validation. Once we have
  * access to or write some classes that implement the VO-DML meta model we can
  * return an instance of VODataModel instead.
- * 
+ *
  * @author pdowler
  */
-public class VOModelReader 
-{
-    private static final Logger log = Logger.getLogger(VOModelReader.class);
-    
-    private static final String VODML_NS = "http://www.ivoa.net/xml/VODML/v1.0";
-    private static final String VODML_SCHEMA = "vo-dml-v1.0.xsd";
-    private static final String VODML_SCHEMATRON = "vo-dml.sch.xml";
+public class VOModelReader {
 
-    private Map<String,String> schemaMap;
+    private static final Logger log = Logger.getLogger(VOModelReader.class);
+
+    private static final String VODML_NS = "http://www.ivoa.net/xml/VODML/v1";
+    private static final String VODML_SCHEMA = "vo-dml-v1.0.xsd";
+    private static final String VODML_SCHEMATRON = "vo-dml-v1.0.sch.xml";
+
+    private Map<String, String> schemaMap;
     private boolean schematronVal;
     private boolean logWarnings;
-    
-    public VOModelReader() 
-    { 
-        this(true, true, false); 
+
+    public VOModelReader() {
+        this(true, true, false);
     }
-    
-    public VOModelReader(boolean schemaVal, boolean schematronVal, boolean logWarnings)
-    {
-        if (schemaVal)
-        {
+
+    public VOModelReader(boolean schemaVal, boolean schematronVal, boolean logWarnings) {
+        if (schemaVal) {
             schemaMap = new TreeMap<>();
             String vodmlSchemaLoc = XmlUtil.getResourceUrlString(VODML_SCHEMA, VOModelReader.class);
             log.debug("schemaMap: " + VODML_NS + " -> " + vodmlSchemaLoc);
             schemaMap.put(VODML_NS, vodmlSchemaLoc);
-            
+
             String w3cSchemaURL = XmlUtil.getResourceUrlString(W3CConstants.XSI_SCHEMA, VOModelReader.class);
             log.debug("schemaMap: " + W3CConstants.XSI_SCHEMA + " -> " + w3cSchemaURL);
             schemaMap.put(W3CConstants.XSI_NS_URI.toString(), w3cSchemaURL);
@@ -130,75 +127,70 @@ public class VOModelReader
         this.schematronVal = schematronVal;
         this.logWarnings = logWarnings;
     }
-    
-    public Document read(InputStream in) 
-        throws JDOMException, IOException, SchematronValidationException
-    {
+
+    public Document read(InputStream in)
+            throws JDOMException, IOException, SchematronValidationException {
         InputStreamReader isr = new InputStreamReader(in);
         return read(isr);
     }
-    
-    public Document read(Reader in) 
-        throws JDOMException, IOException, SchematronValidationException
-    {
+
+    public Document read(Reader in)
+            throws JDOMException, IOException, SchematronValidationException {
         SAXBuilder builder = XmlUtil.createBuilder(schemaMap);
         Document doc = builder.build(in);
-        if (schematronVal)
+        if (schematronVal) {
             validateSchematron(doc);
+        }
         return doc;
     }
-    
+
     private void validateSchematron(Document doc)
-        throws IOException, SchematronValidationException
-    {
+            throws IOException, SchematronValidationException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         VOModelWriter w = new VOModelWriter(false);
         w.write(doc, bos);
         byte[] buf = bos.toByteArray();
-        
+
         ISchematronResource sch = SchematronResourceSCH.fromClassPath(VODML_SCHEMATRON);
-        if (sch == null)
+        if (sch == null) {
             throw new RuntimeException("failed to load " + VODML_SCHEMATRON);
-        if (!sch.isValidSchematron ())
-            throw new IllegalArgumentException("VO-DML schematron is invalid: " + VODML_SCHEMATRON);
-            
-        SchematronOutputType result;
-        try
-        {
-            result = sch.applySchematronValidationToSVRL(new StreamSource(new ByteArrayInputStream(buf)));
         }
-        catch (Exception ex)
-        {
+        if (!sch.isValidSchematron()) {
+            throw new IllegalArgumentException("VO-DML schematron is invalid: " + VODML_SCHEMATRON);
+        }
+
+        SchematronOutputType result;
+        try {
+            result = sch.applySchematronValidationToSVRL(new StreamSource(new ByteArrayInputStream(buf)));
+        } catch (Exception ex) {
             throw new RuntimeException("failed to validate", ex);
         }
-        if (result == null)
-        {
+        if (result == null) {
             throw new RuntimeException("failed to validate: no result from schematron validator (unexpected)");
         }
-        
+
         int num = result.getTextCount();
-        for (int i=0; i<num; i++)
-        {
+        for (int i = 0; i < num; i++) {
             String o = result.getTextAtIndex(i);
             log.debug("[" + i + "] " + o);
         }
         num = result.getActivePatternAndFiredRuleAndFailedAssertCount();
         List<String> emsgs = new ArrayList<>();
-        for (int i=0; i<num; i++)
-        {
+        for (int i = 0; i < num; i++) {
             Object o = result.getActivePatternAndFiredRuleAndFailedAssertAtIndex(i);
             log.debug("[" + i + "," + o.getClass().getName() + "] " + o);
-            if (o instanceof FailedAssert)
-            {
+            if (o instanceof FailedAssert) {
                 FailedAssert fa = (FailedAssert) o;
-                if ("error".equalsIgnoreCase(fa.getFlag()))
+                if ("error".equalsIgnoreCase(fa.getFlag())) {
                     emsgs.add("[" + emsgs.size() + 1 + "] " + o);
-                else if (logWarnings && "warning".equalsIgnoreCase(fa.getFlag()))
+                } else if (logWarnings && "warning".equalsIgnoreCase(fa.getFlag())) {
                     log.warn(fa.getText());
+                }
             }
         }
 
-        if (!emsgs.isEmpty())
+        if (!emsgs.isEmpty()) {
             throw new SchematronValidationException(emsgs.size(), emsgs);
+        }
     }
 }

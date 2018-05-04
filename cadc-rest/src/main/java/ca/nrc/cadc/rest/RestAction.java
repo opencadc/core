@@ -69,32 +69,73 @@
 
 package ca.nrc.cadc.rest;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.security.AccessControlException;
-import java.security.PrivilegedExceptionAction;
-import java.security.cert.CertificateException;
-
-import org.apache.log4j.Logger;
-
 import ca.nrc.cadc.io.ByteLimitExceededException;
 import ca.nrc.cadc.log.WebServiceLogInfo;
 import ca.nrc.cadc.net.HttpTransfer;
 import ca.nrc.cadc.net.ResourceAlreadyExistsException;
 import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.net.TransientException;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.security.AccessControlException;
+import java.security.PrivilegedExceptionAction;
+import java.security.cert.CertificateException;
+import org.apache.log4j.Logger;
 
 /**
  * Base REST action class.
  * 
  * @author pdowler
  */
-public abstract class RestAction implements PrivilegedExceptionAction<Object>
-{
+public abstract class RestAction implements PrivilegedExceptionAction<Object> {
     private static final Logger log = Logger.getLogger(RestAction.class);
+    
+    public static final String STATE_MODE_KEY = "-" + RestAction.class.getName() + ".state";
+    public static final String STATE_OFFLINE = "Offline";
+    public static final String STATE_OFFLINE_MSG = "System is offline for maintainence";
+    public static final String STATE_READ_ONLY = "ReadOnly";
+    public static final String STATE_READ_ONLY_MSG = "System is in read-only mode for maintainence";
+    public static final String STATE_READ_WRITE = "ReadWrite";
+    
+    /**
+     * Current readable state. A service is readable in READ_WRITE or READ_ONLY mode.
+     * Subclasses that implement application logic must check the readable flag and
+     * respond with an appropriate message when necessary.
+     */
+    protected boolean readable = true;
+    
+    /**
+     * Current writable state. A service is writable in READ_WRITE mode. Subclasses that 
+     * implement application logic must check the readable flag and respond with an 
+     * appropriate message when necessary.
+     */
+    protected boolean writable = true;
 
+    /**
+     * The application name is a string unique to the application.  It
+     * can be used to prefix log messages, JNDI key names, etc. that are common
+     * to components of the application.
+     */
+    protected String appName;
+    
+    /**
+     * The componentID is a string unique to a single instance of RestServlet. It
+     * can be used to prefix log messages, JNDI key names, System properties, etc. 
+     * It is not a path like one might get from SyncInput.getContextPath() and should
+     * never be parsed or interpreted.
+     */
+    protected String componentID;
+    
+    /**
+     * Wrapper around the HTTP request.
+     */
     protected SyncInput syncInput;
+    
+    /**
+     * Wrapper around the HTTP response.
+     */
     protected SyncOutput syncOutput;
+    
     protected WebServiceLogInfo logInfo;
 
     public static final String URLENCODED = "application/x-www-form-urlencoded";
@@ -106,11 +147,40 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object>
     }
 
     /**
+     * Initialise readable and writable state. This method will only downgrade 
+     * the state to !readable and !writable and will never restore them to true.
+     * In this implementation, the state is stored in system property named
+     * with the appName + STATE_MODE_KEY so the state is shared by all endpoints in an
+     * application. 
+     * 
+     * The design philosophy is that an application will set the state via a WebService 
+     * implementation (see cadc-vosi library), which has access to the same appName. 
+     * The VOSI AvailabilityServlet supports POST requests to change the state. So,
+     * a service operator can POST to the /appName/availability resource, the AvailabilityServlet
+     * will call setState(String) on the WebService implementation, and the WebService impl is
+     * responsible for setting the appName + STATE_MODE_KEY system property to one of 
+     * STATE_READ_WRITE, STATE_READ_ONLY, or STATE_OFFLINE, and then this method will check the
+     * system property and set readable and writable flags. Finally, RestAction subclasses must check
+     * the flags and allow or disallow the request.
+     */
+    protected void initState() {
+        String key = appName + STATE_MODE_KEY;
+        String val = System.getProperty(key);
+        log.debug("initState: " + key + "=" + val);
+        if (STATE_OFFLINE.equals(val)) {
+            readable = false;
+            writable = false;
+        } else if (STATE_READ_ONLY.equals(val)) {
+            writable = false;
+        }
+    }
+    
+    /**
      * Create inline content handler to process non-form data. Non-form data could 
      * be a document or part of a multi-part request). Null return value is allowed 
      * if the service never expects non-form data or wants to ignore non-form data.
      * 
-     * @return
+     * @return configured InlineContentHandler
      */
     abstract protected InlineContentHandler getInlineContentHandler();
 
@@ -129,13 +199,22 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object>
      *  ca.nrc.cadc.net.TransientException : 503
      *  java.lang.RuntimeException : 500
      *  java.lang.Error : 500
-     * @throws Exception
+     * 
+     * @throws Exception for standard application failure
      */
     public abstract void doAction() throws Exception;
 
     public void setLogInfo(WebServiceLogInfo logInfo)
     {
         this.logInfo = logInfo;
+    }
+
+    public void setAppName(String appName) {
+        this.appName = appName;
+    }
+            
+    public void setComponentID(String componentID) {
+        this.componentID = componentID;
     }
 
     public void setSyncInput(SyncInput syncInput)
@@ -158,7 +237,7 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object>
             {
                 syncInput.init();
             }
-
+            initState();
             doAction();
 
             logInfo.setSuccess(true);
@@ -223,11 +302,12 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object>
      * response code and write the message in text/plain. Optionally write a full
      * except5ion stack trace to output (showExceptions = true).
      *
-     * @param ex
-     * @param code
-     * @param message
-     * @param showExceptions
-     * @throws IOException
+     * @param ex exception to handle
+     * @param code HTTP status code
+     * @param message message body
+     * @param showStackTrace  log stack trace
+     * @param showExceptions  show exceptions in output
+     * @throws IOException if write to output fails
      */
     protected void handleException(
         Throwable ex, int code, String message, boolean showStackTrace, boolean showExceptions)

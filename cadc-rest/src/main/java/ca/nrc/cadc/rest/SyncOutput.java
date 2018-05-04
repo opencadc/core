@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2016.                            (c) 2016.
+*  (c) 2018.                            (c) 2018.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -78,7 +78,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Logger;
 
 /**
- *
+ * Wrapper around an application-server response.
+ * 
  * @author pdowler
  */
 public class SyncOutput
@@ -93,11 +94,22 @@ public class SyncOutput
         this.response = response;
     }
 
+    /**
+     * Check is the output stream is open. If true, the header has been committed and additional
+     * calls to setHeader will be ignored.
+     * 
+     * @return true if response header committed and output stream has been opened
+     */
     public boolean isOpen()
     {
         return (outputStream != null);
     }
 
+    /**
+     * Set HTTP response code.
+     * 
+     * @param code HTTP response code
+     */
     public void setCode(int code)
     {
         if (outputStream != null)
@@ -109,6 +121,12 @@ public class SyncOutput
         response.setStatus(code);
     }
 
+    /**
+     * Set HTTP header.
+     * 
+     * @param key HTTP header name
+     * @param value HTTP header value
+     */
     public void setHeader(String key, Object value)
     {
         if (outputStream != null)
@@ -124,6 +142,12 @@ public class SyncOutput
             response.setHeader(key, value.toString());
     }
 
+    /**
+     * Get the output stream. Calling this method commits the request (see isOpen).
+     * 
+     * @return the output stream for writing the response 
+     * @throws IOException fail to open output stream
+     */
     public OutputStream getOutputStream()
         throws IOException
     {

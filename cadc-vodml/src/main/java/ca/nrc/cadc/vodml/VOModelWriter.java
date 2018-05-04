@@ -63,13 +63,14 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.vodml;
 
-
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import org.apache.log4j.Logger;
 import org.jdom2.Document;
 import org.jdom2.output.Format;
@@ -79,30 +80,33 @@ import org.jdom2.output.XMLOutputter;
  *
  * @author pdowler
  */
-public class VOModelWriter 
-{
+public class VOModelWriter {
+
     private static final Logger log = Logger.getLogger(VOModelWriter.class);
 
     private boolean prettyPrint;
-    
-    public VOModelWriter() 
-    { 
+
+    public VOModelWriter() {
         this(true);
     }
-    
-    public VOModelWriter(boolean prettyPrint)
-    {
+
+    public VOModelWriter(boolean prettyPrint) {
         this.prettyPrint = prettyPrint;
     }
+
+    public void write(Document doc, OutputStream out)
+            throws IOException {
+        OutputStreamWriter osw = new OutputStreamWriter(out);
+        write(doc, osw);
+    }
     
-    public void write(Document doc, OutputStream out) 
-        throws IOException
-    {
+    public void write(Document doc, Writer out) throws IOException {
         XMLOutputter outputter = new XMLOutputter();
-        if (prettyPrint)
+        if (prettyPrint) {
             outputter.setFormat(Format.getPrettyFormat());
-        else
+        } else {
             outputter.setFormat(Format.getCompactFormat());
+        }
         outputter.output(doc, out);
     }
 }
