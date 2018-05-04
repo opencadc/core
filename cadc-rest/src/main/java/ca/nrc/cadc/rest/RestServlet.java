@@ -104,7 +104,7 @@ public class RestServlet extends HttpServlet
     private Class<RestAction> headAction;
     
     protected String appName;
-    protected String restEndpoint;
+    protected String componentID;
 
     @Override
     public void init(ServletConfig config) throws ServletException
@@ -116,7 +116,7 @@ public class RestServlet extends HttpServlet
         this.deleteAction = loadAction(config, "delete");
         this.headAction = loadAction(config, "head");
         this.appName = config.getServletContext().getServletContextName();
-        this.restEndpoint = config.getServletContext().getServletContextName()  + "." + config.getServletName();
+        this.componentID = appName  + "." + config.getServletName();
     }
 
     private Class<RestAction> loadAction(ServletConfig config, String method)
@@ -243,7 +243,7 @@ public class RestServlet extends HttpServlet
             SyncInput in = new SyncInput(request, handler);
             out = new SyncOutput(response);
             action.setAppName(appName);
-            action.setRestEndpoint(restEndpoint);
+            action.setComponentID(componentID);
             action.setSyncInput(in);
             action.setSyncOutput(out);
             action.setLogInfo(logInfo);

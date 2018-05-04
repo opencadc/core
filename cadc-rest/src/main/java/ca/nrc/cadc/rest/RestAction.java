@@ -119,11 +119,12 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
     protected String appName;
     
     /**
-     * The REST endpoint is a string unique to a single instance of RestServlet. It
-     * can be used to prefix log messages, JNDI key names, etc. It is not a path
-     * like one might get from SyncInput.getContextPath().
+     * The componentID is a string unique to a single instance of RestServlet. It
+     * can be used to prefix log messages, JNDI key names, System properties, etc. 
+     * It is not a path like one might get from SyncInput.getContextPath() and should
+     * never be parsed or interpreted.
      */
-    protected String restEndpoint;
+    protected String componentID;
     
     /**
      * Wrapper around the HTTP request.
@@ -212,8 +213,8 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
         this.appName = appName;
     }
             
-    public void setRestEndpoint(String restEndpoint) {
-        this.restEndpoint = restEndpoint;
+    public void setComponentID(String componentID) {
+        this.componentID = componentID;
     }
 
     public void setSyncInput(SyncInput syncInput)
