@@ -236,6 +236,7 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
             if (syncInput != null)
             {
                 syncInput.init();
+                logInfo.setPath(syncInput.getComponentPath());
             }
             initState();
             doAction();
