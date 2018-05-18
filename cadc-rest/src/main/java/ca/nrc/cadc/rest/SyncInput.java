@@ -114,7 +114,7 @@ public class SyncInput
      * Get the real client IP address. The REST binding is split up as follows:
      *  <pre>
      *  requestURI = protocol :// hostname / requestPath
-     *  requestPath = contextPath / path
+     *  requestPath = contextPath / componentPath / path
      *  </pre>
      * 
      * @return client IP address
@@ -158,17 +158,25 @@ public class SyncInput
     
     /**
      * Get the path up to the rest binding. This returns the base path of the
-     * REST application component with trailing slash removed.
+     * REST application.
      * 
      * @return context path
      */
     public String getContextPath()
     {
         String ret = request.getContextPath();
-        if (ret == null)
-            return ret;
-        if (ret.charAt(0) == '/')
-            ret = ret.substring(1);
+        return ret;
+    }
+    
+    /**
+     * Get the path up to the rest binding. This returns the path of the
+     * REST application component.
+     * 
+     * @return context path
+     */
+    public String getComponentPath()
+    {
+        String ret = request.getServletPath();
         return ret;
     }
     
