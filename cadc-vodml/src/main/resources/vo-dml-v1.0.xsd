@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.ivoa.net/xml/VODML/v1" targetNamespace="http://www.ivoa.net/xml/VODML/v1" attributeFormDefault="unqualified" elementFormDefault="unqualified" version="1.0">
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns="http://www.ivoa.net/xml/VODML/v1"
+            targetNamespace="http://www.ivoa.net/xml/VODML/v1"
+            attributeFormDefault="unqualified" elementFormDefault="unqualified"
+            version="1.0">
 <!-- Change log:
 2017-09-23: 
 - added version attribute in schema 
@@ -20,7 +24,7 @@ TBD continue based on VO-DML specification document.
   </xsd:annotation>
 
   <!-- +++++++++++++++++++ Begin of 'Identifier section' +++++++++++++++++++ -->
-  <xsd:simpleType name="VODMLID">
+  <xsd:simpleType name="VODMLID" >
     <xsd:annotation>
       <xsd:documentation>
           Type representing the way referable elements are identified uniquely in VO-DML.
@@ -126,7 +130,7 @@ TBD continue based on VO-DML specification document.
           </xsd:documentation>
         </xsd:annotation>
       </xsd:element>
-      <xsd:element name="name" type="VODMLName" minOccurs="1">
+      <xsd:element name="name" type="VODMLName" minOccurs="1" >
         <xsd:annotation>
           <xsd:documentation>
             The name of the model element. 
@@ -504,7 +508,7 @@ TBD continue based on VO-DML specification document.
                 </xsd:annotation>
             </xsd:element>
         </xsd:sequence>
-        <xsd:attribute name="abstract" type="xsd:boolean" use="optional"/>
+        <xsd:attribute name="abstract" type="xsd:boolean" use="optional" />
       </xsd:extension>
     </xsd:complexContent>
   </xsd:complexType>
