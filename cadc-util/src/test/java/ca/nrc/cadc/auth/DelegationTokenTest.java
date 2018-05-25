@@ -285,11 +285,24 @@ public class DelegationTokenTest {
 
     @Test
     public void validCookieValue() throws Exception {
+        // configure the test scope validator
+        File config = FileUtil.getFileFromResource("DelegationToken.properties", DelegationTokenTest.class);
+        FileWriter w = new FileWriter(config);
+        w.write(DelegationToken.class.getName() + ".scopeValidator = " + TestScopeValidator.class.getName());
+        w.write("\n");
+        w.flush();
+        w.close();
+
         final Principal httpPrincipal = new HttpPrincipal("some;user", "someproxyuser");
         final Principal x509 = new X500Principal("CN=JBP,OU=nrc-cnrc.gc.ca,O=grid,C=CA");
+
+        // The DN should be left out.
+        final Principal distinguishedName = new DNPrincipal("uid=88,OU=nrc-cnrc.gc.ca,O=grid,C=CA");
+
         final Set<Principal> principals = new HashSet<>();
 
         principals.add(httpPrincipal);
+        principals.add(distinguishedName);
         principals.add(x509);
 
         final URI scope = new URI("foo:bar");
@@ -306,6 +319,16 @@ public class DelegationTokenTest {
                                              Arrays.toString(ILLEGAL_COOKIE_CHARACTERS)),
                                tokenValue.contains(Character.toString(c)));
         }
+
+        final DelegationToken parsedDelegationToken = DelegationToken.parse(tokenValue, null);
+        final Set<Principal> expectedPrincipals = new HashSet<>();
+
+        expectedPrincipals.add(httpPrincipal);
+        expectedPrincipals.add(x509);
+
+        final Set<Principal> parsedPrincipals = parsedDelegationToken.getIdentityPrincipals();
+
+        assertEquals("Wrong principals.", expectedPrincipals, parsedPrincipals);
     }
 }
 

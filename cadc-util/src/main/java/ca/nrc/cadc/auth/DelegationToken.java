@@ -389,14 +389,16 @@ public class DelegationToken implements Serializable {
                     principalBuilder.append(VALUE_DELIM);
                     principalBuilder.append(httpPrincipal.getProxyUser());
                 }
+
+                principalBuilder.append(FIELD_DELIM);
             } else if (!principalIdentity.equals(IdentityType.ENTRY_DN)) {
                 // Do not add this for external use, to cookies, etc.
                 principalBuilder.append(principalIdentity.getValue());
                 principalBuilder.append(VALUE_DELIM);
                 principalBuilder.append(principal.getName());
-            }
 
-            principalBuilder.append(FIELD_DELIM);
+                principalBuilder.append(FIELD_DELIM);
+            }
         }
 
         if (principalBuilder.lastIndexOf(FIELD_DELIM) > 0) {
