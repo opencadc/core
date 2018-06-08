@@ -236,11 +236,17 @@ public class RestServlet extends HttpServlet
         {
             Subject subject = AuthenticationUtil.getSubject(request);
             logInfo.setSubject(subject);
-            log.info(logInfo.start());
 
             RestAction action = actionClass.newInstance();
             InlineContentHandler handler = action.getInlineContentHandler();
             SyncInput in = new SyncInput(request, handler);
+            StringBuilder sb = new StringBuilder(in.getComponentPath());
+            if (in.getPath() != null) { 
+                sb.append("/").append(in.getPath());
+            }
+            logInfo.setPath(sb.toString());
+            log.info(logInfo.start());
+            
             out = new SyncOutput(response);
             action.setAppName(appName);
             action.setComponentID(componentID);
