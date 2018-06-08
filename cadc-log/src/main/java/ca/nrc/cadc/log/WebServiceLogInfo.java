@@ -234,7 +234,12 @@ public abstract class WebServiceLogInfo
             this.message = message.trim();
     }
 
-    protected void setJobID(String jobID)
+    /**
+     * Set jobID. This is normally only needed in requests that create new jobs.
+     * 
+     * @param jobID 
+     */
+    public void setJobID(String jobID)
     {
         if (StringUtil.hasText(jobID))
             this.jobID = jobID.trim();
