@@ -75,11 +75,9 @@ import ca.nrc.cadc.util.Log4jInit;
 import ca.nrc.cadc.util.PropertiesReader;
 import ca.nrc.cadc.util.RSASignatureGeneratorValidatorTest;
 import ca.nrc.cadc.util.RsaSignatureGenerator;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URL;
 import java.security.InvalidKeyException;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -91,27 +89,27 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import javax.security.auth.x500.X500Principal;
-
 import org.apache.log4j.Level;
 import org.junit.After;
 import org.junit.Test;
-
 import static org.junit.Assert.*;
-
 import org.junit.Before;
 
 
-public class SSOCookieManagerTest {
-    static {
+public class SSOCookieManagerTest
+{    
+    static
+    {
         Log4jInit.setLevel("ca.nrc.cadc.auth", Level.INFO);
     }
-
+    
     File pubFile, privFile;
 
     List<String> domainList = new ArrayList<>();
 
     @Before
-    public void initKeys() throws Exception {
+    public void initKeys() throws Exception
+    {
         String keysDir = RSASignatureGeneratorValidatorTest.getCompleteKeysDirectoryName();
         RsaSignatureGenerator.genKeyPair(keysDir);
         privFile = new File(keysDir, RsaSignatureGenerator.PRIV_KEY_FILE_NAME);
@@ -123,15 +121,17 @@ public class SSOCookieManagerTest {
         domainList.add("cadc-ccda.hia-iha.nrc-cnrc.gc.ca");
 
     }
-
+    
     @After
-    public void cleanupKeys() throws Exception {
+    public void cleanupKeys()
+    {
         pubFile.delete();
         privFile.delete();
     }
-
+    
     @Test
-    public void roundTripMin() throws Exception {
+    public void roundTripMin() throws Exception
+    {
         final HttpPrincipal userPrincipal = new HttpPrincipal("CADCtest");
         SSOCookieManager cm = new SSOCookieManager();
         DelegationToken cookieToken = cm.parse(cm.generate(userPrincipal, null));
@@ -142,10 +142,10 @@ public class SSOCookieManagerTest {
     }
 
     @Test
-    public void roundTrip() throws Exception {
-        loadDomainsProperties();
-
+    public void roundTrip() throws Exception
+    {
         SSOCookieManager cm = new SSOCookieManager();
+        System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, "./build/resources/test");
 
         // round trip test
         Set<Principal> testPrincipals = new HashSet<>();
@@ -170,27 +170,10 @@ public class SSOCookieManagerTest {
         assertEquals("domain list not equal", domainList, actToken.getDomains());
     }
 
-    /**
-     * Method to ensure the ac-domains.properties is loaded from the test resources classpath.
-     *
-     * @throws IOException If it cannot be loaded.
-     */
-    private void loadDomainsProperties() throws IOException {
-        // Set properties file location.
-        final URL resourceURL =
-            SSOCookieManagerTest.class.getClassLoader().getResource("ac-domains.properties");
-
-        if (resourceURL == null) {
-            throw new IOException("No ac-domains.properties in classpath.");
-        }
-
-        final String domainsPath = resourceURL.getPath();
-        System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, new File(domainsPath).getParent());
-    }
-
     public String createCookieString() throws InvalidKeyException, IOException {
 
-        loadDomainsProperties();
+        // Set properties file location.
+        System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, "./build/resources/test");
         // get the properties
         PropertiesReader propReader = new PropertiesReader(SSOCookieManager.DOMAINS_PROP_FILE);
         List<String> propertyValues = propReader.getPropertyValues("domains");
@@ -200,11 +183,7 @@ public class SSOCookieManagerTest {
         Date cookieExpiry = new Date(baseTime.getTime() + (48 * 3600 * 1000));
         String testCookieStringDate = DelegationToken.EXPIRY_LABEL + "=" + cookieExpiry.getTime();
 
-        final Set<Principal> principals = new HashSet<>();
-        principals.add(new HttpPrincipal("someuser"));
-
-        String testCookieStringBody = "&" + DelegationToken.IDENTITIES_LABEL + "=" +
-            String.valueOf(DelegationToken.encodePrincipals(principals)) + "&" +
+        String testCookieStringBody ="&" + DelegationToken.USER_LABEL + "=someuser&" +
             DelegationToken.DOMAIN_LABEL + "=" + domainList.get(0) + "&" +
             DelegationToken.DOMAIN_LABEL + "=" + domainList.get(1) + "&" +
             DelegationToken.DOMAIN_LABEL + "=" + domainList.get(2) + "&" +
@@ -235,7 +214,9 @@ public class SSOCookieManagerTest {
 
             // cookieList length should be same as list of expected domains
             assertEquals(cookieList.size(), domainList.size());
-        } finally {
+        }
+        finally
+        {
             System.setProperty(PropertiesReader.class.getName() + ".dir", "");
         }
     }
