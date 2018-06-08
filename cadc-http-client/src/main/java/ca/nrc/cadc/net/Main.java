@@ -70,6 +70,7 @@
 package ca.nrc.cadc.net;
 
 
+import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.CertCmdArgUtil;
 import ca.nrc.cadc.auth.RunnableAction;
 import ca.nrc.cadc.net.event.TransferEvent;
@@ -111,7 +112,10 @@ public class Main implements TransferListener
             Log4jInit.setLevel("ca.nrc.cadc.net", level);
             Log4jInit.setLevel("ca.nrc.cadc.auth", level);
             
-            Subject s = CertCmdArgUtil.initSubject(am);
+            Subject s = AuthenticationUtil.getAnonSubject();
+            if (am.isSet("cert")) {
+                s = CertCmdArgUtil.initSubject(am);
+            }
             
             List<String> urls = am.getPositionalArgs();
             String fname = am.getValue("in");
