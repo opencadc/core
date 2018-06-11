@@ -123,7 +123,7 @@ public class SSOCookieManagerTest
     }
     
     @After
-    public void cleanupKeys() throws Exception
+    public void cleanupKeys()
     {
         pubFile.delete();
         privFile.delete();
@@ -169,7 +169,6 @@ public class SSOCookieManagerTest
 
         assertEquals("domain list not equal", domainList, actToken.getDomains());
     }
-
 
     public String createCookieString() throws InvalidKeyException, IOException {
 

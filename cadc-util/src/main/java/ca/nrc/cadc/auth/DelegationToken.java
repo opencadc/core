@@ -78,6 +78,9 @@ import java.security.InvalidKeyException;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Date;
+
+import ca.nrc.cadc.auth.encoding.TokenEncoderDecoder;
+import ca.nrc.cadc.auth.encoding.TokenEncoding;
 import ca.nrc.cadc.util.Base64;
 import ca.nrc.cadc.util.RsaSignatureGenerator;
 import ca.nrc.cadc.util.RsaSignatureVerifier;
@@ -89,7 +92,9 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import javax.security.auth.x500.X500Principal;
+
 import org.apache.log4j.Logger;
+
 
 /**
  * Class that captures the information required to perform delegation (i.e.
@@ -97,16 +102,15 @@ import org.apache.log4j.Logger;
  * - the user that delegates
  * - the expirty time
  * - scope of delegation
- *
+ * <p>
  * This class can serialize and de-serialize the information into a
  * String token. Optionally, it can sign the serialized token and
  * verify when one is received.
  */
-public class DelegationToken implements Serializable
-{
+public class DelegationToken implements Serializable {
     private static final Logger log = Logger.getLogger(DelegationToken.class);
 
-    private static final long serialVersionUID = 20180321000000l;
+    private static final long serialVersionUID = 20180321000000L;
 
     private Set<Principal> identityPrincipals;
 
@@ -117,6 +121,8 @@ public class DelegationToken implements Serializable
     public static String EXPIRY_LABEL = "expirytime";
     public static String SIGNATURE_LABEL = "signature";
 
+    private static final TokenEncoderDecoder TOKEN_ENCODER_DECODER = new TokenEncoderDecoder();
+
     private Date expiryTime; // expiration time of the delegation (UTC)
     private URI scope; // resources that are the object of the delegation
     private List<String> domains;
@@ -124,11 +130,9 @@ public class DelegationToken implements Serializable
     public static final String FIELD_DELIM = "&";
     public static final String VALUE_DELIM = "=";
 
-    public static class ScopeValidator
-    {
+    public static class ScopeValidator {
         public void verifyScope(URI scope, String requestURI)
-            throws InvalidDelegationTokenException
-        {
+            throws InvalidDelegationTokenException {
             throw new InvalidDelegationTokenException("default: invalid scope");
         }
     }
@@ -136,24 +140,21 @@ public class DelegationToken implements Serializable
     /**
      * Constructor.
      *
-     * @param user identity of the delegating user - required
-     * @param scope - scope of the delegation, i.e. resource that it applies
-     * to - optional
+     * @param user       identity of the delegating user - required
+     * @param scope      - scope of the delegation, i.e. resource that it applies
+     *                   to - optional
      * @param expiryTime - the expiry date of this token (UTC)
      */
-    public DelegationToken(HttpPrincipal user, URI scope, Date expiryTime, List<String> domains)
-    {
+    public DelegationToken(HttpPrincipal user, URI scope, Date expiryTime, List<String> domains) {
         // Validation of parameter means using this() to call
         // other constructor isn't possible.
-        if (user == null)
-        {
+        if (user == null) {
             throw new IllegalArgumentException("User identity required");
         }
 
         this.addPrincipal(user);
 
-        if(expiryTime == null)
-        {
+        if (expiryTime == null) {
             throw new IllegalArgumentException("No expiry time");
         }
         this.expiryTime = expiryTime;
@@ -164,20 +165,18 @@ public class DelegationToken implements Serializable
 
     /**
      * Constructor.
+     *
      * @param principals - sorted set of identity principals (http, x500, cadc)
-     * @param scope - scope of the delegation, i.e. resource that it applies to - optional
+     * @param scope      - scope of the delegation, i.e. resource that it applies to - optional
      * @param expiryTime - the expiry date of this token (UTC)
-     * @param domains - list of domains that this token could be used for
+     * @param domains    - list of domains that this token could be used for
      */
-    public DelegationToken(Set<Principal> principals, URI scope, Date expiryTime, List<String> domains)
-    {
-        if (principals == null || principals.size() == 0)
-        {
+    public DelegationToken(Set<Principal> principals, URI scope, Date expiryTime, List<String> domains) {
+        if (principals == null || principals.size() == 0) {
             throw new IllegalArgumentException("Identity principals required (ie http, x500, cadc internal)");
         }
 
-        if(expiryTime == null)
-        {
+        if (expiryTime == null) {
             throw new IllegalArgumentException("No expiry time");
         }
 
@@ -192,14 +191,26 @@ public class DelegationToken implements Serializable
      * Serializes and signs the object into a string of attribute-value pairs.
      *
      * @param token the token to format
-     * the returned string
+     *              the returned string
      * @return String with DelegationToken information
-     * @throws IOException
-     * @throws InvalidKeyException
+     * @throws IOException         Any IO Errors.
+     * @throws InvalidKeyException If the signature cannot be completed.
      */
-    public static String format(DelegationToken token)
-        throws InvalidKeyException, IOException
-    {
+    public static String format(DelegationToken token)  throws InvalidKeyException, IOException {
+        return format(token, TokenEncoding.BASE64);
+    }
+
+    /**
+     * Serializes and signs the object into a string of attribute-value pairs.
+     *
+     * @param token the token to format
+     *              the returned string
+     * @return String with DelegationToken information, with a "scheme" to indicate the encoding type.
+     * @throws IOException         Any IO Errors.
+     * @throws InvalidKeyException If the signature cannot be completed.
+     */
+    public static String format(final DelegationToken token, final TokenEncoding tokenEncoding)
+        throws InvalidKeyException, IOException {
         StringBuilder sb = getContent(token);
 
         //sign and add the signature field
@@ -208,30 +219,30 @@ public class DelegationToken implements Serializable
         sb.append(FIELD_DELIM);
         sb.append(SIGNATURE_LABEL);
         sb.append(VALUE_DELIM);
-        RsaSignatureGenerator su = new RsaSignatureGenerator();
-        byte[] sig =
-                su.sign(new ByteArrayInputStream(toSign.getBytes()));
+
+        // Signature is always Base64 encoded.  This is necessary because the value of the Signature alone cannot be
+        // easily transported.
+        final RsaSignatureGenerator su = new RsaSignatureGenerator();
+        final byte[] sig = su.sign(new ByteArrayInputStream(toSign.getBytes()));
         sb.append(new String(Base64.encode(sig)));
 
-        return sb.toString();
+        return tokenEncoding.name().toLowerCase() + ":"
+            + new String(TOKEN_ENCODER_DECODER.encode(sb.toString().getBytes(), tokenEncoding));
     }
 
     // the formatted content without the signature
-    private static StringBuilder getContent(DelegationToken token)
-    {
+    private static StringBuilder getContent(DelegationToken token) {
         StringBuilder sb = new StringBuilder();
 
-        sb.append(EXPIRY_LABEL + VALUE_DELIM);
+        sb.append(EXPIRY_LABEL).append(VALUE_DELIM);
         sb.append(token.getExpiryTime().getTime());
 
         // Add all available identity principals to the content
-        for (Principal prin: token.identityPrincipals)
-        {
+        for (Principal prin : token.identityPrincipals) {
             String principalName = prin.getClass().getSimpleName();
 
             IdentityType principalIdentity = IdentityType.principalIdentityMap.get(principalName);
-            if (principalIdentity.equals(IdentityType.ENTRY_DN))
-            {
+            if (principalIdentity.equals(IdentityType.ENTRY_DN)) {
                 // Do not add this for external use, to cookies, etc.
                 continue;
             }
@@ -243,16 +254,14 @@ public class DelegationToken implements Serializable
         }
 
         HttpPrincipal user = token.getUser();
-        if (StringUtil.hasText(user.getProxyUser()))
-        {
+        if (StringUtil.hasText(user.getProxyUser())) {
             sb.append(FIELD_DELIM);
             sb.append(PROXY_LABEL);
             sb.append(VALUE_DELIM);
             sb.append(user.getProxyUser());
         }
 
-        if (token.getScope() != null)
-        {
+        if (token.getScope() != null) {
             sb.append(FIELD_DELIM);
             sb.append(SCOPE_LABEL);
             sb.append(VALUE_DELIM);
@@ -260,8 +269,7 @@ public class DelegationToken implements Serializable
         }
 
         if (token.getDomains() != null) {
-            for (String domain : token.getDomains())
-            {
+            for (String domain : token.getDomains()) {
                 sb.append(FIELD_DELIM);
                 sb.append(DOMAIN_LABEL);
                 sb.append(VALUE_DELIM);
@@ -274,30 +282,55 @@ public class DelegationToken implements Serializable
     }
 
     /**
+     * Parse the given text into a DelegationToken object.
      *
-     * @param text
-     * @param requestURI
-     * @return
-     * @throws InvalidDelegationTokenException
+     * @param text       The token string.
+     * @param requestURI The HTTP Request URI
+     * @return DelegationToken instance.  Never null.
+     * @throws InvalidDelegationTokenException If the given token cannot be parsed.
      */
     public static DelegationToken parse(String text, String requestURI)
-            throws InvalidDelegationTokenException
-    {
+        throws InvalidDelegationTokenException {
         return parse(text, requestURI, null);
     }
 
     /**
      * Builds a DelegationToken from a text string
-     * @param text to parse
-     * @param requestURI the request URI
-     * @param sv
+     *
+     * @param text       Token to parse
+     * @param requestURI The HTTP Request URI
+     * @param sv         ScopeValidator instance.
      * @return corresponding DelegationToken
-     * @throws InvalidDelegationTokenException
+     * @throws InvalidDelegationTokenException If the given token cannot be parsed.
      */
     public static DelegationToken parse(String text, String requestURI, ScopeValidator sv)
-            throws InvalidDelegationTokenException
-    {
-        String[] fields = text.split(FIELD_DELIM);
+        throws InvalidDelegationTokenException {
+
+        if (text.startsWith(DelegationToken.EXPIRY_LABEL)) {
+            final String[] fields = text.split(FIELD_DELIM);
+            return parse(fields, text, requestURI, sv);
+        } else {
+            return parseEncoded(URI.create(text), requestURI, sv);
+        }
+    }
+
+    private static DelegationToken parseEncoded(final URI encodedURI, final String requestURI,
+                                                final ScopeValidator scopeValidator)
+        throws InvalidDelegationTokenException {
+
+        if (!StringUtil.hasLength(encodedURI.getScheme())) {
+            throw new InvalidDelegationTokenException("Wrong format for encoded token.");
+        } else {
+            final TokenEncoding tokenEncoding = TokenEncoding.valueOf(encodedURI.getScheme().toUpperCase());
+            final byte[] decodedBytes = TOKEN_ENCODER_DECODER.decode(encodedURI.getSchemeSpecificPart(), tokenEncoding);
+            final String decodedString = new String(decodedBytes);
+
+            return parse(decodedString.split(FIELD_DELIM), decodedString, requestURI, scopeValidator);
+        }
+    }
+
+    private static DelegationToken parse(String[] fields, String cookieText, String requestURI, ScopeValidator sv)
+        throws InvalidDelegationTokenException {
         String userid = null;
         Set<Principal> principalSet = new HashSet<>();
         String proxyUser = null;
@@ -305,123 +338,103 @@ public class DelegationToken implements Serializable
         URI scope = null;
         String signature = null;
         List<String> domains = new ArrayList<>();
-        try
-        {
-            for (String field : fields)
-            {
+        try {
+            for (final String field : fields) {
+
+                log.info("Field: " + field);
 
                 String key = field.substring(0, field.indexOf(VALUE_DELIM));
                 String value = field.substring(field.indexOf(VALUE_DELIM) + 1);
                 log.debug("key = value: " + key + "=" + value);
 
-                if (key.equalsIgnoreCase(IdentityType.USERID.getValue()))
-                {
+                if (key.equalsIgnoreCase(IdentityType.USERID.getValue())) {
                     userid = value;
-                }
-                else if (key.equalsIgnoreCase(PROXY_LABEL))
-                {
+                } else if (key.equalsIgnoreCase(PROXY_LABEL)) {
                     proxyUser = value;
-                }
-                else if (key.equalsIgnoreCase(IdentityType.X500.getValue().toLowerCase()))
-                {
+                } else if (key.equalsIgnoreCase(IdentityType.X500.getValue().toLowerCase())) {
                     principalSet.add(new X500Principal(value));
                 }
                 // Treating CADC principal as a NumericPrincipal
                 // check for both for backward cookie compatibility
                 else if (key.equalsIgnoreCase(IdentityType.NUMERICID.getValue())
-                    || key.equalsIgnoreCase(IdentityType.CADC.getValue()))
-                {
+                    || key.equalsIgnoreCase(IdentityType.CADC.getValue())) {
                     principalSet.add(new NumericPrincipal(UUID.fromString(value)));
-                }
-                else if (key.equalsIgnoreCase(EXPIRY_LABEL))
-                {
+                } else if (key.equalsIgnoreCase(EXPIRY_LABEL)) {
                     expirytime = new Date(Long.valueOf(value));
-                }
-                else if (key.equalsIgnoreCase(SCOPE_LABEL))
-                {
+                } else if (key.equalsIgnoreCase(SCOPE_LABEL)) {
                     scope = new URI(value);
-                }
-                else if (key.equalsIgnoreCase(SIGNATURE_LABEL))
-                {
+                } else if (key.equalsIgnoreCase(SIGNATURE_LABEL)) {
                     signature = value;
-                }
-                else if (key.equalsIgnoreCase(DOMAIN_LABEL))
-                {
+                } else if (key.equalsIgnoreCase(DOMAIN_LABEL)) {
                     domains.add(value);
                 }
             }
 
             // Construct HttpPrincipal
-            if (userid != null && proxyUser != null)
-            {
+            if (userid != null && proxyUser != null) {
                 principalSet.add(new HttpPrincipal(userid, proxyUser));
-            } else if (userid != null)
-            {
+            } else if (userid != null) {
                 principalSet.add(new HttpPrincipal(userid));
             }
-            
-        }
-        catch (NumberFormatException ex)
-        {
+
+        } catch (NumberFormatException ex) {
             throw new InvalidDelegationTokenException("invalid numeric field", ex);
-        }
-        catch (URISyntaxException ex)
-        {
+        } catch (URISyntaxException ex) {
             throw new InvalidDelegationTokenException("invalid scope URI", ex);
         }
 
-        if (signature == null)
+        if (signature == null) {
             throw new InvalidDelegationTokenException("missing signature");
+        }
 
         // validate expiry
-        if (expirytime == null)
+        if (expirytime == null) {
             throw new InvalidDelegationTokenException("missing expirytime");
+        }
         Date now = new Date();
 
-        if (now.getTime() > expirytime.getTime())
+        if (now.getTime() > expirytime.getTime()) {
             throw new InvalidDelegationTokenException("expired");
+        }
 
         // validate scope
-        if (scope != null)
-        {
-            if (sv == null) // not supplied
+        if (scope != null) {
+            if (sv == null) { // not supplied
                 sv = getScopeValidator();
+            }
             sv.verifyScope(scope, requestURI);
         }
 
+        validateSignature(signature, cookieText);
+
+        return new DelegationToken(principalSet, scope, expirytime, domains);
+    }
+
+    private static void validateSignature(final String signatureString, final String text) throws
+        InvalidDelegationTokenException {
         // validate signature
-        try
-        {
+        try {
+            final byte[] signature = Base64.decode(signatureString);
             RsaSignatureVerifier su = new RsaSignatureVerifier();
             String signatureSplitter = FIELD_DELIM + DelegationToken.SIGNATURE_LABEL + "=";
             String[] cookieNSignature = text.split(signatureSplitter);
             log.debug("string to be verified" + cookieNSignature[0]);
-            boolean valid = su.verify(
-                new ByteArrayInputStream(cookieNSignature[0].getBytes()),
-                Base64.decode(signature));
+            boolean valid = su.verify(new ByteArrayInputStream(cookieNSignature[0].getBytes()), signature);
 
-            if (!valid)
-            {
-                log.error("invalid signature: " + text);
+            if (!valid) {
+                log.error("invalid signature: " + new String(signature));
                 throw new InvalidDelegationTokenException("cannot verify signature");
             }
 
-        }
-        catch(Exception ex)
-        {
+        } catch (Exception ex) {
             log.debug("failed to verify DelegationToken signature", ex);
             throw new InvalidDelegationTokenException("cannot verify signature", ex);
         }
-
-        return new DelegationToken(principalSet, scope, expirytime, domains);
-
     }
 
-    private static ScopeValidator getScopeValidator()
-    {
-        try
-        {
-            String fname = DelegationToken.class.getSimpleName()+".properties";
+    private static ScopeValidator getScopeValidator() {
+        try {
+            String fname = DelegationToken.class.getSimpleName() + ".properties";
             String pname = DelegationToken.class.getName() + ".scopeValidator";
             Properties props = new Properties();
             props.load(DelegationToken.class.getClassLoader().getResource(fname).openStream());
@@ -431,12 +444,9 @@ public class DelegationToken implements Serializable
             ScopeValidator ret = (ScopeValidator) c.newInstance();
             log.debug("created: " + ret.getClass().getName());
             return ret;
-        }
-        catch(Exception ignore)
-        {
+        } catch (Exception ignore) {
             log.debug("failed to load custom ScopeValidator", ignore);
         }
-        finally { }
 
         // default
         return new ScopeValidator();
@@ -447,25 +457,20 @@ public class DelegationToken implements Serializable
         return getPrincipalByClass(HttpPrincipal.class);
     }
 
-    public <T extends Principal> T getPrincipalByClass(Class clazz)
-    {
-        for (Principal prin : this.identityPrincipals)
-        {
-            if (prin.getClass() == clazz)
-            {
-                return (T)prin;
+    public <T extends Principal> T getPrincipalByClass(Class clazz) {
+        for (Principal prin : this.identityPrincipals) {
+            if (prin.getClass() == clazz) {
+                return (T) prin;
             }
         }
         return null;
     }
 
-    public Date getExpiryTime()
-    {
+    public Date getExpiryTime() {
         return expiryTime;
     }
 
-    public URI getScope()
-    {
+    public URI getScope() {
         return scope;
     }
 
@@ -476,23 +481,21 @@ public class DelegationToken implements Serializable
 
     // TODO: update this to include principals
     @Override
-    public String toString()
-    {
+    public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("DelegationToken(" + USER_LABEL + "=");
-        if (StringUtil.hasText(getUser().getProxyUser()))
-        {
-            sb.append("," + PROXY_LABEL + "=");
+        sb.append("DelegationToken(").append(USER_LABEL).append("=");
+        if (StringUtil.hasText(getUser().getProxyUser())) {
+            sb.append(",").append(PROXY_LABEL).append("=");
             sb.append(getUser().getProxyUser());
         }
         sb.append(getUser());
-        sb.append("," + SCOPE_LABEL + "=");
+        sb.append(",").append(SCOPE_LABEL).append("=");
         sb.append(getScope());
         sb.append(",startTime=");
         sb.append(getExpiryTime());
 
-        for (String domain: domains) {
-            sb.append(","+ DOMAIN_LABEL + "=" + domain);
+        for (String domain : domains) {
+            sb.append(",").append(DOMAIN_LABEL).append("=").append(domain);
         }
         sb.append(")");
         return sb.toString();
@@ -528,7 +531,4 @@ public class DelegationToken implements Serializable
     public Set<Principal> getIdentityPrincipals() {
         return identityPrincipals;
     }
-
-
-
 }
