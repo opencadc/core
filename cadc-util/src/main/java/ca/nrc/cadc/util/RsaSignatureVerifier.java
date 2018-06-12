@@ -130,20 +130,24 @@ public class RsaSignatureVerifier
 
     
     /**
-     * Default ctor
+     * Default constructor. This will look for a private key file named RsaSignaturePub.key
+     * and use it to verify.
      */
     public RsaSignatureVerifier()
     {
-        this(false);
+        this(PUB_KEY_FILE_NAME, false);
     }
     
-    
+    public RsaSignatureVerifier(String keyFilename) {
+        this(keyFilename, false);
+    }
     /**
      * constructor
+     * @param keyFilename
      * @param privateKeyExpected - ctor instantiated in the context in which 
      * a private key is also expected
      */
-    protected RsaSignatureVerifier(boolean privateKeyExpected)
+    protected RsaSignatureVerifier(String keyFilename, boolean privateKeyExpected)
     {
         KeyFactory keyFactory = null;
         try
