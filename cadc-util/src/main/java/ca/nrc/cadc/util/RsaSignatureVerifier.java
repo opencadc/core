@@ -163,14 +163,14 @@ public class RsaSignatureVerifier
         try
         {
             // check config dir first
-            File keysFile = new File(DEFAULT_CONFIG_DIR, PUB_KEY_FILE_NAME);
+            File keysFile = new File(DEFAULT_CONFIG_DIR, keyFilename);
             if (!keysFile.exists())
             {
                 try // find in classpath
                 {
 
                    keysFile = FileUtil.getFileFromResource(
-                        PUB_KEY_FILE_NAME, this.getClass());
+                        keyFilename, this.getClass());
                 }
                 catch (MissingResourceException ex)
                 {
