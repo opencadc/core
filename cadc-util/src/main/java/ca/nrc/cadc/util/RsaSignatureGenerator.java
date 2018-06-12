@@ -133,11 +133,15 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier
     public static final String PRIV_KEY_END = "-----END PRIVATE KEY-----";
 
     /**
-     * Simple constructor
+     * Default constructor. This will look for a private key file named RsaSignaturePriv.key
+     * and use it to sign.
      */
-    public RsaSignatureGenerator()
-    {
-        super(true);
+    public RsaSignatureGenerator() {
+        this(PRIV_KEY_FILE_NAME);
+    }
+    
+    public RsaSignatureGenerator(String keyFilename) {
+        super(keyFilename, true);
         KeyFactory keyFactory = null;
         try
         {
@@ -151,7 +155,7 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier
         try
         {
             File keysFile = FileUtil.getFileFromResource(
-                    PRIV_KEY_FILE_NAME, this.getClass());
+                    keyFilename, this.getClass());
 
             BufferedReader br = new BufferedReader(new FileReader(keysFile));
             try
@@ -287,32 +291,6 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier
     }
 
     
-    /**
-     * Main method invoked to generate a pair of RSA keys. It expects as
-     * argument the destination directory where the MessageRSA.keys file
-     * containing the keys is written.
-     * @param args
-     */
-    public static void main(String[] args)
-    {
-        if (args.length != 1)
-        {
-            System.out.println("Directory for the keys file requried");
-            System.exit(-1);
-        }
-        
-        try
-        {
-            genKeyPair(args[0]);
-        }
-        catch(FileNotFoundException e)
-        {
-            System.out.println("Directory for the keys file not valid");
-            System.exit(-1);
-        }
-        System.out.println("Done");
-    }
-    
     public static void genKeyPair(String directory) 
         throws FileNotFoundException
     { 
@@ -322,6 +300,10 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier
     public static void genKeyPair(File directory) 
         throws FileNotFoundException
     {      
+        genKeyPair(new File(directory, PUB_KEY_FILE_NAME), new File(directory, PRIV_KEY_FILE_NAME), 1024);
+    }
+    
+    public static void genKeyPair(File pubKey, File privKey, int keyLength) throws FileNotFoundException {
         // generate the certs
         KeyPairGenerator kpg;
         try
@@ -333,7 +315,7 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier
             throw new RuntimeException(
                     "BUG: illegal key algorithm - " + KEY_ALGORITHM, e);
         }
-        kpg.initialize(1024);
+        kpg.initialize(keyLength);
         KeyPair keyPair = kpg.genKeyPair();
 
         String base64PrivKey = 
@@ -341,8 +323,7 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier
         String base64PubKey = 
                 Base64.encodeLines(keyPair.getPublic().getEncoded());
 
-        PrintWriter outPub = new PrintWriter(
-                new File(directory, PUB_KEY_FILE_NAME));
+        PrintWriter outPub = new PrintWriter(pubKey);
         try
         {
             outPub.println(PUB_KEY_START);
@@ -354,8 +335,7 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier
             outPub.close();
         }    
         
-        PrintWriter outPriv = new PrintWriter(
-                new File(directory, PRIV_KEY_FILE_NAME));
+        PrintWriter outPriv = new PrintWriter(privKey);
         try
         {
             outPriv.println(PRIV_KEY_START);
