@@ -121,7 +121,7 @@ public class ServletLogInfo extends WebServiceLogInfo {
         } else {
             this.path = path;
         }
-        String runID = request.getParameter("runID");
+        runID = request.getParameter("runID");
     }
 
     private String parseJobID(String path) {
