@@ -158,6 +158,7 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
             principals.add(token.getUser());
         
         Cookie[] cookies = request.getCookies();
+        log.debug("Request cookies: " + cookies);
         if (cookies == null || ArrayUtil.isEmpty(cookies))
             return;
         

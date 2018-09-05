@@ -132,11 +132,12 @@ public class WebServiceLogInfoTest {
         logInfo.setElapsedTime(1234L);
         logInfo.setBytes(10L);
         logInfo.setMessage("the message");
+        logInfo.setRunID("runID");
         String end = logInfo.end();
         log.info("testMaximalContentServlet: " + end);
         Assert.assertEquals("Wrong end", "END: {\"method\":\"GET\",\"path\":\"/path/of/request\",\"success\":false," +
             "\"user\":\"the user\",\"proxyUser\":\"the proxy\",\"from\":\"192.168.0.0\",\"time\":1234,\"bytes\":10," +
-            "\"message\":\"the message\"}", end);
+            "\"message\":\"the message\",\"runID\":\"runID\"}", end);
         EasyMock.verify(request);
     }
 
