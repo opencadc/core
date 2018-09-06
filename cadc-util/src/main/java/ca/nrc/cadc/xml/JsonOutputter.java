@@ -246,8 +246,9 @@ public class JsonOutputter implements Serializable
         
         if (listItem)
         {
-            String n = e.getName();
-            w.print(n);
+            w.print(QUOTE);
+            w.print(e.getName());
+            w.print(QUOTE);
             w.print(" : ");
         }
         else
@@ -330,14 +331,18 @@ public class JsonOutputter implements Serializable
             w.print(",");
         while ( iter.hasNext() )
         {
+            Element c = iter.next();
             ret = true;
             if (listItem)
             {
                 indent(w,i);
                 w.print("{");
+                writeElement(c, w, i+1, listItem);
             }
-            Element c = iter.next();
-            writeElement(c, w, i+1, listItem);
+            else
+            {
+              writeElement(c, w, i, listItem);
+            }
             if (listItem)
             {
                 indent(w,i);
