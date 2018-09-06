@@ -71,6 +71,8 @@ package ca.nrc.cadc.log;
 
 import ca.nrc.cadc.net.NetUtil;
 
+import java.util.Enumeration;
+
 import javax.servlet.http.HttpServletRequest;
 
 
@@ -120,6 +122,14 @@ public class ServletLogInfo extends WebServiceLogInfo {
             this.jobID = parseJobID(path);
         } else {
             this.path = path;
+        }
+        Enumeration<String> paramNames = request.getParameterNames();
+        while (paramNames.hasMoreElements()) {
+            String nextName = paramNames.nextElement();
+            if (nextName.equalsIgnoreCase("runid")) {
+                runID = request.getParameter(nextName);
+                break;
+            }
         }
     }
 
