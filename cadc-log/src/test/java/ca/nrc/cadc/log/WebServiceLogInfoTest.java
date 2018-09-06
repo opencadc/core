@@ -69,6 +69,12 @@
 
 package ca.nrc.cadc.log;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
 
@@ -96,7 +102,10 @@ public class WebServiceLogInfoTest {
         EasyMock.expect(request.getPathInfo()).andReturn("/path/of/request").once();
         EasyMock.expect(request.getHeader("X-Forwarded-For")).andReturn(null).once();
         EasyMock.expect(request.getRemoteAddr()).andReturn("192.168.0.0").once();
-        EasyMock.expect(request.getParameter("runID")).andReturn(null).once();
+        Set<String> params = new HashSet<String>();
+        params.add("other1");
+        params.add("other2");
+        EasyMock.expect(request.getParameterNames()).andReturn(Collections.enumeration(params));
 
         EasyMock.replay(request);
 
@@ -120,7 +129,12 @@ public class WebServiceLogInfoTest {
         EasyMock.expect(request.getPathInfo()).andReturn("/path/of/request").once();
         EasyMock.expect(request.getHeader("X-Forwarded-For")).andReturn(null).once();
         EasyMock.expect(request.getRemoteAddr()).andReturn("192.168.0.0").once();
-        EasyMock.expect(request.getParameter("runID")).andReturn("abc").once();
+        Set<String> params = new HashSet<String>();
+        params.add("other1");
+        params.add("runID");
+        params.add("other2");
+        EasyMock.expect(request.getParameterNames()).andReturn(Collections.enumeration(params));
+        EasyMock.expect(request.getParameter("runID")).andReturn("abc");
 
         EasyMock.replay(request);
 
@@ -149,7 +163,10 @@ public class WebServiceLogInfoTest {
         EasyMock.expect(request.getPathInfo()).andReturn("/theJobID").once();
         EasyMock.expect(request.getHeader("X-Forwarded-For")).andReturn(null).once();
         EasyMock.expect(request.getRemoteAddr()).andReturn("192.168.0.0").once();
-        EasyMock.expect(request.getParameter("runID")).andReturn(null).once();
+        Set<String> params = new HashSet<String>();
+        params.add("other1");
+        params.add("other2");
+        EasyMock.expect(request.getParameterNames()).andReturn(Collections.enumeration(params));
 
         EasyMock.replay(request);
 
@@ -177,7 +194,10 @@ public class WebServiceLogInfoTest {
         EasyMock.expect(request.getMethod()).andReturn("Get").once();
         EasyMock.expect(request.getPathInfo()).andReturn("/theJobID").once();
         EasyMock.expect(request.getHeader("X-Forwarded-For")).andReturn("192.168.0.3").once();
-        EasyMock.expect(request.getParameter("runID")).andReturn(null).once();
+        Set<String> params = new HashSet<String>();
+        params.add("other1");
+        params.add("other2");
+        EasyMock.expect(request.getParameterNames()).andReturn(Collections.enumeration(params));
 
         EasyMock.replay(request);
 
@@ -206,7 +226,10 @@ public class WebServiceLogInfoTest {
         EasyMock.expect(request.getPathInfo()).andReturn("/theJobID").once();
         EasyMock.expect(request.getHeader("X-Forwarded-For")).andReturn("192.168.1.4, 192.168.44.88, 192.168.0.3")
                 .once();
-        EasyMock.expect(request.getParameter("runID")).andReturn(null).once();
+        Set<String> params = new HashSet<String>();
+        params.add("other1");
+        params.add("other2");
+        EasyMock.expect(request.getParameterNames()).andReturn(Collections.enumeration(params));
 
         EasyMock.replay(request);
 
