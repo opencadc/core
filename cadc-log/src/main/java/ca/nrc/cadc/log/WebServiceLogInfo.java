@@ -116,6 +116,8 @@ public abstract class WebServiceLogInfo
     protected String message;
 
     protected String jobID;
+    
+    protected String runID;
 
     protected WebServiceLogInfo() { }
 
@@ -277,6 +279,10 @@ public abstract class WebServiceLogInfo
 
     public void setPath(String path) {
         this.path = path;
+    }
+    
+    public void setRunID(String runID) {
+        this.runID = runID;
     }
 
 }

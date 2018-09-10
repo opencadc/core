@@ -103,9 +103,6 @@ public class JsonOutputterTest
         jsonOut.getListElementNames().add("items");
         jsonOut.getStringElementNames().add("item");
         
-        JsonInputter jsonIn = new JsonInputter();
-        jsonIn.getListElementMap().put("items", "item");
-        
         final Writer writer = new StringWriter();
 
         jsonOut.output(document, writer);
@@ -178,11 +175,21 @@ public class JsonOutputterTest
                                                    + "\"meta\" : {\"$\": \"META\"},"
                                                    + "\"items\" : {"
                                                    + "\"$\" : ["
-                                                   + "{\"@i\" : \"0\", \"$\" : \"0\"},"
-                                                   + "{\"@i\" : \"1\", \"$\" : \"1\"},"
-                                                   + "{\"@i\" : \"2\", \"$\" : \"2\"},"
-                                                   + "{\"@i\" : \"3\", \"$\" : \"3\"},"
-                                                   + "{\"@i\" : \"4\", \"$\" : \"4\"}"
+                                                   + "{\r\n"
+                                                   + "\"item\" : {\"@i\" : \"0\", \"$\" : \"0\"}"
+                                                   + "},\r\n"
+                                                   + "{\r\n"
+                                                   + "\"item\" : {\"@i\" : \"1\", \"$\" : \"1\"}"
+                                                   + "},\r\n"
+                                                   + "{\r\n"
+                                                   + "\"item\" : {\"@i\" : \"2\", \"$\" : \"2\"}"
+                                                   + "},\r\n"
+                                                   + "{\r\n"
+                                                   + "\"item\" : {\"@i\" : \"3\", \"$\" : \"3\"}"
+                                                   + "},\r\n"
+                                                   + "{\r\n"
+                                                   + "\"item\" : {\"@i\" : \"4\", \"$\" : \"4\"}"
+                                                   + "}\r\n"
                                                    + "] } } }");
         
         doit("writeMultiObject", document, expected);
@@ -208,11 +215,21 @@ public class JsonOutputterTest
 
         final JSONObject expected = new JSONObject("{\"items\" : {"
                                                    + "\"$\" : ["
-                                                   + "{\"$\" : \"0\"},"
-                                                   + "{\"$\" : \"1\"},"
-                                                   + "{\"$\" : \"2\"},"
-                                                   + "{\"$\" : \"3\"},"
-                                                   + "{\"$\" : \"4\"}"
+                                                   + "{\r\n"
+                                                   + "\"item\" : {\"$\" : \"0\"}"
+                                                   + "},\r\n"
+                                                   + "{\r\n"
+                                                   + "\"item\" : {\"$\" : \"1\"}"
+                                                   + "},\r\n"
+                                                   + "{\r\n"
+                                                   + "\"item\" : {\"$\" : \"2\"}"
+                                                   + "},\r\n"
+                                                   + "{\r\n"
+                                                   + "\"item\" : {\"$\" : \"3\"}"
+                                                   + "},\r\n"
+                                                   + "{\r\n"
+                                                   + "\"item\" : {\"$\" : \"4\"}"
+                                                   + "}\r\n"
                                                    + "] } }");
         
         doit("writeRootArray", document, expected);
@@ -240,11 +257,21 @@ public class JsonOutputterTest
                                                    + "\"nsi:items\" : {"
                                                    + "\"@xmlns:nsi\": \"http://ns.items.com\","
                                                    + "\"$\": ["
-                                                   + "{\"$\" : \"0\"},"
-                                                   + "{\"$\" : \"1\"},"
-                                                   + "{\"$\" : \"2\"},"
-                                                   + "{\"$\" : \"3\"},"
-                                                   + "{\"$\" : \"4\"}"
+                                                   + "{\r\n"
+                                                   + "\"item\" : {\"$\" : \"0\"}"
+                                                   + "},\r\n"
+                                                   + "{\r\n"
+                                                   + "\"item\" : {\"$\" : \"1\"}"
+                                                   + "},\r\n"
+                                                   + "{\r\n"
+                                                   + "\"item\" : {\"$\" : \"2\"}"
+                                                   + "},\r\n"
+                                                   + "{\r\n"
+                                                   + "\"item\" : {\"$\" : \"3\"}"
+                                                   + "},\r\n"
+                                                   + "{\r\n"
+                                                   + "\"item\" : {\"$\" : \"4\"}"
+                                                   + "}\r\n"
                                                    + "] } }");
         
         doit("writeNamespacePrefix", document, expected);
@@ -271,11 +298,21 @@ public class JsonOutputterTest
                                                    + "\"items\" : {"
                                                    + "\"@xmlns\": \"http://ns.items.com\","
                                                    + "\"$\": ["
-                                                   + "{\"$\" : \"0\"},"
-                                                   + "{\"$\" : \"1\"},"
-                                                   + "{\"$\" : \"2\"},"
-                                                   + "{\"$\" : \"3\"},"
-                                                   + "{\"$\" : \"4\"}"
+                                                   + "{\r\n"
+                                                   + "\"item\" : {\"$\" : \"0\"}"
+                                                   + "},\r\n"
+                                                   + "{\r\n"
+                                                   + "\"item\" : {\"$\" : \"1\"}"
+                                                   + "},\r\n"
+                                                   + "{\r\n"
+                                                   + "\"item\" : {\"$\" : \"2\"}"
+                                                   + "},\r\n"
+                                                   + "{\r\n"
+                                                   + "\"item\" : {\"$\" : \"3\"}"
+                                                   + "},\r\n"
+                                                   + "{\r\n"
+                                                   + "\"item\" : {\"$\" : \"4\"}"
+                                                   + "}\r\n"
                                                    + "] } }");
         
         doit("writeNamespaceNoPrefix", document, expected);
@@ -304,12 +341,16 @@ public class JsonOutputterTest
                                                    + "\"nsi:items\" : {"
                                                    + "\"@xmlns:nsi\": \"http://ns.items.com\","
                                                    + "\"$\": ["
-                                                   + "{ \"nso:other\" : {"
+                                                   + "{\r\n"
+                                                   + "\"item\" : { \"nso:other\" : {"
                                                    + "  \"@xmlns:nso\" : \"http://ns.items.com/other\","
-                                                   + "  \"$\" : \"stuff0\" } },"
-                                                   + "{ \"nso:other\" : {"
+                                                   + "  \"$\" : \"stuff0\" } }"
+                                                   + "},\r\n"
+                                                   + "{\r\n"
+                                                   + "\"item\" : { \"nso:other\" : {"
                                                    + "  \"@xmlns:nso\" : \"http://ns.items.com/other\","
                                                    + "  \"$\" : \"stuff1\" } }"
+                                                   + "}\r\n"
                                                    + "] } }");
         
         doit("testNamespaceOnMultipleBranches", document, expected);
