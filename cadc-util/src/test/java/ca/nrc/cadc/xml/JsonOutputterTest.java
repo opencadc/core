@@ -103,9 +103,6 @@ public class JsonOutputterTest
         jsonOut.getListElementNames().add("items");
         jsonOut.getStringElementNames().add("item");
         
-        JsonInputter jsonIn = new JsonInputter();
-        jsonIn.getListElementMap().put("items", "item");
-        
         final Writer writer = new StringWriter();
 
         jsonOut.output(document, writer);
