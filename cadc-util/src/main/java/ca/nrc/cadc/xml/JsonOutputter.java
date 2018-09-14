@@ -141,13 +141,33 @@ public class JsonOutputter implements Serializable
     {
         this.fmt = fmt;
     }
-    
+
+    /**
+     * Write a Document instance to a writer.
+     *
+     * @param doc Document instance to write.
+     * @param writer Writer to write to.
+     * @throws IOException if the writer fails to write.
+     */
     public void output(final Document doc, Writer writer)
+        throws IOException
+    {
+        output(doc.getRootElement(), writer);
+    }
+
+    /**
+     * Write a Document instance to a writer.
+     *
+     * @param element document to write starting from element.
+     * @param writer Writer to write to.
+     * @throws IOException if the writer fails to write.
+     */
+    public void output(final Element element, Writer writer)
         throws IOException
     {
         PrintWriter pw = new PrintWriter(writer);
         pw.print("{ ");
-        writeElement(doc.getRootElement(), pw, 1, false);
+        writeElement(element, pw, 1, false);
         indent(pw, 0);
         pw.print("}");
         pw.flush();
