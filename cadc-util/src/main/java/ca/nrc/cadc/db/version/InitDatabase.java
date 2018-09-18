@@ -87,7 +87,6 @@ public abstract class InitDatabase {
 
     private static final Logger log = Logger.getLogger(InitDatabase.class);
 
-    // caom2persistence 2.3.12 modifies DeletedObservation table
     private final String modelName;
     private final String modelVersion;
     private final String prevModelVersion;
@@ -136,22 +135,22 @@ public abstract class InitDatabase {
         try {
             // get current ModelVersion
             ModelVersionDAO vdao = new ModelVersionDAO(dataSource, database, schema);
-            ModelVersion cur = vdao.get(modelName);
+            KeyValue cur = vdao.get(modelName);
             log.debug("found: " + cur);
-            prevVersion = cur.version;
+            prevVersion = cur.value;
 
             // select SQL to execute
             List<String> ddls = createSQL; // default
             boolean upgrade = false;
-            if (cur.version != null && modelVersion.equals(cur.version)) {
+            if (cur.value != null && modelVersion.equals(cur.value)) {
                 log.debug("doInit: already up to date - nothing to do");
                 return false;
             }
-            if (cur.version != null && cur.version.equals(prevModelVersion)) {
+            if (cur.value != null && cur.value.equals(prevModelVersion)) {
                 ddls = upgradeSQL;
                 upgrade = true;
-            } else if (cur.version != null) {
-                throw new UnsupportedOperationException("doInit: version upgrade not supported: " + cur.version + " -> " + modelVersion);
+            } else if (cur.value != null) {
+                throw new UnsupportedOperationException("doInit: version upgrade not supported: " + cur.value + " -> " + modelVersion);
             }
 
             // start transaction
@@ -171,7 +170,7 @@ public abstract class InitDatabase {
                 }
             }
             // update ModelVersion
-            cur.version = modelVersion;
+            cur.value = modelVersion;
             vdao.put(cur);
 
             // commit transaction

@@ -86,17 +86,23 @@ import org.springframework.jdbc.core.ResultSetExtractor;
  *
  * @author pdowler
  */
-public class ModelVersionDAO {
+public class KeyValueDAO {
 
-    private static final Logger log = Logger.getLogger(ModelVersionDAO.class);
+    private static final Logger log = Logger.getLogger(KeyValueDAO.class);
 
+    protected String[] columnNames;
+    
     private final String tableName;
     private final JdbcTemplate jdbc;
     private final ResultSetExtractor extractor;
 
     private final Calendar utcCalendar = Calendar.getInstance(DateUtil.UTC);
 
-    public ModelVersionDAO(DataSource dataSource, String database, String schema) {
+    public KeyValueDAO(DataSource dataSource, String database, String schema) {
+        this(dataSource, database, schema, KeyValue.class);
+    }
+    
+    public KeyValueDAO(DataSource dataSource, String database, String schema, Class tupleType) {
         this.jdbc = new JdbcTemplate(dataSource);
         StringBuilder tn = new StringBuilder();
         if (database != null) {
@@ -105,21 +111,23 @@ public class ModelVersionDAO {
         if (schema != null) {
             tn.append(schema).append(".");
         }
-        tn.append(ModelVersion.class.getSimpleName());
+        tn.append(tupleType.getSimpleName());
         this.tableName = tn.toString();
         this.extractor = new ModelVersionExtractor();
+        this.columnNames = new String[] { "value", "lastModified", "name" };
     }
 
-    public ModelVersion get(String modelName) {
+    public KeyValue get(String name) {
         Object o = null;
 
         SelectStatementCreator sel = new SelectStatementCreator();
-        sel.setValues(modelName);
+        sel.setValues(name);
         try {
             o = jdbc.query(sel, extractor);
         } catch (BadSqlGrammarException ex) {
             try {
                 // try simples query possible to see if table exists
+                log.debug("check exists: " + tableName);
                 jdbc.queryForInt("SELECT count(*) FROM " + tableName);
 
                 // some other kind of error
@@ -130,14 +138,14 @@ public class ModelVersionDAO {
             }
         }
         if (o == null) {
-            ModelVersion mv = new ModelVersion(modelName);
+            KeyValue mv = new KeyValue(name);
             log.debug("created: " + mv);
             return mv;
         }
-        return (ModelVersion) o;
+        return (KeyValue) o;
     }
 
-    public void put(ModelVersion modelVersion) {
+    public void put(KeyValue modelVersion) {
         boolean update = true;
         if (modelVersion.lastModified == null) {
             update = false;
@@ -165,8 +173,14 @@ public class ModelVersionDAO {
         @Override
         public PreparedStatement createPreparedStatement(Connection conn)
                 throws SQLException {
-            String sql = "SELECT model, version, lastModified FROM "
-                    + tableName + " WHERE model = ?";
+            StringBuilder sb = new StringBuilder();
+            sb.append("SELECT ");
+            sb.append(columnNames[0]).append(",");
+            sb.append(columnNames[1]).append(",");
+            sb.append(columnNames[2]);
+            sb.append(" FROM ").append(tableName);
+            sb.append(" WHERE ").append(columnNames[2]).append(" = ?");        
+            String sql = sb.toString();
             PreparedStatement prep = conn.prepareStatement(sql);
             log.debug(sql);
             loadValues(prep);
@@ -182,25 +196,34 @@ public class ModelVersionDAO {
     private class PutStatementCreator implements PreparedStatementCreator {
 
         private final boolean update;
-        private ModelVersion state;
+        private KeyValue state;
 
         PutStatementCreator(boolean update) {
             this.update = update;
         }
 
-        public void setValue(ModelVersion state) {
+        public void setValue(KeyValue state) {
             this.state = state;
         }
 
         @Override
         public PreparedStatement createPreparedStatement(Connection conn)
                 throws SQLException {
-            String sql = null;
+            StringBuilder sb = new StringBuilder();
+                    
             if (update) {
-                sql = "UPDATE " + tableName + " SET version = ?, lastModified = ? WHERE model = ?";
+                sb.append("UPDATE ").append(tableName).append(" SET ");
+                sb.append(columnNames[0]).append(" = ?, ");
+                sb.append(columnNames[1]).append(" = ?");
+                sb.append(" WHERE ").append(columnNames[2]).append(" = ?");
             } else {
-                sql = "INSERT INTO " + tableName + " (version,lastModified,model) values(?, ?, ?)";
+                sb.append("INSERT INTO ").append(tableName).append( "(");
+                sb.append(columnNames[0]).append(",");
+                sb.append(columnNames[1]).append(",");
+                sb.append(columnNames[2]).append(")");
+                sb.append(" values(?, ?, ?)");
             }
+            String sql = sb.toString();
             PreparedStatement prep = conn.prepareStatement(sql);
             log.debug(sql);
             loadValues(prep);
@@ -212,14 +235,14 @@ public class ModelVersionDAO {
             StringBuilder sb = new StringBuilder("values: ");
             int col = 1;
 
-            ps.setString(col++, state.version);
-            sb.append(state.version).append(",");
+            ps.setString(col++, state.value);
+            sb.append(state.value).append(",");
 
             ps.setTimestamp(col++, new Timestamp(state.lastModified.getTime()), utcCalendar);
             sb.append(state.lastModified).append(",");
 
-            ps.setString(col++, state.getModel());
-            sb.append(state.getModel()).append(",");
+            ps.setString(col++, state.getName());
+            sb.append(state.getName()).append(",");
 
             log.debug(sb.toString());
         }
@@ -230,12 +253,14 @@ public class ModelVersionDAO {
         @Override
         public Object extractData(ResultSet rs)
                 throws SQLException {
-            ModelVersion ret = null;
+            KeyValue ret = null;
             if (rs.next()) {
-                String m = rs.getString(1);
-                ret = new ModelVersion(m);
-                ret.version = rs.getString(2);
-                ret.lastModified = getDate(rs, 3, utcCalendar);
+                String value = rs.getString(1);
+                Date lastModified = getDate(rs, 2, utcCalendar);
+                String name = rs.getString(3);
+                ret = new KeyValue(name);
+                ret.value = value;
+                ret.lastModified = lastModified;
             }
             return ret;
         }

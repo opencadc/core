@@ -71,27 +71,28 @@ import java.util.Date;
 import org.apache.log4j.Logger;
 
 /**
- *
+ * Simple key-value pair where the value can be null.
+ * 
  * @author pdowler
  */
-public class ModelVersion {
+public class KeyValue {
 
-    private static final Logger log = Logger.getLogger(ModelVersion.class);
+    private static final Logger log = Logger.getLogger(KeyValue.class);
 
-    private final String model;
-    public String version;
+    private final String name;
+    public String value;
     Date lastModified;
 
-    public ModelVersion(String model) {
-        this.model = model;
+    public KeyValue(String name) {
+        this.name = name;
     }
 
-    public String getModel() {
-        return model;
+    public String getName() {
+        return name;
     }
 
     @Override
     public String toString() {
-        return "ModelVersion[" + model + "," + version + "]";
+        return this.getClass().getSimpleName() + "[" + name + "," + value + "]";
     }
 }
