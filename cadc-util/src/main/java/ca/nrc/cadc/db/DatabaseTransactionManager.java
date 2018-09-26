@@ -119,7 +119,6 @@ public class DatabaseTransactionManager implements TransactionManager {
 
     public void startTransaction() {
         TransactionDefinition defn;
-        boolean doCommit = true;
         if (transactions.isEmpty()) {
             log.debug("startTransaction: default");
             defn = defaultTxnDef;
@@ -129,7 +128,7 @@ public class DatabaseTransactionManager implements TransactionManager {
         } else {
             throw new RuntimeException("nested transactions not supported by current configuration");
         }
-        Txn txn = new Txn(writeTxnManager.getTransaction(defn), doCommit);
+        Txn txn = new Txn(writeTxnManager.getTransaction(defn), true);
         transactions.push(txn);
         log.debug("startTransaction: " + transactions.size());
     }

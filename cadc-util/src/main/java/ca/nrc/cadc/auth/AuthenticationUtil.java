@@ -118,17 +118,16 @@ public class AuthenticationUtil
         "DC", "CN", "OU", "O", "STREET", "L", "ST", "C", "UID"
     };
 
-    private static final String DEFAULT_AUTH = Authenticator.class.getName() + "Impl";
-
     private static Logger log = Logger.getLogger(AuthenticationUtil.class);
 
     private static Authenticator getAuthenticator()
     {
+        String defaultImplClass = Authenticator.class.getName() + "Impl";
         String cname = System.getProperty(Authenticator.class.getName());
         Class c = null;
         if (cname == null)
         {
-            cname = DEFAULT_AUTH;
+            cname = defaultImplClass;
         }
         try
         {
@@ -140,7 +139,7 @@ public class AuthenticationUtil
         }
         catch (Throwable t)
         {
-            if (!DEFAULT_AUTH.equals(cname) || c != null)
+            if (!defaultImplClass.equals(cname) || c != null)
             {
                 log.error("failed to load Authenticator: " + cname, t);
             }
@@ -174,11 +173,11 @@ public class AuthenticationUtil
             return ret;
         } catch (Throwable t) {
             if (!defaultImplClass.equals(cname) || c != null) {
-                log.error("failed to load configured Authenticator: " + cname, t);
+                log.error("failed to load configured IdentityManager: " + cname, t);
             }
-            log.debug("failed to load default Authenticator: " + cname, t);
+            log.debug("failed to load default IdentityManager: " + cname, t);
         }
-        log.debug("Authenticator: null");
+        log.debug("IdentityManager: null");
         return null;
     }
 
