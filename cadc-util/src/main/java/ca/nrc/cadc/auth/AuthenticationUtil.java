@@ -118,17 +118,16 @@ public class AuthenticationUtil
         "DC", "CN", "OU", "O", "STREET", "L", "ST", "C", "UID"
     };
 
-    private static final String DEFAULT_AUTH = Authenticator.class.getName() + "Impl";
-
     private static Logger log = Logger.getLogger(AuthenticationUtil.class);
 
     private static Authenticator getAuthenticator()
     {
+        String defaultImplClass = Authenticator.class.getName() + "Impl";
         String cname = System.getProperty(Authenticator.class.getName());
         Class c = null;
         if (cname == null)
         {
-            cname = DEFAULT_AUTH;
+            cname = defaultImplClass;
         }
         try
         {
@@ -140,13 +139,45 @@ public class AuthenticationUtil
         }
         catch (Throwable t)
         {
-            if (!DEFAULT_AUTH.equals(cname) || c != null)
+            if (!defaultImplClass.equals(cname) || c != null)
             {
                 log.error("failed to load Authenticator: " + cname, t);
             }
             log.debug("failed to load Authenticator: " + cname, t);
         }
         log.debug("Authenticator: null");
+        return null;
+    }
+    
+    /**
+     * Load the available IdentityManager implementation. This utility method will
+     * check the <code>ca.nrc.cadc.auth.IdentityManager</code> system property for
+     * a configured class name (default class name: <code>ca.nrc.cadc.auth.IdentityManagerImpl</code>).
+     * The easiest way for software implementers to customize behavior is to create their 
+     * own IdentityManagerimpl class and add it to the classpath.
+     * 
+     * @return an IdentityManager implementation or null if none provided
+     */
+    public static IdentityManager getIdentityManager() {
+        String defaultImplClass = IdentityManager.class.getName() + "Impl";
+        String cname = System.getProperty(IdentityManager.class.getName());
+        Class c = null;
+        if (cname == null) {
+            cname = defaultImplClass;
+        }
+        try {
+            c = Class.forName(cname);
+            Object o = c.newInstance();
+            IdentityManager ret = (IdentityManager) o;
+            log.debug("IdentityManager: " + cname);
+            return ret;
+        } catch (Throwable t) {
+            if (!defaultImplClass.equals(cname) || c != null) {
+                log.error("failed to load configured IdentityManager: " + cname, t);
+            }
+            log.debug("failed to load default IdentityManager: " + cname, t);
+        }
+        log.debug("IdentityManager: null");
         return null;
     }
 
