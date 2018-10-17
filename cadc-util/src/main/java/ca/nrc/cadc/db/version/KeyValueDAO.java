@@ -145,15 +145,25 @@ public class KeyValueDAO {
         return (KeyValue) o;
     }
 
-    public void put(KeyValue modelVersion) {
+    public void put(KeyValue kv) {
         boolean update = true;
-        if (modelVersion.lastModified == null) {
+        if (kv.lastModified == null) {
             update = false;
         }
-        modelVersion.lastModified = new Date();
+        kv.lastModified = new Date();
         PutStatementCreator put = new PutStatementCreator(update);
-        put.setValue(modelVersion);
+        put.setValue(kv);
         jdbc.update(put);
+    }
+    
+    public void delete(String name) {
+        if (name == null) {
+            throw new IllegalArgumentException("name arg cannot be null");
+        }
+        String sql = "DELETE FROM " + tableName + " WHERE " + columnNames[2] + " = ?";
+        Object[] arg = new Object[1];
+        arg[0] = name;
+        jdbc.update(sql, arg);
     }
 
     private class SelectStatementCreator implements PreparedStatementCreator {
