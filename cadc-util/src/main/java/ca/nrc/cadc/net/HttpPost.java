@@ -259,6 +259,7 @@ public class HttpPost extends HttpTransfer
                 doPost(conn, contentType, content);
             else
                 doPost(conn, paramMap);
+
         }
         catch(TransientException tex)
         {
@@ -307,7 +308,7 @@ public class HttpPost extends HttpTransfer
         Object value = null;
 
         Map<String,List<Object>> pmap = new TreeMap<String,List<Object>>();
-        Map<String,File> uploads = new TreeMap<String,File>();
+        Map<String,Object> uploads = new TreeMap<String,Object>();
         for (Map.Entry<String,Object> me : parameters.entrySet())
         {
             String key = me.getKey();
@@ -316,6 +317,11 @@ public class HttpPost extends HttpTransfer
             {
                 File u = (File) value;
                 uploads.put(key, u);
+            }
+            else if (value instanceof FileContent)
+            {
+                FileContent fc = (FileContent) value;
+                uploads.put(key, fc);
             }
             else if (value instanceof Collection)
             {
@@ -367,7 +373,7 @@ public class HttpPost extends HttpTransfer
         handleResponse(conn);
     }
     
-    private void doPost(HttpURLConnection conn, Map<String,List<Object>> params, Map<String,File> uploads)
+    private void doPost(HttpURLConnection conn, Map<String,List<Object>> params, Map<String,Object> uploads)
         throws IOException, InterruptedException, TransientException
     {
         
@@ -393,8 +399,6 @@ public class HttpPost extends HttpTransfer
         conn.setUseCaches(false);
         conn.setDoOutput(true);
         conn.setDoInput(true);
-
-        //log.debug("POST - writing content: " + content);
         
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String,List<Object>> pe : params.entrySet())
@@ -426,10 +430,19 @@ public class HttpPost extends HttpTransfer
         
         if (multi)
         {
-            for (Map.Entry<String,File> up : uploads.entrySet())
+            for (Map.Entry<String,Object> up : uploads.entrySet())
             {
-                writeFilePart(up.getKey(), up.getValue(), writer);
+                if (up.getValue() instanceof File) {
+                    writeFilePart(up.getKey(), ((File)up.getValue()), writer);
+                }
+                else if (up.getValue() instanceof FileContent) {
+                    writeFilePart(up.getKey(), (FileContent)up.getValue(), writer);
+                }
+                else {
+                    throw new UnsupportedOperationException("Unexpected upload type: " + up.getClass().getName());
+                }
             }
+
             String end = LINE_FEED + "--" + MULTIPART_BOUNDARY + "--" + LINE_FEED;
             writer.append(end);
         }
@@ -539,6 +552,43 @@ public class HttpPost extends HttpTransfer
                 r.close();
         }
         log.debug("file part length: " + len);
+    }
+
+    private void writeFilePart(String fieldName, FileContent uploadContent, Writer w)
+        throws IOException
+    {
+        StringBuilder sb = new StringBuilder();
+        log.warn(uploadContent.getContentType());
+        sb.append(LINE_FEED).append("--" + MULTIPART_BOUNDARY);
+        sb.append(LINE_FEED).append("Content-Disposition: form-data; name=\"" + fieldName + "\";"
+            + " filename=\"dummyFile\"");
+//        sb.append(LINE_FEED);
+        sb.append(LINE_FEED).append("Content-Type: " + uploadContent.getContentType() + ";");
+        sb.append(LINE_FEED);
+        sb.append(LINE_FEED);
+
+        log.debug("upload content: " + sb);
+        w.append(sb);
+
+//        FileReader r = null;
+//        long len = 0;
+//        try
+//        {
+//            r = new FileReader(uploadFile);
+//            char[] buffer = new char[4096];
+//            int bytesRead;
+//            while ((bytesRead = r.read(buffer)) != -1)
+//            {
+                w.write(uploadContent.getContent());
+//                len += bytesRead;
+//            }
+//        }
+//        finally
+//        {
+//            if (r != null)
+//                r.close();
+//        }
+//        log.debug("file part length: " + len);
     }
     
     private int checkStatusCode(HttpURLConnection conn)
