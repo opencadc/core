@@ -530,7 +530,7 @@ public class HttpPost extends HttpTransfer
         sb.append(LINE_FEED);
         sb.append(LINE_FEED);
         
-        log.debug("file part: " + sb);
+        log.debug("MULTIPART PORTION: " + sb.toString());
         w.append(sb);
         
         FileReader r = null;
@@ -562,33 +562,17 @@ public class HttpPost extends HttpTransfer
         sb.append(LINE_FEED).append("--" + MULTIPART_BOUNDARY);
         sb.append(LINE_FEED).append("Content-Disposition: form-data; name=\"" + fieldName + "\";"
             + " filename=\"dummyFile\"");
-//        sb.append(LINE_FEED);
+
         sb.append(LINE_FEED).append("Content-Type: " + uploadContent.getContentType() + ";");
         sb.append(LINE_FEED);
         sb.append(LINE_FEED);
 
-        log.debug("upload content: " + sb);
+
+        log.debug("MULTIPART PORTION: " + sb.toString());
         w.append(sb);
 
-//        FileReader r = null;
-//        long len = 0;
-//        try
-//        {
-//            r = new FileReader(uploadFile);
-//            char[] buffer = new char[4096];
-//            int bytesRead;
-//            while ((bytesRead = r.read(buffer)) != -1)
-//            {
-                w.write(uploadContent.getContent());
-//                len += bytesRead;
-//            }
-//        }
-//        finally
-//        {
-//            if (r != null)
-//                r.close();
-//        }
-//        log.debug("file part length: " + len);
+        w.write(uploadContent.getContent());
+
     }
     
     private int checkStatusCode(HttpURLConnection conn)
