@@ -560,6 +560,8 @@ public class HttpPost extends HttpTransfer
         StringBuilder sb = new StringBuilder();
         log.warn(uploadContent.getContentType());
         sb.append(LINE_FEED).append("--" + MULTIPART_BOUNDARY);
+        // 'filename' for data entry is needed so this data is treated as
+        // stream input by the accepting web service
         sb.append(LINE_FEED).append("Content-Disposition: form-data; name=\"" + fieldName + "\";"
             + " filename=\"dummyFile\"");
 
@@ -567,12 +569,9 @@ public class HttpPost extends HttpTransfer
         sb.append(LINE_FEED);
         sb.append(LINE_FEED);
 
-
         log.debug("MULTIPART PORTION: " + sb.toString());
         w.append(sb);
-
         w.write(uploadContent.getContent());
-
     }
     
     private int checkStatusCode(HttpURLConnection conn)
