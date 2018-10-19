@@ -74,16 +74,19 @@ package ca.nrc.cadc.net;
  */
 public class FileContent {
 
-    String content;
-    String contentType;
+    private String content;
+    private String contentType;
 
     public FileContent(String content, String contentType) {
+
+        if (content == null) {
+            throw new IllegalArgumentException("content required");
+        }
         this.content = content;
 
         if (contentType == null) {
             throw new IllegalArgumentException("contentType required");
         }
-
         this.contentType = contentType;
     }
 
