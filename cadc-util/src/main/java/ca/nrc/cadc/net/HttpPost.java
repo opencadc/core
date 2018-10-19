@@ -565,7 +565,9 @@ public class HttpPost extends HttpTransfer
         sb.append(LINE_FEED).append("Content-Disposition: form-data; name=\"" + fieldName + "\";"
             + " filename=\"dummyFile\"");
 
-        sb.append(LINE_FEED).append("Content-Type: " + uploadContent.getContentType() + ";");
+        if (uploadContent.getContentType() != null ) {
+            sb.append(LINE_FEED).append("Content-Type: " + uploadContent.getContentType() + ";");
+        }
         sb.append(LINE_FEED);
         sb.append(LINE_FEED);
 
