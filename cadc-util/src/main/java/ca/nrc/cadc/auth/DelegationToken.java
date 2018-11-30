@@ -341,7 +341,7 @@ public class DelegationToken implements Serializable {
         try {
             for (final String field : fields) {
 
-                log.info("Field: " + field);
+                log.debug("Field: " + field);
 
                 String key = field.substring(0, field.indexOf(VALUE_DELIM));
                 String value = field.substring(field.indexOf(VALUE_DELIM) + 1);
