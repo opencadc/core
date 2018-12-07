@@ -109,8 +109,12 @@ public class NetrcFile extends File
         this.secureMode = secureMode;
     }
 
-    // unit-test support
-    NetrcFile(String netrcFile)
+    /**
+     * Create a .netrc compatible object. This uses the .netrc compatible entries in the specified file.
+     *
+     * @param netrcFile File name containing the username/password information.
+     */
+    public NetrcFile(String netrcFile)
     {
         super(netrcFile);
     }
