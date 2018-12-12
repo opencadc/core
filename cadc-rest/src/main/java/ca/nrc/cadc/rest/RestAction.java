@@ -80,6 +80,7 @@ import java.io.OutputStream;
 import java.security.AccessControlException;
 import java.security.PrivilegedExceptionAction;
 import java.security.cert.CertificateException;
+import java.util.Map;
 import org.apache.log4j.Logger;
 
 /**
@@ -125,6 +126,12 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
      * never be parsed or interpreted.
      */
     protected String componentID;
+    
+    /**
+     * Map of init params from the web deployment descriptor. This map does not include
+     * the init params that configure the http method action classes.
+     */
+    protected Map<String,String> initParams;
     
     /**
      * Wrapper around the HTTP request.
@@ -215,6 +222,10 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
             
     public void setComponentID(String componentID) {
         this.componentID = componentID;
+    }
+
+    public void setInitParams(Map<String, String> initParams) {
+        this.initParams = initParams;
     }
 
     public void setSyncInput(SyncInput syncInput)

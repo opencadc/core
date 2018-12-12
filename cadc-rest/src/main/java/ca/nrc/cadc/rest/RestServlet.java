@@ -72,11 +72,16 @@ package ca.nrc.cadc.rest;
 import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.log.ServletLogInfo;
 import ca.nrc.cadc.log.WebServiceLogInfo;
+import ca.nrc.cadc.util.Enumerator;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.security.AccessControlException;
 import java.security.PrivilegedActionException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import javax.security.auth.Subject;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -97,11 +102,21 @@ public class RestServlet extends HttpServlet
 
     private static final Logger log = Logger.getLogger(RestServlet.class);
 
+    private static final List<String> CITEMS = new ArrayList<String>();
+    static {
+        CITEMS.add("head");
+        CITEMS.add("get");
+        CITEMS.add("post");
+        CITEMS.add("put");
+        CITEMS.add("delete");
+    }
+            
     private Class<RestAction> getAction;
     private Class<RestAction> postAction;
     private Class<RestAction> putAction;
     private Class<RestAction> deleteAction;
     private Class<RestAction> headAction;
+    private final Map<String,String> initParams = new TreeMap<String,String>();
     
     protected String appName;
     protected String componentID;
@@ -117,6 +132,13 @@ public class RestServlet extends HttpServlet
         this.headAction = loadAction(config, "head");
         this.appName = config.getServletContext().getServletContextName();
         this.componentID = appName  + "." + config.getServletName();
+        
+        // application specific config
+        for (String name : new Enumerator<String>(config.getInitParameterNames())) {
+            if (!CITEMS.contains(name)) {
+                initParams.put(name, config.getInitParameter(name));
+            }
+        }
     }
 
     private Class<RestAction> loadAction(ServletConfig config, String method)
@@ -238,6 +260,10 @@ public class RestServlet extends HttpServlet
             logInfo.setSubject(subject);
 
             RestAction action = actionClass.newInstance();
+            action.setAppName(appName);
+            action.setComponentID(componentID);
+            action.setInitParams(initParams);
+            
             InlineContentHandler handler = action.getInlineContentHandler();
             SyncInput in = new SyncInput(request, handler);
             StringBuilder sb = new StringBuilder(in.getComponentPath());
@@ -248,8 +274,6 @@ public class RestServlet extends HttpServlet
             log.info(logInfo.start());
             
             out = new SyncOutput(response);
-            action.setAppName(appName);
-            action.setComponentID(componentID);
             action.setSyncInput(in);
             action.setSyncOutput(out);
             action.setLogInfo(logInfo);
