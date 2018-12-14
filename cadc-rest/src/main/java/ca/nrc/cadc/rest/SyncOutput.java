@@ -106,6 +106,17 @@ public class SyncOutput
     }
 
     /**
+     * Compatibility with cadc-uws-server API that is in use.
+     * 
+     * @param code
+     * @deprecated 
+     */
+    @Deprecated
+    public void setResponseCode(int code) {
+        setCode(code);
+    }
+    
+    /**
      * Set HTTP response code.
      * 
      * @param code HTTP response code
