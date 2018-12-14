@@ -82,14 +82,17 @@ import javax.net.ssl.HttpsURLConnection;
 import org.apache.log4j.Logger;
 
 import ca.nrc.cadc.util.StringUtil;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -116,9 +119,8 @@ public class HttpPost extends HttpTransfer
     private static final String LINE_FEED = "\r\n";
     
     // request information
-    private Map<String,Object> paramMap;
-    private String content;
-    private String contentType;
+    private Map<String,Object> paramMap = new TreeMap<String,Object>(); // removes a lot of checking for null
+    private FileContent inputFileContent;
     private OutputStream outputStream;
 
     // result information
@@ -127,43 +129,47 @@ public class HttpPost extends HttpTransfer
     private String responseBody;
     
     /**
-     * HttpPost contructor.  Redirects will be followed.
+     * HttpPost constructor.  Redirects will be followed.
      * Ideal for large expected responses.
      * 
      * @param url The POST destination.
      * @param map A map of the data to be posted.
      * @param outputStream An output stream to capture the response data.
      */
-    public HttpPost(URL url, Map<String, Object> map, OutputStream outputStream)
-    {
-        super(true);
-        this.remoteURL = url;
-        this.paramMap = map;
+    public HttpPost(URL url, Map<String, Object> map, OutputStream outputStream) {
+        this(url, map, true);
         this.outputStream = outputStream;
-        this.followRedirects = true;
-        if (url == null)
-            throw new IllegalArgumentException("url cannot be null.");
-        if (map == null || map.size() == 0)
-            throw new IllegalArgumentException("parameters cannot be empty.");
-        
     }
     
     /**
-     * HttpPost contructor.
+     * HttpPost constructor.
      * 
      * @param url The POST destination.
      * @param map A map of the data to be posted.
      * @param followRedirects Whether or not to follow server redirects.
      */
-    public HttpPost(URL url, Map<String, Object> map, boolean followRedirects)
-    {
-        super(followRedirects);
-        this.remoteURL = url;
-        this.paramMap = map;
-        if (url == null)
-            throw new IllegalArgumentException("url cannot be null.");
-        if (map == null || map.isEmpty())
+    public HttpPost(URL url, Map<String, Object> map, boolean followRedirects) {
+        this(url, followRedirects);
+        if (map == null || map.isEmpty()) {
             throw new IllegalArgumentException("parameters cannot be empty.");
+        }
+        this.paramMap = map;
+    }
+    
+    /**
+     * HttpPost constructor.
+     * 
+     * @param url
+     * @param input
+     * @param followRedirects
+     */
+    public HttpPost(URL url, FileContent input, boolean followRedirects)
+    {
+        this(url, followRedirects);
+        this.inputFileContent = input;
+        if (input == null) {
+            throw new IllegalArgumentException("input cannot be null");
+        }
     }
     
     /**
@@ -173,17 +179,19 @@ public class HttpPost extends HttpTransfer
      * @param content The content to post.
      * @param contentType The type of the content.
      * @param followRedirects Whether or not to follow server redirects.
+     * @deprecated use a FileContent object instead
      */
-    public HttpPost(URL url, String content, String contentType, boolean followRedirects)
-    {
+    @Deprecated
+    public HttpPost(URL url, String content, String contentType, boolean followRedirects) {
+        this(url, new FileContent(content, contentType, Charset.forName("UTF-8")), followRedirects);
+    }
+    
+    private HttpPost(URL url, boolean followRedirects) {
         super(followRedirects);
+        if (url == null) {
+            throw new IllegalArgumentException("URL cannot be null.");
+        }
         this.remoteURL = url;
-        this.content = content;
-        this.contentType = contentType;
-        if (url == null)
-            throw new IllegalArgumentException("dest cannot be null.");
-        if (!StringUtil.hasText(content))
-            throw new IllegalArgumentException("cannot have empty content.");
     }
 
     @Override
@@ -255,11 +263,7 @@ public class HttpPost extends HttpTransfer
                 HttpsURLConnection sslConn = (HttpsURLConnection) conn;
                 initHTTPS(sslConn);
             }
-            if (content != null)
-                doPost(conn, contentType, content);
-            else
-                doPost(conn, paramMap);
-
+            doPost(conn);
         }
         catch(TransientException tex)
         {
@@ -298,63 +302,57 @@ public class HttpPost extends HttpTransfer
         }
     }
     
-    private void doPost(HttpURLConnection conn, Map<String, Object> parameters)
-        throws IOException, InterruptedException, TransientException
-    {
-        if (parameters == null)
-            parameters = new TreeMap<String,Object>(); // removes a lot of checking for null
+    private void doPost(HttpURLConnection conn)
+        throws IOException, InterruptedException, TransientException {
         
-        Set<String> keys = parameters.keySet();
-        Object value = null;
-
-        Map<String,List<Object>> pmap = new TreeMap<String,List<Object>>();
-        Map<String,Object> uploads = new TreeMap<String,Object>();
-        for (Map.Entry<String,Object> me : parameters.entrySet())
-        {
-            String key = me.getKey();
-            value = me.getValue();
-            if (value instanceof File)
+        if (inputFileContent != null) {
+            doPost(conn, inputFileContent);
+        } else {
+            // separate params from uploads
+            Map<String,List<Object>> pmap = new TreeMap<String,List<Object>>();
+            Map<String,Object> uploads = new TreeMap<String,Object>();
+            for (Map.Entry<String,Object> me : paramMap.entrySet())
             {
-                File u = (File) value;
-                uploads.put(key, u);
+                String key = me.getKey();
+                Object value = me.getValue();
+                if (value instanceof File)
+                {
+                    File u = (File) value;
+                    uploads.put(key, u);
+                }
+                else if (value instanceof FileContent)
+                {
+                    FileContent fc = (FileContent) value;
+                    uploads.put(key, fc);
+                }
+                else if (value instanceof Collection)
+                {
+                    Collection vals = (Collection) value;
+                    List<Object> pmv = new ArrayList<Object>(vals.size());
+                    pmv.addAll(vals);
+                    pmap.put(key, pmv);
+                }
+                else
+                {
+                    List<Object> pmv = new ArrayList<Object>(1);
+                    pmv.add(value);
+                    pmap.put(key, pmv);
+                }
             }
-            else if (value instanceof FileContent)
-            {
-                FileContent fc = (FileContent) value;
-                uploads.put(key, fc);
-            }
-            else if (value instanceof Collection)
-            {
-                Collection vals = (Collection) value;
-                List<Object> pmv = new ArrayList<Object>(vals.size());
-                pmv.addAll(vals);
-                pmap.put(key, pmv);
-            }
-            else
-            {
-                List<Object> pmv = new ArrayList<Object>(1);
-                pmv.add(value);
-                pmap.put(key, pmv);
-            }
+            doPost(conn, pmap, uploads);
         }
-        
-        doPost(conn, pmap, uploads);
     }
     
-    private void doPost(HttpURLConnection conn, String contentType, String content)
-        throws IOException, InterruptedException, TransientException
-    {
+    private void doPost(HttpURLConnection conn, FileContent input)
+        throws IOException, InterruptedException, TransientException {
         setRequestSSOCookie(conn);
         conn.setRequestMethod("POST");
-        if (content != null)
-        {
-            String len = Long.toString(content.getBytes("UTF-8").length);
-            conn.setRequestProperty("Content-Length", len);
-            log.debug("POST Content-Length: " + len);
-        }
-        if (contentType != null)
-            conn.setRequestProperty("Content-Type", contentType);
-        log.debug("POST Content-Type: " + contentType);
+        byte[] buf = input.getBytes();
+        String len = Long.toString(buf.length);
+        conn.setRequestProperty("Content-Length", len);
+        log.debug("POST Content-Length: " + len);
+        conn.setRequestProperty("Content-Type", input.getContentType());
+        log.debug("POST Content-Type: " + input.getContentType());
         
         setRequestHeaders(conn);
         
@@ -363,10 +361,13 @@ public class HttpPost extends HttpTransfer
         conn.setDoOutput(true);
         conn.setDoInput(true);
         
-        OutputStreamWriter writer = new OutputStreamWriter(conn.getOutputStream(), "UTF-8");
-        writer.write(content);
-        writer.flush();
-        writer.close();
+        OutputStream ostream = conn.getOutputStream();
+        try {
+            ostream.write(input.getBytes());
+        } finally {
+            ostream.flush();
+            ostream.close();
+        }
         
         log.debug("POST - done: " + remoteURL.toString());
         
@@ -425,30 +426,33 @@ public class HttpPost extends HttpTransfer
         
         log.debug("params: " + sb.toString());
         
-        OutputStreamWriter writer = new OutputStreamWriter(conn.getOutputStream(), "UTF-8");
-        writer.write(sb.toString());
-        
-        if (multi)
-        {
-            for (Map.Entry<String,Object> up : uploads.entrySet())
-            {
-                if (up.getValue() instanceof File) {
-                    writeFilePart(up.getKey(), ((File)up.getValue()), writer);
-                }
-                else if (up.getValue() instanceof FileContent) {
-                    writeFilePart(up.getKey(), (FileContent)up.getValue(), writer);
-                }
-                else {
-                    throw new UnsupportedOperationException("Unexpected upload type: " + up.getClass().getName());
-                }
-            }
+        Charset utf8 = Charset.forName("UTF-8");
+        OutputStream writer = conn.getOutputStream();
+        try {
+            writer.write(sb.toString().getBytes(utf8));
 
-            String end = LINE_FEED + "--" + MULTIPART_BOUNDARY + "--" + LINE_FEED;
-            writer.append(end);
+            if (multi)
+            {
+                for (Map.Entry<String,Object> up : uploads.entrySet())
+                {
+                    if (up.getValue() instanceof File) {
+                        writeFilePart(up.getKey(), ((File)up.getValue()), writer, utf8);
+                    }
+                    else if (up.getValue() instanceof FileContent) {
+                        writeFilePart(up.getKey(), (FileContent)up.getValue(), writer, utf8);
+                    }
+                    else {
+                        throw new UnsupportedOperationException("Unexpected upload type: " + up.getClass().getName());
+                    }
+                }
+
+                String end = LINE_FEED + "--" + MULTIPART_BOUNDARY + "--" + LINE_FEED;
+                writer.write(end.getBytes(utf8));
+            }
+        } finally {
+            writer.flush();
+            writer.close();
         }
-        
-        writer.flush();
-        writer.close();
 
         log.debug("POST - done: " + remoteURL.toString());
         
@@ -520,7 +524,7 @@ public class HttpPost extends HttpTransfer
         }
     }
     
-    private void writeFilePart(String fieldName, File uploadFile, Writer w)
+    private void writeFilePart(String fieldName, File uploadFile, OutputStream w, Charset utf8)
         throws IOException 
     {
         StringBuilder sb = new StringBuilder();
@@ -531,14 +535,14 @@ public class HttpPost extends HttpTransfer
         sb.append(LINE_FEED);
         
         log.debug("MULTIPART PORTION: " + sb.toString());
-        w.append(sb);
+        w.write(sb.toString().getBytes(utf8));
         
-        FileReader r = null;
+        FileInputStream r = null;
         long len = 0;
         try
         {
-            r = new FileReader(uploadFile);
-            char[] buffer = new char[4096];
+            r = new FileInputStream(uploadFile);
+            byte[] buffer = new byte[4096];
             int bytesRead;
             while ((bytesRead = r.read(buffer)) != -1) 
             {
@@ -554,7 +558,7 @@ public class HttpPost extends HttpTransfer
         log.debug("file part length: " + len);
     }
 
-    private void writeFilePart(String fieldName, FileContent uploadContent, Writer w)
+    private void writeFilePart(String fieldName, FileContent uploadContent, OutputStream w, Charset utf8)
         throws IOException
     {
         StringBuilder sb = new StringBuilder();
@@ -566,14 +570,15 @@ public class HttpPost extends HttpTransfer
             + " filename=\"dummyFile\"");
 
         if (uploadContent.getContentType() != null ) {
-            sb.append(LINE_FEED).append("Content-Type: " + uploadContent.getContentType() + ";");
+            sb.append(LINE_FEED).append("Content-Type: " + uploadContent.getContentType());
         }
         sb.append(LINE_FEED);
         sb.append(LINE_FEED);
 
         log.debug("MULTIPART PORTION: " + sb.toString());
-        w.append(sb);
-        w.write(uploadContent.getContent());
+        w.write(sb.toString().getBytes(utf8));
+        w.write(uploadContent.getBytes());
+        w.flush();
     }
     
     private int checkStatusCode(HttpURLConnection conn)

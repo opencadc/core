@@ -69,32 +69,36 @@
 
 package ca.nrc.cadc.net;
 
+import java.nio.charset.Charset;
+
 /**
  * Created by jeevesh on 2018-10-17.
  */
 public class FileContent {
 
-    private String content;
+    private byte[] content;
     private String contentType;
 
-    public FileContent(String content, String contentType) {
-
+    public FileContent(String content, String contentType, Charset cs) {
+        this(content.getBytes(cs), contentType);
+    }
+    
+    public FileContent(byte[] content, String contentType) {
         if (content == null) {
             throw new IllegalArgumentException("content required");
         }
-        this.content = content;
-
         if (contentType == null) {
             throw new IllegalArgumentException("contentType required");
         }
+        this.content = content;
         this.contentType = contentType;
-    }
-
-    public String getContent() {
-        return content;
     }
 
     public String getContentType() {
         return contentType;
+    }
+    
+    public byte[] getBytes() {
+        return content;
     }
 }
