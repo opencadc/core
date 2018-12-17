@@ -96,6 +96,13 @@ public class Enumerator<T> implements Iterator<T>, Iterable<T> {
     }
 
     @Override
+    public void remove() {
+        // JDK7 support
+        throw new UnsupportedOperationException();
+    }
+
+    
+    @Override
     public Iterator<T> iterator() {
         return this;
     }
