@@ -62,43 +62,48 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
 */
 
-package ca.nrc.cadc.net;
+package ca.nrc.cadc.util;
 
-import java.nio.charset.Charset;
+import java.util.Enumeration;
+import java.util.Iterator;
+import org.apache.log4j.Logger;
 
 /**
- * Created by jeevesh on 2018-10-17.
+ * Simple wrapper to support using Enumeration when needing an Iterator.
+ * 
+ * @author pdowler
  */
-public class FileContent {
+public class Enumerator<T> implements Iterator<T>, Iterable<T> {
+    private static final Logger log = Logger.getLogger(Enumerator.class);
 
-    private byte[] content;
-    private String contentType;
-
-    public FileContent(String content, String contentType, Charset cs) {
-        this(content.getBytes(cs), contentType);
+    private final Enumeration<T> wrapped;
+            
+    public Enumerator(Enumeration<T> wrapped) {
+        this.wrapped = wrapped;
     }
+
+    @Override
+    public boolean hasNext() {
+        return wrapped.hasMoreElements();
+    }
+
+    @Override
+    public T next() {
+        return wrapped.nextElement();
+    }
+
+    @Override
+    public void remove() {
+        // JDK7 support
+        throw new UnsupportedOperationException();
+    }
+
     
-    public FileContent(byte[] content, String contentType) {
-        if (content == null) {
-            throw new IllegalArgumentException("content required");
-        }
-        if (contentType == null) {
-            throw new IllegalArgumentException("contentType required");
-        }
-        this.content = content;
-        this.contentType = contentType;
-    }
-
-    public String getContentType() {
-        return contentType;
-    }
-    
-    public byte[] getBytes() {
-        return content;
+    @Override
+    public Iterator<T> iterator() {
+        return this;
     }
 }
