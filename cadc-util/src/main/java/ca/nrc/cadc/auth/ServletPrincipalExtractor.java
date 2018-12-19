@@ -69,9 +69,12 @@
 
 package ca.nrc.cadc.auth;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.AccessControlException;
 import java.security.Principal;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -83,6 +86,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import ca.nrc.cadc.net.NetUtil;
 import org.apache.log4j.Logger;
+import org.apache.xerces.impl.dv.util.Base64;
 
 import ca.nrc.cadc.util.ArrayUtil;
 import ca.nrc.cadc.util.StringUtil;
@@ -96,6 +100,8 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
     private static final Logger log = Logger.getLogger(ServletPrincipalExtractor.class);
     
     public static final String CERT_REQUEST_ATTRIBUTE = "javax.servlet.request.X509Certificate";
+    public static final String CERT_HEADER_FIELD = "X-Client-Certificate";
+    
     private final HttpServletRequest request;
 
     private X509CertificateChain chain;
@@ -117,10 +123,34 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
     public ServletPrincipalExtractor(final HttpServletRequest req)
     {
         this.request = req;
+        
+        // support certs from the java request attribute and from
+        // the request header.  favour the request attribute for now.
         X509Certificate[] ca = (X509Certificate[])
             request.getAttribute(CERT_REQUEST_ATTRIBUTE);
-
-        if (!ArrayUtil.isEmpty(ca)) {
+        
+        if (ArrayUtil.isEmpty(ca)) {
+            // try the header field
+            String certString = req.getHeader(CERT_HEADER_FIELD);
+            log.debug("Cert String: " + certString);
+            if (certString != null && certString.length() > 0) {
+                try {
+                    byte[] certBytes = Base64.decode(certString);
+                    if (certBytes != null) {
+                        CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+                        ByteArrayInputStream in = new ByteArrayInputStream(certBytes);
+                        List<X509Certificate> certList = (List<X509Certificate>) certFactory.generateCertificates(in);
+                        chain = new X509CertificateChain(certList);
+                        if (chain != null) {
+                            principals.add(chain.getPrincipal());
+                        }
+                    }
+                } catch (CertificateException e) {
+                    log.error("Failed to read certificate", e);
+                    throw new AccessControlException("Failed to read certificate: " + e.getMessage());
+                }
+            }
+        } else {
             chain = new X509CertificateChain(Arrays.asList(ca));
             if (chain != null) {
                 principals.add(chain.getPrincipal());

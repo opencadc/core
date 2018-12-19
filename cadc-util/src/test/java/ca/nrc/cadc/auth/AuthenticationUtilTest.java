@@ -450,6 +450,7 @@ public class AuthenticationUtilTest
             expect(mockRequest.getHeader(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
             expect(mockRequest.getAttribute(
                     "javax.servlet.request.X509Certificate")).andReturn(null).atLeastOnce();
+            expect(mockRequest.getHeader(ServletPrincipalExtractor.CERT_HEADER_FIELD)).andReturn(null);
 
             replay(mockRequest);
             final Subject subject1 = AuthenticationUtil.getSubject(mockRequest);
@@ -485,6 +486,7 @@ public class AuthenticationUtilTest
             expect(mockRequest.getHeader(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
             expect(mockRequest.getAttribute(
                     "javax.servlet.request.X509Certificate")).andReturn(null).atLeastOnce();
+            expect(mockRequest.getHeader(ServletPrincipalExtractor.CERT_HEADER_FIELD)).andReturn(null);
 
             replay(mockRequest);
             final Subject subject1 = AuthenticationUtil.getSubject(mockRequest);
