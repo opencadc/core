@@ -589,6 +589,7 @@ public class HttpPost extends HttpTransfer
         this.responseCode = code;
         
         if (code != HttpURLConnection.HTTP_OK &&
+            code != HttpURLConnection.HTTP_CREATED &&
             code != HttpURLConnection.HTTP_MOVED_TEMP &&
             code != HttpURLConnection.HTTP_SEE_OTHER)
         {
