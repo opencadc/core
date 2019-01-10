@@ -451,7 +451,7 @@ public class HttpUpload extends HttpTransfer
         int code = conn.getResponseCode();
         log.debug("code: " + code);
         this.responseCode = code;
-        if (code != HttpURLConnection.HTTP_OK)
+        if (code != HttpURLConnection.HTTP_OK && code != HttpURLConnection.HTTP_CREATED)
         {
             String msg = "(" + code + ") " + conn.getResponseMessage();
             checkTransient(code, msg, conn);
