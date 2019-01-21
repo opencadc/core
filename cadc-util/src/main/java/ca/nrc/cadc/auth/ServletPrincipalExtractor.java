@@ -72,10 +72,12 @@ package ca.nrc.cadc.auth;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.AccessControlException;
+import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -135,17 +137,10 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
             log.debug("Cert String: " + certString);
             if (certString != null && certString.length() > 0) {
                 try {
-                    byte[] certBytes = Base64.decode(certString);
-                    if (certBytes != null) {
-                        CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-                        ByteArrayInputStream in = new ByteArrayInputStream(certBytes);
-                        List<X509Certificate> certList = (List<X509Certificate>) certFactory.generateCertificates(in);
-                        chain = new X509CertificateChain(certList);
-                        if (chain != null) {
-                            principals.add(chain.getPrincipal());
-                        }
-                    }
-                } catch (CertificateException e) {
+                    byte[] certBytes = SSLUtil.getCertificates(certString.getBytes());
+                    chain = SSLUtil.readPemCertificateAndKey(certBytes);
+                    principals.add(chain.getPrincipal());
+                } catch (Exception e) {
                     log.error("Failed to read certificate", e);
                     throw new AccessControlException("Failed to read certificate: " + e.getMessage());
                 }
