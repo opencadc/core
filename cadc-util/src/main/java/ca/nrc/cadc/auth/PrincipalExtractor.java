@@ -31,6 +31,7 @@
  ****  C A N A D I A N   A S T R O N O M Y   D A T A   C E N T R E  *****
  ************************************************************************
  */
+
 package ca.nrc.cadc.auth;
 
 import java.security.Principal;
@@ -43,8 +44,24 @@ import java.util.Set;
  * to know how to pull Principals from their context, and provide them to the
  * caller.
  */
-public interface PrincipalExtractor
-{
+public interface PrincipalExtractor {
+    
+    /**
+     * System property to enable using the an HTTP header to get the client certificate.
+     * This feature must only be enabled in a back end server that trusts the connecting
+     * client to do SSL termination with client certificates; the back end server should
+     * not be exposed to untrusted connections (e.g. the internet) as anyone could send in
+     * a user identity (client cert) and impersonate that user. The value of this system
+     * property is <em>{fully qualified class name of this class}.enableClientCertHeader</em>.
+     */
+    public static final String CERT_HEADER_ENABLE = PrincipalExtractor.class.getName() + ".enableClientCertHeader";
+    
+    /**
+     * HTTP Header value for getting the client certificate. 
+     * The value is <em>X-Client-Certificate</em>.
+     */
+    public static final String CERT_HEADER_FIELD = "X-Client-Certificate";
+    
     /**
      * Obtain a Collection of Principals from this extractor.  This should be
      * immutable.

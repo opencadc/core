@@ -394,31 +394,48 @@ public class SSLUtil
 
         List<byte[]> certs = new ArrayList<byte[]>(); //list of byte certificates
         int byteSize = 0;
-        while (line != null)
-        {
-            StringBuilder base64 = new StringBuilder();
-            if (line.startsWith(X509CertificateChain.CERT_BEGIN))
-            {
-                //log.debug(line);
-                line = rdr.readLine();
-                while (line != null && !line.startsWith(X509CertificateChain.CERT_END))
-                {
-                    //log.debug(line + " (" + line.length() + ")");
-                    base64.append(line.trim());
-                    line = rdr.readLine();
-                }
-                if (line.startsWith(X509CertificateChain.CERT_END))
-                {
-                    String encoded = base64.toString();
-                    //log.debug("CERTIFICATE: " + encoded);
-                    byte[] tmp = Base64.decode(encoded);
-                    byteSize += tmp.length;
-                    certs.add(tmp);
-                }
-                //log.debug(line);
+        if (line != null) {
+            line = line.trim();
+            
+            if (!line.startsWith("---")) {
+                // HAProxy cert from http header: single base64 encoded cert
+                byte[] tmp = Base64.decode(line);
+                byteSize += tmp.length;
+                certs.add(tmp);
             }
-            else
-                line = rdr.readLine();
+            // TODO nginx SSL ternination and client cert forwarding: 
+            //       includes the begin/end markers and arbitrary whitespace in place of EOL
+            
+            // TODO apache SSL termination and client cert forwarding: ??
+        }
+        if (byteSize == 0) {
+            while (line != null)
+            {
+
+
+                StringBuilder base64 = new StringBuilder();
+                if (line.startsWith(X509CertificateChain.CERT_BEGIN))
+                {
+                    //log.debug(line);
+                    line = rdr.readLine();
+                    while (line != null && !line.startsWith(X509CertificateChain.CERT_END))
+                    {
+                        //log.debug(line + " (" + line.length() + ")");
+                        base64.append(line.trim());
+                        line = rdr.readLine();
+                    }
+                    if (line.startsWith(X509CertificateChain.CERT_END))
+                    {
+                        String encoded = base64.toString();
+                        //log.debug("CERTIFICATE: " + encoded);
+                        byte[] tmp = Base64.decode(encoded);
+                        byteSize += tmp.length;
+                        certs.add(tmp);
+                    }
+                    //log.debug(line);
+                } else // blank line
+                    line = rdr.readLine();
+            }
         }
         rdr.close();
 

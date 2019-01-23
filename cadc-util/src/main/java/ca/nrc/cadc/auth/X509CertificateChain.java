@@ -160,12 +160,10 @@ public class X509CertificateChain
         }
         
         String canonizedDn = AuthenticationUtil.canonizeDistinguishedName(principal.getName());
-        //TODO
-        //AD: For some reason, tomcat only passes the first certificate in the
-        // chain which makes this method fail if the proxy certificate has
-        // more than two certificates in the chain. This issue needs to be addressed.
-        // The following line is just a temporary solution
-        if(canonizedDn.lastIndexOf("cn=") > -1)
+        //TODO: some upstream SSL termination engines (haproxy, tomcat) only pass the first certificate in the
+        // chain which makes the correct method above fail if the proxy certificate has more than two certificates 
+        // in the chain. The following is just a workaround to remove extra leading CN(s):
+        if(canonizedDn.lastIndexOf("cn=") > -1) 
         {
             canonizedDn = canonizedDn.substring(canonizedDn.lastIndexOf("cn="));
         }
