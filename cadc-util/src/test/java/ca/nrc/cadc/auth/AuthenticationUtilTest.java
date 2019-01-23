@@ -450,6 +450,9 @@ public class AuthenticationUtilTest
             expect(mockRequest.getHeader(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
             expect(mockRequest.getAttribute(
                     "javax.servlet.request.X509Certificate")).andReturn(null).atLeastOnce();
+            
+            // not enabled by default
+            //expect(mockRequest.getHeader(ServletPrincipalExtractor.CERT_HEADER_FIELD)).andReturn(null);
 
             replay(mockRequest);
             final Subject subject1 = AuthenticationUtil.getSubject(mockRequest);
@@ -468,6 +471,47 @@ public class AuthenticationUtilTest
         finally
         {
             log.debug("testGetSubjectFromHttpServletRequest_anon - DONE");
+        }
+    }
+    
+    @Test
+    public void testGetSubjectFromHttpServletRequest_XClientCertificateEnabled()
+    {
+        log.debug("testGetSubjectFromHttpServletRequest_Anon - START");
+        try
+        {
+            System.setProperty(PrincipalExtractor.CERT_HEADER_ENABLE, "true");
+            
+            final HttpServletRequest mockRequest =
+                createMock(HttpServletRequest.class);
+
+            expect(mockRequest.getRemoteUser()).andReturn(null).atLeastOnce();
+            expect(mockRequest.getCookies()).andReturn(null).atLeastOnce();
+            expect(mockRequest.getHeader(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
+            expect(mockRequest.getAttribute(
+                    "javax.servlet.request.X509Certificate")).andReturn(null).atLeastOnce();
+            
+            // enabled by system property
+            expect(mockRequest.getHeader(ServletPrincipalExtractor.CERT_HEADER_FIELD)).andReturn(null).atLeastOnce();
+
+            replay(mockRequest);
+            final Subject subject1 = AuthenticationUtil.getSubject(mockRequest);
+
+            assertEquals(0, subject1.getPrincipals().size());
+            AuthMethod am = AuthenticationUtil.getAuthMethod(subject1);
+            assertEquals(AuthMethod.ANON, am);
+
+            verify(mockRequest);
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            fail("unexpected exception: " + unexpected);
+        }
+        finally
+        {
+            log.debug("testGetSubjectFromHttpServletRequest_anon - DONE");
+            System.setProperty(PrincipalExtractor.CERT_HEADER_ENABLE, "false");
         }
     }
 

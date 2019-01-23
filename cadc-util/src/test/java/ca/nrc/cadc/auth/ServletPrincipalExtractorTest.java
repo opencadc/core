@@ -102,6 +102,7 @@ public class ServletPrincipalExtractorTest
                 andReturn(SSOCookieManager.DEFAULT_SSO_COOKIE_NAME);
             expect(cookie.getValue()).andReturn(cookieValue).atLeastOnce();
             expect(cookie.getDomain()).andReturn("cookiedomain").atLeastOnce();
+            expect(request.getHeader(ServletPrincipalExtractor.CERT_HEADER_FIELD)).andReturn(null);
             replay(request);
             replay(cookie);
             ServletPrincipalExtractor ex = new ServletPrincipalExtractor(request);
@@ -133,6 +134,7 @@ public class ServletPrincipalExtractorTest
                 andReturn(SSOCookieManager.DEFAULT_SSO_COOKIE_NAME);
             expect(cookie.getValue()).andReturn(cookieValue).atLeastOnce();
             expect(cookie.getDomain()).andReturn("cookiedomain").atLeastOnce();
+            expect(request.getHeader(ServletPrincipalExtractor.CERT_HEADER_FIELD)).andReturn(null);
             replay(request);
             replay(cookie);
             ex = new ServletPrincipalExtractor(request);

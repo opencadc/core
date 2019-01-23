@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2018.                            (c) 2018.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -69,6 +69,9 @@
 
 package ca.nrc.cadc.auth;
 
+import ca.nrc.cadc.net.NetUtil;
+import ca.nrc.cadc.util.ArrayUtil;
+import ca.nrc.cadc.util.StringUtil;
 import java.io.IOException;
 import java.security.AccessControlException;
 import java.security.Principal;
@@ -77,16 +80,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
-
-import ca.nrc.cadc.net.NetUtil;
 import org.apache.log4j.Logger;
-
-import ca.nrc.cadc.util.ArrayUtil;
-import ca.nrc.cadc.util.StringUtil;
-
 
 /**
  * Implementation of a Principal Extractor from an HttpServletRequest.
@@ -96,6 +92,7 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
     private static final Logger log = Logger.getLogger(ServletPrincipalExtractor.class);
     
     public static final String CERT_REQUEST_ATTRIBUTE = "javax.servlet.request.X509Certificate";
+    
     private final HttpServletRequest request;
 
     private X509CertificateChain chain;
@@ -117,13 +114,30 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
     public ServletPrincipalExtractor(final HttpServletRequest req)
     {
         this.request = req;
-        X509Certificate[] ca = (X509Certificate[])
-            request.getAttribute(CERT_REQUEST_ATTRIBUTE);
-
+        
+        // support certs from the java request attribute
+        X509Certificate[] ca = (X509Certificate[]) request.getAttribute(CERT_REQUEST_ATTRIBUTE);
         if (!ArrayUtil.isEmpty(ca)) {
             chain = new X509CertificateChain(Arrays.asList(ca));
             if (chain != null) {
                 principals.add(chain.getPrincipal());
+            }
+        } 
+        
+        // optionally get client certificate from a request header
+        if (chain == null && "true".equals(System.getProperty(CERT_HEADER_ENABLE))) {
+            // try the header field
+            String certString = req.getHeader(CERT_HEADER_FIELD);
+            log.debug(CERT_HEADER_FIELD + ":\n" + certString + "\n");
+            if (certString != null && certString.length() > 0) {
+                try {
+                    byte[] certBytes = SSLUtil.getCertificates(certString.getBytes());
+                    chain = new X509CertificateChain(SSLUtil.readCertificateChain(certBytes), null);
+                    principals.add(chain.getPrincipal());
+                } catch (Exception e) {
+                    log.error("Failed to read certificate", e);
+                    throw new AccessControlException("Failed to read certificate: " + e.getMessage());
+                }
             }
         }
 
