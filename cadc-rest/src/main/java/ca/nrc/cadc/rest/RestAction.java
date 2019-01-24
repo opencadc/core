@@ -238,6 +238,8 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
         this.syncOutput = syncOutput;
     }
 
+    // return Object ignored; method signature from PrivilegedExceptionAction
+    @Override
     public Object run()
         throws Exception
     {
@@ -246,7 +248,16 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
             logInfo.setSuccess(false);
             if (syncInput != null)
             {
-                syncInput.init();
+                try 
+                {
+                    syncInput.init();
+                }
+                catch(IOException ex) {
+                    // failed to read input stream
+                    logInfo.setSuccess(false);
+                    handleException(ex, 500, "failed to read input -- reason: " + ex.getMessage(), false, true);
+                    return null;
+                }
             }
             initState();
             doAction();
@@ -282,6 +293,7 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
             logInfo.setSuccess(true);
             handleException(ex, 413, ex.getMessage(), false, false);
         }
+        
         catch(UnsupportedOperationException ex)
         {
             logInfo.setSuccess(true);
