@@ -243,21 +243,14 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
     public Object run()
         throws Exception
     {
+        boolean ioExceptionOnInput = true;
         try
         {
             logInfo.setSuccess(false);
             if (syncInput != null)
             {
-                try 
-                {
-                    syncInput.init();
-                }
-                catch(IOException ex) {
-                    // failed to read input stream
-                    logInfo.setSuccess(false);
-                    handleException(ex, 500, "failed to read input -- reason: " + ex.getMessage(), false, true);
-                    return null;
-                }
+                syncInput.init();
+                ioExceptionOnInput = false;
             }
             initState();
             doAction();
@@ -293,7 +286,6 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
             logInfo.setSuccess(true);
             handleException(ex, 413, ex.getMessage(), false, false);
         }
-        
         catch(UnsupportedOperationException ex)
         {
             logInfo.setSuccess(true);
@@ -304,6 +296,18 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
             logInfo.setSuccess(true);
             syncOutput.setHeader(HttpTransfer.SERVICE_RETRY, ex.getRetryDelay());
             handleException(ex, 503, "temporarily unavailable: " + syncInput.getPath(), true, false);
+        }
+        catch(IOException ex) {
+            if (ioExceptionOnInput) {
+                // failed to read input stream
+                logInfo.setSuccess(false);
+                handleException(ex, 500, "failed to read input -- reason: " + ex.getMessage(), false, true);
+            } else {
+                // same as Error below
+                logInfo.setSuccess(false);
+                handleException(ex, 500, "unexpected error: " + syncInput.getPath(), true, true);
+            }
+            
         }
         catch(RuntimeException unexpected)
         {
