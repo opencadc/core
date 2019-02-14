@@ -69,6 +69,7 @@
 
 package ca.nrc.cadc.rest;
 
+import ca.nrc.cadc.net.ResourceNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -94,10 +95,11 @@ public interface InlineContentHandler
      * @param inputStream containing the data.
      * @throws InlineContentException for errors storing the data.
      * @throws IOException for errors reading the InputStream.
+     * @throws ResourceNotFoundException if the specified destination for the input content is not found
      * @return Content inline content.
      */
     Content accept(String name, String contentType, InputStream inputStream)
-        throws InlineContentException, IOException;
+        throws InlineContentException, IOException, ResourceNotFoundException;
 
     public static class Content
     {
