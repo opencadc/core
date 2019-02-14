@@ -71,6 +71,8 @@ package ca.nrc.cadc.rest;
 
 import ca.nrc.cadc.util.CaseInsensitiveStringComparator;
 import ca.nrc.cadc.net.NetUtil;
+import ca.nrc.cadc.net.ResourceNotFoundException;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -263,7 +265,7 @@ public class SyncInput
     	return content.get(name);
     }
     
-    public void init() throws IOException
+    public void init() throws IOException, ResourceNotFoundException
     {
         if (request.getMethod().equals("GET") ||
                 request.getMethod().equals("HEAD") ||
@@ -321,7 +323,7 @@ public class SyncInput
     }
 
     private void processMultiPart(FileItemIterator itemIterator)
-        throws FileUploadException, IOException
+        throws FileUploadException, IOException, ResourceNotFoundException
     {
         while (itemIterator.hasNext())
         {
@@ -336,16 +338,37 @@ public class SyncInput
     }
 
     private void processStream(String name, String contentType, InputStream inputStream)
-        throws IOException
+        throws IOException, ResourceNotFoundException
     {
-    	if (inlineContentHandler == null)
-    	{
-    		log.warn("request includes inline content and inlne content handler is null");
-    		// TODO: Need to figure if we need to process the stream to completion
-    		return;
-    	}
+        if (inlineContentHandler == null) {
+            log.warn("request includes inline content and InlineContentHandler is null");
+            // TODO: Need to figure if we need to process the stream to completion
+            return;
+        }
 
-        InlineContentHandler.Content c = inlineContentHandler.accept(name, contentType, inputStream);
+        InlineContentHandler.Content c = inlineContentHandler.accept(name, contentType, new CloseWrapper(inputStream));
         content.put(c.name, c.value);
+    }
+    
+    // this is here to aid in debugging InputStream failures like the one where some library code
+    // called close() in a finalise() method, eg during garbage collection
+    private class CloseWrapper extends FilterInputStream {
+
+        String tname;
+        public CloseWrapper(InputStream in) {
+            super(in);
+            this.tname = "CloseWrapper[" + Thread.currentThread().getName() + "] ";
+        }
+
+        @Override
+        public void close() throws IOException {
+            Exception ex = new Exception();
+            String streamID = super.in.toString();
+            //log.debug(tname + " - " + streamID + ": close() was called: ", ex);
+            super.in.close();
+        }
+        
+        
+        
     }
 }
