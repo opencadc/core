@@ -94,6 +94,8 @@ import ca.nrc.cadc.net.event.TransferEvent;
 import ca.nrc.cadc.util.FileMetadata;
 import ca.nrc.cadc.util.StringUtil;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Simple task to encapsulate a single download (GET). This class supports http and https
@@ -414,6 +416,7 @@ public class HttpDownload extends HttpTransfer
             return; // cancelled while queued, event notification handled in terminate()
         
         boolean throwTE = false;
+        URL originalURL = remoteURL;
         try
         {
             // store the thread so that other threads (typically the
@@ -422,7 +425,26 @@ public class HttpDownload extends HttpTransfer
             
             fireEvent(TransferEvent.CONNECTING);
 
-            doGet();
+            boolean done = false;
+            
+            List<URL> visitedURLs = new ArrayList<URL>();
+            while (!done) {
+                done = true;
+                doGet();
+                if (followRedirects && redirectURL != null) {
+                    if (visitedURLs.contains(redirectURL)) {
+                        throw new IllegalArgumentException("redirect back to a previously visited URL: " + redirectURL);
+                    }
+                    if (visitedURLs.size() > 6) {
+                        throw new IllegalArgumentException("redirect exceeded hard-coded limit (6): " + redirectURL);
+                    }
+                    visitedURLs.add(remoteURL);
+                    remoteURL = redirectURL;
+                    redirectURL = null;
+                    done = false;
+                }
+            }
+            
             
             if (decompress && decompressor != NONE)
             {
@@ -453,6 +475,7 @@ public class HttpDownload extends HttpTransfer
         }
         finally
         {
+            remoteURL = originalURL;
             synchronized(this) // vs sync block in terminate() 
             {
                 if (thread != null)
