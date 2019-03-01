@@ -462,6 +462,9 @@ public class HttpPost extends HttpTransfer
     private void handleResponse(HttpURLConnection conn)
         throws IOException, InterruptedException, TransientException
     {
+        // generic capture
+        captureResponseHeaders(conn);
+        
         //int statusCode = checkStatusCode(conn);
         this.responseCode = conn.getResponseCode();
         this.responseContentType = conn.getContentType();
@@ -562,7 +565,7 @@ public class HttpPost extends HttpTransfer
         throws IOException
     {
         StringBuilder sb = new StringBuilder();
-        log.warn(uploadContent.getContentType());
+        log.debug("writeFilePart: " + uploadContent.getContentType());
         sb.append(LINE_FEED).append("--" + MULTIPART_BOUNDARY);
         // 'filename' for data entry is needed so this data is treated as
         // stream input by the accepting web service

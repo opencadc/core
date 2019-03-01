@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2016.                            (c) 2016.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -69,6 +69,15 @@
 
 package ca.nrc.cadc.net;
 
+import ca.nrc.cadc.auth.SSLUtil;
+import ca.nrc.cadc.auth.SSOCookieCredential;
+import ca.nrc.cadc.auth.SSOCookieManager;
+import ca.nrc.cadc.net.event.ProgressListener;
+import ca.nrc.cadc.net.event.TransferEvent;
+import ca.nrc.cadc.net.event.TransferListener;
+import ca.nrc.cadc.util.FileMetadata;
+import ca.nrc.cadc.util.HexUtil;
+import ca.nrc.cadc.util.StringUtil;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -81,27 +90,18 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-
+import java.util.TreeMap;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
 import javax.security.auth.Subject;
-
 import org.apache.log4j.Logger;
-
-import ca.nrc.cadc.auth.SSLUtil;
-import ca.nrc.cadc.auth.SSOCookieCredential;
-import ca.nrc.cadc.auth.SSOCookieManager;
-import ca.nrc.cadc.net.event.ProgressListener;
-import ca.nrc.cadc.net.event.TransferEvent;
-import ca.nrc.cadc.net.event.TransferListener;
-import ca.nrc.cadc.util.FileMetadata;
-import ca.nrc.cadc.util.HexUtil;
-import ca.nrc.cadc.util.StringUtil;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 /**
  * Base class for HTTP transfers.
@@ -125,7 +125,7 @@ public abstract class HttpTransfer implements Runnable
     public static final String SERVICE_RETRY = "Retry-After";
 
     public static final int DEFAULT_BUFFER_SIZE = 8*1024; // 8KB
-    // note: thecombiantion of a large buffer, small-ish streamed put w/ no
+    // note: the combination of a large buffer, small-ish streamed put w/ no
     // content-length, and tomcat6 fails, plus apache+tomcat seem to have some
     // limits at 8k anyway
 
@@ -199,8 +199,7 @@ public abstract class HttpTransfer implements Runnable
     protected boolean followRedirects = false;
     protected URL redirectURL;
     protected int responseCode = -1;
-
-    private SSLSocketFactory sslSocketFactory;
+    protected final Map<String,String> responseHeaders = new TreeMap<String,String>();
 
     static
     {
@@ -246,6 +245,28 @@ public abstract class HttpTransfer implements Runnable
         log.debug("bufferSize: " + bufferSize);
     }
 
+    /**
+     * Get an HTTP header value from the response. Subclasses may provide more convenient type-safe
+     * methods to get specific standard header values.
+     * 
+     * @param key
+     * @return header value, possibly null
+     */
+    public String getResponseHeader(String key) {
+        return responseHeaders.get(key);
+    }
+    
+    protected void captureResponseHeaders(HttpURLConnection con) {
+        for (String key : con.getHeaderFields().keySet()) {
+            if (key != null) {
+                String value = con.getHeaderField(key);
+                if (value != null) {
+                    responseHeaders.put(key, value);
+                }
+            }
+        }
+    }
+    
     /**
      * Set the current following redirects behaviour.
      *
@@ -392,16 +413,6 @@ public abstract class HttpTransfer implements Runnable
             log.debug("add request properties: " + props.size());
             this.requestProperties.addAll(props);
         }
-    }
-
-    public void setSSLSocketFactory(SSLSocketFactory sslSocketFactory)
-    {
-        this.sslSocketFactory = sslSocketFactory;
-    }
-
-    public SSLSocketFactory getSSLSocketFactory()
-    {
-        return this.sslSocketFactory;
     }
 
     public void setOverwriteChooser(OverwriteChooser overwriteChooser) { this.overwriteChooser = overwriteChooser; }
@@ -604,19 +615,14 @@ public abstract class HttpTransfer implements Runnable
     /**
      * @param sslConn
      */
-    protected void initHTTPS(HttpsURLConnection sslConn)
-    {
-        if (sslSocketFactory == null) // lazy init
-        {
-            log.debug("initHTTPS: lazy init");
-            AccessControlContext ac = AccessController.getContext();
-            Subject s = Subject.getSubject(ac);
-            this.sslSocketFactory = SSLUtil.getSocketFactory(s);
-        }
-        if (sslSocketFactory != null)
-        {
+    protected void initHTTPS(HttpsURLConnection sslConn) {
+        log.debug("initHTTPS: lazy init");
+        AccessControlContext ac = AccessController.getContext();
+        Subject s = Subject.getSubject(ac);
+        SSLSocketFactory sf = SSLUtil.getSocketFactory(s);
+        if (sf != null) {
             log.debug("setting SSLSocketFactory on " + sslConn.getClass().getName());
-            sslConn.setSSLSocketFactory(sslSocketFactory);
+            sslConn.setSSLSocketFactory(sf);
         }
     }
 
