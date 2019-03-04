@@ -142,6 +142,9 @@ public class HttpDelete extends HttpTransfer
     void verifyDelete(final HttpURLConnection connection) throws IOException
     {
         responseCode = connection.getResponseCode();
+        // generic capture
+        captureResponseHeaders(connection);
+        
         final String responseMessage = connection.getResponseMessage();
 
         switch (responseCode)

@@ -361,14 +361,6 @@ public class HttpUpload extends HttpTransfer
             conn.setRequestProperty("Content-MD5", contentMD5);
 
         setRequestHeaders(conn);
-//        log.debug("custom request properties: " + requestProperties.size());
-//        for (HttpRequestProperty rp : requestProperties)
-//        {
-//            String p = rp.getProperty();
-//            String v = rp.getValue();
-//            log.debug("set request property: "+p+"="+v);
-//            conn.setRequestProperty(p, v);
-//        }
 
         int bSize = bufferSize;
         if (localFile != null && localFile.length() < bSize)
@@ -450,6 +442,9 @@ public class HttpUpload extends HttpTransfer
 
         int code = conn.getResponseCode();
         log.debug("code: " + code);
+        // generic capture
+        captureResponseHeaders(conn);
+        
         this.responseCode = code;
         if (code != HttpURLConnection.HTTP_OK && code != HttpURLConnection.HTTP_CREATED)
         {

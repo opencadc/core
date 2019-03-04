@@ -74,6 +74,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.AccessControlException;
 
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import static org.easymock.EasyMock.*;
@@ -81,6 +84,8 @@ import static org.easymock.EasyMock.*;
 
 public class HttpDeleteTest
 {
+    static Map<String,List<String>> EMPTY = new TreeMap<>();
+    
     @Test
     public void verifyDeleteOK() throws Exception
     {
@@ -92,6 +97,7 @@ public class HttpDeleteTest
 
         expect(mockConnection.getResponseCode()).andReturn(200).once();
         expect(mockConnection.getResponseMessage()).andReturn("OK").once();
+        expect(mockConnection.getHeaderFields()).andReturn(EMPTY).anyTimes();
 
         replay(mockConnection);
 
@@ -110,8 +116,8 @@ public class HttpDeleteTest
                 createMock(HttpURLConnection.class);
 
         expect(mockConnection.getResponseCode()).andReturn(404).once();
-        expect(mockConnection.getResponseMessage()).andReturn("Not Found")
-                .once();
+        expect(mockConnection.getResponseMessage()).andReturn("Not Found").once();
+        expect(mockConnection.getHeaderFields()).andReturn(EMPTY).anyTimes();
 
         replay(mockConnection);
 
@@ -138,8 +144,8 @@ public class HttpDeleteTest
                 createMock(HttpURLConnection.class);
 
         expect(mockConnection.getResponseCode()).andReturn(401).once();
-        expect(mockConnection.getResponseMessage()).andReturn("Unauthorized")
-                .once();
+        expect(mockConnection.getResponseMessage()).andReturn("Unauthorized").once();
+        expect(mockConnection.getHeaderFields()).andReturn(EMPTY).anyTimes();
 
         replay(mockConnection);
 
@@ -160,8 +166,8 @@ public class HttpDeleteTest
         reset(mockConnection);
 
         expect(mockConnection.getResponseCode()).andReturn(423).once();
-        expect(mockConnection.getResponseMessage()).andReturn("Locked")
-                .once();
+        expect(mockConnection.getResponseMessage()).andReturn("Locked").once();
+        expect(mockConnection.getHeaderFields()).andReturn(EMPTY).anyTimes();
 
         replay(mockConnection);
 

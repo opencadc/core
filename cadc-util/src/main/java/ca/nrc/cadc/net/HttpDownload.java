@@ -99,9 +99,8 @@ import java.util.List;
 
 /**
  * Simple task to encapsulate a single download (GET). This class supports http and https
- * (SSL) using the specified SSLSocketFactory (or by creating one from the current Subject);
- * the SSLSocketFactory and/or Subject are only really needed if the server the client to have
- * an X509 certificate. This class also supports retrying downloads if the server responds
+ * (SSL) with optional client certificate authentication using a SSLSocketFactory created one from 
+ * the current Subject. This class also supports retrying downloads if the server responds
  * with a 503 and a valid Retry-After header, where valid means an integer (number of seconds)
  * that is between 0 and HttpTransfer.MAX_RETRY_DELAY.
  *
@@ -176,7 +175,7 @@ public class HttpDownload extends HttpTransfer
      * <p>
      * The src URL cannot be null. If the protocol is https, this class will get the current Subject from
      * the AccessControlContext and use the Certificate(s) and PrivateKey(s) found there to set up an
-     * SSLSocketFactory. This is required if ther server requests that the client authenticate itself.
+     * SSLSocketFactory.
      * </p>
      * <p>
      * The dest File cannot be null. If dest is a directory, the downloaded
@@ -230,7 +229,7 @@ public class HttpDownload extends HttpTransfer
      * <p>
      * The src URL cannot be null. If the protocol is https, this class will get the current Subject from
      * the AccessControlContext and use the Certificate(s) and PrivateKey(s) found there to set up an
-     * SSLSocketFactory. This is required if ther server requests that the client authenticate itself.
+     * SSLSocketFactory. 
      * </p>
      * <p>
      * The dest output stream cannot be null.
@@ -606,7 +605,10 @@ public class HttpDownload extends HttpTransfer
     private void processHeader(HttpURLConnection conn)
         throws IOException, InterruptedException
     {
-        this.contentEncoding = conn.getHeaderField(("Content-Encoding"));
+        // generic capture
+        captureResponseHeaders(conn);
+        
+        this.contentEncoding = conn.getHeaderField("Content-Encoding");
         this.contentType = conn.getContentType();
         this.contentMD5 = conn.getHeaderField("Content-MD5");
 
@@ -782,10 +784,6 @@ public class HttpDownload extends HttpTransfer
             conn.setRequestProperty("Accept", "*/*");
             conn.setRequestProperty("User-Agent", userAgent);
             setRequestHeaders(conn);
-//            for (HttpRequestProperty rp : requestProperties)
-//            {
-//                conn.setRequestProperty(rp.getProperty(), rp.getValue());
-//            }
 
             if (headOnly)
                 conn.setRequestMethod("HEAD");
@@ -842,8 +840,6 @@ public class HttpDownload extends HttpTransfer
                 rconn.setRequestProperty("Accept", "*/*");
                 rconn.setRequestProperty("User-Agent", userAgent);
                 setRequestHeaders(conn);
-//                for (HttpRequestProperty rp : requestProperties)
-//                    rconn.setRequestProperty(rp.getProperty(), rp.getValue());
                 log.debug("trying: " + pkey + " = " + pvalue);
                 rconn.setRequestProperty(pkey, pvalue);
                 rconn.setRequestMethod("GET");
