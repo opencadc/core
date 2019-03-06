@@ -351,6 +351,9 @@ public class SyncInput {
 
         @Override
         public void close() throws IOException {
+            //Exception ex = new Exception();
+            //String streamID = super.in.toString();
+            //log.debug(tname + " - " + streamID + ": close() was called: ", ex);
             super.in.close();
         }
     }
