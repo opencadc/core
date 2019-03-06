@@ -82,46 +82,27 @@ import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.entity.mime.content.StringBody;
 import org.junit.Test;
 import org.junit.Assert;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Vector;
 
-import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
 public class SyncInputTest {
-    @Mock
-    HttpServletRequest mockRequest;
 
     @Test
     public void initBasic() throws Exception {
+        final HttpServletRequest mockRequest = new StubHttpServletRequest("GET");
         final SyncInput testSubject = new SyncInput(mockRequest, null);
-        final Vector<String> parameterNames = new Vector<>();
+        final Map<String, String[]> requestParameters = mockRequest.getParameterMap();
 
-        parameterNames.add("ONE");
-        parameterNames.add("TWO");
-        parameterNames.add("THREE");
-
-        when(mockRequest.getParameterValues("ONE")).thenReturn(new String[] {});
-        when(mockRequest.getParameterValues("TWO")).thenReturn(new String[] {"2"});
-        when(mockRequest.getParameterValues("THREE")).thenReturn(new String[] {"3"});
-        when(mockRequest.getParameterNames()).thenReturn(parameterNames.elements());
-        when(mockRequest.getMethod()).thenReturn("GET");
+        requestParameters.put("ONE", new String[] {});
+        requestParameters.put("TWO", new String[] {"2"});
+        requestParameters.put("THREE", new String[] {"3"});
 
         testSubject.init();
-
-        verify(mockRequest, times(1)).getMethod();
-        verify(mockRequest, times(1)).getParameterNames();
-        verify(mockRequest, times(1)).getParameterValues("ONE");
-        verify(mockRequest, times(1)).getParameterValues("TWO");
-        verify(mockRequest, times(1)).getParameterValues("THREE");
 
         Assert.assertNull("Wrong one param.", testSubject.getParameter("ONE"));
         Assert.assertEquals("Wrong two param.", "2", testSubject.getParameter("TWO"));
@@ -130,44 +111,55 @@ public class SyncInputTest {
 
     @Test
     public void initUpload() throws Exception {
-        final SyncInput testSubject = new SyncInput(mockRequest, new TestInlineContentHandler());
         final Map<String, String[]> requestParameters = new HashMap<>();
 
         requestParameters.put("ONE", new String[] {"1", "1-ALT"});
         requestParameters.put("TWO", new String[] {"2"});
 
-        final HttpEntity multipartEntity = createMultipartFormDataRequest("FILE_UPLOAD",
-                                                                          requestParameters);
+        final HttpEntity multipartEntity = createMultipartFormDataRequest("FILE_UPLOAD", requestParameters);
         final InputStream multipartEntityInputStream = multipartEntity.getContent();
-        when(mockRequest.getContentType()).thenReturn(multipartEntity.getContentType().getValue());
-        when(mockRequest.getInputStream()).thenReturn(new ServletInputStream() {
+
+        final HttpServletRequest mockRequest = new StubHttpServletRequest("POST",
+                                                                          multipartEntity.getContentType().getValue()) {
+            /**
+             * Retrieves the body of the request as binary data using
+             * a {@link ServletInputStream}.  Either this method or
+             * {@link #getReader} may be called to read the body, not both.
+             *
+             * @return a {@link ServletInputStream} object containing
+             * the body of the request
+             *
+             * @throws IllegalStateException if the {@link #getReader} method
+             *                               has already been called for this request
+             */
             @Override
-            public boolean isFinished() {
-                return false;
+            public ServletInputStream getInputStream() {
+                return new ServletInputStream() {
+                    @Override
+                    public boolean isFinished() {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean isReady() {
+                        return false;
+                    }
+
+                    @Override
+                    public void setReadListener(ReadListener readListener) {
+
+                    }
+
+                    @Override
+                    public int read() throws IOException {
+                        return multipartEntityInputStream.read();
+                    }
+                };
             }
-
-            @Override
-            public boolean isReady() {
-                return false;
-            }
-
-            @Override
-            public void setReadListener(ReadListener readListener) {
-
-            }
-
-            @Override
-            public int read() throws IOException {
-                return multipartEntityInputStream.read();
-            }
-        });
-
-        when(mockRequest.getMethod()).thenReturn("POST");
+        };
+        final SyncInput testSubject = new SyncInput(mockRequest, new TestInlineContentHandler());
 
         testSubject.init();
-
-        verify(mockRequest, times(3)).getMethod();
-        verify(mockRequest, times(2)).getContentType();
 
         Assert.assertEquals("Wrong content", TestInlineContentHandler.CONTENT_VALUE,
                             testSubject.getContent(TestInlineContentHandler.CONTENT_NAME));
@@ -180,8 +172,7 @@ public class SyncInputTest {
                                                       final Map<String, String[]> textRequestParameters)
         throws IOException {
 
-        final FileBody fileBody = new FileBody(File.createTempFile(".txt",
-                                                                   SyncInputTest.class.getCanonicalName()),
+        final FileBody fileBody = new FileBody(File.createTempFile(".txt", SyncInputTest.class.getCanonicalName()),
                                                ContentType.DEFAULT_BINARY);
 
         final MultipartEntityBuilder builder = MultipartEntityBuilder.create();
