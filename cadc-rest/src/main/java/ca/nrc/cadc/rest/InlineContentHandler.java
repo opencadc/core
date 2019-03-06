@@ -101,7 +101,7 @@ public interface InlineContentHandler
     Content accept(String name, String contentType, InputStream inputStream)
         throws InlineContentException, IOException, ResourceNotFoundException;
 
-    public static class Content
+    class Content
     {
     	public String name;
     	public Object value;
