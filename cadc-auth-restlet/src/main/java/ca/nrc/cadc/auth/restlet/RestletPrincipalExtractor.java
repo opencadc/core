@@ -74,15 +74,18 @@ import ca.nrc.cadc.auth.DelegationToken;
 import ca.nrc.cadc.auth.HttpPrincipal;
 import ca.nrc.cadc.auth.InvalidDelegationTokenException;
 import ca.nrc.cadc.auth.PrincipalExtractor;
+import ca.nrc.cadc.auth.SSLUtil;
 import ca.nrc.cadc.auth.SSOCookieCredential;
 import ca.nrc.cadc.auth.SSOCookieManager;
 import ca.nrc.cadc.auth.X509CertificateChain;
 import ca.nrc.cadc.net.NetUtil;
+import ca.nrc.cadc.util.ArrayUtil;
 import ca.nrc.cadc.util.StringUtil;
 import java.io.IOException;
 import java.security.AccessControlException;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -125,15 +128,31 @@ public class RestletPrincipalExtractor implements PrincipalExtractor {
     }
 
     private void init() {
+
         if (chain == null) {
             final Collection<X509Certificate> requestCertificates
-                    = (Collection<X509Certificate>) getRequest().getAttributes().get(
-                            "org.restlet.https.clientCertificates");
+                = (Collection<X509Certificate>) getRequest().getAttributes().get(
+                    "org.restlet.https.clientCertificates");
             if ((requestCertificates != null) && (!requestCertificates.isEmpty())) {
                 this.chain = new X509CertificateChain(requestCertificates);
                 principals.add(this.chain.getPrincipal());
             }
-
+        }
+        
+        if (chain == null && "true".equals(System.getProperty(CERT_HEADER_ENABLE))) {
+            Form allHeaders = (Form) getRequest().getAttributes().get("org.restlet.http.headers");
+            String certString = allHeaders.getFirstValue(CERT_HEADER_FIELD);
+            log.debug(CERT_HEADER_FIELD + ":\n" + certString + "\n");
+            if (certString != null && certString.length() > 0) {
+                try {
+                    byte[] certBytes = SSLUtil.getCertificates(certString.getBytes());
+                    chain = new X509CertificateChain(SSLUtil.readCertificateChain(certBytes), null);
+                    principals.add(chain.getPrincipal());
+                } catch (Exception e) {
+                    log.error("Failed to read certificate", e);
+                    throw new AccessControlException("Failed to read certificate: " + e.getMessage());
+                }
+            }
         }
 
         if (token == null) {
