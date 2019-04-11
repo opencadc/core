@@ -139,9 +139,10 @@ public class RestletPrincipalExtractor implements PrincipalExtractor {
             }
         }
         
+        log.debug("Value of CERT_HEADER_ENABLE sys prop: " + System.getProperty(CERT_HEADER_ENABLE));        
         if (chain == null && "true".equals(System.getProperty(CERT_HEADER_ENABLE))) {
             Form allHeaders = (Form) getRequest().getAttributes().get("org.restlet.http.headers");
-            String certString = allHeaders.getFirstValue(CERT_HEADER_FIELD);
+            String certString = allHeaders.getFirstValue(CERT_HEADER_FIELD, true);
             log.debug(CERT_HEADER_FIELD + ":\n" + certString + "\n");
             if (certString != null && certString.length() > 0) {
                 try {
