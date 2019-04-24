@@ -73,6 +73,7 @@ import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.DelegationToken;
 import ca.nrc.cadc.auth.HttpPrincipal;
 import ca.nrc.cadc.auth.InvalidDelegationTokenException;
+import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.auth.PrincipalExtractor;
 import ca.nrc.cadc.auth.SSLUtil;
 import ca.nrc.cadc.auth.SSOCookieCredential;
@@ -164,10 +165,10 @@ public class RestletPrincipalExtractor implements PrincipalExtractor {
                     this.token = DelegationToken.parse(tokenValue, request.getResourceRef().getPath());
                 } catch (InvalidDelegationTokenException ex) {
                     log.debug("invalid DelegationToken: " + tokenValue, ex);
-                    throw new AccessControlException("invalid delegation token");
+                    throw new NotAuthenticatedException("invalid delegation token. " + ex.getMessage());
                 } catch (RuntimeException ex) {
                     log.debug("invalid DelegationToken: " + tokenValue, ex);
-                    throw new AccessControlException("invalid delegation token");
+                    throw new NotAuthenticatedException("invalid delegation token. " + ex.getMessage());
                 } finally {
                 }
             }
@@ -208,9 +209,8 @@ public class RestletPrincipalExtractor implements PrincipalExtractor {
                     cookieCredentialList = ssoCookieManager.getSSOCookieCredentials(ssoCookie.getValue(),
                             NetUtil.getDomainName(getRequest().getResourceRef().toUrl()));
                 } catch (InvalidDelegationTokenException | IOException e) {
-                    log.debug("Cannot use SSO Cookie. Reason: "
-                            + e.getMessage());
-                    throw new AccessControlException("invalid SSO cookie" + e);
+                    log.debug("Cannot use SSO Cookie. Reason: " + e.getMessage());
+                    throw new NotAuthenticatedException("invalid cookie. " + e.getMessage());
                 }
             }
         }
