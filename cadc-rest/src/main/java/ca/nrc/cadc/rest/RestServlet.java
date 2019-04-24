@@ -70,6 +70,7 @@
 package ca.nrc.cadc.rest;
 
 import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.log.ServletLogInfo;
 import ca.nrc.cadc.log.WebServiceLogInfo;
 import ca.nrc.cadc.util.Enumerator;
@@ -288,11 +289,12 @@ public class RestServlet extends HttpServlet
             logInfo.setMessage(message);
             handleException(out, response, ex, 500, message, true);
         }
-        catch(AccessControlException ex)
+        catch(AccessControlException | NotAuthenticatedException ex)
         {
-            // return a 401 instead of a 403 here.  At this level, it
-            // usually means wrong credentials such as invalid delegation
+            // For AccessControlExceptions, return a 401 instead of a 403 here.
+            // At this level, it usually means wrong credentials such as invalid delegation
             // token, cookie, etc...
+            // NotAuthenticatedException specifically means wrong credentials.
             logInfo.setSuccess(true);
             logInfo.setMessage(ex.getMessage());
             handleException(out, response, ex, 401, ex.getMessage(), false);
