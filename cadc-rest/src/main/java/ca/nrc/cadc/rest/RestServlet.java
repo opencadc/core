@@ -307,7 +307,7 @@ public class RestServlet extends HttpServlet
         {
             logInfo.setSuccess(false);
             logInfo.setMessage(t.getMessage());
-            handleUnexpected(out, t);
+            handleUnexpected(out, response, t);
         }
         finally
         {
@@ -391,9 +391,13 @@ public class RestServlet extends HttpServlet
             log.error("unexpected situation: SyncOutput is open", ex);
     }
 
-    private void handleUnexpected(SyncOutput out, Throwable t)
+    private void handleUnexpected(SyncOutput out, HttpServletResponse response, Throwable t)
         throws IOException
     {
+        if (out == null) {
+            out = new SyncOutput(response);
+        }
+        
         log.error("unexpected exception (SyncOutput.isOpen: " + out.isOpen() + ")", t);
 
         if (out.isOpen())
