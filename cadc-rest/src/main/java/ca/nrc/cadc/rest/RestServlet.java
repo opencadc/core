@@ -70,6 +70,7 @@
 package ca.nrc.cadc.rest;
 
 import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.log.ServletLogInfo;
 import ca.nrc.cadc.log.WebServiceLogInfo;
 import ca.nrc.cadc.util.Enumerator;
@@ -288,11 +289,12 @@ public class RestServlet extends HttpServlet
             logInfo.setMessage(message);
             handleException(out, response, ex, 500, message, true);
         }
-        catch(AccessControlException ex)
+        catch(AccessControlException | NotAuthenticatedException ex)
         {
-            // return a 401 instead of a 403 here.  At this level, it
-            // usually means wrong credentials such as invalid delegation
+            // For AccessControlExceptions, return a 401 instead of a 403 here.
+            // At this level, it usually means wrong credentials such as invalid delegation
             // token, cookie, etc...
+            // NotAuthenticatedException specifically means wrong credentials.
             logInfo.setSuccess(true);
             logInfo.setMessage(ex.getMessage());
             handleException(out, response, ex, 401, ex.getMessage(), false);
@@ -307,7 +309,7 @@ public class RestServlet extends HttpServlet
         {
             logInfo.setSuccess(false);
             logInfo.setMessage(t.getMessage());
-            handleUnexpected(out, t);
+            handleUnexpected(out, response, t);
         }
         finally
         {
@@ -391,9 +393,13 @@ public class RestServlet extends HttpServlet
             log.error("unexpected situation: SyncOutput is open", ex);
     }
 
-    private void handleUnexpected(SyncOutput out, Throwable t)
+    private void handleUnexpected(SyncOutput out, HttpServletResponse response, Throwable t)
         throws IOException
     {
+        if (out == null) {
+            out = new SyncOutput(response);
+        }
+        
         log.error("unexpected exception (SyncOutput.isOpen: " + out.isOpen() + ")", t);
 
         if (out.isOpen())

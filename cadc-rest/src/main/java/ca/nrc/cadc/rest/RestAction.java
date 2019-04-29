@@ -69,6 +69,7 @@
 
 package ca.nrc.cadc.rest;
 
+import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.io.ByteLimitExceededException;
 import ca.nrc.cadc.log.WebServiceLogInfo;
 import ca.nrc.cadc.net.HttpTransfer;
@@ -256,6 +257,10 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
             doAction();
 
             logInfo.setSuccess(true);
+        }
+        catch(NotAuthenticatedException ex) {
+            logInfo.setSuccess(true);
+            handleException(ex, 401, ex.getMessage(), false, false);
         }
         catch(AccessControlException ex)
         {

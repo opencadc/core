@@ -53,6 +53,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.easymock.EasyMock;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -137,10 +138,12 @@ public class ServletPrincipalExtractorTest
             expect(request.getHeader(ServletPrincipalExtractor.CERT_HEADER_FIELD)).andReturn(null);
             replay(request);
             replay(cookie);
-            ex = new ServletPrincipalExtractor(request);
-
-            assertEquals(null, ex.getSSOCookieCredentials());
-            assertEquals(0, ex.getPrincipals().size() );
+            try {
+                ex = new ServletPrincipalExtractor(request);
+                Assert.fail("Should have received NotAuthenticatedException");
+            } catch (NotAuthenticatedException e) {
+                // expected
+            }
 
         }
         finally
