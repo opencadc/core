@@ -154,12 +154,12 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
             catch (InvalidDelegationTokenException ex) 
             {
                 log.debug("invalid DelegationToken: " + tokenValue, ex);
-                throw new AccessControlException("invalid delegation token");
+                throw new NotAuthenticatedException("invalid delegation token. " + ex.getMessage());
             }
             catch(RuntimeException ex)
             {
                 log.debug("invalid DelegationToken: " + tokenValue, ex);
-                throw new AccessControlException("invalid delegation token");
+                throw new NotAuthenticatedException("invalid delegation token. " + ex.getMessage());
             }
             finally { }
         }
@@ -196,15 +196,15 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
                 } 
                 catch (IOException e)
                 {
-                    log.info("Cannot use SSO Cookie. Reason: " 
-                            + e.getMessage());
+                    log.debug("Cannot use SSO Cookie. Reason: " + e.getMessage());
+                    throw new NotAuthenticatedException("invalid cookie. " + e.getMessage());
                 } 
                 catch (InvalidDelegationTokenException e)
                 {
-                    log.info("Cannot use SSO Cookie. Reason: " 
-                            + e.getMessage());
+                    log.debug("Cannot use SSO Cookie. Reason: " + e.getMessage());
+                    throw new NotAuthenticatedException("invalid cookie. " + e.getMessage());
                 }
-                
+
             }
         }
         
