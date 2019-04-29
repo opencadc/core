@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2018.                            (c) 2018.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -167,14 +167,15 @@ public abstract class WebServiceLogInfo
                     log.debug(f.getName() + " = " + o);
                     if (o != null)
                     {
+                        String val = sanitize(o);
                         if (sb.length() > 1) // more than just the opening {
                             sb.append(",");
                         sb.append("\"").append(f.getName()).append("\"");
                         sb.append(":");
                         if (o instanceof String)
-                            sb.append("\"").append(o.toString()).append("\"");
+                            sb.append("\"").append(val).append("\"");
                         else
-                            sb.append(o.toString());
+                            sb.append(val);
                     }
                 }
                 catch(IllegalAccessException ex)
@@ -188,6 +189,12 @@ public abstract class WebServiceLogInfo
             populate(sb, sc);
     }
 
+    static String sanitize(Object o) {
+        String ret = o.toString();
+        ret = ret.replaceAll("\"", "\'"); // double to single quote
+        ret = ret.replaceAll("\\s+", " "); // multiple whitespace to single space
+        return ret;
+    }
 
     /**
      * Set the success/fail boolean.

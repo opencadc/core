@@ -69,24 +69,18 @@
 
 package ca.nrc.cadc.log;
 
-import java.util.ArrayList;
+import ca.nrc.cadc.auth.HttpPrincipal;
+import ca.nrc.cadc.util.Log4jInit;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
-
-
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Test;
-
-import ca.nrc.cadc.auth.HttpPrincipal;
-import ca.nrc.cadc.util.Log4jInit;
 
 public class WebServiceLogInfoTest {
     private static final Logger log = Logger.getLogger(WebServiceLogInfoTest.class);
@@ -95,6 +89,14 @@ public class WebServiceLogInfoTest {
         Log4jInit.setLevel("ca.nrc.cadc.log", Level.INFO);
     }
 
+    @Test
+    public void testSanitize() {
+        String sketchy = "sketchy \"json\" content\n in this message";
+        String expected = "sketchy 'json' content in this message";
+        String actual = WebServiceLogInfo.sanitize(sketchy);
+        Assert.assertEquals(expected, actual);
+    }
+    
     @Test
     public void testMinimalContentServlet() {
         HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
