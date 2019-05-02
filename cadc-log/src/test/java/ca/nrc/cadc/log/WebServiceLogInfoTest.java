@@ -91,7 +91,7 @@ public class WebServiceLogInfoTest {
 
     @Test
     public void testSanitize() {
-        String sketchy = "sketchy \"json\" content\n in this message";
+        String sketchy = "sketchy \"json\" content\n in     this     message";
         String expected = "sketchy 'json' content in this message";
         String actual = WebServiceLogInfo.sanitize(sketchy);
         Assert.assertEquals(expected, actual);
