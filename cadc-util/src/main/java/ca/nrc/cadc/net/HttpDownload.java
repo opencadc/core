@@ -141,7 +141,7 @@ public class HttpDownload extends HttpTransfer
     private long decompSize = -1;
     private long size = -1;
     private long lastModified = -1;
-
+    
     /**
      * Constructor with default user-agent string.
      * 
@@ -790,6 +790,8 @@ public class HttpDownload extends HttpTransfer
             else
                 conn.setRequestMethod("GET");
 
+            requestStartTime = System.currentTimeMillis();
+            
             processHeader(conn);
             int code = checkStatusCode(conn);
 
