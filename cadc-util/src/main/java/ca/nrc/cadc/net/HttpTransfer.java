@@ -199,6 +199,11 @@ public abstract class HttpTransfer implements Runnable
     protected boolean followRedirects = false;
     protected URL redirectURL;
     protected int responseCode = -1;
+    
+    // latency tracking
+    protected Long requestStartTime;
+    protected Long responseLatency;
+    
     protected final Map<String,String> responseHeaders = new TreeMap<String,String>();
 
     static
@@ -245,6 +250,16 @@ public abstract class HttpTransfer implements Runnable
         log.debug("bufferSize: " + bufferSize);
     }
 
+    /**
+     * Latency from start of call to first bytes of response. This could be null if some methods
+     * do not or cannot track latency.
+     * 
+     * @return response latency in milliseconds
+     */
+    public Long getResponceLatency() {
+        return responseLatency;
+    }
+    
     /**
      * Get an HTTP header value from the response. Subclasses may provide more convenient type-safe
      * methods to get specific standard header values.
@@ -674,6 +689,10 @@ public abstract class HttpTransfer implements Runnable
             nb = istream.read(buf, 0, sz);
             if (logIO)
                 readTime += System.currentTimeMillis() - readStart;
+            
+            if (requestStartTime != null) {
+                responseLatency = System.currentTimeMillis() - requestStartTime;
+            }
             
             if (nb != -1)
             {
