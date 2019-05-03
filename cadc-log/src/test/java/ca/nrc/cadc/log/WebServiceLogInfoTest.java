@@ -75,6 +75,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import javax.security.auth.Subject;
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -104,22 +105,28 @@ public class WebServiceLogInfoTest {
         EasyMock.expect(request.getPathInfo()).andReturn("/path/of/request").once();
         EasyMock.expect(request.getHeader("X-Forwarded-For")).andReturn(null).once();
         EasyMock.expect(request.getRemoteAddr()).andReturn("192.168.0.0").once();
+        ServletContext servletContext = EasyMock.createMock(ServletContext.class);
+        EasyMock.expect(servletContext.getServletContextName()).andReturn("test_ws");
+        EasyMock.expect(request.getServletContext()).andReturn(servletContext);
         Set<String> params = new HashSet<String>();
         params.add("other1");
         params.add("other2");
         EasyMock.expect(request.getParameterNames()).andReturn(Collections.enumeration(params));
 
         EasyMock.replay(request);
+        EasyMock.replay(servletContext);
 
         WebServiceLogInfo logInfo = new ServletLogInfo(request);
         String start = logInfo.start();
         log.info("testMinimalContentServlet: " + start);
         String end = logInfo.end();
         log.info("testMinimalContentServlet: " + end);
-        Assert.assertEquals("Wrong start", "START: {\"method\":\"GET\",\"path\":\"/path/of/request\"," +
-            "\"from\":\"192.168.0.0\"}", start);
-        Assert.assertEquals("Wrong end", "END: {\"method\":\"GET\",\"path\":\"/path/of/request\",\"success\":true," +
-            "\"from\":\"192.168.0.0\"}", end);
+        String expected = "\"phase\":\"start\",\"ip\":\"192.168.0.0\",\"method\":\"GET\",\"path\":\"/path/of/request\"";
+        Assert.assertTrue("Wrong start", start.contains(expected));
+        Assert.assertTrue("Wrong start", start.contains("\"service\":{\"name\":\"test_ws\"}"));
+        expected = "\"phase\":\"end\",\"ip\":\"192.168.0.0\",\"method\":\"GET\",\"path\":\"/path/of/request\",\"success\":true";
+        Assert.assertTrue("Wrong end", end.contains(expected));
+        Assert.assertTrue("Wrong start", end.contains("\"service\":{\"name\":\"test_ws\"}"));
 
         EasyMock.verify(request);
     }
@@ -131,6 +138,9 @@ public class WebServiceLogInfoTest {
         EasyMock.expect(request.getPathInfo()).andReturn("/path/of/request").once();
         EasyMock.expect(request.getHeader("X-Forwarded-For")).andReturn(null).once();
         EasyMock.expect(request.getRemoteAddr()).andReturn("192.168.0.0").once();
+        ServletContext servletContext = EasyMock.createMock(ServletContext.class);
+        EasyMock.expect(servletContext.getServletContextName()).andReturn("test_ws");
+        EasyMock.expect(request.getServletContext()).andReturn(servletContext);
         Set<String> params = new HashSet<String>();
         params.add("other1");
         params.add("runID");
@@ -139,12 +149,14 @@ public class WebServiceLogInfoTest {
         EasyMock.expect(request.getParameter("runID")).andReturn("abc");
 
         EasyMock.replay(request);
+        EasyMock.replay(servletContext);
 
         WebServiceLogInfo logInfo = new ServletLogInfo(request);
         String start = logInfo.start();
         log.info("testMaximalContentServlet: " + start);
-        Assert.assertEquals("Wrong start", "START: {\"method\":\"GET\",\"path\":\"/path/of/request\"," +
-            "\"from\":\"192.168.0.0\",\"runID\":\"abc\"}", start);
+        String expected = "\"phase\":\"start\",\"ip\":\"192.168.0.0\",\"method\":\"GET\",\"path\":\"/path/of/request\",\"runID\":\"abc\"";
+        Assert.assertTrue("Wrong start", start.contains(expected));
+        Assert.assertTrue("Wrong start", start.contains("\"service\":{\"name\":\"test_ws\"}"));
         logInfo.setSuccess(false);
         logInfo.setSubject(createSubject("the user", "the proxy"));
         logInfo.setElapsedTime(1234L);
@@ -152,9 +164,9 @@ public class WebServiceLogInfoTest {
         logInfo.setMessage("the message");
         String end = logInfo.end();
         log.info("testMaximalContentServlet: " + end);
-        Assert.assertEquals("Wrong end", "END: {\"method\":\"GET\",\"path\":\"/path/of/request\",\"success\":false," +
-            "\"user\":\"the user\",\"proxyUser\":\"the proxy\",\"from\":\"192.168.0.0\",\"time\":1234,\"bytes\":10," +
-            "\"message\":\"the message\",\"runID\":\"abc\"}", end);
+        expected = "\"phase\":\"end\",\"bytes\":10,\"ip\":\"192.168.0.0\",\"message\":\"the message\",\"method\":\"GET\",\"path\":\"/path/of/request\",\"proxyUser\":\"the proxy\",\"runID\":\"abc\",\"success\":false,\"time\":1234,\"user\":\"the user\"";
+        Assert.assertTrue("Wrong end", end.contains(expected));
+        Assert.assertTrue("Wrong start", end.contains("\"service\":{\"name\":\"test_ws\"}"));
         EasyMock.verify(request);
     }
 
@@ -165,18 +177,23 @@ public class WebServiceLogInfoTest {
         EasyMock.expect(request.getPathInfo()).andReturn("/theJobID").once();
         EasyMock.expect(request.getHeader("X-Forwarded-For")).andReturn(null).once();
         EasyMock.expect(request.getRemoteAddr()).andReturn("192.168.0.0").once();
+        ServletContext servletContext = EasyMock.createMock(ServletContext.class);
+        EasyMock.expect(servletContext.getServletContextName()).andReturn("test_ws");
+        EasyMock.expect(request.getServletContext()).andReturn(servletContext);
         Set<String> params = new HashSet<String>();
         params.add("other1");
         params.add("other2");
         EasyMock.expect(request.getParameterNames()).andReturn(Collections.enumeration(params));
 
         EasyMock.replay(request);
+        EasyMock.replay(servletContext);
 
         WebServiceLogInfo logInfo = new ServletLogInfo(request, true);
         String start = logInfo.start();
         log.info("testPathIsJobID: " + start);
-        Assert.assertEquals("Wrong start", "START: {\"method\":\"GET\",\"from\":\"192.168.0.0\"," +
-            "\"jobID\":\"theJobID\"}", start);
+        String expected = "\"phase\":\"start\",\"ip\":\"192.168.0.0\"," + "\"jobID\":\"theJobID\",\"method\":\"GET\"}";
+        Assert.assertTrue("Wrong start", start.contains(expected));
+        Assert.assertTrue("Wrong start", start.contains("\"service\":{\"name\":\"test_ws\"}"));
         logInfo.setSuccess(false);
         logInfo.setSubject(createSubject("the user", null));
         logInfo.setElapsedTime(1234L);
@@ -184,9 +201,9 @@ public class WebServiceLogInfoTest {
         logInfo.setMessage("the message");
         String end = logInfo.end();
         log.info("testPathIsJobID: " + end);
-        Assert.assertEquals("Wrong end", "END: {\"method\":\"GET\",\"success\":false,\"user\":\"the user\"," +
-            "\"from\":\"192.168.0.0\",\"time\":1234,\"bytes\":10,\"message\":\"the message\"," +
-            "\"jobID\":\"theJobID\"}", end);
+        expected = "\"phase\":\"end\",\"bytes\":10,\"ip\":\"192.168.0.0\",\"jobID\":\"theJobID\",\"message\":\"the message\",\"method\":\"GET\",\"success\":false,\"time\":1234,\"user\":\"the user\"";
+        Assert.assertTrue("Wrong end", end.contains(expected));
+        Assert.assertTrue("Wrong start", end.contains("\"service\":{\"name\":\"test_ws\"}"));
         EasyMock.verify(request);
     }
 
@@ -196,18 +213,23 @@ public class WebServiceLogInfoTest {
         EasyMock.expect(request.getMethod()).andReturn("Get").once();
         EasyMock.expect(request.getPathInfo()).andReturn("/theJobID").once();
         EasyMock.expect(request.getHeader("X-Forwarded-For")).andReturn("192.168.0.3").once();
+        ServletContext servletContext = EasyMock.createMock(ServletContext.class);
+        EasyMock.expect(servletContext.getServletContextName()).andReturn("test_ws");
+        EasyMock.expect(request.getServletContext()).andReturn(servletContext);
         Set<String> params = new HashSet<String>();
         params.add("other1");
         params.add("other2");
         EasyMock.expect(request.getParameterNames()).andReturn(Collections.enumeration(params));
 
         EasyMock.replay(request);
+        EasyMock.replay(servletContext);
 
         WebServiceLogInfo logInfo = new ServletLogInfo(request, true);
         String start = logInfo.start();
         log.info("testPathIsJobID: " + start);
-        Assert.assertEquals("Wrong start", "START: {\"method\":\"GET\",\"from\":\"192.168.0.3\"," +
-            "\"jobID\":\"theJobID\"}", start);
+        String expected = "\"phase\":\"start\",\"ip\":\"192.168.0.3\",\"jobID\":\"theJobID\",\"method\":\"GET\"";
+        Assert.assertTrue("Wrong start", start.contains(expected));
+        Assert.assertTrue("Wrong start", start.contains("\"service\":{\"name\":\"test_ws\"}"));
         logInfo.setSuccess(false);
         logInfo.setSubject(createSubject("the user", null));
         logInfo.setElapsedTime(1234L);
@@ -215,9 +237,9 @@ public class WebServiceLogInfoTest {
         logInfo.setMessage("the message");
         String end = logInfo.end();
         log.info("testPathIsJobID: " + end);
-        Assert.assertEquals("Wrong end", "END: {\"method\":\"GET\",\"success\":false,\"user\":\"the user\"," +
-            "\"from\":\"192.168.0.3\",\"time\":1234,\"bytes\":10,\"message\":\"the message\"," +
-            "\"jobID\":\"theJobID\"}", end);
+        expected = "\"phase\":\"end\",\"bytes\":10,\"ip\":\"192.168.0.3\",\"jobID\":\"theJobID\",\"message\":\"the message\",\"method\":\"GET\",\"success\":false,\"time\":1234,\"user\":\"the user\"";
+        Assert.assertTrue("Wrong end", end.contains(expected));
+        Assert.assertTrue("Wrong start", end.contains("\"service\":{\"name\":\"test_ws\"}"));
         EasyMock.verify(request);
     }
 
@@ -228,18 +250,23 @@ public class WebServiceLogInfoTest {
         EasyMock.expect(request.getPathInfo()).andReturn("/theJobID").once();
         EasyMock.expect(request.getHeader("X-Forwarded-For")).andReturn("192.168.1.4, 192.168.44.88, 192.168.0.3")
                 .once();
+        ServletContext servletContext = EasyMock.createMock(ServletContext.class);
+        EasyMock.expect(servletContext.getServletContextName()).andReturn("test_ws");
+        EasyMock.expect(request.getServletContext()).andReturn(servletContext);
         Set<String> params = new HashSet<String>();
         params.add("other1");
         params.add("other2");
         EasyMock.expect(request.getParameterNames()).andReturn(Collections.enumeration(params));
 
         EasyMock.replay(request);
+        EasyMock.replay(servletContext);
 
         WebServiceLogInfo logInfo = new ServletLogInfo(request, true);
         String start = logInfo.start();
         log.info("testPathIsJobID: " + start);
-        Assert.assertEquals("Wrong start", "START: {\"method\":\"GET\",\"from\":\"192.168.1.4\"," +
-            "\"jobID\":\"theJobID\"}", start);
+        String expected = "\"phase\":\"start\",\"ip\":\"192.168.1.4\",\"jobID\":\"theJobID\",\"method\":\"GET\"";
+        Assert.assertTrue("Wrong start", start.contains(expected));
+        Assert.assertTrue("Wrong start", start.contains("\"service\":{\"name\":\"test_ws\"}"));
         logInfo.setSuccess(false);
         logInfo.setSubject(createSubject("the user", null));
         logInfo.setElapsedTime(1234L);
@@ -247,10 +274,9 @@ public class WebServiceLogInfoTest {
         logInfo.setMessage("the message");
         String end = logInfo.end();
         log.info("testPathIsJobID: " + end);
-        Assert.assertEquals("Wrong end", "END: {\"method\":\"GET\",\"success\":false,\"user\":\"the user\"," +
-                                "\"from\":\"192.168.1.4\",\"time\":1234,\"bytes\":10,\"message\":\"the message\"," +
-                                "\"jobID\":\"theJobID\"}",
-                            end);
+        expected = "\"phase\":\"end\",\"bytes\":10,\"ip\":\"192.168.1.4\",\"jobID\":\"theJobID\",\"message\":\"the message\",\"method\":\"GET\",\"success\":false,\"time\":1234,\"user\":\"the user\"";
+        Assert.assertTrue("Wrong end", end.contains(expected));
+        Assert.assertTrue("Wrong start", end.contains("\"service\":{\"name\":\"test_ws\"}"));
         EasyMock.verify(request);
     }
 

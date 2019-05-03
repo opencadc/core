@@ -73,6 +73,7 @@ import ca.nrc.cadc.net.NetUtil;
 
 import java.util.Enumeration;
 
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 
 
@@ -116,8 +117,11 @@ public class ServletLogInfo extends WebServiceLogInfo {
 
     public ServletLogInfo(HttpServletRequest request, String path, boolean pathIsJobID) {
         super();
+//        ServletContext servletContext = request.getServletContext();
+//        this.serviceName = servletContext.getServletContextName();
+        this.serviceName = request.getServletContext().getServletContextName();
         this.method = request.getMethod().toUpperCase();
-        this.from = NetUtil.getClientIP(request);
+        this.ip = NetUtil.getClientIP(request);
         if (pathIsJobID) {
             this.jobID = parseJobID(path);
         } else {
