@@ -116,8 +116,6 @@ public class ServletLogInfo extends WebServiceLogInfo {
 
     public ServletLogInfo(HttpServletRequest request, String path, boolean pathIsJobID) {
         super();
-//        ServletContext servletContext = request.getServletContext();
-//        this.serviceName = servletContext.getServletContextName();
         this.serviceName = request.getServletContext().getServletContextName();
         this.method = request.getMethod().toUpperCase();
         this.ip = NetUtil.getClientIP(request);
