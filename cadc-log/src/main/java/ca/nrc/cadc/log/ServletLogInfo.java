@@ -73,7 +73,6 @@ import ca.nrc.cadc.net.NetUtil;
 
 import java.util.Enumeration;
 
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 
 
