@@ -36,13 +36,19 @@ package ca.nrc.cadc.auth.restlet;
 
 import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.DelegationToken;
+import ca.nrc.cadc.auth.HttpPrincipal;
+
+import java.net.URI;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import javax.security.auth.x500.X500Principal;
@@ -63,6 +69,50 @@ public class RestletPrincipalExtractorTest {
 
     private RestletPrincipalExtractor testSubject;
     private final Request mockRequest = createMock(Request.class);
+
+
+    @Test
+    public void testCaseInsensitiveDelegationToken() throws Exception {
+        setTestSubject(new RestletPrincipalExtractor() {
+            @Override
+            public Request getRequest() {
+                return getMockRequest();
+            }
+
+            @Override
+            protected String getAuthenticatedUsername() {
+                return null;
+            }
+        });
+
+        final Series<Cookie> requestCookies = new CookieSeries();
+        expect(getMockRequest().getCookies()).andReturn(requestCookies).atLeastOnce();
+
+        HttpPrincipal userid = new HttpPrincipal("someuser", "someproxyuser");
+        URI scope = new URI("foo:bar");
+        int duration = 10; // h
+        Calendar expiry = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+        expiry.add(Calendar.HOUR, duration);
+        List<String> domains = new ArrayList<String>();
+        domains.add(scope.toASCIIString());
+        DelegationToken token = new DelegationToken(userid, scope, expiry.getTime(), domains);
+
+        
+        final ConcurrentMap<String, Object> attributes
+                = new ConcurrentHashMap<String, java.lang.Object>();
+        Form form = new Form(AuthenticationUtil.AUTH_HEADER + "=" + token);
+        form.encode();
+        attributes.put("org.restlet.http.headers", form);
+        expect(getMockRequest().getAttributes()).andReturn(attributes).atLeastOnce();
+
+        replay(getMockRequest());
+        try {
+        		DelegationToken dt = getTestSubject().getDelegationToken();
+        		assertTrue(false);
+        } catch (AssertionError e)
+        {
+        }
+    }
 
     @Test
     public void testGetDelegationToken() throws Exception {
@@ -85,7 +135,7 @@ public class RestletPrincipalExtractorTest {
                 = new ConcurrentHashMap<String, java.lang.Object>();
         Form mockHeaders = createMock(Form.class);
         attributes.put("org.restlet.http.headers", mockHeaders);
-        expect(mockHeaders.getFirstValue(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
+        expect(mockHeaders.getFirstValue(AuthenticationUtil.AUTH_HEADER, true)).andReturn(null).atLeastOnce();
         expect(getMockRequest().getAttributes()).andReturn(attributes).atLeastOnce();
 
         replay(mockHeaders);
@@ -121,7 +171,7 @@ public class RestletPrincipalExtractorTest {
                 = new ConcurrentHashMap<String, java.lang.Object>();
         Form mockHeaders = createMock(Form.class);
         attributes.put("org.restlet.http.headers", mockHeaders);
-        expect(mockHeaders.getFirstValue(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
+        expect(mockHeaders.getFirstValue(AuthenticationUtil.AUTH_HEADER, true)).andReturn(null).atLeastOnce();
         expect(getMockRequest().getAttributes()).andReturn(attributes).atLeastOnce();
 
         replay(mockHeaders);
@@ -186,7 +236,7 @@ public class RestletPrincipalExtractorTest {
                 = new ConcurrentHashMap<String, java.lang.Object>();
         Form mockHeaders = createMock(Form.class);
         attributes.put("org.restlet.http.headers", mockHeaders);
-        expect(mockHeaders.getFirstValue(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
+        expect(mockHeaders.getFirstValue(AuthenticationUtil.AUTH_HEADER, true)).andReturn(null).atLeastOnce();
         expect(getMockRequest().getAttributes()).andReturn(attributes).atLeastOnce();
 
         replay(mockHeaders);
@@ -215,7 +265,7 @@ public class RestletPrincipalExtractorTest {
                 = new ConcurrentHashMap<String, java.lang.Object>();
         Form mockHeaders = createMock(Form.class);
         attributes.put("org.restlet.http.headers", mockHeaders);
-        expect(mockHeaders.getFirstValue(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
+        expect(mockHeaders.getFirstValue(AuthenticationUtil.AUTH_HEADER, true)).andReturn(null).atLeastOnce();
         expect(getMockRequest().getAttributes()).andReturn(attributes).atLeastOnce();
 
         final Series<Cookie> requestCookies = new CookieSeries();
@@ -240,7 +290,7 @@ public class RestletPrincipalExtractorTest {
 
         mockHeaders = createMock(Form.class);
         attributes.put("org.restlet.http.headers", mockHeaders);
-        expect(mockHeaders.getFirstValue(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
+        expect(mockHeaders.getFirstValue(AuthenticationUtil.AUTH_HEADER, true)).andReturn(null).atLeastOnce();
 
         final Calendar notAfterCal = Calendar.getInstance();
         notAfterCal.set(1977, Calendar.NOVEMBER, 25, 3, 21, 0);
