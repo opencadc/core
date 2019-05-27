@@ -36,13 +36,7 @@ package ca.nrc.cadc.auth.restlet;
 
 import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.DelegationToken;
-import ca.nrc.cadc.util.FileUtil;
-import ca.nrc.cadc.auth.HttpPrincipal;
-import ca.nrc.cadc.util.RsaSignatureGenerator;
 import ca.nrc.cadc.auth.NotAuthenticatedException;
-
-import java.io.File;
-import java.net.URI;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
