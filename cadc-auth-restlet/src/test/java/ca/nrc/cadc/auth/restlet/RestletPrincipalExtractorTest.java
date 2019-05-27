@@ -49,10 +49,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.List;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import javax.security.auth.x500.X500Principal;
@@ -66,7 +63,6 @@ import org.restlet.data.Cookie;
 import org.restlet.data.Form;
 import org.restlet.engine.util.CookieSeries;
 import org.restlet.util.Series;
-
 
 public class RestletPrincipalExtractorTest {
 
