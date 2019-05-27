@@ -36,8 +36,12 @@ package ca.nrc.cadc.auth.restlet;
 
 import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.DelegationToken;
+import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.auth.HttpPrincipal;
+import ca.nrc.cadc.util.RsaSignatureGenerator;
+import ca.nrc.cadc.auth.NotAuthenticatedException;
 
+import java.io.File;
 import java.net.URI;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
@@ -63,16 +67,18 @@ import org.restlet.data.Form;
 import org.restlet.engine.util.CookieSeries;
 import org.restlet.util.Series;
 
+
 public class RestletPrincipalExtractorTest {
 
     private static final Logger log = Logger.getLogger(RestletPrincipalExtractorTest.class);
 
     private RestletPrincipalExtractor testSubject;
     private final Request mockRequest = createMock(Request.class);
-
-
+    
     @Test
     public void testCaseInsensitiveDelegationToken() throws Exception {
+    	// create an invalid token and test that RestletPrincipalExtractor finds it even when case of
+    	// attribute is changed
         setTestSubject(new RestletPrincipalExtractor() {
             @Override
             public Request getRequest() {
@@ -84,24 +90,10 @@ public class RestletPrincipalExtractorTest {
                 return null;
             }
         });
-
-        final Series<Cookie> requestCookies = new CookieSeries();
-        expect(getMockRequest().getCookies()).andReturn(requestCookies).atLeastOnce();
-
-        HttpPrincipal userid = new HttpPrincipal("someuser", "someproxyuser");
-        URI scope = new URI("foo:bar");
-        int duration = 10; // h
-        Calendar expiry = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
-        expiry.add(Calendar.HOUR, duration);
-        List<String> domains = new ArrayList<String>();
-        domains.add(scope.toASCIIString());
-        DelegationToken token = new DelegationToken(userid, scope, expiry.getTime(), domains);
-
-        
+ 
         final ConcurrentMap<String, Object> attributes
                 = new ConcurrentHashMap<String, java.lang.Object>();
-        Form form = new Form(AuthenticationUtil.AUTH_HEADER + "=" + token);
-        form.encode();
+        Form form = new Form(AuthenticationUtil.AUTH_HEADER + "=foo");
         attributes.put("org.restlet.http.headers", form);
         expect(getMockRequest().getAttributes()).andReturn(attributes).atLeastOnce();
 
@@ -109,9 +101,26 @@ public class RestletPrincipalExtractorTest {
         try {
         		DelegationToken dt = getTestSubject().getDelegationToken();
         		assertTrue(false);
-        } catch (AssertionError e)
+        } catch (NotAuthenticatedException e)
         {
+        		assertEquals("Unexpected exception", "invalid delegation token. null", e.getMessage());
         }
+        
+        // repeat test with lowercase attributes
+        reset(getMockRequest());
+        attributes.clear();
+        form = new Form(AuthenticationUtil.AUTH_HEADER.toLowerCase() + "=foo");
+        attributes.put("org.restlet.http.headers", form);
+        expect(getMockRequest().getAttributes()).andReturn(attributes).atLeastOnce();
+        
+		replay(getMockRequest());
+		try {
+				DelegationToken dt = getTestSubject().getDelegationToken();
+				assertTrue(false);
+		} catch (NotAuthenticatedException e)
+		{
+				assertEquals("Unexpected exception", "invalid delegation token. null", e.getMessage());
+		}
     }
 
     @Test
