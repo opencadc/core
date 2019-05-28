@@ -50,6 +50,7 @@ import javax.security.auth.x500.X500Principal;
 import org.apache.log4j.Logger;
 import static org.easymock.EasyMock.*;
 import static org.junit.Assert.*;
+import org.junit.Assert;
 import org.junit.Test;
 import org.restlet.Request;
 import org.restlet.data.ClientInfo;
@@ -103,14 +104,14 @@ public class RestletPrincipalExtractorTest {
         attributes.put("org.restlet.http.headers", form);
         expect(getMockRequest().getAttributes()).andReturn(attributes).atLeastOnce();
         
-		replay(getMockRequest());
-		try {
-				DelegationToken dt = getTestSubject().getDelegationToken();
-				assertTrue(false);
-		} catch (NotAuthenticatedException e)
-		{
-				assertEquals("Unexpected exception", "invalid delegation token. null", e.getMessage());
-		}
+        replay(getMockRequest());
+        try {
+                DelegationToken dt = getTestSubject().getDelegationToken();
+                Assert.fail("reason: expected exception due to invalid token");
+        } catch (NotAuthenticatedException e)
+        {
+                assertEquals("expected exception", "invalid delegation token. null", e.getMessage());
+        }
     }
 
     @Test
