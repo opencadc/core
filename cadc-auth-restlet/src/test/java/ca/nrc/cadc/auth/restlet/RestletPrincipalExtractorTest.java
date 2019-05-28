@@ -36,6 +36,7 @@ package ca.nrc.cadc.auth.restlet;
 
 import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.DelegationToken;
+import ca.nrc.cadc.auth.NotAuthenticatedException;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -49,6 +50,7 @@ import javax.security.auth.x500.X500Principal;
 import org.apache.log4j.Logger;
 import static org.easymock.EasyMock.*;
 import static org.junit.Assert.*;
+import org.junit.Assert;
 import org.junit.Test;
 import org.restlet.Request;
 import org.restlet.data.ClientInfo;
@@ -63,6 +65,54 @@ public class RestletPrincipalExtractorTest {
 
     private RestletPrincipalExtractor testSubject;
     private final Request mockRequest = createMock(Request.class);
+    
+    @Test
+    public void testCaseInsensitiveDelegationToken() throws Exception {
+    	// create an invalid token and test that RestletPrincipalExtractor finds it even when case of
+    	// attribute is changed
+        setTestSubject(new RestletPrincipalExtractor() {
+            @Override
+            public Request getRequest() {
+                return getMockRequest();
+            }
+
+            @Override
+            protected String getAuthenticatedUsername() {
+                return null;
+            }
+        });
+ 
+        final ConcurrentMap<String, Object> attributes
+                = new ConcurrentHashMap<String, java.lang.Object>();
+        Form form = new Form(AuthenticationUtil.AUTH_HEADER + "=foo");
+        attributes.put("org.restlet.http.headers", form);
+        expect(getMockRequest().getAttributes()).andReturn(attributes).atLeastOnce();
+
+        replay(getMockRequest());
+        try {
+        		DelegationToken dt = getTestSubject().getDelegationToken();
+        		assertTrue(false);
+        } catch (NotAuthenticatedException e)
+        {
+        		assertEquals("Unexpected exception", "invalid delegation token. null", e.getMessage());
+        }
+        
+        // repeat test with lowercase attributes
+        reset(getMockRequest());
+        attributes.clear();
+        form = new Form(AuthenticationUtil.AUTH_HEADER.toLowerCase() + "=foo");
+        attributes.put("org.restlet.http.headers", form);
+        expect(getMockRequest().getAttributes()).andReturn(attributes).atLeastOnce();
+        
+        replay(getMockRequest());
+        try {
+                DelegationToken dt = getTestSubject().getDelegationToken();
+                Assert.fail("reason: expected exception due to invalid token");
+        } catch (NotAuthenticatedException e)
+        {
+                assertEquals("expected exception", "invalid delegation token. null", e.getMessage());
+        }
+    }
 
     @Test
     public void testGetDelegationToken() throws Exception {
@@ -85,7 +135,7 @@ public class RestletPrincipalExtractorTest {
                 = new ConcurrentHashMap<String, java.lang.Object>();
         Form mockHeaders = createMock(Form.class);
         attributes.put("org.restlet.http.headers", mockHeaders);
-        expect(mockHeaders.getFirstValue(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
+        expect(mockHeaders.getFirstValue(AuthenticationUtil.AUTH_HEADER, true)).andReturn(null).atLeastOnce();
         expect(getMockRequest().getAttributes()).andReturn(attributes).atLeastOnce();
 
         replay(mockHeaders);
@@ -121,7 +171,7 @@ public class RestletPrincipalExtractorTest {
                 = new ConcurrentHashMap<String, java.lang.Object>();
         Form mockHeaders = createMock(Form.class);
         attributes.put("org.restlet.http.headers", mockHeaders);
-        expect(mockHeaders.getFirstValue(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
+        expect(mockHeaders.getFirstValue(AuthenticationUtil.AUTH_HEADER, true)).andReturn(null).atLeastOnce();
         expect(getMockRequest().getAttributes()).andReturn(attributes).atLeastOnce();
 
         replay(mockHeaders);
@@ -186,7 +236,7 @@ public class RestletPrincipalExtractorTest {
                 = new ConcurrentHashMap<String, java.lang.Object>();
         Form mockHeaders = createMock(Form.class);
         attributes.put("org.restlet.http.headers", mockHeaders);
-        expect(mockHeaders.getFirstValue(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
+        expect(mockHeaders.getFirstValue(AuthenticationUtil.AUTH_HEADER, true)).andReturn(null).atLeastOnce();
         expect(getMockRequest().getAttributes()).andReturn(attributes).atLeastOnce();
 
         replay(mockHeaders);
@@ -215,7 +265,7 @@ public class RestletPrincipalExtractorTest {
                 = new ConcurrentHashMap<String, java.lang.Object>();
         Form mockHeaders = createMock(Form.class);
         attributes.put("org.restlet.http.headers", mockHeaders);
-        expect(mockHeaders.getFirstValue(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
+        expect(mockHeaders.getFirstValue(AuthenticationUtil.AUTH_HEADER, true)).andReturn(null).atLeastOnce();
         expect(getMockRequest().getAttributes()).andReturn(attributes).atLeastOnce();
 
         final Series<Cookie> requestCookies = new CookieSeries();
@@ -240,7 +290,7 @@ public class RestletPrincipalExtractorTest {
 
         mockHeaders = createMock(Form.class);
         attributes.put("org.restlet.http.headers", mockHeaders);
-        expect(mockHeaders.getFirstValue(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
+        expect(mockHeaders.getFirstValue(AuthenticationUtil.AUTH_HEADER, true)).andReturn(null).atLeastOnce();
 
         final Calendar notAfterCal = Calendar.getInstance();
         notAfterCal.set(1977, Calendar.NOVEMBER, 25, 3, 21, 0);

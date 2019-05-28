@@ -159,7 +159,7 @@ public class RestletPrincipalExtractor implements PrincipalExtractor {
 
         if (token == null) {
             Form headers = (Form) getRequest().getAttributes().get("org.restlet.http.headers");
-            String tokenValue = headers.getFirstValue(AuthenticationUtil.AUTH_HEADER);
+            String tokenValue = headers.getFirstValue(AuthenticationUtil.AUTH_HEADER, true);
             if (StringUtil.hasText(tokenValue)) {
                 try {
                     this.token = DelegationToken.parse(tokenValue, request.getResourceRef().getPath());
