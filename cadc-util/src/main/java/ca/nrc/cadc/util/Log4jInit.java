@@ -186,7 +186,7 @@ public class Log4jInit
             conAppenderHigh.addFilter(errorFilter);
             BasicConfigurator.configure(conAppenderHigh);
 
-            // Appender for INFO with LONG_FORMAT message prefix
+            // Appender for INFO with LONG_INFO_FORMAT message prefix
             ConsoleAppender conAppenderInfo =
                     new ConsoleAppender(new PatternLayout(infoLogFormat));
             LevelRangeFilter infoFilter = new LevelRangeFilter();

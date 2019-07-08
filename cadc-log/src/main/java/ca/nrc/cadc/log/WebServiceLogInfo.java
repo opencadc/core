@@ -145,7 +145,7 @@ public abstract class WebServiceLogInfo
     private String getTimestamp() {
         DateFormat format = DateUtil.getDateFormat(DateUtil.ISO_DATE_FORMAT,  DateUtil.UTC);
         Date date = new Date(System.currentTimeMillis());
-        return "\"@timestamp\":" + format.format(date);
+        return "\"@timestamp\":\"" + format.format(date) + "\"";
     }
 
     private String getWebServiceName() {
@@ -161,7 +161,7 @@ public abstract class WebServiceLogInfo
     }
 
     private String getLoglevel() {
-        return "\"log\":{\"level\":info}";
+        return "\"log\":{\"level\":\"info\"}";
     }
 
     private String getPreamble() {
