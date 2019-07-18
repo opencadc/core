@@ -219,6 +219,7 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
 
     public void setAppName(String appName) {
         this.appName = appName;
+        initState();
     }
             
     public void setComponentID(String componentID) {
@@ -253,7 +254,6 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
                 syncInput.init();
                 ioExceptionOnInput = false;
             }
-            initState();
             doAction();
 
             logInfo.setSuccess(true);
