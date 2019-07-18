@@ -25,6 +25,6 @@ dependencies {
     compile 'org.springframework:spring-jdbc:2.5.6.SEC01'
 
     testCompile 'junit:junit:[4.0,)'
-    testCompile 'org.easymock:easymock:[3.0,)'
+    testCompile 'org.easymock:easymock:3.6'
     testCompile 'org.skyscreamer:jsonassert:[1.0,)'
 }
