@@ -14,17 +14,17 @@ sourceCompatibility = 1.7
 
 group = 'org.opencadc'
 
-version = '1.2.15'
+version = '1.2.16'
 
 dependencies {
-    compile 'log4j:log4j:1.2.+'
-    compile 'javax.servlet:javax.servlet-api:3.1.+'
+    compile 'log4j:log4j:[1.2,)'
+    compile 'javax.servlet:javax.servlet-api:[3.1,4.0)'
     compile 'org.json:json:20160212'
-    compile 'xerces:xercesImpl:2.+'
-    compile 'org.jdom:jdom2:2.+'
+    compile 'xerces:xercesImpl:[2.0,)'
+    compile 'org.jdom:jdom2:[2.0.6,)'
     compile 'org.springframework:spring-jdbc:2.5.6.SEC01'
 
-    testCompile 'junit:junit:4.+'
-    testCompile 'org.easymock:easymock:3.+'
-    testCompile 'org.skyscreamer:jsonassert:1.+'
+    testCompile 'junit:junit:[4.0,)'
+    testCompile 'org.easymock:easymock:[3.0,)'
+    testCompile 'org.skyscreamer:jsonassert:[1.0,)'
 }
