@@ -112,6 +112,9 @@ public class AuthenticationUtil
 
     public static final String AUTH_HEADER = "X-CADC-DelegationToken";
 
+    // HTTP/1.1 Authorization header as defined by RFC 7235
+    public static final String AUTHORIZATION_HEADER = "Authorization";
+
     // Mandatory support list of RDN descriptors according to RFC 4512.
     private static final String[] ORDERED_RDN_KEYS = new String[]
     {
