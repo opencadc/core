@@ -65,42 +65,40 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.xml;
 
 import java.net.URI;
-
 import org.apache.log4j.Logger;
 import org.jdom2.Namespace;
 
 /**
- * XmlUtil  class for use with JDOM-2.
+ * XmlUtil class for use with JDOM-2.
+ *
  * @author yeunga
  *
  */
-public class W3CConstants
-{
+public class W3CConstants {
+
     private static Logger log = Logger.getLogger(W3CConstants.class);
 
-    public static final URI XSI_NS_URI;
-    
-    static 
-    {
-        try 
-        {
-        	XSI_NS_URI = URI.create("http://www.w3.org/2001/XMLSchema-instance");
-        } 
-        catch(IllegalArgumentException bug)
-        {
+    static final URI XSI_NS_URI;
+    static final URI XML_NS_URI;
+
+    static {
+        try {
+            XSI_NS_URI = URI.create("http://www.w3.org/2001/XMLSchema-instance");
+            XML_NS_URI = URI.create("http://www.w3.org/XML/1998/namespace");
+        } catch (IllegalArgumentException bug) {
             throw new RuntimeException("BUG: invalid URI string in static constants", bug);
-        }
-        catch(NullPointerException bug)
-        {
+        } catch (NullPointerException bug) {
             throw new RuntimeException("BUG: null URI string in static constants", bug);
         }
-    }    
+    }
 
-    public static final String XSI_SCHEMA = "XMLSchema.xsd";
+    static final String XSI_SCHEMA = "XMLSchema.xsd";
+    static final String XML_SCHEMA = "xml.xsd";
+
     public static final Namespace XSI_NS = Namespace.getNamespace("xsi", XSI_NS_URI.toString());
 }

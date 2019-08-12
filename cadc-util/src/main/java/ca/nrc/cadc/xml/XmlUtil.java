@@ -249,6 +249,12 @@ public class XmlUtil
         StringBuilder sbSchemaLocations = new StringBuilder();
         if (schemaVal) 
         {
+            // force local xml and XMLSchema mapping
+            schemaResource = XmlUtil.getResourceUrlString(W3CConstants.XML_SCHEMA, XmlUtil.class);
+            schemaMap.put(W3CConstants.XML_NS_URI.toASCIIString(), schemaResource);
+            schemaResource = XmlUtil.getResourceUrlString(W3CConstants.XSI_SCHEMA, XmlUtil.class);
+            schemaMap.put(W3CConstants.XSI_NS_URI.toASCIIString(), schemaResource);
+            
             log.debug("schemaMap.size(): " + schemaMap.size());
             for (String schemaNSKey : schemaMap.keySet())
             {
