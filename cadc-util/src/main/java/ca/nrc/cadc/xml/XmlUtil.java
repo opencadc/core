@@ -249,20 +249,18 @@ public class XmlUtil
         StringBuilder sbSchemaLocations = new StringBuilder();
         if (schemaVal) 
         {
+            // force local xml and XMLSchema mapping
+            schemaResource = XmlUtil.getResourceUrlString(W3CConstants.XML_SCHEMA, XmlUtil.class);
+            schemaMap.put(W3CConstants.XML_NS_URI.toASCIIString(), schemaResource);
+            schemaResource = XmlUtil.getResourceUrlString(W3CConstants.XSI_SCHEMA, XmlUtil.class);
+            schemaMap.put(W3CConstants.XSI_NS_URI.toASCIIString(), schemaResource);
+            
             log.debug("schemaMap.size(): " + schemaMap.size());
             for (String schemaNSKey : schemaMap.keySet())
             {
                 schemaResource = (String) schemaMap.get(schemaNSKey);
                 sbSchemaLocations.append(schemaNSKey).append(space).append(schemaResource).append(space);
             }
-            // xml
-            schemaResource = XmlUtil.getResourceUrlString(W3CConstants.XML_SCHEMA, XmlUtil.class);
-            sbSchemaLocations.append(W3CConstants.XML_NS_URI.toASCIIString()).append(space).append(schemaResource).append(space);
-                    
-            // XMLSchema
-            schemaResource = XmlUtil.getResourceUrlString(W3CConstants.XSI_SCHEMA, XmlUtil.class);
-            sbSchemaLocations.append(W3CConstants.XSI_NS_URI.toASCIIString()).append(space).append(schemaResource).append(space);
-            
             // enable xerces grammar caching
             System.setProperty("org.apache.xerces.xni.parser.XMLParserConfiguration", GRAMMAR_POOL);
         }
