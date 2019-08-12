@@ -3,5 +3,6 @@
            xmlns:foons="http://localhost/foo.xsd"
            elementFormDefault="qualified"
            targetNamespace="http://localhost/foo.xsd">
+    <xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://www.w3.org/2009/01/xml.xsd"/>
     <xs:element name="foo" />
 </xs:schema>
