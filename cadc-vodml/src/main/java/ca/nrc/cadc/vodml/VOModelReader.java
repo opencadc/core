@@ -119,10 +119,6 @@ public class VOModelReader {
             String vodmlSchemaLoc = XmlUtil.getResourceUrlString(VODML_SCHEMA, VOModelReader.class);
             log.debug("schemaMap: " + VODML_NS + " -> " + vodmlSchemaLoc);
             schemaMap.put(VODML_NS, vodmlSchemaLoc);
-
-            String w3cSchemaURL = XmlUtil.getResourceUrlString(W3CConstants.XSI_SCHEMA, VOModelReader.class);
-            log.debug("schemaMap: " + W3CConstants.XSI_SCHEMA + " -> " + w3cSchemaURL);
-            schemaMap.put(W3CConstants.XSI_NS_URI.toString(), w3cSchemaURL);
         }
         this.schematronVal = schematronVal;
         this.logWarnings = logWarnings;
