@@ -71,6 +71,8 @@ package ca.nrc.cadc.log;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.text.DateFormat;
+import java.util.Date;
 import java.util.Set;
 
 import javax.security.auth.Subject;
@@ -79,6 +81,7 @@ import javax.security.auth.x500.X500Principal;
 import org.apache.log4j.Logger;
 
 import ca.nrc.cadc.auth.HttpPrincipal;
+import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.util.StringUtil;
 
 /**
@@ -97,27 +100,19 @@ public abstract class WebServiceLogInfo
 
     private boolean userSuccess = true;
 
+    protected String serviceName;
+    protected Long bytes;
+    protected String ip;
+    protected String jobID;
+    protected String message;
     protected String method;
-
     protected String path;
-
-    protected Boolean success;
-
-    public String user;
-
     protected String proxyUser;
-
-    protected String from;
-
+    protected String runID;
+    protected Boolean success;
     protected Long time;
 
-    protected Long bytes;
-
-    protected String message;
-
-    protected String jobID;
-    
-    protected String runID;
+    public String user;
 
     protected WebServiceLogInfo() { }
 
@@ -127,7 +122,7 @@ public abstract class WebServiceLogInfo
      */
     public String start()
     {
-        return "START: " + doit();
+        return "{" + getPreamble() + "\"phase\":\"start\"," + doit() + "}";
     }
 
     /**
@@ -137,15 +132,44 @@ public abstract class WebServiceLogInfo
     public String end()
     {
         this.success = userSuccess;
-        return "END: " + doit();
+        return "{" + getPreamble() + "\"phase\":\"end\"," + doit() + "}";
     }
 
     String doit()
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("{");
         populate(sb, this.getClass());
-        sb.append("}");
+        return sb.toString();
+    }
+
+    private String getTimestamp() {
+        DateFormat format = DateUtil.getDateFormat(DateUtil.ISO_DATE_FORMAT,  DateUtil.UTC);
+        Date date = new Date(System.currentTimeMillis());
+        return "\"@timestamp\":\"" + format.format(date) + "\"";
+    }
+
+    private String getWebServiceName() {
+        return "data_ws";
+    }
+
+    private String getServiceName() {
+        return "\"service\":{\"name\":\"" + serviceName + "\"}";
+    }
+
+    private String getThreadName() {
+        return "\"thread\":{\"name\":\"" + Thread.currentThread().getName() + "\"}";
+    }
+
+    private String getLoglevel() {
+        return "\"log\":{\"level\":\"info\"}";
+    }
+
+    private String getPreamble() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getTimestamp()).append(",");
+        sb.append(getServiceName()).append(",");
+        sb.append(getThreadName()).append(",");
+        sb.append(getLoglevel()).append(",");
         return sb.toString();
     }
 
@@ -165,7 +189,7 @@ public abstract class WebServiceLogInfo
                 {
                     Object o = f.get(this);
                     log.debug(f.getName() + " = " + o);
-                    if (o != null)
+                    if (o != null && !f.getName().equals("serviceName"))
                     {
                         String val = sanitize(o);
                         if (sb.length() > 1) // more than just the opening {
