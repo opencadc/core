@@ -164,7 +164,7 @@ public class WebServiceLogInfoTest {
         logInfo.setMessage("the message");
         String end = logInfo.end();
         log.info("testMaximalContentServlet: " + end);
-        expected = "\"phase\":\"end\",\"bytes\":10,\"ip\":\"192.168.0.0\",\"message\":\"the message\",\"method\":\"GET\",\"path\":\"/path/of/request\",\"proxyUser\":\"the proxy\",\"runID\":\"abc\",\"success\":false,\"time\":1234,\"user\":\"the user\"";
+        expected = "\"phase\":\"end\",\"bytes\":10,\"ip\":\"192.168.0.0\",\"message\":\"the message\",\"method\":\"GET\",\"path\":\"/path/of/request\",\"proxyUser\":\"the proxy\",\"runID\":\"abc\",\"success\":false,\"duration\":1234,\"user\":\"the user\"";
         Assert.assertTrue("Wrong end", end.contains(expected));
         Assert.assertTrue("Wrong start", end.contains("\"service\":{\"name\":\"test_ws\"}"));
         EasyMock.verify(request);
@@ -201,7 +201,7 @@ public class WebServiceLogInfoTest {
         logInfo.setMessage("the message");
         String end = logInfo.end();
         log.info("testPathIsJobID: " + end);
-        expected = "\"phase\":\"end\",\"bytes\":10,\"ip\":\"192.168.0.0\",\"jobID\":\"theJobID\",\"message\":\"the message\",\"method\":\"GET\",\"success\":false,\"time\":1234,\"user\":\"the user\"";
+        expected = "\"phase\":\"end\",\"bytes\":10,\"ip\":\"192.168.0.0\",\"jobID\":\"theJobID\",\"message\":\"the message\",\"method\":\"GET\",\"success\":false,\"duration\":1234,\"user\":\"the user\"";
         Assert.assertTrue("Wrong end", end.contains(expected));
         Assert.assertTrue("Wrong start", end.contains("\"service\":{\"name\":\"test_ws\"}"));
         EasyMock.verify(request);
@@ -237,7 +237,7 @@ public class WebServiceLogInfoTest {
         logInfo.setMessage("the message");
         String end = logInfo.end();
         log.info("testPathIsJobID: " + end);
-        expected = "\"phase\":\"end\",\"bytes\":10,\"ip\":\"192.168.0.3\",\"jobID\":\"theJobID\",\"message\":\"the message\",\"method\":\"GET\",\"success\":false,\"time\":1234,\"user\":\"the user\"";
+        expected = "\"phase\":\"end\",\"bytes\":10,\"ip\":\"192.168.0.3\",\"jobID\":\"theJobID\",\"message\":\"the message\",\"method\":\"GET\",\"success\":false,\"duration\":1234,\"user\":\"the user\"";
         Assert.assertTrue("Wrong end", end.contains(expected));
         Assert.assertTrue("Wrong start", end.contains("\"service\":{\"name\":\"test_ws\"}"));
         EasyMock.verify(request);
@@ -274,7 +274,7 @@ public class WebServiceLogInfoTest {
         logInfo.setMessage("the message");
         String end = logInfo.end();
         log.info("testPathIsJobID: " + end);
-        expected = "\"phase\":\"end\",\"bytes\":10,\"ip\":\"192.168.1.4\",\"jobID\":\"theJobID\",\"message\":\"the message\",\"method\":\"GET\",\"success\":false,\"time\":1234,\"user\":\"the user\"";
+        expected = "\"phase\":\"end\",\"bytes\":10,\"ip\":\"192.168.1.4\",\"jobID\":\"theJobID\",\"message\":\"the message\",\"method\":\"GET\",\"success\":false,\"duration\":1234,\"user\":\"the user\"";
         Assert.assertTrue("Wrong end", end.contains(expected));
         Assert.assertTrue("Wrong start", end.contains("\"service\":{\"name\":\"test_ws\"}"));
         EasyMock.verify(request);

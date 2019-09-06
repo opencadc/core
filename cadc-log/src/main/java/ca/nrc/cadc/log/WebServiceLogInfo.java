@@ -110,7 +110,7 @@ public abstract class WebServiceLogInfo
     protected String proxyUser;
     protected String runID;
     protected Boolean success;
-    protected Long time;
+    protected Long duration;
 
     public String user;
 
@@ -245,7 +245,7 @@ public abstract class WebServiceLogInfo
      */
     public void setElapsedTime(Long elapsedTime)
     {
-        this.time = elapsedTime;
+        this.duration = elapsedTime;
     }
 
     /**
