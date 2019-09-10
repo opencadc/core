@@ -71,11 +71,7 @@ package ca.nrc.cadc.log;
 
 import ca.nrc.cadc.auth.HttpPrincipal;
 import ca.nrc.cadc.util.Log4jInit;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 import javax.security.auth.Subject;
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -102,7 +98,8 @@ public class WebServiceLogInfoTest {
     public void testMinimalContentServlet() {
         HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
         EasyMock.expect(request.getMethod()).andReturn("Get").once();
-        EasyMock.expect(request.getPathInfo()).andReturn("/service_name/remaining/path/of/request").once();
+        EasyMock.expect(request.getContextPath()).andReturn("/service_name").once();
+        EasyMock.expect(request.getPathInfo()).andReturn("/remaining/path/of/request").once();
         EasyMock.expect(request.getHeader("X-Forwarded-For")).andReturn(null).once();
         EasyMock.expect(request.getRemoteAddr()).andReturn("192.168.0.0").once();
 
@@ -127,7 +124,8 @@ public class WebServiceLogInfoTest {
     public void testMaximalContentServlet() {
         HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
         EasyMock.expect(request.getMethod()).andReturn("Get").once();
-        EasyMock.expect(request.getPathInfo()).andReturn("/service_name/remaining/path/of/request").once();
+        EasyMock.expect(request.getContextPath()).andReturn("/service_name").once();
+        EasyMock.expect(request.getPathInfo()).andReturn("/remaining/path/of/request").once();
         EasyMock.expect(request.getHeader("X-Forwarded-For")).andReturn(null).once();
         EasyMock.expect(request.getRemoteAddr()).andReturn("192.168.0.0").once();
 
