@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2016.                            (c) 2016.
+ *  (c) 2019.                            (c) 2019.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -71,9 +71,9 @@ package ca.nrc.cadc.log;
 
 import ca.nrc.cadc.net.NetUtil;
 
-import java.util.Enumeration;
-
 import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Logger;
 
 
 /**
@@ -84,6 +84,8 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class ServletLogInfo extends WebServiceLogInfo {
 
+    private static Logger log = Logger.getLogger(ServletLogInfo.class);
+
     /**
      * Servlet request constructor that automatically
      * determines the path.
@@ -91,59 +93,14 @@ public class ServletLogInfo extends WebServiceLogInfo {
      * @param request The HTTP Request.
      */
     public ServletLogInfo(HttpServletRequest request) {
-        this(request, request.getPathInfo());
-    }
-
-    public ServletLogInfo(HttpServletRequest request, boolean pathIsJobID) {
-        this(request, request.getPathInfo(), true);
-    }
-
-    /**
-     * Servlet request constructor that takes a path
-     * override parameter.
-     *
-     * @param request The HTTP Request.
-     * @param path    The path to log.
-     */
-    public ServletLogInfo(HttpServletRequest request, String path) {
-        this(request, path, false);
-    }
-
-    public ServletLogInfo(HttpServletRequest request, String path, String jobID) {
-        this(request, path, false);
-        this.jobID = jobID;
-    }
-
-    public ServletLogInfo(HttpServletRequest request, String path, boolean pathIsJobID) {
         super();
-        this.serviceName = request.getServletContext().getServletContextName();
         this.method = request.getMethod().toUpperCase();
         this.ip = NetUtil.getClientIP(request);
-        if (pathIsJobID) {
-            this.jobID = parseJobID(path);
-        } else {
-            this.path = path;
+        String contextPath = request.getContextPath();
+        this.serviceName = this.parseServiceName(contextPath);
+        String pathInfo = request.getPathInfo();
+        if (pathInfo != null && pathInfo.length() > 0) {
+            this.path =  contextPath + pathInfo;
         }
-        Enumeration<String> paramNames = request.getParameterNames();
-        while (paramNames.hasMoreElements()) {
-            String nextName = paramNames.nextElement();
-            if (nextName.equalsIgnoreCase("runid")) {
-                runID = request.getParameter(nextName);
-                break;
-            }
-        }
-    }
-
-    private String parseJobID(String path) {
-        if (path != null) {
-            if (path.startsWith("/")) {
-                path = path.substring(1);
-            }
-            if (path.endsWith("/")) {
-                path = path.substring(0, path.length() - 1);
-            }
-            return path;
-        }
-        return null;
     }
 }

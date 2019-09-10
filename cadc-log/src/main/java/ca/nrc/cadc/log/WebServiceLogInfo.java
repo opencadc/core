@@ -148,10 +148,6 @@ public abstract class WebServiceLogInfo
         return "\"@timestamp\":\"" + format.format(date) + "\"";
     }
 
-    private String getWebServiceName() {
-        return "data_ws";
-    }
-
     private String getServiceName() {
         return "\"service\":{\"name\":\"" + serviceName + "\"}";
     }
@@ -314,6 +310,16 @@ public abstract class WebServiceLogInfo
     
     public void setRunID(String runID) {
         this.runID = runID;
+    }
+    
+    protected String parseServiceName(String path) {
+        if (path != null) {
+            if (path.startsWith("/")) {
+                path = path.substring(1);
+            }
+            return path.split("/")[0];
+        }
+        return null;
     }
 
 }
