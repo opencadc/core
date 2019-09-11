@@ -87,7 +87,7 @@ public class XmlUtilTest
     private static Logger log = Logger.getLogger(XmlUtilTest.class);
     static
     {
-        Log4jInit.setLevel("ca.nrc.cadc", org.apache.log4j.Level.INFO);
+        Log4jInit.setLevel("ca.nrc.cadc.xml", org.apache.log4j.Level.INFO);
     }
 
     String fooSchema = "foo.xsd";
