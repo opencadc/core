@@ -52,7 +52,11 @@ public class PosixPrincipal implements Principal, Serializable
      */
     public PosixPrincipal(int uidNumber)
     {
-        this.uidNumber = uidNumber;
+    	if (uidNumber > 0) {
+	        this.uidNumber = uidNumber;
+    	} else {
+    		throw new IllegalArgumentException("invalid uidNumber " + uidNumber);
+    	}
     }
 
     @Override
