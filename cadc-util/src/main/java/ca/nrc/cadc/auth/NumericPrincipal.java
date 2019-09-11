@@ -51,19 +51,16 @@ public class NumericPrincipal implements Principal, Serializable
      * Ctor
      * @param numericID unique identifier
      */
-    public NumericPrincipal(UUID numericID)
-    {
+    public NumericPrincipal(UUID numericID) {
         this.numericID = numericID;
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return numericID.toString();
     }
 
-    public UUID getUUID()
-    {
+    public UUID getUUID() {
         return numericID;
     }
 
@@ -71,8 +68,7 @@ public class NumericPrincipal implements Principal, Serializable
      * @see java.lang.Object#hashCode()
      */
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         final int prime = 31;
         int result = 1;
         result = prime * result + numericID.hashCode();
@@ -83,42 +79,38 @@ public class NumericPrincipal implements Principal, Serializable
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
-    public boolean equals(Object obj)
-    {
-        if (this == obj)
-        {
+    public boolean equals(Object obj) {
+        if (this == obj) {
             return true;
         }
-        if (obj == null)
-        {
+        
+        if (obj == null) {
             return false;
         }
-        if (!(obj instanceof NumericPrincipal))
-        {
+        
+        if (!(obj instanceof NumericPrincipal)) {
             return false;
         }
+        
         NumericPrincipal other = (NumericPrincipal) obj;
-        if (numericID.equals(other.numericID))
-        {
+        if (numericID.equals(other.numericID)) {
             return true;
         }
+        
         return false;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(getClass().getSimpleName());
         sb.append("[");
-        if (numericID.getMostSignificantBits() == 0L)
-        {
+        if (numericID.getMostSignificantBits() == 0L) {
             sb.append(numericID.getLeastSignificantBits());
-        }
-        else
-        {
+        } else {
             sb.append(getName());
         }
+        
         sb.append("]");
         return sb.toString();
     }

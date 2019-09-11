@@ -23,7 +23,7 @@
  *                                      sation du logiciel.
  *
  *
- * @author adriand
+ * @author yeunga
  *
  * @version $Revision: $
  *
@@ -43,30 +43,27 @@ import java.security.Principal;
  */
 public class PosixPrincipal implements Principal, Serializable
 {
-	private static final long serialVersionUID = 5423257890488724644L;
-	private int uidNumber;
+    private static final long serialVersionUID = 5423257890488724644L;
+    private int uidNumber;
 
     /**
      * Ctor
      * @param uidNumber unique identifier
      */
-    public PosixPrincipal(int uidNumber)
-    {
+    public PosixPrincipal(int uidNumber) {
     	if (uidNumber > 0) {
-	        this.uidNumber = uidNumber;
+            this.uidNumber = uidNumber;
     	} else {
     		throw new IllegalArgumentException("invalid uidNumber " + uidNumber);
     	}
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return Integer.toString(uidNumber);
     }
 
-    public int getUidNumber()
-    {
+    public int getUidNumber() {
         return uidNumber;
     }
 
@@ -74,29 +71,37 @@ public class PosixPrincipal implements Principal, Serializable
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + uidNumber;
-		return result;
-	}
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + uidNumber;
+        return result;
+    }
 
     @Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		PosixPrincipal other = (PosixPrincipal) obj;
-		if (uidNumber != other.uidNumber)
-			return false;
-		return true;
-	}
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
 
-	@Override
-	public String toString() {
-		return "PosixPrincipal [uidNumber=" + uidNumber + "]";
-	}
+        if (obj == null) {
+            return false;
+        }
+
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+
+        PosixPrincipal other = (PosixPrincipal) obj;
+        if (uidNumber != other.uidNumber) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "PosixPrincipal [uidNumber=" + uidNumber + "]";
+    }
 }
