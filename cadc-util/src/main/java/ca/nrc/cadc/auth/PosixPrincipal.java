@@ -38,24 +38,24 @@ import java.io.Serializable;
 import java.security.Principal;
 
 /**
- * Class that represents a Posix Principal. This is useful for
- * representing a user with a PosixAccount key reference.
+ * Class that represents a Posix Principal. This is useful for representing a
+ * user with a PosixAccount key reference.
  */
-public class PosixPrincipal implements Principal, Serializable
-{
+public class PosixPrincipal implements Principal, Serializable {
     private static final long serialVersionUID = 5423257890488724644L;
     private int uidNumber;
 
     /**
      * Ctor
+     * 
      * @param uidNumber unique identifier
      */
     public PosixPrincipal(int uidNumber) {
-    	if (uidNumber > 0) {
-            this.uidNumber = uidNumber;
-    	} else {
-    		throw new IllegalArgumentException("invalid uidNumber " + uidNumber);
-    	}
+        if (uidNumber < 0) {
+            throw new IllegalArgumentException("invalid uidNumber " + uidNumber);
+        }
+
+        this.uidNumber = uidNumber;
     }
 
     @Override
@@ -67,7 +67,9 @@ public class PosixPrincipal implements Principal, Serializable
         return uidNumber;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
