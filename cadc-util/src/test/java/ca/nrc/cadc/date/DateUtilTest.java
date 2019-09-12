@@ -88,7 +88,7 @@ public class DateUtilTest
 
     static
     {
-        Log4jInit.setLevel("ca.nrc.cadc", Level.INFO);
+        Log4jInit.setLevel("ca.nrc.cadc.date", Level.INFO);
     }
 
     @Test

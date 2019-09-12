@@ -46,7 +46,7 @@ public class PropertiesReaderTest
 
     static
     {
-        Log4jInit.setLevel("ca.nrc.cadc", org.apache.log4j.Level.INFO);
+        Log4jInit.setLevel("ca.nrc.cadc.util", org.apache.log4j.Level.INFO);
     }
 
     @Test
