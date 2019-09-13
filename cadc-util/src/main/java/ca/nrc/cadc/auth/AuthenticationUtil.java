@@ -436,8 +436,8 @@ public class AuthenticationUtil {
             return null;
         }
         Subject subject = null;
-        int prStart = 0;
-        int nameStart = s.indexOf("[", prStart);
+        int pStart = 0;
+        int nameStart = s.indexOf("[", pStart);
         try {
             while (nameStart != -1) {
                 int nameEnd = s.indexOf("]", nameStart);
@@ -445,7 +445,7 @@ public class AuthenticationUtil {
                     log.error("Invalid Principal encoding: " + s);
                     return null;
                 }
-                Class c = Class.forName(s.substring(prStart, nameStart));
+                Class c = Class.forName(s.substring(pStart, nameStart));
                 Class[] args = new Class[] { String.class };
                 Constructor constructor = c.getDeclaredConstructor(args);
                 String name = NetUtil.decode(s.substring(nameStart + 1, nameEnd));
@@ -454,8 +454,8 @@ public class AuthenticationUtil {
                     subject = new Subject();
                 }
                 subject.getPrincipals().add(principal);
-                prStart = nameEnd + 1;
-                nameStart = s.indexOf("[", prStart);
+                pStart = nameEnd + 1;
+                nameStart = s.indexOf("[", pStart);
             }
         } catch (IndexOutOfBoundsException ioe) {
             log.error(ioe.getMessage(), ioe);
