@@ -75,18 +75,14 @@ import java.net.URI;
  *
  * @author pdowler
  */
-public class CookieScopeValidator extends DelegationToken.ScopeValidator
-{
-    public CookieScopeValidator() { }
+public class CookieScopeValidator extends DelegationToken.ScopeValidator {
+    public CookieScopeValidator() {
+    }
 
     @Override
-    public void verifyScope(final URI scope, final String requestURI)
-        throws InvalidDelegationTokenException 
-    {
-        if (!SSOCookieManager.SCOPE_URI.equals(scope))
-        {
-            throw new InvalidDelegationTokenException("invalid scope: "
-                                                      + scope);
+    public void verifyScope(final URI scope, final String requestURI) throws InvalidDelegationTokenException {
+        if (!SSOCookieManager.SCOPE_URI.equals(scope)) {
+            throw new InvalidDelegationTokenException("invalid scope: " + scope);
         }
     }
 }

@@ -67,7 +67,6 @@
 
 package ca.nrc.cadc.db.version;
 
-
 import org.apache.log4j.Logger;
 
 /**
@@ -78,7 +77,7 @@ import org.apache.log4j.Logger;
 public class ModelVersion extends KeyValue {
     private static final Logger log = Logger.getLogger(ModelVersion.class);
 
-    public ModelVersion(String name) { 
+    public ModelVersion(String name) {
         super(name);
     }
 }

@@ -2,7 +2,7 @@
  ************************************************************************
  ****  C A N A D I A N   A S T R O N O M Y   D A T A   C E N T R E  *****
  *
- * (c) 2016.                            (c) 2016.
+ * (c) 2019.                            (c) 2019.
  * National Research Council            Conseil national de recherches
  * Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
  * All rights reserved                  Tous droits reserves
@@ -38,11 +38,9 @@ package ca.nrc.cadc.util;
  * Exception thrown when a problem with the command line arguments is
  * encountered.
  */
-public class UsageException extends Exception
-{
+public class UsageException extends Exception {
 
-	public UsageException(String message)
-	{
-		super(message);
-	}
+    public UsageException(String message) {
+        super(message);
+    }
 }

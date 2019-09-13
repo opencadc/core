@@ -145,17 +145,17 @@ public class UUIDComparator implements Comparator<UUID> {
         NAME_BASED_SHA1(5),
         UNKNOWN(0);
 
-        private final int _raw;
+        private final int raw;
 
-        private UUIDType(int raw) {
-            _raw = raw;
+        private UUIDType(int rawi) {
+            raw = rawi;
         }
 
         /**
          * Returns "raw" type constants, embedded within UUID bytes.
          */
         public int raw() {
-            return _raw;
+            return raw;
         }
     }
 }

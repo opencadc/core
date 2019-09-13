@@ -85,64 +85,58 @@ import org.apache.log4j.Logger;
 /**
  * A Simple JNDI context to support testing.
  */
-public class StandaloneContext implements Context
-{
+public class StandaloneContext implements Context {
     private static final Logger log = Logger.getLogger(StandaloneContext.class);
-    Map<String,Object> map = new HashMap<String,Object>(1);
+    Map<String, Object> map = new HashMap<String, Object>(1);
 
     @Override
-    public Object lookup(String name) throws NamingException
-    {
+    public Object lookup(String name) throws NamingException {
         log.debug("TestContext.lookup: " + name + " " + toString());
         return map.get(name);
     }
 
     @Override
-    public void bind(String name, Object value) throws NamingException
-    {
+    public Object lookup(Name arg0) throws NamingException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void bind(String name, Object value) throws NamingException {
         log.debug("TestContext.bind : " + name + " " + value + " " + toString());
-        map.put(name,  value);
+        map.put(name, value);
     }
 
     @Override
-    public Object addToEnvironment(String arg0, Object arg1)
-            throws NamingException
-    {
+    public void bind(Name arg0, Object arg1) throws NamingException {
+    }
+
+    @Override
+    public Object addToEnvironment(String arg0, Object arg1) throws NamingException {
         return null;
     }
 
     @Override
-    public void bind(Name arg0, Object arg1) throws NamingException
-    {
+    public void close() throws NamingException {
     }
 
     @Override
-    public void close() throws NamingException
-    {
-    }
-
-    @Override
-    public Name composeName(Name arg0, Name arg1) throws NamingException
-    {
+    public Name composeName(Name arg0, Name arg1) throws NamingException {
         return null;
     }
 
     @Override
-    public String composeName(String arg0, String arg1)
-            throws NamingException
-    {
+    public String composeName(String arg0, String arg1) throws NamingException {
         return null;
     }
 
     @Override
-    public Context createSubcontext(Name arg0) throws NamingException
-    {
+    public Context createSubcontext(Name arg0) throws NamingException {
         return null;
     }
 
     @Override
-    public Context createSubcontext(String name) throws NamingException
-    {
+    public Context createSubcontext(String name) throws NamingException {
         log.debug("createSubContext: " + name + " " + toString());
         Context ctx = new StandaloneContext();
         map.put(name, ctx);
@@ -151,121 +145,91 @@ public class StandaloneContext implements Context
     }
 
     @Override
-    public void destroySubcontext(Name arg0) throws NamingException
-    {
+    public void destroySubcontext(Name arg0) throws NamingException {
     }
 
     @Override
-    public void destroySubcontext(String arg0) throws NamingException
-    {
+    public void destroySubcontext(String arg0) throws NamingException {
 
     }
 
     @Override
-    public Hashtable<?, ?> getEnvironment() throws NamingException
-    {
+    public Hashtable<?, ?> getEnvironment() throws NamingException {
         return null;
     }
 
     @Override
-    public String getNameInNamespace() throws NamingException
-    {
+    public String getNameInNamespace() throws NamingException {
         return null;
     }
 
     @Override
-    public NameParser getNameParser(Name arg0) throws NamingException
-    {
+    public NameParser getNameParser(Name arg0) throws NamingException {
         return null;
     }
 
     @Override
-    public NameParser getNameParser(String arg0) throws NamingException
-    {
+    public NameParser getNameParser(String arg0) throws NamingException {
         return null;
     }
 
     @Override
-    public NamingEnumeration<NameClassPair> list(Name arg0)
-            throws NamingException
-    {
+    public NamingEnumeration<NameClassPair> list(Name arg0) throws NamingException {
         return null;
     }
 
     @Override
-    public NamingEnumeration<NameClassPair> list(String arg0)
-            throws NamingException
-    {
+    public NamingEnumeration<NameClassPair> list(String arg0) throws NamingException {
         return null;
     }
 
     @Override
-    public NamingEnumeration<Binding> listBindings(Name arg0)
-            throws NamingException
-    {
+    public NamingEnumeration<Binding> listBindings(Name arg0) throws NamingException {
         return null;
     }
 
     @Override
-    public NamingEnumeration<Binding> listBindings(String arg0)
-            throws NamingException
-    {
+    public NamingEnumeration<Binding> listBindings(String arg0) throws NamingException {
         return null;
     }
 
     @Override
-    public Object lookup(Name arg0) throws NamingException
-    {
-        // TODO Auto-generated method stub
+    public Object lookupLink(Name arg0) throws NamingException {
         return null;
     }
 
     @Override
-    public Object lookupLink(Name arg0) throws NamingException
-    {
+    public Object lookupLink(String arg0) throws NamingException {
         return null;
     }
 
     @Override
-    public Object lookupLink(String arg0) throws NamingException
-    {
+    public void rebind(Name arg0, Object arg1) throws NamingException {
+    }
+
+    @Override
+    public void rebind(String arg0, Object arg1) throws NamingException {
+    }
+
+    @Override
+    public Object removeFromEnvironment(String arg0) throws NamingException {
         return null;
     }
 
     @Override
-    public void rebind(Name arg0, Object arg1) throws NamingException
-    {
+    public void rename(Name arg0, Name arg1) throws NamingException {
     }
 
     @Override
-    public void rebind(String arg0, Object arg1) throws NamingException
-    {
+    public void rename(String arg0, String arg1) throws NamingException {
     }
 
     @Override
-    public Object removeFromEnvironment(String arg0) throws NamingException
-    {
-        return null;
+    public void unbind(Name arg0) throws NamingException {
     }
 
     @Override
-    public void rename(Name arg0, Name arg1) throws NamingException
-    {
-    }
-
-    @Override
-    public void rename(String arg0, String arg1) throws NamingException
-    {
-    }
-
-    @Override
-    public void unbind(Name arg0) throws NamingException
-    {
-    }
-
-    @Override
-    public void unbind(String arg0) throws NamingException
-    {
+    public void unbind(String arg0) throws NamingException {
     }
 
 }

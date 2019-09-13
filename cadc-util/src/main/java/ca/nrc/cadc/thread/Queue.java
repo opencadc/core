@@ -80,21 +80,18 @@ import java.util.LinkedList;
  * @version $Revision: 283 $
  * @author $Author: pdowler $
  */
-public class Queue
-{
+public class Queue {
     protected LinkedList<Object> list;
 
-    public Queue()
-    {
-            this.list = new LinkedList<Object>();
+    public Queue() {
+        this.list = new LinkedList<Object>();
     }
 
     /**
      * Add an object to the bottom of the queue.
      * @param obj item to push
      */
-    public synchronized void push(Object obj)
-    {
+    public synchronized void push(Object obj) {
         list.addLast(obj);  // add at the back
         this.notify();      // wake up one waiting thread
     }
@@ -107,10 +104,11 @@ public class Queue
      * @throws java.lang.InterruptedException if blocking is interrupted
      */
     public synchronized Object peek()
-        throws InterruptedException
-    {
-        while (list.size() == 0)
+        throws InterruptedException {
+        while (list.size() == 0) {
             wait();
+        }
+        
         return list.getFirst();
     }
     
@@ -122,10 +120,11 @@ public class Queue
      * @throws java.lang.InterruptedException if blocking is interrupted
      */
     public synchronized Object pop()
-            throws InterruptedException
-    {
-        while (list.size() == 0)
+            throws InterruptedException {
+        while (list.size() == 0) {
             wait();
+        }
+        
         return list.removeFirst();
     }
 
@@ -133,11 +132,13 @@ public class Queue
      * @param qu queue updater to invoke
      * @return value from QueueUpdater.update
      */
-    public synchronized boolean update(QueueUpdater qu)
-    {
+    public synchronized boolean update(QueueUpdater qu) {
         boolean ret = qu.update(list);
-        if (list.size() > 0) // hmmm, should a QU be able to insert stuff?
+        if (list.size() > 0) {
+            // hmmm, should a QU be able to insert stuff?
             this.notify();
+        }
+        
         return ret;
     }
     
@@ -150,9 +151,8 @@ public class Queue
      *
      * @return true if there is at least one object stored
      */
-    public synchronized boolean isEmpty()
-    {
-            return list.isEmpty();
+    public synchronized boolean isEmpty() {
+        return list.isEmpty();
     }
 }
 

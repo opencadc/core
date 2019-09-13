@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2016.                            (c) 2016.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -75,8 +75,7 @@ package ca.nrc.cadc.util;
  * @author majorb
  *
  */
-public class ThrowableUtil
-{
+public class ThrowableUtil {
     
     /**
      * Returns true if the root cause of the provided Throwable t is of
@@ -86,23 +85,24 @@ public class ThrowableUtil
      * @param c The type to look for in the root cause
      * @return
      */
-    public static boolean isRootCause(Throwable t, Class<? extends Throwable> c)
-    {
-        if (t == null || c == null)
+    public static boolean isRootCause(Throwable t, Class<? extends Throwable> c) {
+        if (t == null || c == null) {
             return false;
+        }
         
-        if (t.getCause() == null)
+        if (t.getCause() == null) {
             return false;
+        }
         
         Throwable rootCause = t.getCause();
-        while (rootCause.getCause() != null)
-        {
+        while (rootCause.getCause() != null) {
             rootCause = rootCause.getCause();
         }
         
         Class<? extends Throwable> rootCauseClass = rootCause.getClass();
-        if (c.isAssignableFrom(rootCauseClass))
+        if (c.isAssignableFrom(rootCauseClass)) {
             return true;
+        }
         
         return false;
     }
@@ -115,26 +115,26 @@ public class ThrowableUtil
      * @param c The type to look for in the causes of t
      * @return
      */
-    public static boolean isACause(Throwable t, Class<? extends Throwable> c)
-    {
-        if (t == null || c == null)
+    public static boolean isACause(Throwable t, Class<? extends Throwable> c) {
+        if (t == null || c == null) {
             return false;
+        }
         
-        if (t.getCause() == null)
+        if (t.getCause() == null) {
             return false;
+        }
         
         Throwable nextCause = t.getCause();
         Class<? extends Throwable> rootCauseClass = null;
-        while (nextCause != null)
-        {
+        while (nextCause != null) {
             rootCauseClass = nextCause.getClass();            
-            if (c.isAssignableFrom(rootCauseClass))
+            if (c.isAssignableFrom(rootCauseClass)) {
                 return true;
+            }
             
             nextCause = nextCause.getCause();
         }
 
         return false;
     }
-
 }

@@ -69,92 +69,79 @@
 
 package ca.nrc.cadc.auth;
 
-
 import java.io.Serializable;
 import java.security.Principal;
 
 /**
  * This class encapsulates an Http Principal
  */
-public class DNPrincipal implements Principal, Serializable
-{
+public class DNPrincipal implements Principal, Serializable {
     private static final long serialVersionUID = 20150902100215L;
 
     private String dn;
 
     /**
      * Ctor
+     * 
      * @param dn Users distinguished name. Cannot be null.
      */
-    public DNPrincipal(String dn)
-    {
-        if (dn == null)
-        {
+    public DNPrincipal(String dn) {
+        if (dn == null) {
             throw new IllegalArgumentException("Provided null dn");
         }
         this.dn = dn;
     }
 
-
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.security.Principal#getName()
      */
-    public String getName()
-    {
+    public String getName() {
         return dn;
     }
 
-
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Object#hashCode()
      */
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result
-            + ((dn == null) ? 0 : dn.hashCode());
+        result = prime * result + ((dn == null) ? 0 : dn.hashCode());
         return result;
     }
 
-
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
-    public boolean equals(Object obj)
-    {
-        if (this == obj)
-        {
+    public boolean equals(Object obj) {
+        if (this == obj) {
             return true;
         }
-        if (obj == null)
-        {
+        if (obj == null) {
             return false;
         }
-        if (!(obj instanceof DNPrincipal))
-        {
+        if (!(obj instanceof DNPrincipal)) {
             return false;
         }
         DNPrincipal other = (DNPrincipal) obj;
-        if (dn == null)
-        {
-            if (other.dn != null)
-            {
+        if (dn == null) {
+            if (other.dn != null) {
                 return false;
             }
-        }
-        else if (!dn.equals(other.dn))
-        {
+        } else if (!dn.equals(other.dn)) {
             return false;
         }
         return true;
     }
 
-
-    public String toString()
-    {
+    public String toString() {
         return getClass().getSimpleName() + "[" + getName() + "]";
     }
 

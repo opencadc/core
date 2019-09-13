@@ -66,11 +66,12 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.io;
 
 import java.io.DataOutputStream;
-import java.io.OutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * This class implements a stream filter for writing numeric data to an
@@ -78,14 +79,13 @@ import java.io.IOException;
  * adds the ability to write large chunks of internal types at once in binary
  * format.
  *
- * @see	DataOutputStream
- * @see	OutputStream
+ * @see DataOutputStream
+ * @see OutputStream
  * @version 0.1
  * @author Patrick Dowler
  *
  */
-public class BulkDataOutputStream extends DataOutputStream implements BulkDataOutput
-{
+public class BulkDataOutputStream extends DataOutputStream implements BulkDataOutput {
 
     protected boolean eos;
 
@@ -94,25 +94,19 @@ public class BulkDataOutputStream extends DataOutputStream implements BulkDataOu
      *
      * @param ostream an input stream with readInt() methods.
      */
-    public BulkDataOutputStream(OutputStream ostream)
-    {
+    public BulkDataOutputStream(OutputStream ostream) {
         super(ostream);
         eos = false;
     }
 
     // write characters
-    public void writeChar(char[] buf)
-            throws IOException
-    {
+    public void writeChar(char[] buf) throws IOException {
         this.writeChar(buf, 0, buf.length);
     }
 
-    public void writeChar(char[] buf, int off, int len)
-            throws IOException
-    {
+    public void writeChar(char[] buf, int off, int len) throws IOException {
         int i = 0;
-        while (i < off + len)
-        {
+        while (i < off + len) {
             // use DataOutputStream.writeChar()
             this.writeChar(buf[i + off]);
             i++;
@@ -120,24 +114,17 @@ public class BulkDataOutputStream extends DataOutputStream implements BulkDataOu
     }
 
     // write 8-bit signed integers
-    public void writeByte(byte b)
-            throws IOException
-    {
+    public void writeByte(byte b) throws IOException {
         this.write(b);
     }
 
-    public void writeByte(byte[] buf)
-            throws IOException
-    {
+    public void writeByte(byte[] buf) throws IOException {
         this.writeByte(buf, 0, buf.length);
     }
 
-    public void writeByte(byte[] buf, int off, int len)
-            throws IOException
-    {
+    public void writeByte(byte[] buf, int off, int len) throws IOException {
         int i = 0;
-        while (i < off + len)
-        {
+        while (i < off + len) {
             // use DataOutputStream.writeByte()
             this.writeByte(buf[i + off]);
             i++;
@@ -145,42 +132,30 @@ public class BulkDataOutputStream extends DataOutputStream implements BulkDataOu
     }
 
     // write 8-bit unsigned integers
-    public void writeUnsignedByte(short i)
-            throws IOException
-    {
+    public void writeUnsignedByte(short i) throws IOException {
         this.writeByte(i + Byte.MIN_VALUE);
     }
 
-    public void writeUnsignedByte(short[] buf)
-            throws IOException
-    {
+    public void writeUnsignedByte(short[] buf) throws IOException {
         this.writeUnsignedByte(buf, 0, buf.length);
     }
 
-    public void writeUnsignedByte(short[] buf, int off, int len)
-            throws IOException
-    {
+    public void writeUnsignedByte(short[] buf, int off, int len) throws IOException {
         int i = 0;
-        while (i < off + len)
-        {
+        while (i < off + len) {
             this.writeUnsignedByte(buf[i + off]);
             i++;
         }
     }
 
     // write 16-bit signed integers
-    public void writeShort(short[] buf)
-            throws IOException
-    {
+    public void writeShort(short[] buf) throws IOException {
         this.writeShort(buf, 0, buf.length);
     }
 
-    public void writeShort(short[] buf, int off, int len)
-            throws IOException
-    {
+    public void writeShort(short[] buf, int off, int len) throws IOException {
         int i = 0;
-        while (i < len)
-        {
+        while (i < len) {
             // use DataOutputStream.writeShort()
             this.writeShort(buf[i + off]);
             i++;
@@ -188,42 +163,30 @@ public class BulkDataOutputStream extends DataOutputStream implements BulkDataOu
     }
 
     // write 16-bit unsigned integers
-    public void writeUnsignedShort(int i)
-            throws IOException
-    {
+    public void writeUnsignedShort(int i) throws IOException {
         this.writeShort(i + Short.MIN_VALUE);
     }
 
-    public void writeUnsignedShort(int[] buf)
-            throws IOException
-    {
+    public void writeUnsignedShort(int[] buf) throws IOException {
         this.writeUnsignedShort(buf, 0, buf.length);
     }
 
-    public void writeUnsignedShort(int[] buf, int off, int len)
-            throws IOException
-    {
+    public void writeUnsignedShort(int[] buf, int off, int len) throws IOException {
         int i = 0;
-        while (i < off + len)
-        {
+        while (i < off + len) {
             this.writeUnsignedShort(buf[i + off]);
             i++;
         }
     }
 
     // write 32-bit signed integers
-    public void writeInt(int[] buf)
-            throws IOException
-    {
+    public void writeInt(int[] buf) throws IOException {
         this.writeInt(buf, 0, buf.length);
     }
 
-    public void writeInt(int[] buf, int off, int len)
-            throws IOException
-    {
+    public void writeInt(int[] buf, int off, int len) throws IOException {
         int i = 0;
-        while (i < off + len)
-        {
+        while (i < off + len) {
             // use DataOutputStream.writeInt()
             this.writeInt(buf[i + off]);
             i++;
@@ -231,18 +194,13 @@ public class BulkDataOutputStream extends DataOutputStream implements BulkDataOu
     }
 
     // write 64-bit signed integers
-    public void writeLong(long[] buf)
-            throws IOException
-    {
+    public void writeLong(long[] buf) throws IOException {
         this.writeLong(buf, 0, buf.length);
     }
 
-    public void writeLong(long[] buf, int off, int len)
-            throws IOException
-    {
+    public void writeLong(long[] buf, int off, int len) throws IOException {
         int i = 0;
-        while (i < off + len)
-        {
+        while (i < off + len) {
             // use DataOutputStream.writeLong()
             this.writeLong(buf[i + off]);
             i++;
@@ -250,18 +208,13 @@ public class BulkDataOutputStream extends DataOutputStream implements BulkDataOu
     }
 
     // write 32-bit floating point values
-    public void writeFloat(float[] buf)
-            throws IOException
-    {
+    public void writeFloat(float[] buf) throws IOException {
         this.writeFloat(buf, 0, buf.length);
     }
 
-    public void writeFloat(float[] buf, int off, int len)
-            throws IOException
-    {
+    public void writeFloat(float[] buf, int off, int len) throws IOException {
         int i = 0;
-        while (i < off + len)
-        {
+        while (i < off + len) {
             // use DataOutputStream.writeFloat()
             this.writeFloat(buf[i + off]);
             i++;
@@ -269,18 +222,13 @@ public class BulkDataOutputStream extends DataOutputStream implements BulkDataOu
     }
 
     // write 64-bit floating point values
-    public void writeDouble(double[] buf)
-            throws IOException
-    {
+    public void writeDouble(double[] buf) throws IOException {
         this.writeDouble(buf, 0, buf.length);
     }
 
-    public void writeDouble(double[] buf, int off, int len)
-            throws IOException
-    {
+    public void writeDouble(double[] buf, int off, int len) throws IOException {
         int i = 0;
-        while (i < off + len)
-        {
+        while (i < off + len) {
             // use DataOutputStream.writeDouble()
             this.writeDouble(buf[i + off]);
             i++;

@@ -66,6 +66,7 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.io;
 
 import java.io.IOException;
@@ -73,82 +74,61 @@ import java.io.IOException;
 /**
  * Interface for classes which write arrays of builtin data types.
  *
- * Each integer data type can be written from an array of the exact type.
+ * <p>Each integer data type can be written from an array of the exact type.
  * Unsigned integer types are written using an array of the next larger type
  * since java does not have unsigned types per se.
  *
  * @version 0.1
  * @author Patrick Dowler
  */
-public interface BulkDataOutput
-{
+public interface BulkDataOutput {
 
-    public void flush()
-            throws IOException;
+    public void flush() throws IOException;
 
     // write 8-bit signed -> byte
-    public void writeByte(byte b)
-            throws IOException;
+    public void writeByte(byte b) throws IOException;
 
-    public void writeByte(byte[] buf)
-            throws IOException;
+    public void writeByte(byte[] buf) throws IOException;
 
-    public void writeByte(byte[] buf, int off, int len)
-            throws IOException;
+    public void writeByte(byte[] buf, int off, int len) throws IOException;
 
     // write 8-bit unsigned -> short
-    public void writeUnsignedByte(short[] buf)
-            throws IOException;
+    public void writeUnsignedByte(short[] buf) throws IOException;
 
-    public void writeUnsignedByte(short[] buf, int off, int len)
-            throws IOException;
+    public void writeUnsignedByte(short[] buf, int off, int len) throws IOException;
 
     // write characters
-    public void writeChar(char[] buf)
-            throws IOException;
+    public void writeChar(char[] buf) throws IOException;
 
-    public void writeChar(char[] buf, int off, int len)
-            throws IOException;
+    public void writeChar(char[] buf, int off, int len) throws IOException;
 
     // write 16-bit signed integers
-    public void writeShort(short[] buf)
-            throws IOException;
+    public void writeShort(short[] buf) throws IOException;
 
-    public void writeShort(short[] buf, int off, int len)
-            throws IOException;
+    public void writeShort(short[] buf, int off, int len) throws IOException;
 
     // write 16-bit unsigned -> int
-    public void writeUnsignedShort(int[] buf)
-            throws IOException;
+    public void writeUnsignedShort(int[] buf) throws IOException;
 
-    public void writeUnsignedShort(int[] buf, int off, int len)
-            throws IOException;
+    public void writeUnsignedShort(int[] buf, int off, int len) throws IOException;
 
     // write 32-bit signed integers
-    public void writeInt(int[] buf)
-            throws IOException;
+    public void writeInt(int[] buf) throws IOException;
 
-    public void writeInt(int[] buf, int off, int len)
-            throws IOException;
+    public void writeInt(int[] buf, int off, int len) throws IOException;
 
     // write 64-bit signed integers
-    public void writeLong(long[] buf)
-            throws IOException;
+    public void writeLong(long[] buf) throws IOException;
 
-    public void writeLong(long[] buf, int off, int len)
-            throws IOException;
+    public void writeLong(long[] buf, int off, int len) throws IOException;
 
     // write 32-bit floating point values
-    public void writeFloat(float[] buf)
-            throws IOException;
+    public void writeFloat(float[] buf) throws IOException;
 
-    public void writeFloat(float[] buf, int off, int len)
-            throws IOException;
+    public void writeFloat(float[] buf, int off, int len) throws IOException;
 
     // write 64-bit floating point values
-    public void writeDouble(double[] buf)
-            throws IOException;
+    public void writeDouble(double[] buf) throws IOException;
 
-    public void writeDouble(double[] buf, int off, int len)
-            throws IOException;
+    public void writeDouble(double[] buf, int off, int len) throws IOException;
 }

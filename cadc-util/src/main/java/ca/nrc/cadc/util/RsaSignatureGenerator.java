@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2016.                            (c) 2016.
+ *  (c) 2019.                            (c) 2019.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -76,7 +76,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
-import java.net.URLDecoder;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -97,32 +96,31 @@ import org.apache.log4j.Logger;
  * This class is used to sign and/or verify signed messages. The class requires
  * and RSA private key to sign a message.
  * 
- * The key is passed to the class via the MessageRSA.keys file in the 
+ * <p>The key is passed to the class via the MessageRSA.keys file in the 
  * classpath. This class cannot be instantiated without this file containing
  * a private RSA key.
  * 
- * Format of the key:
+ * <p>Format of the key:
  * The private key in the MessageRSA.keys file must be in PEM TKCS#8 to work 
  * with basic Java. These keys are in text format delimited by the following 
  * rows: 
  * "-----BEGIN PRIVATE KEY-----" and "-----END PRIVATE KEY-----".
  * 
- * There are a variety of tools to generate RSA keys, the most common being
+ * <p>There are a variety of tools to generate RSA keys, the most common being
  * openssl and ssh-keygen. These tools allow for both the generation and 
  * manipulation of keys.
  * 
- * For example, an ssh private key is converted to PEM TKCS#8 with command:
+ * <p>For example, an ssh private key is converted to PEM TKCS#8 with command:
  * openssl pkcs8 -topk8 -nocrypt -in &lt;ssh priv key&gt;
  * 
- * This class also provides a main method that can be invoked to generate
+ * <p>This class also provides a main method that can be invoked to generate
  * a set of RSA keys and save them in the MessageRSA.keys file in the
  * directory specified in the command line.
  * 
  * @author adriand
  * 
  */
-public class RsaSignatureGenerator extends RsaSignatureVerifier
-{
+public class RsaSignatureGenerator extends RsaSignatureVerifier {
     private static Logger log = Logger.getLogger(RsaSignatureGenerator.class);
 
     protected static RsaSignatureGenerator inst;
@@ -143,58 +141,51 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier
     public RsaSignatureGenerator(String keyFilename) {
         super(keyFilename, true);
         KeyFactory keyFactory = null;
-        try
-        {
+        try {
             keyFactory = KeyFactory.getInstance(KEY_ALGORITHM);
-        } catch (NoSuchAlgorithmException e1)
-        {
+        } catch (NoSuchAlgorithmException e1) {
             throw new RuntimeException("BUG: Wrong algorithm " + KEY_ALGORITHM,
                     e1);
         }
         // try to load the keys
-        try
-        {
+        try {
             File keysFile = FileUtil.getFileFromResource(
                     keyFilename, this.getClass());
 
             BufferedReader br = new BufferedReader(new FileReader(keysFile));
-            try
-            {
+            try {
                 StringBuilder sb = null;
                 boolean read = false;
                 String line = null;
-                while ((line = br.readLine()) != null)
-                {
-                    if (line.equalsIgnoreCase(PRIV_KEY_START))
-                    {
-                        if (read)
-                        {
+                while ((line = br.readLine()) != null) {
+                    if (line.equalsIgnoreCase(PRIV_KEY_START)) {
+                        if (read) {
                             throw new 
                                 IllegalArgumentException("Corrupted keys file");
                         }
-                        if (privKey != null)
-                        {
+                        
+                        if (privKey != null) {
                             throw new
                             IllegalStateException("Found two private keys");
                         }
+                        
                         read = true;
                         sb = new StringBuilder();
                         continue;
                     }
-                    if (line.equalsIgnoreCase(PRIV_KEY_END))
-                    {
-                        if (!read)
-                        {
+                    
+                    if (line.equalsIgnoreCase(PRIV_KEY_END)) {
+                        if (!read) {
                             throw new 
                             IllegalArgumentException("Corrupted keys file");
                         }
+                        
                         read = false;
                         String payload = sb.toString();
                         byte[] bytes = Base64.decode(payload);
                         PKCS8EncodedKeySpec privateKeySpec = new 
                                 PKCS8EncodedKeySpec(bytes);
-                        try
-                        {
+                        try {
                             privKey = 
                                     keyFactory.generatePrivate(privateKeySpec);
                             // get corresponding public key
@@ -208,31 +199,24 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier
                             PublicKey publicKey = 
                                     keyFactory.generatePublic(publicKeySpec);
                             pubKeys.add(publicKey);
-                        } 
-                        catch (InvalidKeySpecException e)
-                        {
+                        } catch (InvalidKeySpecException e) {
                             log.warn("Could not parse private key", e);
                         }
                     }
-                    if (read)
-                    {
+                    
+                    if (read) {
                         sb.append(line);
                     }
                 }
-            } 
-            finally
-            {
+            } finally {
                 br.close();
             }
-        } 
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             String msg = "Could not read keys";
             throw new RuntimeException(msg, e);
         }
         
-        if (privKey == null)
-        {
+        if (privKey == null) {
             String msg = "No valid private key found";
             throw new IllegalStateException(msg);
         }       
@@ -245,46 +229,38 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier
      * @throws IOException - IO problems
      * @throws InvalidKeyException - the provided key is invalid
      */
-    public byte[] sign(InputStream is) throws IOException, InvalidKeyException
-    {
-        if (privKey == null)
-        {
+    public byte[] sign(InputStream is) throws IOException, InvalidKeyException {
+        if (privKey == null) {
             throw new IllegalStateException(
                     "No private key available for signing");
         }
-        try
-        {
+        
+        try {
             Signature sig = getSignature();
             sig.initSign(privKey);
             byte[] data = new byte[1024];
-            int nRead = is.read(data);
-            while (nRead > 0)
-            {
-                sig.update(data, 0, nRead);
-                nRead = is.read(data);
+            int ndRead = is.read(data);
+            while (ndRead > 0) {
+                sig.update(data, 0, ndRead);
+                ndRead = is.read(data);
             }
+            
             return sig.sign();
-        } catch (SignatureException e)
-        {
+        } catch (SignatureException e) {
             throw new RuntimeException("Signature problem", e);
         }
 
     }
 
     
-    public PrivateKey getPrivateKey()
-    {
+    public PrivateKey getPrivateKey() {
         return privKey;
     }
     
-    private Signature getSignature()
-    {
-        try
-        {
+    private Signature getSignature() {
+        try {
             return Signature.getInstance(SIG_ALGORITHM);
-        } 
-        catch (NoSuchAlgorithmException e)
-        {
+        } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("BUG: Wrong signature algorithm "
                     + SIG_ALGORITHM, e);
         }
@@ -292,29 +268,25 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier
 
     
     public static void genKeyPair(String directory) 
-        throws FileNotFoundException
-    { 
+        throws FileNotFoundException { 
         genKeyPair(new File(directory));
     }
     
     public static void genKeyPair(File directory) 
-        throws FileNotFoundException
-    {      
+        throws FileNotFoundException {      
         genKeyPair(new File(directory, PUB_KEY_FILE_NAME), new File(directory, PRIV_KEY_FILE_NAME), 1024);
     }
     
     public static void genKeyPair(File pubKey, File privKey, int keyLength) throws FileNotFoundException {
         // generate the certs
         KeyPairGenerator kpg;
-        try
-        {
+        try {
             kpg = KeyPairGenerator.getInstance(KEY_ALGORITHM);
-        } 
-        catch (NoSuchAlgorithmException e)
-        {
+        } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(
                     "BUG: illegal key algorithm - " + KEY_ALGORITHM, e);
         }
+        
         kpg.initialize(keyLength);
         KeyPair keyPair = kpg.genKeyPair();
 
@@ -324,26 +296,20 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier
                 Base64.encodeLines(keyPair.getPublic().getEncoded());
 
         PrintWriter outPub = new PrintWriter(pubKey);
-        try
-        {
+        try {
             outPub.println(PUB_KEY_START);
             outPub.print(base64PubKey);
             outPub.println(PUB_KEY_END);
-        }
-        finally
-        {
+        } finally {
             outPub.close();
         }    
         
         PrintWriter outPriv = new PrintWriter(privKey);
-        try
-        {
+        try {
             outPriv.println(PRIV_KEY_START);
             outPriv.print(base64PrivKey);
             outPriv.println(PRIV_KEY_END);
-        }
-        finally
-        {
+        } finally {
             outPriv.close();
         }   
     }

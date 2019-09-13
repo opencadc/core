@@ -3,6 +3,7 @@ plugins {
     id 'maven'
     id 'maven-publish'
     id 'com.jfrog.bintray' version '1.8.4'
+    id 'checkstyle'
 }
 
 repositories {
@@ -28,3 +29,5 @@ dependencies {
     testCompile 'org.easymock:easymock:3.6'
     testCompile 'org.skyscreamer:jsonassert:[1.0,)'
 }
+apply from: '../opencadc.gradle'
+

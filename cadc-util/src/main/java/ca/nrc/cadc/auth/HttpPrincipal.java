@@ -69,135 +69,114 @@
 
 package ca.nrc.cadc.auth;
 
+import ca.nrc.cadc.util.StringUtil;
+
 import java.io.Serializable;
 import java.security.Principal;
-
-import ca.nrc.cadc.util.StringUtil;
 
 /**
  * This class encapsulates an Http Principal
  */
-public class HttpPrincipal implements Principal, Serializable
-{
-    private static final long serialVersionUID = 20090816143750l;
+public class HttpPrincipal implements Principal, Serializable {
+    private static final long serialVersionUID = 20090816143750L;
 
     private String remoteUser;
     private String proxyUser; // user that impersonates remoteUser
 
-    
     /**
      * Ctor
+     * 
      * @param remoteUser Http remote user. Cannot be null.
      */
-    public HttpPrincipal(String remoteUser)
-    {
+    public HttpPrincipal(String remoteUser) {
         this(remoteUser, null);
     }
-    
+
     /**
      * Ctor
+     * 
      * @param remoteUser Http remote user. Cannot be null.
-     * @param proxyUser Http ID of the real user that impersonates the
-     * remote user.
+     * @param proxyUser  Http ID of the real user that impersonates the remote user.
      */
-    public HttpPrincipal(String remoteUser, String proxyUser)
-    {
-        if (remoteUser == null)
-        {
+    public HttpPrincipal(String remoteUser, String proxyUser) {
+        if (remoteUser == null) {
             throw new IllegalArgumentException("Provided null remoteUser");
         }
         this.proxyUser = proxyUser;
         this.remoteUser = remoteUser;
     }
 
-    
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.security.Principal#getName()
      */
-    public String getName()
-    {
+    public String getName() {
         return remoteUser;
     }
-    
+
     /**
      * 
      * @return the proxy user (if any) that impersonates the remote user
      */
-    public String getProxyUser()
-    {
+    public String getProxyUser() {
         return proxyUser;
     }
-    
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Object#hashCode()
      */
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result
-                + ((remoteUser == null) ? 0 : remoteUser.hashCode())
+        result = prime * result + ((remoteUser == null) ? 0 : remoteUser.hashCode())
                 + ((proxyUser == null) ? 0 : proxyUser.hashCode());
         return result;
     }
 
-
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
-    public boolean equals(Object obj)
-    {
-        if (this == obj)
-        {
+    public boolean equals(Object obj) {
+        if (this == obj) {
             return true;
         }
-        if (obj == null)
-        {
+        if (obj == null) {
             return false;
         }
-        if (!(obj instanceof HttpPrincipal))
-        {
+        if (!(obj instanceof HttpPrincipal)) {
             return false;
         }
         HttpPrincipal other = (HttpPrincipal) obj;
-        if (proxyUser == null)
-        {
-            if (other.proxyUser != null)
-            {
+        if (proxyUser == null) {
+            if (other.proxyUser != null) {
                 return false;
             }
-        }
-        else if (!proxyUser.equals(other.proxyUser))
-        {
+        } else if (!proxyUser.equals(other.proxyUser)) {
             return false;
         }
-        if (remoteUser == null)
-        {
-            if (other.remoteUser != null)
-            {
+        if (remoteUser == null) {
+            if (other.remoteUser != null) {
                 return false;
             }
-        }
-        else if (!remoteUser.equals(other.remoteUser))
-        {
+        } else if (!remoteUser.equals(other.remoteUser)) {
             return false;
         }
         return true;
     }
 
-
-    public String toString()
-    {
+    public String toString() {
         String proxyUserStr = "";
-        if (StringUtil.hasText(getProxyUser()))
-        {
+        if (StringUtil.hasText(getProxyUser())) {
             proxyUserStr = getProxyUser() + " as ";
         }
-        return getClass().getSimpleName() + "[" + proxyUserStr + getName()
-                + "]";
+        return getClass().getSimpleName() + "[" + proxyUserStr + getName() + "]";
     }
 
 }

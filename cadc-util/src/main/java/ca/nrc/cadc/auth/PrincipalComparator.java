@@ -75,13 +75,10 @@ import java.util.Comparator;
 /**
  * Compares two principal objects.
  */
-public class PrincipalComparator implements Comparator<Principal>
-{
+public class PrincipalComparator implements Comparator<Principal> {
     @Override
-    public int compare(Principal o1, Principal o2)
-    {
-        if (o1 == null || o2 == null)
-        {
+    public int compare(Principal o1, Principal o2) {
+        if (o1 == null || o2 == null) {
             throw new IllegalArgumentException("Cannot compare null objects");
         }
 

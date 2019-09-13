@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2016.                            (c) 2016.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -75,10 +75,8 @@ import java.util.Comparator;
  *
  * @author pdowler
  */
-public class CaseInsensitiveStringComparator  implements Comparator<String>
-{
-    public int compare(String o1, String o2)
-    {
+public class CaseInsensitiveStringComparator  implements Comparator<String> {
+    public int compare(String o1, String o2) {
         return o1.compareToIgnoreCase(o2);
     }
 }

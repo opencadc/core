@@ -75,43 +75,45 @@ import javax.net.ssl.X509TrustManager;
 import org.apache.log4j.Logger;
 
 /**
- * Simple X509TrustManager that delegates all calls to an underlying X509TrustManager.
- * This class currently only adds some debug-level logging of method calls and supports
- * a way to bypass checking server certificates for testing (e.g. against a server without
- * a valid certificate). To bypass server validation entirely, simply set the system property
+ * Simple X509TrustManager that delegates all calls to an underlying
+ * X509TrustManager. This class currently only adds some debug-level logging of
+ * method calls and supports a way to bypass checking server certificates for
+ * testing (e.g. against a server without a valid certificate). To bypass server
+ * validation entirely, simply set the system property
  * <code>ca.nrc.cadc.auth.BasicX509TrustManager.trust=true</code>. This feature
  * should only be used for running test code with self-signed certificates.
  *
  * @author pdowler
  */
-public class BasicX509TrustManager implements X509TrustManager
-{
+public class BasicX509TrustManager implements X509TrustManager {
     private static Logger log = Logger.getLogger(BasicX509TrustManager.class);
     private static final String TRUST_ALL_PROPERTY = BasicX509TrustManager.class.getName() + ".trust";
 
     private X509TrustManager delegate;
 
-    public BasicX509TrustManager(X509TrustManager delegate)
-    {
+    public BasicX509TrustManager(X509TrustManager delegate) {
         this.delegate = delegate;
     }
 
-    public void checkClientTrusted(X509Certificate[] xcs, String str) throws CertificateException
-    {
-        if (xcs != null)
-            for (int i=0; i<xcs.length; i++)
+    public void checkClientTrusted(X509Certificate[] xcs, String str) throws CertificateException {
+        if (xcs != null) {
+            for (int i = 0; i < xcs.length; i++) {
                 log.debug("checkClientTrusted: " + xcs[i].getSubjectDN() + "," + str);
+            }
+        }
+        
         delegate.checkClientTrusted(xcs, str);
         log.debug("delegate.checkClientTrusted: OK");
     }
 
-    public void checkServerTrusted(X509Certificate[] xcs, String str) throws CertificateException
-    {
-        if (xcs != null)
-            for (int i=0; i<xcs.length; i++)
+    public void checkServerTrusted(X509Certificate[] xcs, String str) throws CertificateException {
+        if (xcs != null) {
+            for (int i = 0; i < xcs.length; i++) {
                 log.debug("checkServerTrusted: " + xcs[i].getSubjectDN() + "," + str);
-        if ( System.getProperty(TRUST_ALL_PROPERTY) != null )
-        {
+            }
+        }
+        
+        if (System.getProperty(TRUST_ALL_PROPERTY) != null) {
             log.debug(TRUST_ALL_PROPERTY + " is set, trusting all server certificates");
             return;
         }
@@ -119,12 +121,10 @@ public class BasicX509TrustManager implements X509TrustManager
         log.debug("delegate.checkServerTrusted: OK");
     }
 
-    public X509Certificate[] getAcceptedIssuers()
-    {
+    public X509Certificate[] getAcceptedIssuers() {
         X509Certificate[] ret = delegate.getAcceptedIssuers();
         log.debug("deletage X509TrustManager knows " + ret.length + " accepted issuers");
         return ret;
     }
-
 
 }

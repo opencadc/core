@@ -74,13 +74,19 @@ package ca.nrc.cadc.net;
 
 import ca.nrc.cadc.util.StringUtil;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.*;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.net.UnknownHostException;
+
+import javax.servlet.http.HttpServletRequest;
 
 
 /**
@@ -108,8 +114,8 @@ public class NetUtil {
      * 4. the canonical FQHN from InetAddress.getInetAddress().getCanonicalHostname()
      * 5. localhost
      * </pre>
-     * <p>
-     * Thus, one can override the default (canonical host name in a properly configured network) with a global
+     * 
+     * <p>Thus, one can override the default (canonical host name in a properly configured network) with a global
      * (#3), package-specific (#2), or class specific (#1) setting as necessary.
      *
      * @param c a class whose name is used to construct system properties (1 and 2 above), null allowed

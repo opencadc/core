@@ -69,73 +69,70 @@
 
 package ca.nrc.cadc.net;
 
-
 import org.apache.log4j.Logger;
 
 /**
- * Simple wrapper around a Content-Type value to support comparisons.
- * Current: strips all extraneous whitespace. TODO: more careful
- * comparison of parameters that is order-independent.
+ * Simple wrapper around a Content-Type value to support comparisons. Current:
+ * strips all extraneous whitespace. TODO: more careful comparison of parameters
+ * that is order-independent.
  * 
  * @author pdowler
  */
-public class ContentType 
-{
+public class ContentType {
     private static final Logger log = Logger.getLogger(ContentType.class);
 
     private String value;
     private String baseType;
-    
-    public ContentType(String value) 
-    {
-        if (value == null)
+
+    public ContentType(String value) {
+        if (value == null) {
             throw new IllegalArgumentException("null value");
+        }
+        
         this.value = toCanonicalForm(value);
-        if (baseType == null)
+        if (baseType == null) {
             throw new IllegalArgumentException("null base type");
+        }
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "ContentType[" + value + "]";
     }
 
-    public String getValue()
-    {
+    public String getValue() {
         return value;
     }
 
-    public String getBaseType()
-    {
+    public String getBaseType() {
         return baseType;
     }
-    
+
     @Override
-    public boolean equals(Object obj)
-    {
-        if (obj == null)
+    public boolean equals(Object obj) {
+        if (obj == null) {
             return false;
-        if (obj instanceof ContentType)
-        {
+        }
+        
+        if (obj instanceof ContentType) {
             ContentType rhs = (ContentType) obj;
             return value.equalsIgnoreCase(rhs.value);
         }
         return false;
     }
-    
+
     // remove extraneous whitespace
-    private String toCanonicalForm(String s)
-    {
+    private String toCanonicalForm(String s) {
         s = s.trim();
-        String[] parts = s.split(";"); 
+        String[] parts = s.split(";");
         StringBuilder sb = new StringBuilder();
         sb.append(parts[0]); // base type
         this.baseType = parts[0];
-        for (int i=1; i<parts.length; i++) // parameters
-        {
+        for (int i = 1; i < parts.length; i++) {
+            // parameters
             sb.append(";").append(parts[i].trim());
         }
+        
         return sb.toString();
     }
 }

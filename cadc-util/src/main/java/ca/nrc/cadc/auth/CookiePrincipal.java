@@ -31,30 +31,25 @@
  ****  C A N A D I A N   A S T R O N O M Y   D A T A   C E N T R E  *****
  ************************************************************************
  */
-package ca.nrc.cadc.auth;
 
+package ca.nrc.cadc.auth;
 
 import ca.nrc.cadc.util.StringUtil;
 
 import java.io.Serializable;
 import java.security.Principal;
 
-
 /**
- * Represents the value of a Cookie as part of the Single Sign-On Cookie
- * based authentication.
+ * Represents the value of a Cookie as part of the Single Sign-On Cookie based
+ * authentication.
  */
-public class CookiePrincipal implements Principal, Serializable
-{
-    private static final long serialVersionUID = 20130313151134l;
+public class CookiePrincipal implements Principal, Serializable {
+    private static final long serialVersionUID = 20130313151134L;
 
     private final String sessionID;
 
-
-    public CookiePrincipal(final String sessionID)
-    {
-        if (!StringUtil.hasText(sessionID))
-        {
+    public CookiePrincipal(final String sessionID) {
+        if (!StringUtil.hasText(sessionID)) {
             throw new IllegalArgumentException("Null or emplty sessionID");
         }
 
@@ -62,8 +57,7 @@ public class CookiePrincipal implements Principal, Serializable
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return getName();
     }
 
@@ -73,26 +67,21 @@ public class CookiePrincipal implements Principal, Serializable
      * @return the name of this principal.
      */
     @Override
-    public String getName()
-    {
+    public String getName() {
         return sessionID;
     }
 
-    public String getSessionId()
-    {
+    public String getSessionId() {
         return sessionID;
     }
 
     @Override
-    public boolean equals(Object o)
-    {
-        if (this == o)
-        {
+    public boolean equals(Object o) {
+        if (this == o) {
             return true;
         }
 
-        if ((o == null) || (getClass() != o.getClass()))
-        {
+        if ((o == null) || (getClass() != o.getClass())) {
             return false;
         }
 
@@ -102,8 +91,7 @@ public class CookiePrincipal implements Principal, Serializable
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return sessionID.hashCode();
     }
 }

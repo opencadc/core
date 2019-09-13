@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2016.                            (c) 2016.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -71,7 +71,11 @@ package ca.nrc.cadc.util;
 
 import ca.nrc.cadc.net.NetUtil;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.util.MissingResourceException;
@@ -83,23 +87,21 @@ import org.apache.log4j.Logger;
  * @author zhangsa
  *
  */
-public class FileUtil
-{
+public class FileUtil {
     private static final Logger log = Logger.getLogger(FileUtil.class);
     
     public static boolean delete(File f, boolean recursive)
-        throws IOException
-    {
-        if ( !f.exists() )
+        throws IOException {
+        if (!f.exists()) {
             return false;
+        }
         
-        if (recursive && f.isDirectory())
-        {
+        if (recursive && f.isDirectory()) {
             File[] children = f.listFiles();
-            for (File c : children)
-            {
-                if ( ! delete(c, true) )
+            for (File c : children) {
+                if (! delete(c, true)) {
                     return false; // return immediately if we fail to delete something
+                }
             }
         }
         return f.delete();
@@ -114,8 +116,7 @@ public class FileUtil
      * 
      * @throws IOException
      */
-    public static boolean compare(File file1, File file2) throws IOException
-    {
+    public static boolean compare(File file1, File file2) throws IOException {
         long cs1 = checksum(file1);
         long cs2 = checksum(file2);
         return (cs1 == cs2);
@@ -128,16 +129,15 @@ public class FileUtil
      * @return
      * @throws IOException
      */
-    public static long checksum(File file) throws IOException
-    {
-        FileInputStream fInStream = new FileInputStream(file);
-        CheckedInputStream cInStream = new CheckedInputStream(fInStream, new CRC32());
-        BufferedInputStream bInStream = new BufferedInputStream(cInStream);
-        while (bInStream.read() != -1)
-        {
+    public static long checksum(File file) throws IOException {
+        FileInputStream fileInStream = new FileInputStream(file);
+        CheckedInputStream checkedInStream = new CheckedInputStream(fileInStream, new CRC32());
+        BufferedInputStream bufferedInStream = new BufferedInputStream(checkedInStream);
+        while (bufferedInStream.read() != -1) {
             // Read file in completely
         }
-        return cInStream.getChecksum().getValue();
+        
+        return checkedInStream.getChecksum().getValue();
     }
 
     /**
@@ -147,22 +147,22 @@ public class FileUtil
      * @return byte array containing the content of the file
      * @throws IOException
      */
-    public static byte[] readFile(File f) throws IOException
-    {
+    public static byte[] readFile(File f) throws IOException {
         DataInputStream dis = null;
-        try
-        {
+        try {
             dis = new DataInputStream(new FileInputStream(f));
             byte[] ret = new byte[(int) f.length()];
             dis.readFully(ret);
             dis.close();
             return ret;
-        }
-        finally
-        {
-            if (dis != null)
-                try { dis.close(); }
-                catch(IOException ignore) { }
+        } finally {
+            if (dis != null) {
+                try { 
+                    dis.close(); 
+                } catch (IOException ignore) { 
+                    // do nothing
+                }
+            }
         }
     }
 
@@ -173,32 +173,28 @@ public class FileUtil
      * @param runningClass          The class whose path to look for.
      * @return                      File object.
      */
-    public static File getFileFromResource(String resourceFileName, Class runningClass)
-    {
+    public static File getFileFromResource(String resourceFileName, Class runningClass) {
         URL url = runningClass.getClassLoader().getResource(resourceFileName);
 
-        if (url == null)
+        if (url == null) {
             throw new MissingResourceException("Resource not found: "
                                                + resourceFileName,
                                                runningClass.getName(),
                                                resourceFileName);
+        }
 
         return FileUtil.getFileFromURL(url);
     }
 
-    public static File getFileFromURL(final URL url)
-    {
+    public static File getFileFromURL(final URL url) {
         log.debug("getFileFromURL: " + url);
         final String path = url.getPath();
         final File found = new File(URI.create(url.toExternalForm()));
         final File f;
 
-        if (found.exists())
-        {
+        if (found.exists()) {
             f = found;
-        }
-        else
-        {
+        } else {
             f = new File(NetUtil.decode(path));
         }
 

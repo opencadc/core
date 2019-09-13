@@ -74,28 +74,25 @@ package ca.nrc.cadc.db;
  * 
  * @author pdowler
  */
-public class DBConfigException extends RuntimeException
-{
+public class DBConfigException extends RuntimeException {
     private static final long serialVersionUID = 201103281230L;
-    
+
     /**
      * Constrcutor with default message suitable for failure to load JDBC driver.
      *
      * @param cause upstream throwable
      */
-    public DBConfigException(Throwable cause)
-    {
+    public DBConfigException(Throwable cause) {
         super(cause);
     }
 
     /**
      * Standard exception constructor.
      *
-     * @param msg error message
+     * @param msg   error message
      * @param cause upstream throwable
      */
-    public DBConfigException(String msg, Throwable cause)
-    {
+    public DBConfigException(String msg, Throwable cause) {
         super(msg, cause);
     }
 }

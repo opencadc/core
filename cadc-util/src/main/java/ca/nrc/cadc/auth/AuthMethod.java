@@ -69,42 +69,39 @@
 
 package ca.nrc.cadc.auth;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  *
  * @author pdowler
  */
-public enum AuthMethod
-{
-    ANON("anon"),          // anonymous
-    CERT("cert"),          // X509 certificate
-    COOKIE("cookie"),      // http-cookie
-    PASSWORD("password"),  // http-basic, http-digest
-    TOKEN("token");        // DelegationToken
-       
+public enum AuthMethod {
+    ANON("anon"), // anonymous
+    CERT("cert"), // X509 certificate
+    COOKIE("cookie"), // http-cookie
+    PASSWORD("password"), // http-basic, http-digest
+    TOKEN("token"); // DelegationToken
+
     private final String value;
-    
-    private AuthMethod(String s)
-    {
+
+    private AuthMethod(String s) {
         this.value = s;
     }
-    
-    public static AuthMethod getAuthMethod(String s)
-    {
-        for (AuthMethod am : values())
-        {
-            if (am.value.equals(s))
+
+    public static AuthMethod getAuthMethod(String s) {
+        for (AuthMethod am : values()) {
+            if (am.value.equals(s)) {
                 return am;
+            }
         }
         throw new IllegalArgumentException("invalid value: " + s);
     }
-    
-    public String getValue() { return value; }
-    
+
+    public String getValue() {
+        return value;
+    }
+
     @Override
-    public String toString() { return "AuthMethod[" + value + "]"; }
+    public String toString() {
+        return "AuthMethod[" + value + "]";
+    }
 }

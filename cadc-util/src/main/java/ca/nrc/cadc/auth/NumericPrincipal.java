@@ -39,16 +39,16 @@ import java.security.Principal;
 import java.util.UUID;
 
 /**
- * Class that represents a numeric Principal. This is useful for
- * representing an internal user key reference.
+ * Class that represents a numeric Principal. This is useful for representing an
+ * internal user key reference.
  */
-public class NumericPrincipal implements Principal, Serializable
-{
-    private static final long serialVersionUID = 20140625143750l;
+public class NumericPrincipal implements Principal, Serializable {
+    private static final long serialVersionUID = 20140625143750L;
     private UUID numericID;
 
     /**
      * Ctor
+     * 
      * @param numericID unique identifier
      */
     public NumericPrincipal(UUID numericID) {
@@ -64,7 +64,9 @@ public class NumericPrincipal implements Principal, Serializable
         return numericID;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Object#hashCode()
      */
     @Override
@@ -75,7 +77,9 @@ public class NumericPrincipal implements Principal, Serializable
         return result;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -83,20 +87,20 @@ public class NumericPrincipal implements Principal, Serializable
         if (this == obj) {
             return true;
         }
-        
+
         if (obj == null) {
             return false;
         }
-        
+
         if (!(obj instanceof NumericPrincipal)) {
             return false;
         }
-        
+
         NumericPrincipal other = (NumericPrincipal) obj;
         if (numericID.equals(other.numericID)) {
             return true;
         }
-        
+
         return false;
     }
 
@@ -110,7 +114,7 @@ public class NumericPrincipal implements Principal, Serializable
         } else {
             sb.append(getName());
         }
-        
+
         sb.append("]");
         return sb.toString();
     }

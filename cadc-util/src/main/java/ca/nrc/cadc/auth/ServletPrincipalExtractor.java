@@ -87,12 +87,11 @@ import org.apache.log4j.Logger;
 /**
  * Implementation of a Principal Extractor from an HttpServletRequest.
  */
-public class ServletPrincipalExtractor implements PrincipalExtractor
-{
+public class ServletPrincipalExtractor implements PrincipalExtractor {
     private static final Logger log = Logger.getLogger(ServletPrincipalExtractor.class);
-    
+
     public static final String CERT_REQUEST_ATTRIBUTE = "javax.servlet.request.X509Certificate";
-    
+
     private final HttpServletRequest request;
 
     private X509CertificateChain chain;
@@ -101,20 +100,18 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
     private Set<Principal> cookiePrincipals = new HashSet<>(); // identities extracted from cookie
     private Set<Principal> principals = new HashSet<>();
 
-    private ServletPrincipalExtractor()
-    {
+    private ServletPrincipalExtractor() {
         this.request = null;
     }
 
     /**
      * Constructor to create Principals from the given Servlet Request.
      *
-     * @param req       The HTTP Request.
+     * @param req The HTTP Request.
      */
-    public ServletPrincipalExtractor(final HttpServletRequest req)
-    {
+    public ServletPrincipalExtractor(final HttpServletRequest req) {
         this.request = req;
-        
+
         // support certs from the java request attribute
         X509Certificate[] ca = (X509Certificate[]) request.getAttribute(CERT_REQUEST_ATTRIBUTE);
         if (!ArrayUtil.isEmpty(ca)) {
@@ -122,8 +119,8 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
             if (chain != null) {
                 principals.add(chain.getPrincipal());
             }
-        } 
-        
+        }
+
         // optionally get client certificate from a request header
         if (chain == null && "true".equals(System.getProperty(CERT_HEADER_ENABLE))) {
             // try the header field
@@ -143,102 +140,86 @@ public class ServletPrincipalExtractor implements PrincipalExtractor
 
         // add user if they have a valid delegation token
         String tokenValue = request.getHeader(AuthenticationUtil.AUTH_HEADER);
-        if ( StringUtil.hasText(tokenValue) )
-        {
+        if (StringUtil.hasText(tokenValue)) {
 
-            try
-            {
-                this.token = DelegationToken.parse(tokenValue, 
-                        request.getRequestURI());
-            }
-            catch (InvalidDelegationTokenException ex) 
-            {
+            try {
+                this.token = DelegationToken.parse(tokenValue, request.getRequestURI());
+            } catch (InvalidDelegationTokenException ex) {
                 log.debug("invalid DelegationToken: " + tokenValue, ex);
                 throw new NotAuthenticatedException("invalid delegation token. " + ex.getMessage());
-            }
-            catch(RuntimeException ex)
-            {
+            } catch (RuntimeException ex) {
                 log.debug("invalid DelegationToken: " + tokenValue, ex);
                 throw new NotAuthenticatedException("invalid delegation token. " + ex.getMessage());
+            } finally {
+                // do nothing
             }
-            finally { }
         }
 
         String authToken = request.getHeader(AuthenticationUtil.AUTHORIZATION_HEADER);
-        if ( BearerTokenPrincipal.isBearerToken(authToken) )
-        {
+        if (BearerTokenPrincipal.isBearerToken(authToken)) {
             principals.add(new BearerTokenPrincipal(authToken));
         }
 
         // add HttpPrincipal
         final String httpUser = request.getRemoteUser();
-        if (StringUtil.hasText(httpUser)) // user from HTTP AUTH
+        if (StringUtil.hasText(httpUser)) {
+            // user from HTTP AUTH
             principals.add(new HttpPrincipal(httpUser));
-        else if (token != null) // user from token
+        } else if (token != null) {
+            // user from token
             principals.add(token.getUser());
-        
+        }
+
         Cookie[] cookies = request.getCookies();
         log.debug("Request cookies: " + cookies);
-        if (cookies == null || ArrayUtil.isEmpty(cookies))
+        if (cookies == null || ArrayUtil.isEmpty(cookies)) {
             return;
-        
-        for (Cookie ssoCookie : cookies)
-        {
-            if (SSOCookieManager.DEFAULT_SSO_COOKIE_NAME.equals(
-                    ssoCookie.getName())
-                    && StringUtil.hasText(ssoCookie.getValue()))
-            {
+        }
+
+        for (Cookie ssoCookie : cookies) {
+            if (SSOCookieManager.DEFAULT_SSO_COOKIE_NAME.equals(ssoCookie.getName())
+                    && StringUtil.hasText(ssoCookie.getValue())) {
                 SSOCookieManager ssoCookieManager = new SSOCookieManager();
-                try
-                {
-                    DelegationToken cookieToken = ssoCookieManager.parse(
-                        ssoCookie.getValue());
+                try {
+                    DelegationToken cookieToken = ssoCookieManager.parse(ssoCookie.getValue());
 
                     cookiePrincipals = cookieToken.getIdentityPrincipals();
                     principals.addAll(cookiePrincipals);
 
                     cookieCredentialList = ssoCookieManager.getSSOCookieCredentials(ssoCookie.getValue(),
-                                                NetUtil.getDomainName(request.getServerName()));
-                } 
-                catch (IOException e)
-                {
+                            NetUtil.getDomainName(request.getServerName()));
+                } catch (IOException e) {
                     log.debug("Cannot use SSO Cookie. Reason: " + e.getMessage());
                     throw new NotAuthenticatedException("invalid cookie. " + e.getMessage());
-                } 
-                catch (InvalidDelegationTokenException e)
-                {
+                } catch (InvalidDelegationTokenException e) {
                     log.debug("Cannot use SSO Cookie. Reason: " + e.getMessage());
                     throw new NotAuthenticatedException("invalid cookie. " + e.getMessage());
                 }
 
             }
         }
-        
+
     }
 
     /**
-     * Obtain a Collection of Principals from this extractor.  This should be
+     * Obtain a Collection of Principals from this extractor. This should be
      * immutable.
      *
-     * @return Collection of Principal instances, or empty Collection.
-     *         Never null.
+     * @return Collection of Principal instances, or empty Collection. Never null.
      */
     @Override
-    public Set<Principal> getPrincipals()
-    {
+    public Set<Principal> getPrincipals() {
         return principals;
     }
 
-    public X509CertificateChain getCertificateChain()
-    {
+    public X509CertificateChain getCertificateChain() {
         return chain;
     }
 
-    public DelegationToken getDelegationToken() 
-    {
+    public DelegationToken getDelegationToken() {
         return token;
     }
-    
+
     public List<SSOCookieCredential> getSSOCookieCredentials() {
         return cookieCredentialList;
     }

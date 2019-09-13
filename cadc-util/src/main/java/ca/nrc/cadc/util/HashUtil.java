@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2016.                            (c) 2016.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -74,8 +74,7 @@ import java.lang.reflect.Array;
 /**
  * Simple utility to help in overriding Object.hashCode method.
  */
-public class HashUtil
-{
+public class HashUtil {
 
     /**
     * An initial value for a <code>hashCode</code>, to which is added contributions
@@ -87,74 +86,66 @@ public class HashUtil
     /**
     * booleans.
     */
-    public static int hash( int aSeed, boolean aBoolean )
-    {
-        return firstTerm( aSeed ) + ( aBoolean ? 1 : 0 );
+    public static int hash(int someSeed, boolean someBoolean) {
+        return firstTerm(someSeed) + (someBoolean ? 1 : 0);
     }
 
     /**
     * chars.
     */
-    public static int hash( int aSeed, char aChar )
-    {
-        return firstTerm( aSeed ) + (int)aChar;
+    public static int hash(int someSeed, char someChar) {
+        return firstTerm(someSeed) + (int)someChar;
     }
 
     /**
     * ints.
     */
-    public static int hash( int aSeed , int aInt )
-    {
-        return firstTerm( aSeed ) + aInt;
+    public static int hash(int someSeed , int someInt) {
+        return firstTerm(someSeed) + someInt;
     }
 
     /**
     * longs.
     */
-    public static int hash( int aSeed , long aLong )
-    {
-        return firstTerm(aSeed)  + (int)( aLong ^ (aLong >>> 32) );
+    public static int hash(int someSeed , long someLong) {
+        return firstTerm(someSeed) + (int)(someLong ^ (someLong >>> 32));
     }
 
     /**
     * floats.
     */
-    public static int hash( int aSeed , float aFloat )
-    {
-        return hash( aSeed, Float.floatToIntBits(aFloat) );
+    public static int hash(int someSeed , float someFloat) {
+        return hash(someSeed, Float.floatToIntBits(someFloat));
     }
 
     /**
     * doubles.
     */
-    public static int hash( int aSeed , double aDouble )
-    {
-        return hash( aSeed, Double.doubleToLongBits(aDouble) );
+    public static int hash(int someSeed , double someDouble) {
+        return hash(someSeed, Double.doubleToLongBits(someDouble));
     }
 
     /**
     * The <code>obj</code> is a possibly-null object field, and possibly an array.
     *
-    * If <code>obj</code> is an array, then each element may be a primitive
+    * <p>If <code>obj</code> is an array, then each element may be a primitive
     * or a possibly-null object.
     */
-    public static int hash(int seed , Object obj)
-    {
+    public static int hash(int seed , Object obj) {
         int result = seed;
-        if ( obj == null)
+        if (obj == null) {
             result = hash(result, 0);
-        else if ( ! isArray(obj) )
+        } else if (! isArray(obj)) {
             result = hash(result, obj.hashCode());
-        else
-        {
+        } else {
             int length = Array.getLength(obj);
-            for ( int idx = 0; idx < length; ++idx )
-            {
+            for (int idx = 0; idx < length; ++idx) {
                 Object item = Array.get(obj, idx);
                 //recursive call!
                 result = hash(result, item);
             }
         }
+        
         return result;
     }
 
@@ -162,14 +153,12 @@ public class HashUtil
     /// PRIVATE ///
     private static final int fODD_PRIME_NUMBER = 37;
 
-    private static int firstTerm( int aSeed )
-    {
-        return fODD_PRIME_NUMBER * aSeed;
+    private static int firstTerm(int someSeed) {
+        return fODD_PRIME_NUMBER * someSeed;
     }
 
-    private static boolean isArray(Object aObject)
-    {
-        return aObject.getClass().isArray();
+    private static boolean isArray(Object anObject) {
+        return anObject.getClass().isArray();
     }
 }
 
