@@ -3,6 +3,7 @@ plugins {
     id 'maven'
     id 'maven-publish'
     id 'com.jfrog.bintray' version '1.8.4'
+    id 'checkstyle'
 }
 
 repositories {
@@ -14,13 +15,15 @@ sourceCompatibility = 1.7
 
 group = 'org.opencadc'
 
-version = '1.0.7'
+version = '1.0.8'
 
 dependencies {
-    compile 'log4j:log4j:1.2.+'
-    compile 'javax.servlet:javax.servlet-api:3.1.+'
-    compile 'org.opencadc:cadc-util:1.+'
+    compile 'log4j:log4j:[1.2,)'
+    compile 'javax.servlet:javax.servlet-api:[3.1,4.0)'
+    compile 'org.opencadc:cadc-util:[1.2,)'
 
-    testCompile 'junit:junit:4.+'
-    testCompile 'org.easymock:easymock:3.+'
+    testCompile 'junit:junit:[4.0,5.0)'
+    testCompile 'org.easymock:easymock:[3.0,4.0)'
 }
+
+apply from: '../opencadc.gradle'

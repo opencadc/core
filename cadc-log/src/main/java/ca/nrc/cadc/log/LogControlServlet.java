@@ -65,11 +65,9 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
-
+ */
 
 package ca.nrc.cadc.log;
-
 
 import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.Authorizer;
@@ -93,7 +91,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-
 
 /**
  * Sets up log4j for whichever webapp contains this
@@ -124,61 +121,63 @@ import org.apache.log4j.Logger;
  * level is changed for all previously configured packages.
  * </p>
  */
-public class LogControlServlet extends HttpServlet
-{
-	private static final long serialVersionUID = 200909091014L;
+public class LogControlServlet extends HttpServlet {
 
-	private static final Logger logger = Logger.getLogger(LogControlServlet.class);
+    private static final long serialVersionUID = 200909091014L;
 
-	private static final Level DEFAULT_LEVEL = Level.INFO;
+    private static final Logger logger = Logger.getLogger(LogControlServlet.class);
 
-	private static final String LOG_LEVEL_PARAM = "logLevel";
-	private static final String PACKAGES_PARAM  = "logLevelPackages";
+    private static final Level DEFAULT_LEVEL = Level.INFO;
 
-	private static final String GROUP_PARAM  = "logAccessGroup";
-	private static final String GROUP_AUTHORIZER  = "groupAuthorizer";
+    private static final String LOG_LEVEL_PARAM = "logLevel";
+    private static final String PACKAGES_PARAM = "logLevelPackages";
 
-	private Level level = null;
-	private List<String> packages;
+    private static final String GROUP_PARAM = "logAccessGroup";
+    private static final String GROUP_AUTHORIZER = "groupAuthorizer";
 
-	private String accessGroup;
-	private Authorizer groupAuthorizer;
+    private Level level = null;
+    private List<String> packages;
+
+    private String authorizerClassName;
+    private Authorizer groupAuthorizer;
 
     /**
-     *  Initialize the logging.  This method should only get
-     *  executed once and, if properly configured, it should
-     *  be the first method to be executed.
+     * Initialize the logging. This method should only get
+     * executed once and, if properly configured, it should
+     * be the first method to be executed.
      *
      * @param config
      * @throws ServletException
      */
     @Override
-	public void init( final ServletConfig config ) throws ServletException
-    {
-    	super.init( config );
+    public void init(final ServletConfig config) throws ServletException {
+        super.init(config);
         this.packages = new ArrayList<String>();
 
-    	//  Determine the desired logging level.
-    	String levelVal = config.getInitParameter( LOG_LEVEL_PARAM );
-    	if ( levelVal == null )
-    		level = DEFAULT_LEVEL;
-    	else if ( levelVal.equalsIgnoreCase(Level.TRACE.toString()) )
-    		level = Level.TRACE;
-    	else if ( levelVal.equalsIgnoreCase(Level.DEBUG.toString()) )
-    		level = Level.DEBUG;
-    	else if ( levelVal.equalsIgnoreCase(Level.INFO.toString()) )
-    		level = Level.INFO;
-    	else if ( levelVal.equalsIgnoreCase(Level.WARN.toString()) )
-    		level = Level.WARN;
-    	else if ( levelVal.equalsIgnoreCase(Level.ERROR.toString()) )
-    		level = Level.ERROR;
-    	else if ( levelVal.equalsIgnoreCase(Level.FATAL.toString()) )
-    		level = Level.FATAL;
-    	else
-    		level = DEFAULT_LEVEL;
+        //  Determine the desired logging level.
+        String levelVal = config.getInitParameter(LOG_LEVEL_PARAM);
+        if (levelVal == null) {
+            level = DEFAULT_LEVEL;
+        } else if (levelVal.equalsIgnoreCase(Level.TRACE.toString())) {
+            level = Level.TRACE;
+        } else if (levelVal.equalsIgnoreCase(Level.DEBUG.toString())) {
+            level = Level.DEBUG;
+        } else if (levelVal.equalsIgnoreCase(Level.INFO.toString())) {
+            level = Level.INFO;
+        } else if (levelVal.equalsIgnoreCase(Level.WARN.toString())) {
+            level = Level.WARN;
+        } else if (levelVal.equalsIgnoreCase(Level.ERROR.toString())) {
+            level = Level.ERROR;
+        } else if (levelVal.equalsIgnoreCase(Level.FATAL.toString())) {
+            level = Level.FATAL;
+        } else {
+            level = DEFAULT_LEVEL;
+        }
 
-    	String webapp = config.getServletContext().getServletContextName();
-    	if (webapp == null) webapp = "[?]";
+        String webapp = config.getServletContext().getServletContextName();
+        if (webapp == null) {
+            webapp = "[?]";
+        }
 
         String thisPkg = LogControlServlet.class.getPackage().getName();
         Log4jInit.setLevel(webapp, thisPkg, Level.WARN);
@@ -186,56 +185,44 @@ public class LogControlServlet extends HttpServlet
         logger.warn("log level: " + thisPkg + " =  " + Level.WARN);
 
         String packageParamValues = config.getInitParameter(PACKAGES_PARAM);
-        if (packageParamValues != null)
-        {
+        if (packageParamValues != null) {
             StringTokenizer stringTokenizer = new StringTokenizer(packageParamValues, " \n\t\r", false);
-            while (stringTokenizer.hasMoreTokens())
-            {
+            while (stringTokenizer.hasMoreTokens()) {
                 String pkg = stringTokenizer.nextToken();
-                if ( pkg.length() > 0 )
-                {
+                if (pkg.length() > 0) {
                     logger.warn(pkg + ": " + level);
                     Log4jInit.setLevel(webapp, pkg, level);
-                    if (!packages.contains(pkg))
+                    if (!packages.contains(pkg)) {
                         packages.add(pkg);
+                    }
                 }
             }
         }
 
         // get the access group and group authorizer
-        accessGroup = config.getInitParameter(GROUP_PARAM);
-        String authClassName = config.getInitParameter(GROUP_AUTHORIZER);
+        String accessGroup = config.getInitParameter(GROUP_PARAM);
+        authorizerClassName = config.getInitParameter(GROUP_AUTHORIZER);
 
         // instantiate the class if all configuration is present
-        if (authClassName != null)
-        {
-            try
-            {
-                Class authClass = Class.forName(authClassName);
-                if (accessGroup != null)
-                {
-                    try
-                    {
+        if (authorizerClassName != null) {
+            try {
+                Class authClass = Class.forName(authorizerClassName);
+                if (accessGroup != null) {
+                    try {
                         Constructor ctor = authClass.getConstructor(String.class);
                         Object o = ctor.newInstance(accessGroup);
                         groupAuthorizer = (Authorizer) o;
-                    }
-                    catch(NoSuchMethodException ex)
-                    {
-                        logger.warn("authorizer " + authClassName + " has no constructor(String), ignoring accessGroup=" + accessGroup);
+                    } catch (NoSuchMethodException ex) {
+                        logger.warn("authorizer " + authorizerClassName + " has no constructor(String), ignoring accessGroup=" + accessGroup);
                         Object o = authClass.newInstance();
                         groupAuthorizer = (Authorizer) o;
                     }
-                }
-                else
-                {
+                } else {
                     // no-arg constructor
                     Object o = authClass.newInstance();
                     groupAuthorizer = (Authorizer) o;
                 }
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
                 logger.error("Could not load group authorizer", e);
             }
         }
@@ -247,7 +234,7 @@ public class LogControlServlet extends HttpServlet
 
     /**
      * In response to an HTTP GET, return the current logging level and the list
-	 * of packages for which logging is enabled.
+     * of packages for which logging is enabled.
      *
      * @param request
      * @param response
@@ -256,27 +243,19 @@ public class LogControlServlet extends HttpServlet
      */
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response)
-        throws ServletException, IOException
-	{
+            throws ServletException, IOException {
 
-        try
-        {
+        try {
             authorize(request, true);
-        }
-        catch (AccessControlException e)
-        {
+        } catch (AccessControlException e) {
             logger.debug("Forbidden");
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             return;
-        }
-        catch (TransientException e)
-        {
+        } catch (TransientException e) {
             logger.error("Error calling group authorizer", e);
             response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
             return;
-        }
-        catch (Throwable t)
-        {
+        } catch (Throwable t) {
             logger.error("Error calling group authorizer", t);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             return;
@@ -287,17 +266,17 @@ public class LogControlServlet extends HttpServlet
         PrintWriter writer = response.getWriter();
 
         //writer.println("Logging level " + level + " set on " + packageNames.length + " packages:");
-        for (String pkg : packages)
-        {
+        for (String pkg : packages) {
             Logger log = Logger.getLogger(pkg);
-        	writer.println(pkg + " " + log.getLevel());
+            writer.println(pkg + " " + log.getLevel());
         }
 
         writer.close();
-	}
+    }
 
     /**
      * Allows the caller to set the log level (e.g. with the level=DEBUG parameter).
+     *
      * @param request
      * @param response
      * @throws ServletException
@@ -305,27 +284,19 @@ public class LogControlServlet extends HttpServlet
      */
     @Override
     public void doPost(HttpServletRequest request, HttpServletResponse response)
-        throws ServletException, IOException
-	{
+            throws ServletException, IOException {
 
-        try
-        {
+        try {
             authorize(request, false);
-        }
-        catch (AccessControlException e)
-        {
+        } catch (AccessControlException e) {
             logger.debug("Forbidden");
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             return;
-        }
-        catch (TransientException e)
-        {
+        } catch (TransientException e) {
             logger.error("Error calling group authorizer", e);
             response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
             return;
-        }
-        catch (Throwable t)
-        {
+        } catch (Throwable t) {
             logger.error("Error calling group authorizer", t);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             return;
@@ -333,26 +304,25 @@ public class LogControlServlet extends HttpServlet
 
         String[] params = request.getParameterValues("level");
         String levelVal = null;
-        if (params != null && params.length > 0)
+        if (params != null && params.length > 0) {
             levelVal = params[0];
-        if (levelVal != null)
-        {
-            if ( levelVal == null )
+        }
+        if (levelVal != null) {
+            if (levelVal == null) {
                 level = DEFAULT_LEVEL;
-            else if ( levelVal.equalsIgnoreCase(Level.TRACE.toString()) )
+            } else if (levelVal.equalsIgnoreCase(Level.TRACE.toString())) {
                 level = Level.TRACE;
-            else if ( levelVal.equalsIgnoreCase(Level.DEBUG.toString()) )
+            } else if (levelVal.equalsIgnoreCase(Level.DEBUG.toString())) {
                 level = Level.DEBUG;
-            else if ( levelVal.equalsIgnoreCase(Level.INFO.toString()) )
+            } else if (levelVal.equalsIgnoreCase(Level.INFO.toString())) {
                 level = Level.INFO;
-            else if ( levelVal.equalsIgnoreCase(Level.WARN.toString()) )
+            } else if (levelVal.equalsIgnoreCase(Level.WARN.toString())) {
                 level = Level.WARN;
-            else if ( levelVal.equalsIgnoreCase(Level.ERROR.toString()) )
+            } else if (levelVal.equalsIgnoreCase(Level.ERROR.toString())) {
                 level = Level.ERROR;
-            else if ( levelVal.equalsIgnoreCase(Level.FATAL.toString()) )
+            } else if (levelVal.equalsIgnoreCase(Level.FATAL.toString())) {
                 level = Level.FATAL;
-            else
-            {
+            } else {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 response.setContentType("text/plain");
                 PrintWriter writer = response.getWriter();
@@ -362,22 +332,19 @@ public class LogControlServlet extends HttpServlet
         }
 
         String[] pkgs = request.getParameterValues("package");
-        if (pkgs != null)
-        {
+        if (pkgs != null) {
             String dnt = request.getParameter("notrack");
             boolean track = (dnt == null);
-            for (String p : pkgs)
-            {
+            for (String p : pkgs) {
                 logger.warn("setLevel: " + p + " -> " + level);
                 Log4jInit.setLevel(p, level);
-                if (!packages.contains(p) && track)
+                if (!packages.contains(p) && track) {
                     packages.add(p);
+                }
             }
-        }
-        else // all currently configured packages
-        {
-            for (String p : packages)
-            {
+        } else { 
+            // all currently configured packages
+            for (String p : packages) {
                 logger.warn("setLevel: " + p + " -> " + level);
                 Log4jInit.setLevel(p, level);
             }
@@ -392,11 +359,13 @@ public class LogControlServlet extends HttpServlet
     /**
      * Check for proper group membership.
      */
-    private void authorize(HttpServletRequest request, boolean readOnly) throws AccessControlException, TransientException
-    {
-        if (accessGroup == null || groupAuthorizer == null)
-        {
-            logger.debug("Authorization not configured, log control is public.");
+    private void authorize(HttpServletRequest request, boolean readOnly) throws AccessControlException, TransientException {
+        if (authorizerClassName != null && groupAuthorizer == null) {
+            throw new RuntimeException("CONFIG: group authorizer was configured but failed to load: " + authorizerClassName);
+        }
+
+        if (groupAuthorizer == null) {
+            logger.warn("Authorization not configured, log control is public.");
             return;
         }
 
@@ -405,70 +374,49 @@ public class LogControlServlet extends HttpServlet
 
         GroupAuthorizationAction groupCheck = new GroupAuthorizationAction(readOnly);
 
-        try
-        {
-            if (subject == null)
-            {
+        try {
+            if (subject == null) {
                 groupCheck.run();
-            }
-            else
-            {
-                try
-                {
+            } else {
+                try {
                     Subject.doAs(subject, groupCheck);
-                }
-                catch (PrivilegedActionException e)
-                {
+                } catch (PrivilegedActionException e) {
                     throw e.getException();
                 }
             }
-        }
-        catch (Exception e)
-        {
-            if (e instanceof AccessControlException)
-            {
+        } catch (Exception e) {
+            if (e instanceof AccessControlException) {
                 throw (AccessControlException) e;
             }
-            if (e instanceof TransientException)
-            {
+            if (e instanceof TransientException) {
                 throw (TransientException) e;
             }
             throw new IllegalStateException(e);
         }
     }
 
-    class GroupAuthorizationAction implements PrivilegedExceptionAction<Object>
-    {
+    class GroupAuthorizationAction implements PrivilegedExceptionAction<Object> {
+
         private boolean readOnly;
 
-        GroupAuthorizationAction(boolean readOnly)
-        {
+        GroupAuthorizationAction(boolean readOnly) {
             this.readOnly = readOnly;
         }
 
         @Override
-        public Object run() throws Exception
-        {
-            try
-            {
-                if (readOnly)
-                {
+        public Object run() throws Exception {
+            try {
+                if (readOnly) {
                     groupAuthorizer.getReadPermission(null);
-                }
-                else
-                {
+                } else {
                     groupAuthorizer.getWritePermission(null);
                 }
-            }
-            catch (FileNotFoundException e)
-            {
+            } catch (FileNotFoundException e) {
                 throw new IllegalStateException("UnexpectedException", e);
             }
 
             return null;
         }
     }
-
-
 
 }

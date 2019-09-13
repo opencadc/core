@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2016.                            (c) 2016.
+ *  (c) 2019.                            (c) 2019.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -75,7 +75,6 @@ import java.util.Enumeration;
 
 import javax.servlet.http.HttpServletRequest;
 
-
 /**
  * Class to be used by web services to log at INFO level the start and
  * end messages for each request from a HttpServlet web service
@@ -103,7 +102,7 @@ public class ServletLogInfo extends WebServiceLogInfo {
      * override parameter.
      *
      * @param request The HTTP Request.
-     * @param path    The path to log.
+     * @param path The path to log.
      */
     public ServletLogInfo(HttpServletRequest request, String path) {
         this(request, path, false);

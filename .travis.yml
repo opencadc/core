@@ -11,7 +11,7 @@ script:
 
     # checkstyle 
     - if [[ $TRAVIS_JDK_VERSION == 'oraclejdk8' ]]; then
-        for i in cadc-util; do
+        for i in cadc-util cadc-log; do
            cd $i;
            gradle checkstyleMain || break -1;
            cd ..;
