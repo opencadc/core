@@ -76,8 +76,7 @@ package ca.nrc.cadc.net.event;
  * @version $Version$
  * @author pdowler
  */
-public interface TransferListener
-{
+public interface TransferListener {
     /**
      * Handle a DownloadEvent. This method is called whenever a Download makes a transition
      * from to one of the states defined in DownloadEvent.

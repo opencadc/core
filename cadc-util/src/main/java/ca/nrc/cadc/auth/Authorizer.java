@@ -69,47 +69,46 @@
 
 package ca.nrc.cadc.auth;
 
+import ca.nrc.cadc.net.TransientException;
+
 import java.io.FileNotFoundException;
 import java.net.URI;
 import java.security.AccessControlException;
 
-import ca.nrc.cadc.net.TransientException;
-
 /**
- * Interface for classes that check if a user is authorized to perform
- * specific actions on a resource. The methods of implementing classes
- * may be called directly to check for anonymous permission. To check if
- * a specific user is permitted to perform the action, a Subject with at
- * least one Principal must be set in the current AccessControlContext.
- * See Subject.doAs for details.
+ * Interface for classes that check if a user is authorized to perform specific
+ * actions on a resource. The methods of implementing classes may be called
+ * directly to check for anonymous permission. To check if a specific user is
+ * permitted to perform the action, a Subject with at least one Principal must
+ * be set in the current AccessControlContext. See Subject.doAs for details.
  *
  * @author pdowler
  */
-public interface Authorizer
-{
+public interface Authorizer {
     /**
      * Check if the current Subject is allowed to read the specified resource.
      *
      * @param resource
      * @return null or some object to be logged (type TBD)
      * @throws AccessControlException if the permission is denied
-     * @throws FileNotFoundException if the resource identified by
-     * the URI could not be found.
-     * @throws TransientException If a transient error happens.
+     * @throws FileNotFoundException  if the resource identified by the URI could
+     *                                not be found.
+     * @throws TransientException     If a transient error happens.
      */
     public Object getReadPermission(URI resource)
-        throws AccessControlException, FileNotFoundException, TransientException;
+            throws AccessControlException, FileNotFoundException, TransientException;
 
     /**
-     * Check if the current Subject is allowed to write (modify) the specified resource.
+     * Check if the current Subject is allowed to write (modify) the specified
+     * resource.
      *
      * @param resource
      * @return null or some object to be logged (type TBD)
      * @throws AccessControlException if the permission is denied
-     * @throws FileNotFoundException if the resource identified by
-     * the URI could not be found.
-     * @throws TransientException If a transient error happens.
+     * @throws FileNotFoundException  if the resource identified by the URI could
+     *                                not be found.
+     * @throws TransientException     If a transient error happens.
      */
     public Object getWritePermission(URI resource)
-        throws AccessControlException, FileNotFoundException, TransientException;
+            throws AccessControlException, FileNotFoundException, TransientException;
 }

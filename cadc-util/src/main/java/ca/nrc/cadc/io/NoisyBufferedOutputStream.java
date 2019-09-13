@@ -77,139 +77,122 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * A NoisyBufferedInputStream adds progress reporting through
- * listener notification to the BufferedInputStream.
+ * A NoisyBufferedInputStream adds progress reporting through listener
+ * notification to the BufferedInputStream.
  *
- * The buffer size may be different from the reporting
- * size (number of bytes between notification events).
- * However, notification will occur at most once per chunk,
- * so the reporting size can't effectively be smaller than
- * the buffer size.
+ * <p>The buffer size may be different from the reporting size (number of bytes
+ * between notification events). However, notification will occur at most once
+ * per chunk, so the reporting size can't effectively be smaller than the buffer
+ * size.
  *
  * @version 0.1
  * @author Patrick Dowler
  */
-public class NoisyBufferedOutputStream extends BufferedOutputStream implements NoisyStream
-{
-	private long bytes = 0;
-	private int blocks = 0;
-	private int reportSize = 4096; // default 4K reporting size
-	private List<NoisyStreamListener> listeners = new ArrayList<NoisyStreamListener>();
+public class NoisyBufferedOutputStream extends BufferedOutputStream implements NoisyStream {
+    private long bytes = 0;
+    private int blocks = 0;
+    private int reportSize = 4096; // default 4K reporting size
+    private List<NoisyStreamListener> listeners = new ArrayList<NoisyStreamListener>();
 
-	/**
-	* Constructor. Uses default buffer size of BufferedOutputStream
-	* and default reporting block size (4K).
-	*/
-	public NoisyBufferedOutputStream(OutputStream out)
-	{
-		super(out);
-	}
+    /**
+     * Constructor. Uses default buffer size of BufferedOutputStream and default
+     * reporting block size (4K).
+     */
+    public NoisyBufferedOutputStream(OutputStream out) {
+        super(out);
+    }
 
-	/**
-	* Constructor. Uses specified buffer size for BufferedOutputStream.
-	*/
-	public NoisyBufferedOutputStream(OutputStream out, int bufSize)
-	{
-		super(out, bufSize);
-	}
+    /**
+     * Constructor. Uses specified buffer size for BufferedOutputStream.
+     */
+    public NoisyBufferedOutputStream(OutputStream out, int bufSize) {
+        super(out, bufSize);
+    }
 
-	/**
-	 * @return number of bytes read/written by the stream
-	 */
-	public long getByteCount()
-	{
-		return reportSize*blocks + bytes;
-	}
+    /**
+     * @return number of bytes read/written by the stream
+     */
+    public long getByteCount() {
+        return reportSize * blocks + bytes;
+    }
 
-	/**
-	 * Sets the size increment between reporting events. Listeners
-	 * are notified if more than numbytes have been written so far.
-	 */
-	public void setReportSize(int numbytes)
-	{
-		bytes = getByteCount();
-		blocks = 0;
-		reportSize = numbytes;
-		doit(); // recompute blocks and bytes
-	}
+    /**
+     * Sets the size increment between reporting events. Listeners are notified if
+     * more than numbytes have been written so far.
+     */
+    public void setReportSize(int numbytes) {
+        bytes = getByteCount();
+        blocks = 0;
+        reportSize = numbytes;
+        doit(); // recompute blocks and bytes
+    }
 
-	/**
-	 * Add a new listener and immediately notifies the new
-	 * listener by calling its update method.
-	 */
-	public void addListener(NoisyStreamListener listener)
-	{
-		listeners.add(listener);
-		listener.update(this);
-	}
+    /**
+     * Add a new listener and immediately notifies the new listener by calling its
+     * update method.
+     */
+    public void addListener(NoisyStreamListener listener) {
+        listeners.add(listener);
+        listener.update(this);
+    }
 
-	/**
-	 * Remove the specified listener.
-	 */
-	public void removeListener(NoisyStreamListener listener)
-	{
-		listeners.remove(listener);
-	}
+    /**
+     * Remove the specified listener.
+     */
+    public void removeListener(NoisyStreamListener listener) {
+        listeners.remove(listener);
+    }
 
-	/**
-	 * Remove all listeners.
-	 */
-	public void removeListeners()
-	{
-		listeners.clear();
-	}
+    /**
+     * Remove all listeners.
+     */
+    public void removeListeners() {
+        listeners.clear();
+    }
 
-	/**
-	 * Notify all listeners that something changed and they
-	 * should check the state of the stream.
-	 */
-	protected void notifyListeners()
-	{
-		Iterator i = listeners.iterator();
-		while ( i.hasNext() )
-		{
-			NoisyStreamListener n = (NoisyStreamListener) i.next();
-			n.update(this);
-		}
-	}
+    /**
+     * Notify all listeners that something changed and they should check the state
+     * of the stream.
+     */
+    protected void notifyListeners() {
+        Iterator i = listeners.iterator();
+        while (i.hasNext()) {
+            NoisyStreamListener n = (NoisyStreamListener) i.next();
+            n.update(this);
+        }
+    }
 
-	public void write(int b)
-		throws IOException
-	{
-		super.write(b);
-		bytes++;
-		doit();
-	}
+    public void write(int b) throws IOException {
+        super.write(b);
+        bytes++;
+        doit();
+    }
 
-	public void write(byte[] b, int off, int len)
-		throws IOException
-	{
-		super.write(b,off,len);
-		bytes += Math.min( len, b.length-off);
-		doit();
-	}
+    public void write(byte[] b, int off, int len) throws IOException {
+        super.write(b, off, len);
+        bytes += Math.min(len, b.length - off);
+        doit();
+    }
 
-	/**
-	 * Closes the output stream and notifies all listeners.
-	 */
-	public void close()
-		throws IOException
-	{
-		notifyListeners();
-		super.close();
-	}
+    /**
+     * Closes the output stream and notifies all listeners.
+     */
+    public void close() throws IOException {
+        notifyListeners();
+        super.close();
+    }
 
-	private void doit()
-	{
-		boolean changed = false;
-		while ( bytes >= reportSize )
-		{
-			long b = bytes/reportSize;
-			blocks += (int) b;
-			bytes -= b*reportSize;
-			changed = true;
-		}
-		if (changed)
-			notifyListeners();
-	}
+    private void doit() {
+        boolean changed = false;
+        while (bytes >= reportSize) {
+            long b = bytes / reportSize;
+            blocks += (int) b;
+            bytes -= b * reportSize;
+            changed = true;
+        }
+        
+        if (changed) {
+            notifyListeners();
+        }
+    }
 }

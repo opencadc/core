@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2016.                            (c) 2016.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -86,59 +86,66 @@ import java.util.Set;
  *
  * @author pdowler
  */
-public class MultiValuedProperties 
-{
+public class MultiValuedProperties {
     private Map<String, List<String>> props;
 
     public MultiValuedProperties() { }
 
-    public List<String> getProperty(String name)
-    {
-        if (props == null)
+    public List<String> getProperty(String name) {
+        if (props == null) {
             return null;
+        }
+        
         return props.get(name);
     }
 
-    public Set<String> keySet()
-    {
-        if (props == null)
+    public Set<String> keySet() {
+        if (props == null) {
             return null;
+        }
+        
         return props.keySet();
     }
 
     public void load(InputStream istream)
-        throws IOException
-    {
+        throws IOException {
         this.props = new HashMap<String, List<String>>();
 
-        String strLine, key, value;
+        String strLine;
+        String key;
+        String value;
         char firstChar;
         List<String> valueList;
-        int idxColon, lineLength;
+        int idxColon;
+        int lineLength;
 
         BufferedReader br = new BufferedReader(new InputStreamReader(istream));
         //Read File Line By Line
-        while ((strLine = br.readLine()) != null)
-        {
+        while ((strLine = br.readLine()) != null) {
             strLine = strLine.trim();
             lineLength = strLine.length();
-            if (lineLength == 0)
+            if (lineLength == 0) {
                 continue;
+            }
 
             firstChar = strLine.charAt(0);
-            if (firstChar == '#' || firstChar == '!') //comment line
+            if (firstChar == '#' || firstChar == '!') {
+                //comment line {
                 continue;
+            }
 
             idxColon = strLine.indexOf('=');
-            if (idxColon == 0) // "=foo"
+            if (idxColon == 0) {
+                // "=foo"
                 continue;
+            }
 
             key = strLine.substring(0, idxColon).trim();
             value = strLine.substring(idxColon + 1).trim();
 
             valueList = props.get(key);
-            if (valueList == null) // the key is not in parameters yet
-            {
+            if (valueList == null) {
+                // the key is not in parameters yet
                 valueList = new ArrayList<String>();
                 props.put(key, valueList);
             }

@@ -75,15 +75,14 @@ import java.io.OutputStream;
 /**
  * Simple OutputStream wrapper that keeps track of bytes written.
  * 
- * Alternate constructors allow for byte limits to be set and for
- * the lazy retrieval of the output stream from an HttpServletResponse object.
+ * <p>Alternate constructors allow for byte limits to be set and for the lazy
+ * retrieval of the output stream from an HttpServletResponse object.
  * 
  * @author pdowler
  */
-public class ByteCountOutputStream extends OutputStream implements ByteCounter
-{
+public class ByteCountOutputStream extends OutputStream implements ByteCounter {
     private OutputStream ostream;
-    
+
     private long byteCount = 0L;
     private Long byteLimit = null;
 
@@ -92,91 +91,85 @@ public class ByteCountOutputStream extends OutputStream implements ByteCounter
      *
      * @param outputStream
      */
-    public ByteCountOutputStream(OutputStream outputStream)
-    {
+    public ByteCountOutputStream(OutputStream outputStream) {
         super();
         this.ostream = outputStream;
     }
-    
+
     /**
      * Constructor that takes the target output stream and a byte limit.
      * 
-     * @param outputStream       The OutputStream to wrap.
+     * @param outputStream The OutputStream to wrap.
      * @param byteLimit    The quota space left to be written to, in bytes.
      */
-    public ByteCountOutputStream(OutputStream outputStream,
-                                long byteLimit)
-    {
+    public ByteCountOutputStream(OutputStream outputStream, long byteLimit) {
         this.ostream = outputStream;
-        if (byteLimit > 0)
+        if (byteLimit > 0) {
             this.byteLimit = byteLimit;
+        }
     }
-    
+
     /**
-     * Get the number of bytes written to the underlying output stream to far.
-     * This value is up to date right after flush() is called; otherwise, it may
-     * be less than the total number of bytes written via write() method calls of
-     * the underlying stream.
+     * Get the number of bytes written to the underlying output stream to far. This
+     * value is up to date right after flush() is called; otherwise, it may be less
+     * than the total number of bytes written via write() method calls of the
+     * underlying stream.
      *
      * @return number of bytes written to underlying output stream
      */
     @Override
-    public long getByteCount()
-    {
+    public long getByteCount() {
         return byteCount;
     }
 
     @Override
-    public void close()
-        throws IOException
-    {
+    public void close() throws IOException {
         ostream.close();
     }
 
     @Override
-    public void flush()
-        throws IOException
-    {
+    public void flush() throws IOException {
         ostream.flush();
     }
 
     @Override
-    public void write(int b)
-        throws IOException
-    {
-        if (hasReachedLimit())
+    public void write(int b) throws IOException {
+        if (hasReachedLimit()) {
             throw new ByteLimitExceededException(byteLimit);
+        }
+        
         ostream.write(b);
         byteCount++;
     }
 
     @Override
-    public void write(byte[] b)
-        throws IOException
-    {
-        if (hasReachedLimit())
+    public void write(byte[] b) throws IOException {
+        if (hasReachedLimit()) {
             throw new ByteLimitExceededException(byteLimit);
+        }
+        
         ostream.write(b);
         byteCount += b.length;
     }
 
     @Override
-    public void write(byte[] b, int offset, int num)
-        throws IOException
-    {
-        if (hasReachedLimit())
+    public void write(byte[] b, int offset, int num) throws IOException {
+        if (hasReachedLimit()) {
             throw new ByteLimitExceededException(byteLimit);
+        }
+        
         ostream.write(b, offset, num);
         byteCount += num;
     }
-    
+
     /**
      * Obtain whether the byte limit has been reached.
      */
-    private boolean hasReachedLimit()
-    {
-        if (byteLimit == null)
+    private boolean hasReachedLimit() {
+        if (byteLimit == null) {
             return false;
+        }
+        
         return byteCount >= byteLimit;
     }
 }

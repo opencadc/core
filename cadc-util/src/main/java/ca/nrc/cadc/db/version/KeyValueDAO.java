@@ -91,7 +91,7 @@ public class KeyValueDAO {
     private static final Logger log = Logger.getLogger(KeyValueDAO.class);
 
     protected String[] columnNames;
-    
+
     private final String tableName;
     private final JdbcTemplate jdbc;
     private final ResultSetExtractor extractor;
@@ -101,7 +101,7 @@ public class KeyValueDAO {
     public KeyValueDAO(DataSource dataSource, String database, String schema) {
         this(dataSource, database, schema, KeyValue.class);
     }
-    
+
     public KeyValueDAO(DataSource dataSource, String database, String schema, Class tupleType) {
         this.jdbc = new JdbcTemplate(dataSource);
         StringBuilder tn = new StringBuilder();
@@ -155,7 +155,7 @@ public class KeyValueDAO {
         put.setValue(kv);
         jdbc.update(put);
     }
-    
+
     public void delete(String name) {
         if (name == null) {
             throw new IllegalArgumentException("name arg cannot be null");
@@ -181,15 +181,14 @@ public class KeyValueDAO {
         }
 
         @Override
-        public PreparedStatement createPreparedStatement(Connection conn)
-                throws SQLException {
+        public PreparedStatement createPreparedStatement(Connection conn) throws SQLException {
             StringBuilder sb = new StringBuilder();
             sb.append("SELECT ");
             sb.append(columnNames[0]).append(",");
             sb.append(columnNames[1]).append(",");
             sb.append(columnNames[2]);
             sb.append(" FROM ").append(tableName);
-            sb.append(" WHERE ").append(columnNames[2]).append(" = ?");        
+            sb.append(" WHERE ").append(columnNames[2]).append(" = ?");
             String sql = sb.toString();
             PreparedStatement prep = conn.prepareStatement(sql);
             log.debug(sql);
@@ -197,8 +196,7 @@ public class KeyValueDAO {
             return prep;
         }
 
-        private void loadValues(PreparedStatement ps)
-                throws SQLException {
+        private void loadValues(PreparedStatement ps) throws SQLException {
             ps.setString(1, model);
         }
     }
@@ -217,17 +215,16 @@ public class KeyValueDAO {
         }
 
         @Override
-        public PreparedStatement createPreparedStatement(Connection conn)
-                throws SQLException {
+        public PreparedStatement createPreparedStatement(Connection conn) throws SQLException {
             StringBuilder sb = new StringBuilder();
-                    
+
             if (update) {
                 sb.append("UPDATE ").append(tableName).append(" SET ");
                 sb.append(columnNames[0]).append(" = ?, ");
                 sb.append(columnNames[1]).append(" = ?");
                 sb.append(" WHERE ").append(columnNames[2]).append(" = ?");
             } else {
-                sb.append("INSERT INTO ").append(tableName).append( "(");
+                sb.append("INSERT INTO ").append(tableName).append("(");
                 sb.append(columnNames[0]).append(",");
                 sb.append(columnNames[1]).append(",");
                 sb.append(columnNames[2]).append(")");
@@ -240,8 +237,7 @@ public class KeyValueDAO {
             return prep;
         }
 
-        private void loadValues(PreparedStatement ps)
-                throws SQLException {
+        private void loadValues(PreparedStatement ps) throws SQLException {
             StringBuilder sb = new StringBuilder("values: ");
             int col = 1;
 
@@ -261,8 +257,7 @@ public class KeyValueDAO {
     private class ModelVersionExtractor implements ResultSetExtractor {
 
         @Override
-        public Object extractData(ResultSet rs)
-                throws SQLException {
+        public Object extractData(ResultSet rs) throws SQLException {
             KeyValue ret = null;
             if (rs.next()) {
                 String value = rs.getString(1);
@@ -275,7 +270,7 @@ public class KeyValueDAO {
             return ret;
         }
     }
-    
+
     private static Date getDate(ResultSet rs, int col, Calendar cal) throws SQLException {
         Object o = rs.getTimestamp(col, cal);
         return DateUtil.toDate(o);

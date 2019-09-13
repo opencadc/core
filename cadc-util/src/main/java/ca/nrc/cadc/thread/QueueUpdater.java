@@ -81,8 +81,7 @@ import java.util.List;
  * @version $Version$
  * @author pdowler
  */
-public interface QueueUpdater
-{
+public interface QueueUpdater {
     /**
      * Update the content list. This method is called within a synchronized block so
      * does not have to worry about concurrent modifications of the queue while iterating.

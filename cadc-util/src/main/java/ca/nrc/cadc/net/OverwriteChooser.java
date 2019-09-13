@@ -75,8 +75,7 @@ package ca.nrc.cadc.net;
  *
  * @author pdowler
  */
-public interface OverwriteChooser
-{
+public interface OverwriteChooser {
     /**
      * Decide if a specific resource (file) should be overwritten.
      *

@@ -73,8 +73,7 @@ package ca.nrc.cadc.net;
  * Exception indicating that a transient error occured.
  *
  */
-public class TransientException extends Exception
-{
+public class TransientException extends Exception {
 
     private static final long serialVersionUID = 368806655217191211L;
 
@@ -85,8 +84,7 @@ public class TransientException extends Exception
      * 
      * @param msg Error message.
      */
-    public TransientException(String msg)
-    {
+    public TransientException(String msg) {
         this(msg, HttpTransfer.DEFAULT_RETRY_DELAY);
     }
 
@@ -96,8 +94,7 @@ public class TransientException extends Exception
      * @param msg Error message.
      * @param retryDelay Retry delay in seconds.
      */
-    public TransientException(String msg, int retryDelay)
-    {
+    public TransientException(String msg, int retryDelay) {
         this(msg, null, retryDelay);
     }
 
@@ -107,9 +104,8 @@ public class TransientException extends Exception
      * @param msg Error message.
      * @param cause The error cause.
      */
-    public TransientException(String msg, Throwable cause)
-    {
-    	this(msg, cause, HttpTransfer.DEFAULT_RETRY_DELAY);
+    public TransientException(String msg, Throwable cause) {
+        this(msg, cause, HttpTransfer.DEFAULT_RETRY_DELAY);
     }
 
     /**
@@ -119,8 +115,7 @@ public class TransientException extends Exception
      * @param cause The error cause.
      * @param retryDelay Retry delay in seconds.
      */
-    TransientException(String msg, Throwable cause, int retryDelay)
-    {
+    TransientException(String msg, Throwable cause, int retryDelay) {
         super(msg, cause);
         this.retryDelay = retryDelay;
     }
@@ -129,14 +124,12 @@ public class TransientException extends Exception
      * Get the retry delay (in seconds)
      * @return
      */
-    public int getRetryDelay()
-    {
+    public int getRetryDelay() {
         return retryDelay;
     }
     
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "TransientException[" + super.getMessage() + "," + retryDelay + "]";
     }
 }

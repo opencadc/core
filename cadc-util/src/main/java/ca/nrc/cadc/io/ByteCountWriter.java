@@ -74,44 +74,37 @@ import java.io.IOException;
 import java.io.Writer;
 
 /**
- * Count the amount of data written to a Writer. This class actually counts characters, not
- * bytes.
+ * Count the amount of data written to a Writer. This class actually counts
+ * characters, not bytes.
  * 
  * @author pdowler
  */
-public class ByteCountWriter extends FilterWriter implements ByteCounter
-{
+public class ByteCountWriter extends FilterWriter implements ByteCounter {
     private Writer writer;
     private long byteCount = 0L;
 
-    public ByteCountWriter(Writer writer)
-    {
+    public ByteCountWriter(Writer writer) {
         super(writer);
     }
 
-    public long getByteCount()
-    {
+    public long getByteCount() {
         return byteCount;
     }
 
     @Override
-    public void write(char[] buf, int off, int len)
-        throws IOException
-    {
+    public void write(char[] buf, int off, int len) throws IOException {
         super.write(buf, off, len);
         this.byteCount += len;
     }
 
     @Override
-    public void write(int c) throws IOException
-    {
+    public void write(int c) throws IOException {
         super.write(c);
         this.byteCount++;
     }
 
     @Override
-    public void write(String str, int off, int len) throws IOException
-    {
+    public void write(String str, int off, int len) throws IOException {
         super.write(str, off, len);
         this.byteCount += len;
     }

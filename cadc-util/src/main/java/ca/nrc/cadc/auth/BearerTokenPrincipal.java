@@ -66,6 +66,7 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.auth;
 
 import ca.nrc.cadc.util.StringUtil;
@@ -73,37 +74,29 @@ import ca.nrc.cadc.util.StringUtil;
 import java.io.Serializable;
 import java.security.Principal;
 
-
 /**
  * Represents a bearer token
  */
-public class BearerTokenPrincipal implements Principal, Serializable
-{
+public class BearerTokenPrincipal implements Principal, Serializable {
     private static final long serialVersionUID = 7L;
     private static final String prefix = "Bearer ";
 
     private final String token;
 
-
-    public BearerTokenPrincipal(final String authorizationHeader)
-    {
-        if (!isBearerToken(authorizationHeader))
-        {
+    public BearerTokenPrincipal(final String authorizationHeader) {
+        if (!isBearerToken(authorizationHeader)) {
             throw new IllegalArgumentException("Not a bearer token");
         }
 
         this.token = authorizationHeader.substring(prefix.length());
     }
 
-    public static Boolean isBearerToken(final String authorizationHeader)
-    {
-        return StringUtil.hasText(authorizationHeader) &&
-               authorizationHeader.startsWith(prefix);
+    public static Boolean isBearerToken(final String authorizationHeader) {
+        return StringUtil.hasText(authorizationHeader) && authorizationHeader.startsWith(prefix);
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "BearerTokenPrincipal[" + getName().substring(0, 8) + "]";
     }
 
@@ -113,21 +106,17 @@ public class BearerTokenPrincipal implements Principal, Serializable
      * @return the full token as a string
      */
     @Override
-    public String getName()
-    {
+    public String getName() {
         return token;
     }
 
     @Override
-    public boolean equals(Object o)
-    {
-        if (this == o)
-        {
+    public boolean equals(Object o) {
+        if (this == o) {
             return true;
         }
 
-        if ((o == null) || (getClass() != o.getClass()))
-        {
+        if ((o == null) || (getClass() != o.getClass())) {
             return false;
         }
 
@@ -137,8 +126,7 @@ public class BearerTokenPrincipal implements Principal, Serializable
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return token.hashCode();
     }
 }

@@ -81,10 +81,9 @@ import org.apache.log4j.Logger;
 /**
  * A simple JNDI context factory to support testing.
  */
-public class StandaloneContextFactory implements InitialContextFactory
-{
+public class StandaloneContextFactory implements InitialContextFactory {
     private static final Logger log = Logger.getLogger(StandaloneContextFactory.class);
-    
+
     private static Context CTX;
 
     /**
@@ -92,43 +91,37 @@ public class StandaloneContextFactory implements InitialContextFactory
      * 
      * @throws NamingException if this is called in a real JNDI environment
      */
-    public static void initJNDI()
-        throws NamingException
-    {
+    public static void initJNDI() throws NamingException {
         checkJNDI();
-        if (CTX == null)
-        {
+        if (CTX == null) {
             CTX = new StandaloneContext();
             System.setProperty("java.naming.factory.initial", StandaloneContextFactory.class.getName());
         }
     }
-    
-    private static void checkJNDI()
-        throws NamingException
-    {
+
+    private static void checkJNDI() throws NamingException {
         String jnfi = System.getProperty("java.naming.factory.initial");
-        if (StandaloneContextFactory.class.getName().equals(jnfi))
+        if (StandaloneContextFactory.class.getName().equals(jnfi)) {
             return;
-        try
-        {
+        }
+        
+        try {
             Context initContext = new InitialContext();
             Context envContext = (Context) initContext.lookup("java:/com/env");
             throw new IllegalStateException("attempt to initialise StandaloneContext in a real JNDI environment");
-        }
-        catch(NoInitialContextException ignore) 
-        { 
+        } catch (NoInitialContextException ignore) {
             log.debug("checkJNDI: caught NoInitialContextException -- standalone init OK");
         }
     }
-    
+
     /**
      * Do not call this directly. You must call initJNDI() to do the proper setup.
      */
-    public StandaloneContextFactory() { }
+    public StandaloneContextFactory() {
+    }
 
     @Override
-    public Context getInitialContext(Hashtable environment) throws NamingException
-    {
+    public Context getInitialContext(Hashtable environment) throws NamingException {
         log.debug("StandaloneContextFactory.getInitialContext");
         return CTX;
     }

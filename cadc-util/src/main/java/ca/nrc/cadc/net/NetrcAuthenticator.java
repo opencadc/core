@@ -77,38 +77,33 @@ import org.apache.log4j.Logger;
  *
  * @author pdowler
  */
-public class NetrcAuthenticator extends Authenticator
-{
+public class NetrcAuthenticator extends Authenticator {
     private static final Logger log = Logger.getLogger(NetrcAuthenticator.class);
 
     private NetrcFile netrc;
 
-    public NetrcAuthenticator(boolean secureMode)
-    {
+    public NetrcAuthenticator(boolean secureMode) {
         super();
         this.netrc = new NetrcFile(secureMode);
     }
 
     // unit-test method
-    NetrcAuthenticator(String netrcFile)
-    {
+    NetrcAuthenticator(String netrcFile) {
         super();
         this.netrc = new NetrcFile(netrcFile);
     }
 
     @Override
-    protected PasswordAuthentication getPasswordAuthentication()
-    {
-        synchronized(this) // http library does not have to synchronize usage
-        {
+    protected PasswordAuthentication getPasswordAuthentication() {
+        synchronized (this) {
+            // http library does not have to synchronize usage
             log.debug("host: " + getTargetHost());
             return netrc.getCredentials(getTargetHost(), true);
         }
     }
 
     // getRequestingHost is final; this allows faking it for tests
-    protected String getTargetHost()
-    {
+    protected String getTargetHost() {
         return getRequestingHost();
     }
 }

@@ -66,12 +66,13 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.io;
 
 import java.io.DataInputStream;
-import java.io.InputStream;
-import java.io.IOException;
 import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * This class implements a stream filter for reading from an underlying input
@@ -79,20 +80,18 @@ import java.io.EOFException;
  * DataInputStream, it adds the ability to read large chunks of data into
  * arrays.
  *
- * All the readXXX methods block until they either fill the supplied buffer or
+ * <p>All the readXXX methods block until they either fill the supplied buffer or
  * reach end-of-file. Thus, they will return the buffer size on every call
  * except possibly the last successful one, where the read count could be less.
  * A return of 0 means EOF was detected on the first read. This behavior is
  * usefully different from DataInputStream.readFully because the method returns
  * normally when EOF is first reached instead of throwing an EOFException.
  *
- * @see	DataInputStream
+ * @see DataInputStream
  * @version 0.1
  * @author Patrick Dowler
  */
-public class BulkDataInputStream extends DataInputStream
-        implements BulkDataInput
-{
+public class BulkDataInputStream extends DataInputStream implements BulkDataInput {
 
     protected boolean eos;
 
@@ -101,38 +100,28 @@ public class BulkDataInputStream extends DataInputStream
      *
      * @param istream an input stream with readInt() methods.
      */
-    public BulkDataInputStream(InputStream istream)
-    {
+    public BulkDataInputStream(InputStream istream) {
         super(istream);
         eos = false;
     }
 
     // read characters
-    public int readChar(char[] buf)
-            throws IOException, EOFException
-    {
+    public int readChar(char[] buf) throws IOException, EOFException {
         return this.readChar(buf, 0, buf.length);
     }
 
-    public int readChar(char[] buf, int off, int len)
-            throws IOException, EOFException
-    {
-        if (eos)
-        {
+    public int readChar(char[] buf, int off, int len) throws IOException, EOFException {
+        if (eos) {
             throw new EOFException();
         }
 
         int i = 0;
-        while (!eos && i < len)
-        {
-            try
-            {
+        while (!eos && i < len) {
+            try {
                 // use DataInputStream.readChar()
                 buf[i + off] = this.readChar();
                 i++;
-            }
-            catch (EOFException e)
-            {
+            } catch (EOFException e) {
                 eos = true;
             }
         }
@@ -140,31 +129,22 @@ public class BulkDataInputStream extends DataInputStream
     }
 
     // read 8-bit signed integers
-    public int readByte(byte[] buf)
-            throws IOException, EOFException
-    {
+    public int readByte(byte[] buf) throws IOException, EOFException {
         return this.readByte(buf, 0, buf.length);
     }
 
-    public int readByte(byte[] buf, int off, int len)
-            throws IOException, EOFException
-    {
-        if (eos)
-        {
+    public int readByte(byte[] buf, int off, int len) throws IOException, EOFException {
+        if (eos) {
             throw new EOFException();
         }
 
         int i = 0;
-        while (!eos && i < len)
-        {
-            try
-            {
+        while (!eos && i < len) {
+            try {
                 // use DataInputStream.readByte()
                 buf[i + off] = this.readByte();
                 i++;
-            }
-            catch (EOFException e)
-            {
+            } catch (EOFException e) {
                 eos = true;
             }
         }
@@ -172,31 +152,22 @@ public class BulkDataInputStream extends DataInputStream
     }
 
     // read 8-bit unsigned integers
-    public int readUnsignedByte(short[] buf)
-            throws IOException, EOFException
-    {
+    public int readUnsignedByte(short[] buf) throws IOException, EOFException {
         return this.readUnsignedByte(buf, 0, buf.length);
     }
 
-    public int readUnsignedByte(short[] buf, int off, int len)
-            throws IOException, EOFException
-    {
-        if (eos)
-        {
+    public int readUnsignedByte(short[] buf, int off, int len) throws IOException, EOFException {
+        if (eos) {
             throw new EOFException();
         }
 
         int i = 0;
-        while (!eos && i < len)
-        {
-            try
-            {
+        while (!eos && i < len) {
+            try {
                 // int <- DataInputStream.readUnsignedByte()
                 buf[i + off] = (short) this.readUnsignedByte();
                 i++;
-            }
-            catch (EOFException e)
-            {
+            } catch (EOFException e) {
                 eos = true;
             }
         }
@@ -204,34 +175,25 @@ public class BulkDataInputStream extends DataInputStream
     }
 
     // read 16-bit signed integers
-    public int readShort(short[] buf)
-            throws IOException, EOFException
-    {
+    public int readShort(short[] buf) throws IOException, EOFException {
         return this.readShort(buf, 0, buf.length);
     }
 
-    public int readShort(short[] buf, int off, int len)
-            throws IOException, EOFException
-    {
-        if (eos)
-        {
+    public int readShort(short[] buf, int off, int len) throws IOException, EOFException {
+        if (eos) {
             throw new EOFException();
         }
 
         int i = 0;
-        while (i < len && !eos)
-        {
-            try
-            {
+        while (i < len && !eos) {
+            try {
                 // use DataInputStream.readShort()
                 buf[i + off] = this.readShort();
-				//byte b1 = this.readByte();
-                //byte b2 = this.readByte();
-                //buf[i+off] = (short) ((short)(b1)<<8) | ((short)(b2) & 0xff);
+                // byte b1 = this.readByte();
+                // byte b2 = this.readByte();
+                // buf[i+off] = (short) ((short)(b1)<<8) | ((short)(b2) & 0xff);
                 i++;
-            }
-            catch (EOFException e)
-            {
+            } catch (EOFException e) {
                 eos = true;
             }
         }
@@ -239,31 +201,22 @@ public class BulkDataInputStream extends DataInputStream
     }
 
     // read 16-bit unsigned integers
-    public int readUnsignedShort(int[] buf)
-            throws IOException, EOFException
-    {
+    public int readUnsignedShort(int[] buf) throws IOException, EOFException {
         return this.readUnsignedShort(buf, 0, buf.length);
     }
 
-    public int readUnsignedShort(int[] buf, int off, int len)
-            throws IOException, EOFException
-    {
-        if (eos)
-        {
+    public int readUnsignedShort(int[] buf, int off, int len) throws IOException, EOFException {
+        if (eos) {
             throw new EOFException();
         }
 
         int i = 0;
-        while (!eos && i < len)
-        {
-            try
-            {
+        while (!eos && i < len) {
+            try {
                 // use DataInputStream.readUnsignedShort()
                 buf[i + off] = this.readUnsignedShort();
                 i++;
-            }
-            catch (EOFException e)
-            {
+            } catch (EOFException e) {
                 eos = true;
             }
         }
@@ -271,31 +224,22 @@ public class BulkDataInputStream extends DataInputStream
     }
 
     // read 32-bit signed integers
-    public int readInt(int[] buf)
-            throws IOException, EOFException
-    {
+    public int readInt(int[] buf) throws IOException, EOFException {
         return this.readInt(buf, 0, buf.length);
     }
 
-    public int readInt(int[] buf, int off, int len)
-            throws IOException, EOFException
-    {
-        if (eos)
-        {
+    public int readInt(int[] buf, int off, int len) throws IOException, EOFException {
+        if (eos) {
             throw new EOFException();
         }
 
         int i = 0;
-        while (!eos && i < len)
-        {
-            try
-            {
+        while (!eos && i < len) {
+            try {
                 // use DataInputStream.readInt()
                 buf[i + off] = this.readInt();
                 i++;
-            }
-            catch (EOFException e)
-            {
+            } catch (EOFException e) {
                 eos = true;
             }
         }
@@ -303,31 +247,22 @@ public class BulkDataInputStream extends DataInputStream
     }
 
     // read 64-bit signed integers
-    public int readLong(long[] buf)
-            throws IOException, EOFException
-    {
+    public int readLong(long[] buf) throws IOException, EOFException {
         return this.readLong(buf, 0, buf.length);
     }
 
-    public int readLong(long[] buf, int off, int len)
-            throws IOException, EOFException
-    {
-        if (eos)
-        {
+    public int readLong(long[] buf, int off, int len) throws IOException, EOFException {
+        if (eos) {
             throw new EOFException();
         }
 
         int i = 0;
-        while (!eos && i < len)
-        {
-            try
-            {
+        while (!eos && i < len) {
+            try {
                 // use DataInputStream.readLong()
                 buf[i + off] = this.readLong();
                 i++;
-            }
-            catch (EOFException e)
-            {
+            } catch (EOFException e) {
                 eos = true;
             }
         }
@@ -335,31 +270,22 @@ public class BulkDataInputStream extends DataInputStream
     }
 
     // read 32-bit floating point values
-    public int readFloat(float[] buf)
-            throws IOException, EOFException
-    {
+    public int readFloat(float[] buf) throws IOException, EOFException {
         return this.readFloat(buf, 0, buf.length);
     }
 
-    public int readFloat(float[] buf, int off, int len)
-            throws IOException, EOFException
-    {
-        if (eos)
-        {
+    public int readFloat(float[] buf, int off, int len) throws IOException, EOFException {
+        if (eos) {
             throw new EOFException();
         }
 
         int i = 0;
-        while (!eos && i < len)
-        {
-            try
-            {
+        while (!eos && i < len) {
+            try {
                 // use DataInputStream.readFloat()
                 buf[i + off] = this.readFloat();
                 i++;
-            }
-            catch (EOFException e)
-            {
+            } catch (EOFException e) {
                 eos = true;
             }
         }
@@ -367,31 +293,22 @@ public class BulkDataInputStream extends DataInputStream
     }
 
     // read 64-bit floating point values
-    public int readDouble(double[] buf)
-            throws IOException, EOFException
-    {
+    public int readDouble(double[] buf) throws IOException, EOFException {
         return this.readDouble(buf, 0, buf.length);
     }
 
-    public int readDouble(double[] buf, int off, int len)
-            throws IOException, EOFException
-    {
-        if (eos)
-        {
+    public int readDouble(double[] buf, int off, int len) throws IOException, EOFException {
+        if (eos) {
             throw new EOFException();
         }
 
         int i = 0;
-        while (!eos && i < len)
-        {
-            try
-            {
+        while (!eos && i < len) {
+            try {
                 // use DataInputStream.readDouble()
                 buf[i + off] = this.readDouble();
                 i++;
-            }
-            catch (EOFException e)
-            {
+            } catch (EOFException e) {
                 eos = true;
             }
         }

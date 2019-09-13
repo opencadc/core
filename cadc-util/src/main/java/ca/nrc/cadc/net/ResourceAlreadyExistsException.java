@@ -75,9 +75,12 @@ package ca.nrc.cadc.net;
  * 
  * @author adriand
  */
-public class ResourceAlreadyExistsException extends Exception
-{
-    public ResourceAlreadyExistsException(String s) { super(s); }
+public class ResourceAlreadyExistsException extends Exception {
+    public ResourceAlreadyExistsException(String s) { 
+        super(s); 
+    }
     
-    public ResourceAlreadyExistsException(String s, Throwable cause) { super(s, cause); }
+    public ResourceAlreadyExistsException(String s, Throwable cause) { 
+        super(s, cause); 
+    }
 }

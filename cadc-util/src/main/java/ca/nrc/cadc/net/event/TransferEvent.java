@@ -81,8 +81,7 @@ import java.util.EventObject;
  * @version $Version$
  * @author pdowler
  */
-public class TransferEvent extends EventObject
-{
+public class TransferEvent extends EventObject {
     private static final long serialVersionUID = 201008051500L;
     
     private static int MIN_STATE = 0;
@@ -96,8 +95,7 @@ public class TransferEvent extends EventObject
     public static final int DELETED = 8;
     public static final int RETRYING = 9;
     private static int MAX_STATE = 10;
-    private String[] states = new String[]
-    {
+    private String[] states = new String[] {
         "min", 
         "CONNECTING", "CONNECTED", "TRANSFERING", "DECOMPRESSING",
         "COMPLETED", "CANCELLED", "FAILED", "DELETED", "RETRYING",
@@ -120,8 +118,7 @@ public class TransferEvent extends EventObject
      * @param url
      * @param file
      */
-    public TransferEvent(Object source, String eventID, URL url, File file)
-    {
+    public TransferEvent(Object source, String eventID, URL url, File file) {
         this(source, eventID, url, file, COMPLETED, null);
     }
 
@@ -133,8 +130,7 @@ public class TransferEvent extends EventObject
      * @param file
      * @param error
      */
-    public TransferEvent(Object source, String eventID, URL url, File file, Throwable error)
-    {
+    public TransferEvent(Object source, String eventID, URL url, File file, Throwable error) {
         this(source, eventID, url, file, FAILED, error);
     }
     
@@ -147,23 +143,24 @@ public class TransferEvent extends EventObject
      * @param file
      * @param state
      */
-    public TransferEvent(Object source, String eventID, URL url, File file, int state)
-    {
+    public TransferEvent(Object source, String eventID, URL url, File file, int state) {
         this(source, eventID, url, file, state, (Throwable) null);
     }
     
-    private TransferEvent(Object source, String eventID, URL url, File file, int state, Throwable error)
-    {
+    private TransferEvent(Object source, String eventID, URL url, File file, int state, Throwable error) {
         super(source);
         this.eventID = eventID;
         this.url = url;
         this.file = file;
         this.state = state;
         this.error = error;
-        if (error != null && state != FAILED)
+        if (error != null && state != FAILED) {
             throw new IllegalArgumentException("state: " + state + " error: " + error);
-        if (state <= MIN_STATE || state >= MAX_STATE)
+        }
+        
+        if (state <= MIN_STATE || state >= MAX_STATE) {
             throw new IllegalArgumentException("unknown state: " + state);
+        }
     }
 
     /**
@@ -171,69 +168,87 @@ public class TransferEvent extends EventObject
      *
      * @return
      */
-    public int getState() { return state; }
+    public int getState() { 
+        return state; 
+    }
 
     /**
      * Get the state as a string. This is useful for debugging (eg when getting an unexpected state).
      *
      * @return
      */
-    public String getStateLabel() { return states[state]; }
+    public String getStateLabel() { 
+        return states[state]; 
+    }
     
     /**
      * Get the eventID for the download.
      * 
      * @return
      */
-    public String getEventID() { return eventID; }
+    public String getEventID() { 
+        return eventID; 
+    }
     
     /**
      * Get the source URL for the download.
      * 
      * @return
      */
-    public URL getURL() { return url; }
+    public URL getURL() { 
+        return url; 
+    }
     
     /**
      * Get the destination file.
      * 
      * @return
      */
-    public File getFile() { return file; }
+    public File getFile() { 
+        return file; 
+    }
 
     /**
      * Get metadata about the file acquired during or after the transfer.
      * @return
      */
-    public FileMetadata getFileMetadata() { return meta; }
+    public FileMetadata getFileMetadata() { 
+        return meta; 
+    }
 
-    public void setFileMetadata(FileMetadata meta) { this.meta = meta; }
+    public void setFileMetadata(FileMetadata meta) { 
+        this.meta = meta; 
+    }
     
     /**
      * Get associated error. This is null if the download completed successfully or was cancelled.
      * 
      * @return error that caused failure
      */
-    public Throwable getError() { return error; }
+    public Throwable getError() { 
+        return error; 
+    }
     
-    public void setStartingPosition(int start) { this.startingPos = start; }
+    public void setStartingPosition(int start) { 
+        this.startingPos = start; 
+    }
     
-    public int getStartingPosition() { return startingPos; }
+    public int getStartingPosition() { 
+        return startingPos; 
+    }
     
-    public boolean isFinalState()
-    {
-        if (state == COMPLETED ||
-            state == CANCELLED ||
-            state == FAILED)
-        {
+    public boolean isFinalState() {
+        if (state == COMPLETED 
+            || state == CANCELLED 
+            || state == FAILED) {
             return true;
         }
+        
         return false;
     }
 
     @Override
-    public String toString() 
-    {
+    public String toString() {
         return this.getClass().getSimpleName()
                 + "[url=" + url + ", file=" + file + ",state=" + state + "(" + states[state] + "), error=" + error + "]";
     }

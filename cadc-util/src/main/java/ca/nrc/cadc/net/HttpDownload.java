@@ -70,6 +70,10 @@
 
 package ca.nrc.cadc.net;
 
+import ca.nrc.cadc.net.event.TransferEvent;
+import ca.nrc.cadc.util.FileMetadata;
+import ca.nrc.cadc.util.StringUtil;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -82,20 +86,15 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.AccessControlException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipInputStream;
 
 import javax.net.ssl.HttpsURLConnection;
 
 import org.apache.log4j.Logger;
-
-import ca.nrc.cadc.net.event.TransferEvent;
-import ca.nrc.cadc.util.FileMetadata;
-import ca.nrc.cadc.util.StringUtil;
-import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Simple task to encapsulate a single download (GET). This class supports http and https
@@ -104,12 +103,11 @@ import java.util.List;
  * with a 503 and a valid Retry-After header, where valid means an integer (number of seconds)
  * that is between 0 and HttpTransfer.MAX_RETRY_DELAY.
  *
- * Note: Redirects are followed by default.
+ * <p>Note: Redirects are followed by default.
  * 
  * @author pdowler
  */
-public class HttpDownload extends HttpTransfer
-{
+public class HttpDownload extends HttpTransfer {
     private static Logger log = Logger.getLogger(HttpDownload.class);
 
     private static int NONE = 0;
@@ -145,28 +143,26 @@ public class HttpDownload extends HttpTransfer
     /**
      * Constructor with default user-agent string.
      * 
-     * @see HttpDownload(String,URL,File)
+     * @see HttpDownload (String, URL, File)
      * @param src URL to read
      * @param dest file or directory to write to
      */
-    public HttpDownload(URL src, File dest)
-    {
+    public HttpDownload(URL src, File dest) {
         this(null, src, dest);
     }
 
     /**
      * Constructor with default user-agent string.
-     * @see HttpDownload(String,URL,OutputStream)
+     * 
+     * @see HttpDownload (String, URL, OutputStream)
      * @param src URL to read
      * @param dest output stream to write to
      */
-    public HttpDownload(URL src, OutputStream dest)
-    {
+    public HttpDownload(URL src, OutputStream dest) {
         this(null,src,dest);
     }
 
-    public HttpDownload(URL src, InputStreamWrapper dest)
-    {
+    public HttpDownload(URL src, InputStreamWrapper dest) {
         this(null, src, dest);
     }
 
@@ -188,29 +184,30 @@ public class HttpDownload extends HttpTransfer
      * @param src URL to read
      * @param dest file or directory to write to
      */
-    public HttpDownload(String userAgent, URL src, File dest)
-    {
+    public HttpDownload(String userAgent, URL src, File dest) {
         super(true);
         setUserAgent(userAgent);
         
-        if (src == null)
+        if (src == null) {
             throw new IllegalArgumentException("source URL cannot be null");
-        if (dest == null)
-            throw new IllegalArgumentException("destination File cannot be null");
-
-        if (dest.exists() && dest.isDirectory())
-        {
-            this.destDir = dest;
         }
-        else
-        {
+        
+        if (dest == null) {
+            throw new IllegalArgumentException("destination File cannot be null");
+        }
+
+        if (dest.exists() && dest.isDirectory()) {
+            this.destDir = dest;
+        } else {
             File parent = dest.getParentFile();
-            if (parent == null) // relative path
+            if (parent == null) {
+                // relative path
                 throw new IllegalArgumentException("destination File cannot be relative");
+            }
             //if (parent.exists() && parent.isDirectory())
             //{
-                this.destDir = parent;
-                this.localFile = dest;
+            this.destDir = parent;
+            this.localFile = dest;
             //}
             //else
             //    throw new IllegalArgumentException("destination File parent must be a directory that exists");
@@ -226,51 +223,60 @@ public class HttpDownload extends HttpTransfer
 
     /**
      * Constructor. If the user agent string is not supplied, a default value will be generated.
-     * <p>
-     * The src URL cannot be null. If the protocol is https, this class will get the current Subject from
+     * 
+     * <p>The src URL cannot be null. If the protocol is https, this class will get the current Subject from
      * the AccessControlContext and use the Certificate(s) and PrivateKey(s) found there to set up an
      * SSLSocketFactory. 
      * </p>
-     * <p>
-     * The dest output stream cannot be null.
+     * 
+     * <p>The dest output stream cannot be null.
      * </p>
      * 
      * @param userAgent user-agent string to report in HTTP headers
      * @param src URL to read
      * @param dest output stream to write to
      */
-    public  HttpDownload(String userAgent, URL src, OutputStream dest)
-    {
+    public  HttpDownload(String userAgent, URL src, OutputStream dest) {
         super(true);
         setUserAgent(userAgent);
-        if (src == null)
+        if (src == null) {
             throw new IllegalArgumentException("source URL cannot be null");
-        if (dest == null)
+        }
+        
+        if (dest == null) {
             throw new IllegalArgumentException("destination stream cannot be null");
+        }
+        
         this.remoteURL = src;
         this.destStream = dest;
     }
 
-    public HttpDownload(String userAgent, URL src, InputStreamWrapper dest)
-    {
+    public HttpDownload(String userAgent, URL src, InputStreamWrapper dest) {
         super(true);
         setUserAgent(userAgent);
-        if (src == null)
+        if (src == null) {
             throw new IllegalArgumentException("source URL cannot be null");
-        if (dest == null)
+        }
+        
+        if (dest == null) {
             throw new IllegalArgumentException("destination wrapper cannot be null");
+        }
+        
         this.remoteURL = src;
         this.wrapper = dest;
     }
 
     // unused
-    private HttpDownload() { super(true); }
+    private HttpDownload() { 
+        super(true); 
+    }
 
     @Override
-    public String toString() 
-    {
-        if (localFile == null)
+    public String toString() {
+        if (localFile == null) {
             return "HttpDownload[" + remoteURL + "]";
+        }
+        
         return "HttpDownload[" + remoteURL + "," + localFile + "]";
     }
 
@@ -281,11 +287,11 @@ public class HttpDownload extends HttpTransfer
      * 
      * @param headOnly
      */
-    public void setHeadOnly(boolean headOnly)
-    {
+    public void setHeadOnly(boolean headOnly) {
         this.headOnly = headOnly;
-        if (headOnly)
+        if (headOnly) {
             this.logAction = "HTTP HEAD";
+        }
     }
 
 
@@ -293,8 +299,7 @@ public class HttpDownload extends HttpTransfer
      * Enable optional decompression of the data after download. GZIP and ZIP are supported.
      * @param decompress
      */
-    public void setDecompress(boolean decompress)
-    {
+    public void setDecompress(boolean decompress) {
         this.decompress = decompress;
     }
 
@@ -303,8 +308,7 @@ public class HttpDownload extends HttpTransfer
      * 
      * @param overwrite
      */
-    public void setOverwrite(boolean overwrite)
-    {
+    public void setOverwrite(boolean overwrite) {
         this.overwrite = overwrite;
     }
     
@@ -314,14 +318,15 @@ public class HttpDownload extends HttpTransfer
      * 
      * @return the size in bytes, or -1 of unknown
      */
-    public long getSize() { return size; }
+    public long getSize() { 
+        return size; 
+    }
 
     /**
      * Get the content-type returned by the server.
      * @return
      */
-    public String getContentType()
-    {
+    public String getContentType() {
         return contentType;
     }
 
@@ -329,8 +334,7 @@ public class HttpDownload extends HttpTransfer
      * Get the content-encoding returned by the server.
      * @return
      */
-    public String getContentEncoding()
-    {
+    public String getContentEncoding() {
         return contentEncoding;
     }
 
@@ -339,29 +343,33 @@ public class HttpDownload extends HttpTransfer
      *
      * @return the content-length or -1 of unknown
      */
-    public long getContentLength() { return contentLength; }
+    public long getContentLength() { 
+        return contentLength; 
+    }
     
     /**
      * Get the md5 sum of the download (the Content-MD5).
      * 
      * @return the content-md5 or null if unknown
      */
-    public String getContentMD5() { return contentMD5; }
+    public String getContentMD5() { 
+        return contentMD5; 
+    }
 
     /**
      * Last-modified timestamp from http header.
      * 
      * @return 
      */
-    public Date getLastModified()
-    {
-        if (lastModified > 0)
+    public Date getLastModified() {
+        if (lastModified > 0) {
             return new Date(lastModified);
+        }
+        
         return null;
     }
     
-    public String getFilename()
-    {
+    public String getFilename() {
         return serverFilename;
     }
     
@@ -371,34 +379,28 @@ public class HttpDownload extends HttpTransfer
      * 
      * @return reference to the output file or null if download failed
      */
-    public File getFile() { return destFile; }
+    public File getFile() { 
+        return destFile; 
+    }
 
     /**
      * Run the download. This method is intended to be run via a Thread (or pool)
      * but can be called directly. The safe way to stop the download is to call the
      * terminate() method (@see HttpTransfer#terminate()).
      */
-    public void run()
-    {
+    public void run() {
         boolean done = false;
-        while (!done)
-        {
-            try
-            {
+        while (!done) {
+            try {
                 runX();
                 done = true;
-            }
-            catch(TransientException ex)
-            {
-                try
-                {
+            } catch (TransientException ex) {
+                try {
                     long dt = 1000L * ex.getRetryDelay(); // to milliseconds
-                    log.debug("retry " + numRetries +" sleeping  for " + dt);
+                    log.debug("retry " + numRetries + " sleeping  for " + dt);
                     fireEvent(TransferEvent.RETRYING);
                     Thread.sleep(dt);
-                }
-                catch(InterruptedException iex)
-                {
+                } catch (InterruptedException iex) {
                     log.debug("retry interrupted");
                     this.go = false;
                     done = true;
@@ -408,16 +410,15 @@ public class HttpDownload extends HttpTransfer
     }
 
     private void runX()
-        throws TransientException
-    {
+        throws TransientException {
         log.debug(this.toString());
-        if (!go)
+        if (!go) {
             return; // cancelled while queued, event notification handled in terminate()
+        }
         
         boolean throwTE = false;
         URL originalURL = remoteURL;
-        try
-        {
+        try {
             // store the thread so that other threads (typically the
             // Swing event thread) can terminate the Download
             this.thread = Thread.currentThread();
@@ -434,9 +435,11 @@ public class HttpDownload extends HttpTransfer
                     if (visitedURLs.contains(redirectURL)) {
                         throw new IllegalArgumentException("redirect back to a previously visited URL: " + redirectURL);
                     }
+                    
                     if (visitedURLs.size() > 6) {
                         throw new IllegalArgumentException("redirect exceeded hard-coded limit (6): " + redirectURL);
                     }
+                    
                     visitedURLs.add(remoteURL);
                     remoteURL = redirectURL;
                     redirectURL = null;
@@ -444,67 +447,52 @@ public class HttpDownload extends HttpTransfer
                 }
             }
             
-            
-            if (decompress && decompressor != NONE)
-            {
+            if (decompress && decompressor != NONE) {
                 fireEvent(decompFile, TransferEvent.DECOMPRESSING);
                 doDecompress();
             }
-        }
-        catch(InterruptedException iex)
-        {
+        } catch (InterruptedException iex) {
             // need to catch this or it looks like a failure instead of a cancel
             this.go = false;
-        }
-        catch(TransientException tex)
-        {
+        } catch (TransientException tex) {
             log.debug("caught: " + tex);
             throwTE = true;
             throw tex;
-        }
-        catch(AccessControlException ex)
-        {
+        } catch (AccessControlException ex) {
             failure = ex;
-        }
-        catch(Throwable t)
-        {
+        } catch (Throwable t) {
             failure = t;
-            if (log.isDebugEnabled())
+            if (log.isDebugEnabled()) {
                 log.debug("unexpected transfer failure", t);
-        }
-        finally
-        {
+            }
+        } finally {
             remoteURL = originalURL;
-            synchronized(this) // vs sync block in terminate() 
-            {
-                if (thread != null)
-                {
+            synchronized (this) {
+                // vs sync block in terminate() 
+                if (thread != null) {
                     // clear interrupt status
-                    if ( Thread.interrupted() )
+                    if (Thread.interrupted()) {
                         go = false;
+                    }
+                    
                     this.thread = null;
                 }
             }
                         
-            if (failure == null && removeFile != null) // only remove if download was successful
-            {
+            if (failure == null && removeFile != null) {
+                // only remove if download was successful
                 log.debug("removing: " + removeFile);
                 fireEvent(removeFile, TransferEvent.DELETED);
                 removeFile.delete();
             }
 
-            if (!go)
-            {
+            if (!go) {
                 log.debug("cancelled");
                 fireEvent(TransferEvent.CANCELLED);
-            }
-            else if (failure != null)
-            {
+            } else if (failure != null) {
                 log.debug("failed: " + failure);
                 fireEvent(failure);
-            }
-            else if (!throwTE)
-            {
+            } else if (!throwTE) {
                 log.debug("completed");
                 FileMetadata meta = new FileMetadata();
                 meta.setContentType(contentType);
@@ -517,84 +505,74 @@ public class HttpDownload extends HttpTransfer
         }
     }
 
-    protected boolean askOverwrite(File f, Long length, Long lastMod)
-    {
-        return overwrite ||
-            (
-                overwriteChooser != null &&
-                overwriteChooser.overwriteFile(f.getAbsolutePath(), f.length(), f.lastModified(), length, lastMod)
+    protected boolean askOverwrite(File f, Long length, Long lastMod) {
+        return overwrite 
+            || (
+                overwriteChooser != null 
+                && overwriteChooser.overwriteFile(f.getAbsolutePath(), f.length(), f.lastModified(), length, lastMod)
             );
     }
 
     // determine which file to read and write, enable optional decompression
     private boolean doCheckDestination()
-        throws InterruptedException
-    {
+        throws InterruptedException {
         // check/clear interrupted flag and throw if necessary
-        if ( Thread.interrupted() )
+        if (Thread.interrupted()) {
             throw new InterruptedException();
+        }
             
         boolean doDownload = true;
-        if (origFile.exists())
-        {
+        if (origFile.exists()) {
             log.debug(origFile + " exists");
-            if ( askOverwrite(origFile, contentLength, lastModified) )
-            {
+            if (askOverwrite(origFile, contentLength, lastModified)) {
                 log.debug("overwrite: YES -- " + origFile);
                 origFile.delete();
-                if (decompFile != null && decompFile.exists())
+                if (decompFile != null && decompFile.exists()) {
                     decompFile.delete();
-                if (decompress && decompressor != NONE)
+                }
+                
+                if (decompress && decompressor != NONE) {
                     this.destFile = decompFile; // download and decompress
-                else
+                } else {
                     this.destFile = origFile; // download
-            }
-            else
-            {
+                }
+            } else {
                 log.debug("overwrite: NO -- " + origFile);
-                if (decompress && decompressor != NONE)
-                {
+                if (decompress && decompressor != NONE) {
                     decompFile.delete();
                     doDownload = false;
                     this.destFile = decompFile; // decomp only
                     this.removeFile = origFile; // remove after decompress
-                }
-                else
-                {
+                } else {
                     doDownload = false;
                     //this.skipped = true;
                 }
             }
-        }
-        else if (decompFile != null && decompFile.exists())
-        {
+        } else if (decompFile != null && decompFile.exists()) {
             log.debug(decompFile + " exists");
-            if ( askOverwrite(decompFile, decompSize, lastModified) )
-            {
+            if (askOverwrite(decompFile, decompSize, lastModified)) {
                 log.debug("overwrite: YES -- " + decompFile);
                 //decompFile.delete(); // origFile does not exist
                 this.removeFile = decompFile;
-                if (decompress && decompressor != NONE)
+                if (decompress && decompressor != NONE) {
                     this.destFile = decompFile;    // download and decompress
-                else
+                } else {
                     this.destFile = origFile;      // download
-            }
-            else
-            {
+                }
+            } else {
                 log.debug("overwrite: NO -- " + decompFile);
                 this.destFile = decompFile;
                 this.removeFile = null;
                 doDownload = false;
                 //this.skipped = true;
             }
-        }
-        else
-        {
+        } else {
             // found no local files that match
-            if (decompress && decompressor != NONE && decompFile != null)
+            if (decompress && decompressor != NONE && decompFile != null) {
                 this.destFile = decompFile;
-            else
+            } else {
                 this.destFile = origFile;
+            }
         }
         log.debug("destination file: " + destFile);
         this.localFile = destFile;
@@ -603,8 +581,7 @@ public class HttpDownload extends HttpTransfer
 
     // called from doHead and doGet to capture HTTP standard header values
     private void processHeader(HttpURLConnection conn)
-        throws IOException, InterruptedException
-    {
+        throws IOException, InterruptedException {
         // generic capture
         captureResponseHeaders(conn);
         
@@ -614,59 +591,60 @@ public class HttpDownload extends HttpTransfer
 
         // parse this ourselves to get 64-bit sizes: conn.getContentLength returns int
         String cl = conn.getHeaderField("Content-Length");
-        if (cl != null)
-        {
-            try { this.contentLength = Long.parseLong(cl); }
-            catch(NumberFormatException ignore) { }
+        if (cl != null) {
+            try { 
+                this.contentLength = Long.parseLong(cl); 
+            } catch (NumberFormatException ignore) { 
+                // do nothing
+            }
         }
 
         // custom CADC header
         String ucl = conn.getHeaderField("X-Uncompressed-Length");
-        if (ucl != null)
-        {
-            try { this.decompSize = Long.parseLong(ucl); }
-            catch(NumberFormatException ignore) { }
+        if (ucl != null) {
+            try { 
+                this.decompSize = Long.parseLong(ucl); 
+            } catch (NumberFormatException ignore) { 
+                // do nothing
+            }
         }
 
         this.lastModified = conn.getLastModified();
         
         this.serverFilename = getServerFilename(conn);
         
-        if (destStream == null && wrapper == null) // download to file: extra metadata
-        {
+        if (destStream == null && wrapper == null) {
+            // download to file: extra metadata
             String origFilename = null;
 
             // first option: use what the caller suggested
-            if (localFile != destDir)
+            if (localFile != destDir) {
                 this.origFile = localFile;
+            }
 
-            if (origFile == null)
-            {
+            if (origFile == null) {
                 this.origFile = new File(destDir, serverFilename);
             }
             origFilename = origFile.getName();
 
             // encoding mucks with filename
-            if ("gzip".equals(contentEncoding) || origFilename.endsWith(".gz"))
-            {
-                if (origFilename.endsWith(".gz"))
+            if ("gzip".equals(contentEncoding) || origFilename.endsWith(".gz")) {
+                if (origFilename.endsWith(".gz")) {
                     this.decompFile = new File(destDir, origFilename.substring(0, origFilename.length() - 3));
-                else
-                {
+                } else {
                     this.decompFile = origFile;
                     this.origFile = new File(destDir, origFilename + ".gz");
                 }
+                
                 this.decompressor = GZIP;
-            }
-            else if ("zip".equals(contentEncoding) || origFilename.endsWith(".zip"))
-            {
-                if (origFilename.endsWith(".zip"))
+            } else if ("zip".equals(contentEncoding) || origFilename.endsWith(".zip")) {
+                if (origFilename.endsWith(".zip")) {
                     this.decompFile = new File(destDir, origFilename.substring(0, origFilename.length() - 4));
-                else
-                {
+                } else {
                     this.decompFile = origFile;
                     this.origFile = new File(destDir, origFilename + ".zip");
                 }
+                
                 this.decompressor = ZIP;
             }
         }
@@ -682,31 +660,32 @@ public class HttpDownload extends HttpTransfer
         log.debug("    lastModified: " + lastModified);
     }
 
-    private String getServerFilename(HttpURLConnection conn)
-    {
+    private String getServerFilename(HttpURLConnection conn) {
         String ret = null;
 
         // first option: use supplied filename if present in http header
         String cdisp = conn.getHeaderField("Content-Disposition");
         log.debug("HTTP HEAD: Content-Disposition = " + cdisp);
-        if ( cdisp != null )
+        if (cdisp != null) {
             ret = parseContentDisposition(cdisp);
+        }
 
         // alternative: pull something from the end of the URL
-        if (ret == null)
-        {
+        if (ret == null) {
             String s = remoteURL.getPath();
             String query = remoteURL.getQuery();
             int i = s.lastIndexOf('/');
-            if (i != -1 && i < s.length() - 1)
+            if (i != -1 && i < s.length() - 1) {
                 ret = s.substring(i + 1, s.length());
-            if (query != null)
+            }
+            
+            if (query != null) {
                 ret += "?" + query;
+            }
         }
         
         // last resort for no path: use hostname
-        if (ret == null)
-        {
+        if (ret == null) {
             ret = remoteURL.getHost();
         }
         
@@ -714,36 +693,31 @@ public class HttpDownload extends HttpTransfer
     }
     
     private int checkStatusCode(HttpURLConnection conn)
-        throws IOException, TransientException
-    {
+        throws IOException, TransientException {
         int code = conn.getResponseCode();
         this.responseCode = code;
-        log.debug(logAction+" status: " + code + " for " + remoteURL);
+        log.debug(logAction + " status: " + code + " for " + remoteURL);
 
         String location = conn.getHeaderField("Location");
         if ((code == HttpURLConnection.HTTP_SEE_OTHER
             || code == HttpURLConnection.HTTP_MOVED_TEMP
             || code == HttpURLConnection.HTTP_MOVED_PERM) 
-            && location != null)
-        {
+            && location != null) {
             this.redirectURL = new URL(location);
-        }
-        else if (code > 303) // 300 has body to be read, 301-303 handled above
-        {
+        } else if (code > 303) {
+            // 300 has body to be read, 301-303 handled above
             String msg = "(" + code + ") " + conn.getResponseMessage();
-            if (destStream != null)
+            if (destStream != null) {
                 NetUtil.getErrorBody(conn, destStream);
-            else
-            {
+            } else {
                 String body = NetUtil.getErrorBody(conn);
-                if (StringUtil.hasText(body))
-                {
+                if (StringUtil.hasText(body)) {
                     msg = msg + ": " + body;
                 }
             }
+            
             checkTransient(code, msg, conn);
-            switch(code)
-            {
+            switch (code) {
                 case HttpURLConnection.HTTP_NO_CONTENT:
                     break;
                 case HttpURLConnection.HTTP_UNAUTHORIZED:
@@ -756,25 +730,24 @@ public class HttpDownload extends HttpTransfer
                     throw new IOException(msg);
             }
         }
+        
         return code;
     }
 
     private void doGet()
-        throws IOException, InterruptedException, TransientException
-    {
+        throws IOException, InterruptedException, TransientException {
         // check/clear interrupted flag and throw if necessary
-        if ( Thread.interrupted() )
+        if (Thread.interrupted()) {
             throw new InterruptedException();
+        }
         
         InputStream istream = null;
         OutputStream ostream = null;
-        try
-        {
+        try {
             // open connection
             HttpURLConnection conn = (HttpURLConnection) remoteURL.openConnection();
             log.debug("HttpURLConnection type: " + conn.getClass().getName() + " for GET " + remoteURL);
-            if (conn instanceof HttpsURLConnection)
-            {
+            if (conn instanceof HttpsURLConnection) {
                 HttpsURLConnection sslConn = (HttpsURLConnection) conn;
                 initHTTPS(sslConn);
             }
@@ -785,28 +758,32 @@ public class HttpDownload extends HttpTransfer
             conn.setRequestProperty("User-Agent", userAgent);
             setRequestHeaders(conn);
 
-            if (headOnly)
+            if (headOnly) {
                 conn.setRequestMethod("HEAD");
-            else
+            } else {
                 conn.setRequestMethod("GET");
+            }
 
             requestStartTime = System.currentTimeMillis();
             
             processHeader(conn);
             int code = checkStatusCode(conn);
 
-            if (headOnly || (!followRedirects && redirectURL != null))
+            if (headOnly || (!followRedirects && redirectURL != null)) {
                 return;
+            }
 
             // evaulate overwrite of complete file
             boolean doDownload = true;
-            if (destStream == null && wrapper == null)
+            if (destStream == null && wrapper == null) {
                 doDownload = doCheckDestination();
+            }
 
             // go=false means cancelled, doDownload==false means skipped
             go = go && doDownload;
-            if (!go)
+            if (!go) {
                 return;
+            }
 
             // evaluate possible resume?
             File tmp = origFile;
@@ -816,23 +793,22 @@ public class HttpDownload extends HttpTransfer
             String pvalue = null;
             boolean append = false;
             long startingPos = 0;
-            if (destStream == null && wrapper == null) // downloading to file
-            {
+            if (destStream == null && wrapper == null) {
+                // downloading to file
                 // temporary destination
                 origFile = new File(origFile.getAbsolutePath() + ".part");
-                if (origFile.exists() && origFile.length() < contentLength) // partial file from previous download
-                {
+                if (origFile.exists() && origFile.length() < contentLength) {
+                    // partial file from previous download
                     pkey = "Range";
                     pvalue = "bytes=" + origFile.length() + "-"; // open ended
                 }
             }
 
-            if (pkey != null) // open 2nd connection with a range request
-            {
+            if (pkey != null) {
+                // open 2nd connection with a range request
                 HttpURLConnection rconn = (HttpURLConnection) remoteURL.openConnection();
                 log.debug("HttpURLConnection type: " + conn.getClass().getName() + " for GET " + remoteURL);
-                if (rconn instanceof HttpsURLConnection)
-                {
+                if (rconn instanceof HttpsURLConnection) {
                     HttpsURLConnection sslConn = (HttpsURLConnection) rconn;
                     initHTTPS(sslConn);
                 }
@@ -847,38 +823,34 @@ public class HttpDownload extends HttpTransfer
                 rconn.setRequestMethod("GET");
                 int rcode = rconn.getResponseCode();
                 log.debug(logAction + " status: " + rcode + " for range request to " + remoteURL);
-                if (pkey != null && code == 416) // server doesn't like range
-                {
-                    try 
-                    {
+                if (pkey != null && code == 416) {
+                    // server doesn't like range
+                    try {
                         log.debug("cannot resume: closing second connection");
                         rconn.disconnect();
+                    } catch (Exception ignore) { 
+                        // do nothing
                     }
-                    catch(Exception ignore) { }
                     // proceed with original connection
-                }
-                else
-                {
-                    try 
-                    {
+                } else {
+                    try {
                         log.debug("can resume: closing first connection");
                         conn.disconnect();
+                    } catch (Exception ignore) { 
+                        // do nothing
                     }
-                    catch(Exception ignore) { }
+                    
                     conn = rconn; // use the second connection with partial
                     code = rcode;
                 }
             }
             
-            if (pkey != null && code == HttpURLConnection.HTTP_PARTIAL)
-            {
+            if (pkey != null && code == HttpURLConnection.HTTP_PARTIAL) {
                 String cr = conn.getHeaderField("Content-Range");
                 log.debug("Content-Range = " + cr);
-                if (cr != null)
-                {
+                if (cr != null) {
                     cr = cr.trim();
-                    if (cr.startsWith("bytes"))
-                    {
+                    if (cr.startsWith("bytes")) {
                         cr = cr.substring(6);
                         String[] parts = cr.split("-");
                         startingPos = Long.parseLong(parts[0]);
@@ -889,9 +861,7 @@ public class HttpDownload extends HttpTransfer
                         append = true;
                     }
                 }
-            }
-            else
-            {
+            } else {
                 checkStatusCode(conn);
             }
             
@@ -903,26 +873,23 @@ public class HttpDownload extends HttpTransfer
             fireEvent(origFile, TransferEvent.TRANSFERING);
 
             istream = conn.getInputStream();
-            if ( !(istream instanceof BufferedInputStream) )
-            {
+            if (!(istream instanceof BufferedInputStream)) {
                 log.debug("using BufferedInputStream");
                 istream = new BufferedInputStream(istream, bufferSize);
             }
 
-            if (this.destStream != null)
-            {
+            if (this.destStream != null) {
                 log.debug("output: supplied OutputStream");
                 ostream = destStream;
                 log.debug("using BufferedOutputStream");
                 ostream = new BufferedOutputStream(ostream, bufferSize);
-            }
-            else if (wrapper == null)
-            {
+            } else if (wrapper == null) {
                 // prepare to write to origFile
                 File parent = origFile.getParentFile();
                 parent.mkdirs();
-                if ( !parent.exists() )
+                if (!parent.exists()) {
                     throw new IOException("failed to create one or more parent dir(s):" + parent);
+                }
 
                 log.debug("output: " + origFile + " append: " + append);
                 ostream = new FileOutputStream(origFile, append);
@@ -930,26 +897,26 @@ public class HttpDownload extends HttpTransfer
                 ostream = new BufferedOutputStream(ostream, bufferSize);
             }
 
-            if (wrapper != null)
+            if (wrapper != null) {
                 wrapper.read(istream);
-            else
-            {
-                if (use_nio)
-                    nioLoop(istream, ostream, 2*bufferSize, startingPos);
-                else
-                {
-                    String md5 = ioLoop(istream, ostream, 2*bufferSize, startingPos);
-                    if (contentMD5 != null && md5 != null)
-                    {
-                        if ( !md5.equals(contentMD5) )
-                        {
+            } else {
+                if (userNio) {
+                    nioLoop(istream, ostream, 2 * bufferSize, startingPos);
+                } else {
+                    String md5 = ioLoop(istream, ostream, 2 * bufferSize, startingPos);
+                    if (contentMD5 != null && md5 != null) {
+                        if (!md5.equals(contentMD5)) {
                             StringBuilder sb = new StringBuilder();
                             sb.append("MD5 mismatch: ");
                             sb.append(contentMD5).append(" (header) != ").append(md5).append(" (bytes)");
-                            if (remoteURL != null)
+                            if (remoteURL != null) {
                                 sb.append(" url: ").append(remoteURL);
-                            if (destFile != null)
+                            }
+                            
+                            if (destFile != null) {
                                 sb.append(" destFile: ").append(destFile.getAbsolutePath());
+                            }
+                            
                             // TODO: throw an Exception??
                             log.warn(sb.toString());
                         }
@@ -957,12 +924,10 @@ public class HttpDownload extends HttpTransfer
                 }
             }
 
-            if (ostream != null)
-            {
+            if (ostream != null) {
                 long writeStart = System.currentTimeMillis();
                 ostream.flush();
-                if (logIO)
-                {
+                if (logIO) {
                     long flushTime = System.currentTimeMillis() - writeStart;
                     writeTime += flushTime;
                     log.debug("Time (ms) to flush: " + flushTime);
@@ -970,89 +935,99 @@ public class HttpDownload extends HttpTransfer
             }
 
             log.debug("download completed");
-            if (destStream == null && wrapper == null) // downloading to file
-            {
-                log.debug("renaming " + origFile +" to " + tmp);
+            if (destStream == null && wrapper == null) {
+                // downloading to file
+                log.debug("renaming " + origFile + " to " + tmp);
                 origFile.renameTo(tmp);
                 origFile = tmp;
                 destFile = tmp;
             }
-        }
-        finally
-        {
-            if (istream != null)
-            {
+        } finally {
+            if (istream != null) {
                 log.debug("closing InputStream");
-                try { istream.close(); }
-                catch(Exception ignore) { }
+                try { 
+                    istream.close(); 
+                } catch (Exception ignore) { 
+                    // do nothing
+                }
             }
-            if (ostream != null)
-            {
+            
+            if (ostream != null) {
                 log.debug("closing OutputStream");
-                try { ostream.close(); }
-                catch(Exception ignore) { }
+                try { 
+                    ostream.close(); 
+                } catch (Exception ignore) { 
+                    // do nothing
+                }
             }
         }
     }
 
     private void doDecompress()
-        throws IOException, InterruptedException
-    {
+        throws IOException, InterruptedException {
         // check/clear interrupted flag and throw if necessary
-        if ( Thread.interrupted() )
+        if (Thread.interrupted()) {
             throw new InterruptedException();
+        }
         
         InputStream istream = null;
         OutputStream ostream = null;
         //RandomAccessFile ostream = null;
-        try
-        {
+        try {
             this.size = decompSize;
             int sz = bufferSize;
-            if (decompressor == GZIP)
-            {
+            if (decompressor == GZIP) {
                 log.debug("input: GZIPInputStream(BufferedInputStream(FileInputStream)");
                 istream = new GZIPInputStream(new FileInputStream(origFile), sz);
-            }
-            else if (decompressor == ZIP)
-            {
+            } else if (decompressor == ZIP) {
                 log.debug("input: ZIPInputStream(BufferedInputStream(FileInputStream)");
                 istream = new ZipInputStream(new BufferedInputStream(new FileInputStream(origFile)));
             }
+            
             log.debug("output: " + decompFile);
             ostream = new BufferedOutputStream(new FileOutputStream(decompFile), sz);
 
             this.removeFile = origFile;
 
-            if (use_nio)
+            if (userNio) {
                 nioLoop(istream, ostream, sz, 0);
-            else
+            } else {
                 ioLoop(istream, ostream, sz, 0);
+            }
+            
             ostream.flush();
 
             this.destFile = decompFile; // ?? 
-        }
-        finally
-        {
-            if (istream != null)
-                try { istream.close(); }
-                catch(Exception ignore) { }
-            if (ostream != null)
-                try { ostream.close(); }
-                catch(Exception ignore) { }
+        } finally {
+            if (istream != null) {
+                try { 
+                    istream.close(); 
+                } catch (Exception ignore) { 
+                    // do nothing
+                }
+            }
+            
+            if (ostream != null) {
+                try { 
+                    ostream.close(); 
+                } catch (Exception ignore) { 
+                    // do nothing
+                }
+            }
         }
     }
     
     private static char SINGLE_QUOTE = "'".charAt(0);
     private static char DOUBLE_QUOTE = "\"".charAt(0);
 
-    private static boolean isFilenameDisposition(String cdisp)
-    {
-        if (cdisp == null)
+    private static boolean isFilenameDisposition(String cdisp) {
+        if (cdisp == null) {
             return false;
+        }
+        
         cdisp = cdisp.toLowerCase(); // just for checking
         // HACK: HTTP/1.1 allows attachment or extension token, but some sites use inline anyway
-        return ( cdisp.startsWith("attachment") || cdisp.startsWith("inline") );
+        return (cdisp.startsWith("attachment") || cdisp.startsWith("inline"));
     }
 
     /**
@@ -1061,46 +1036,52 @@ public class HttpDownload extends HttpTransfer
      * @param cdisp value of the Content-Disposition header
      * @return a filename, or null
      */
-    public static String parseContentDisposition(String cdisp)
-    {
-        if ( !isFilenameDisposition(cdisp) )
+    public static String parseContentDisposition(String cdisp) {
+        if (!isFilenameDisposition(cdisp)) {
             return null;
+        }
         
         // TODO: should split on ; and check each part for filename=something
         // extra filename from cdisp value
         String[] parts = cdisp.split(";");
-        for (int p=0; p<parts.length; p++)
-        {
+        for (int p = 0; p < parts.length; p++) {
             String part = parts[p].trim();
             // check/remove double quotes
-            if (part.charAt(0) == '"')
+            if (part.charAt(0) == '"') {
                 part = part.substring(1,part.length());
-            if (part.charAt(part.length()-1) == '"')
+            }
+            
+            if (part.charAt(part.length() - 1) == '"') {
                 part = part.substring(0, part.length() - 1);
-            if (part.startsWith("filename"))
-            {
+            }
+            
+            if (part.startsWith("filename")) {
                 int i = part.indexOf('=');
                 String filename = part.substring(i + 1, part.length());
 
                 // strip off optional quotes
                 char c1 = filename.charAt(0);
-                char c2 = filename.charAt(filename.length()-1);
+                char c2 = filename.charAt(filename.length() - 1);
                 boolean rs = (c1 == SINGLE_QUOTE || c1 == DOUBLE_QUOTE);
                 boolean re = (c2 == SINGLE_QUOTE || c2 == DOUBLE_QUOTE);
-                if (rs && re)
+                if (rs && re) {
                     filename = filename.substring(1, filename.length() - 1);
-                else if (rs)
+                } else if (rs) {
                     filename = filename.substring(1, filename.length());
-                else if (re)
+                } else if (re) {
                     filename = filename.substring(0, filename.length() - 1);
+                }
 
                 // strip off optional path information
                 i = filename.lastIndexOf('/'); // unix
-                if (i >= 0)
-                    filename = filename.substring(i+1);
+                if (i >= 0) {
+                    filename = filename.substring(i + 1);
+                }
+                
                 i = filename.lastIndexOf('\\'); // windows
-                if (i >= 0)
-                    filename = filename.substring(i+1);
+                if (i >= 0) {
+                    filename = filename.substring(i + 1);
+                }
 
                 // TODO: check/sanitize for security issues  
 
@@ -1108,6 +1089,5 @@ public class HttpDownload extends HttpTransfer
             }
         }
         return null;
-     }
-
+    }
 }

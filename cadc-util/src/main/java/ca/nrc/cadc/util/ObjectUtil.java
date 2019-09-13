@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2016.                            (c) 2016.
+ *  (c) 2019.                            (c) 2019.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -74,13 +74,12 @@ import java.lang.reflect.Field;
 /**
  * General object utilities.
  */
-public class ObjectUtil
-{
+public class ObjectUtil {
 
     /**
      * Set the value of the field 'name' to be 'value' on object 'object'.
      *
-     * This method will set the field in any superclasses that the object
+     * <p>This method will set the field in any superclasses that the object
      * may inherit too.
      *
      * @param object The object to modify
@@ -89,31 +88,25 @@ public class ObjectUtil
      * @throws RuntimeException If the field doesn't exist or there is a
      *     type inconsistency.
      */
-    public static void setField(Object object, Object value, String name)
-    {
+    public static void setField(Object object, Object value, String name) {
         ReflectiveOperationException firstError = null;
         Class<? extends Object> clazz = object.getClass();
-        while (clazz != null)
-        {
-            try
-            {
+        while (clazz != null) {
+            try {
                 Field field = clazz.getDeclaredField(name);
                 field.setAccessible(true);
                 field.set(object, value);
                 clazz = null;
                 firstError = null;
-            }
-            catch (ReflectiveOperationException e)
-            {
+            } catch (ReflectiveOperationException e) {
                 // try the superclass
                 firstError = e;
                 clazz = clazz.getSuperclass();
             }
         }
-        if (firstError != null)
-        {
+        
+        if (firstError != null) {
             throw new RuntimeException("failed to set field value", firstError);
         }
     }
-
 }

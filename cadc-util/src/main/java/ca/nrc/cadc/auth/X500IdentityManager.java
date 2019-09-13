@@ -78,22 +78,19 @@ import javax.security.auth.x500.X500Principal;
 
 /**
  * Implementation of IdentityManager that uses the X500Principal as the
- * definitive identifying object in a subject. Use this class if you
- * want to store the X509 distinguished name and be able to reconstruct
- * the subject from it later. Other principals and credentials in the
- * callers Subject will not be saved and restored: only a single
- * X500Principal (the first one found).
+ * definitive identifying object in a subject. Use this class if you want to
+ * store the X509 distinguished name and be able to reconstruct the subject from
+ * it later. Other principals and credentials in the callers Subject will not be
+ * saved and restored: only a single X500Principal (the first one found).
  * 
  * @author pdowler
  */
-public class X500IdentityManager implements IdentityManager
-{
+public class X500IdentityManager implements IdentityManager {
 
     /**
      * @return Types.VARCHAR
      */
-    public int getOwnerType()
-    {
+    public int getOwnerType() {
         return Types.VARCHAR;
     }
 
@@ -102,32 +99,31 @@ public class X500IdentityManager implements IdentityManager
      * for persistence: canonical form and convert to lower case.
      *
      * @param subject
-     * @return persistable distinguished name or null if there is no
-     *         X500Principal in the subject
+     * @return persistable distinguished name or null if there is no X500Principal
+     *         in the subject
      */
-    public Object toOwner(Subject subject)
-    {
+    public Object toOwner(Subject subject) {
         String dn = toOwnerString(subject);
-        if (dn != null)
+        if (dn != null) {
             return AuthenticationUtil.canonizeDistinguishedName(dn);
+        }
+        
         return dn;
     }
 
     /**
-     * This implementation finds the distinguished name from the first X500Principal.
+     * This implementation finds the distinguished name from the first
+     * X500Principal.
      * 
      * @param subject
-     * @return distinguished name or null if there is no X500Principal in the subject
+     * @return distinguished name or null if there is no X500Principal in the
+     *         subject
      */
-    public String toOwnerString(Subject subject)
-    {
-        if (subject != null)
-        {
+    public String toOwnerString(Subject subject) {
+        if (subject != null) {
             Set<Principal> principals = subject.getPrincipals();
-            for (Principal principal : principals)
-            {
-                if (principal instanceof X500Principal)
-                {
+            for (Principal principal : principals) {
+                if (principal instanceof X500Principal) {
                     return principal.getName();
                 }
             }
@@ -137,21 +133,21 @@ public class X500IdentityManager implements IdentityManager
 
     /**
      * Create a subject from the specified owner object. It is assumed the owner
-     * object is a  string form of an X500 distinguished name.
+     * object is a string form of an X500 distinguished name.
+     * 
      * @param owner
      * @return a subject with an X500Principal inside
      */
-    public Subject toSubject(Object owner)
-    {
-        try
-        {
+    public Subject toSubject(Object owner) {
+        try {
             String str = (String) owner;
             X500Principal p = new X500Principal(str);
             Set<Principal> pset = new HashSet<Principal>();
             pset.add(p);
-            return new Subject(false,pset,new HashSet(), new HashSet());
+            return new Subject(false, pset, new HashSet(), new HashSet());
+        } finally {
+            // do nothing
         }
-        finally { }
     }
 
 }

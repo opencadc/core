@@ -78,21 +78,18 @@ package ca.nrc.cadc.thread;
  * @version $Revision: 20 $
  * @author $Author: pdowler $
  */
-public class Stack extends Queue
-{
-	public Stack()
-	{
-		super();
-	}
+public class Stack extends Queue {
+    public Stack() {
+        super();
+    }
 
-	/**
-	 * Add an object to the top of the stack.
-	 */
-	public synchronized void push(Object obj)
-	{
-		list.addFirst(obj); // add at the front
-		notify();           // wake up one waiting thread
-	}
+    /**
+     * Add an object to the top of the stack.
+     */
+    public synchronized void push(Object obj) {
+        list.addFirst(obj); // add at the front
+        notify();           // wake up one waiting thread
+    }
 }
 
 // end of Stack.java

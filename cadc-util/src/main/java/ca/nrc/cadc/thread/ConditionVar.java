@@ -78,45 +78,41 @@ package ca.nrc.cadc.thread;
  * @version $Revision: 327 $
  * @author $Author: pdowler $
  */
-public class ConditionVar extends Object
-{
-	private boolean cond;
-	public ConditionVar()
-	{
-		super();
-		cond = false;
-	}
+public class ConditionVar extends Object {
+    private boolean cond;
+    
+    public ConditionVar() {
+        super();
+        cond = false;
+    }
 
-	public synchronized void waitForTrue()
-		throws InterruptedException
-	{
-		if (!cond)
-			this.wait(); // release the monitor
-	}
+    public synchronized void waitForTrue()
+        throws InterruptedException {
+        if (!cond) {
+            this.wait(); // release the monitor
+        }
+    }
     
     public synchronized void waitForTrue(long maxWait)
-		throws InterruptedException
-	{
-		if (!cond)
-			this.wait(maxWait); // release the monitor
-	}
+        throws InterruptedException {
+        if (!cond) {
+            this.wait(maxWait); // release the monitor
+        }
+    }
 
-	public synchronized void setNotify()
-	{
-		cond = true;
-		this.notify();
-	}
+    public synchronized void setNotify() {
+        cond = true;
+        this.notify();
+    }
     
-    public synchronized void setNotifyAll()
-    {
+    public synchronized void setNotifyAll() {
         cond = true;
         this.notifyAll();
     }
     
-	public synchronized void set(boolean val)
-	{
-		cond = val;
-	}
+    public synchronized void set(boolean val) {
+        cond = val;
+    }
 }
 
 // end of ConditionVar.java

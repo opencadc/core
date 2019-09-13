@@ -73,17 +73,16 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Simple wrapper that keeps track of bytes read from the input stream. 
+ * Simple wrapper that keeps track of bytes read from the input stream.
  * 
- * If a limit is provided, a ByteLimitExceededException will be thrown if that
+ * <p>If a limit is provided, a ByteLimitExceededException will be thrown if that
  * limit is reached.
  * 
  * @version $Version$
  * @author majorb
  */
-public class ByteCountInputStream extends InputStream implements ByteCounter
-{
-    
+public class ByteCountInputStream extends InputStream implements ByteCounter {
+
     private InputStream inputStream;
     private long byteCount = 0L;
     private Long byteLimit = null;
@@ -91,75 +90,67 @@ public class ByteCountInputStream extends InputStream implements ByteCounter
     /**
      * Constructor that takes the target input stream..
      * 
-     * @param inputStream  The InputStream to wrap.
+     * @param inputStream The InputStream to wrap.
      */
-    public ByteCountInputStream(final InputStream inputStream)
-    {
+    public ByteCountInputStream(final InputStream inputStream) {
         this.inputStream = inputStream;
     }
-    
+
     /**
      * Constructor that takes the target input stream and a byte limit.
      * 
-     * @param inputStream  The InputStream to wrap.
-     * @param byteLimit    The limit to the number of bytes to read.
+     * @param inputStream The InputStream to wrap.
+     * @param byteLimit   The limit to the number of bytes to read.
      */
-    public ByteCountInputStream(final InputStream inputStream,
-                                final long byteLimit)
-    {
+    public ByteCountInputStream(final InputStream inputStream, final long byteLimit) {
         this.inputStream = inputStream;
-        if (byteLimit > 0)
+        if (byteLimit > 0) {
             this.byteLimit = byteLimit;
+        }
     }
-    
+
     /**
      * Return the number of bytes that were read.
      */
     @Override
-    public long getByteCount()
-    {
+    public long getByteCount() {
         return byteCount;
     }
 
     /**
      * The quota space left to be written to.
      *
-     * @return      Quota space left, in bytes.
+     * @return Quota space left, in bytes.
      */
-    public Long getByteLimit()
-    {
+    public Long getByteLimit() {
         return byteLimit;
     }
 
     @Override
-    public int available() throws IOException
-    {
+    public int available() throws IOException {
         return inputStream.available();
     }
-    
+
     @Override
-    public void close() throws IOException
-    {
+    public void close() throws IOException {
         inputStream.close();
     }
-    
+
     @Override
-    public void mark(int readlimit)
-    {
+    public void mark(int readlimit) {
         inputStream.mark(readlimit);
     }
-    
+
     @Override
-    public boolean markSupported()
-    {
+    public boolean markSupported() {
         return inputStream.markSupported();
     }
 
     @Override
-    public int read() throws IOException
-    {
-        if (hasReachedLimit())
+    public int read() throws IOException {
+        if (hasReachedLimit()) {
             throw new ByteLimitExceededException(byteLimit);
+        }
 
         int value = inputStream.read();
         byteCount++;
@@ -167,57 +158,58 @@ public class ByteCountInputStream extends InputStream implements ByteCounter
     }
 
     @Override
-    public int read(byte[] b) throws IOException
-    {
-        if (hasReachedLimit())
+    public int read(byte[] b) throws IOException {
+        if (hasReachedLimit()) {
             throw new ByteLimitExceededException(byteLimit);
+        }
 
         int bytesRead = inputStream.read(b);
-        if (bytesRead != -1)
+        if (bytesRead != -1) {
             byteCount += bytesRead;
+        }
 
         return bytesRead;
     }
-    
+
     @Override
-    public int read(byte[] b, int off, int len) throws IOException
-    {
-        if (hasReachedLimit())
+    public int read(byte[] b, int off, int len) throws IOException {
+        if (hasReachedLimit()) {
             throw new ByteLimitExceededException(byteLimit);
-               
+        }
+
         int bytesRead = inputStream.read(b, off, len);
-        if (bytesRead != -1)
+        if (bytesRead != -1) {
             byteCount += bytesRead;
-        
+        }
+
         return bytesRead;
     }
 
     /**
      * Reset this stream, if supported.
      *
-     * @throws IOException  If not supported, or something went wrong.
+     * @throws IOException If not supported, or something went wrong.
      *
      */
     @Override
-    public void reset() throws IOException
-    {
+    public void reset() throws IOException {
         inputStream.reset();
         byteCount = 0;
     }
-    
+
     @Override
-    public long skip(long n) throws IOException
-    {
+    public long skip(long n) throws IOException {
         return inputStream.skip(n);
     }
 
     /**
      * Obtain whether the byte limit has been reached.
      */
-    private boolean hasReachedLimit()
-    {
-        if (byteLimit == null)
+    private boolean hasReachedLimit() {
+        if (byteLimit == null) {
             return false;
+        }
+        
         return byteCount >= byteLimit;
     }
 }

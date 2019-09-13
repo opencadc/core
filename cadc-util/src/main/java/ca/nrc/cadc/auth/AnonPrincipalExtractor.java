@@ -80,28 +80,23 @@ import java.util.TreeSet;
  * 
  * @author pdowler
  */
-public class AnonPrincipalExtractor implements PrincipalExtractor
-{
+public class AnonPrincipalExtractor implements PrincipalExtractor {
 
-    public X509CertificateChain getCertificateChain()
-    {
+    public X509CertificateChain getCertificateChain() {
         return null;
     }
 
-    public Set<Principal> getPrincipals()
-    {
+    public Set<Principal> getPrincipals() {
         return new TreeSet<Principal>();
     }
 
-    public DelegationToken getDelegationToken() 
-    {
+    public DelegationToken getDelegationToken() {
         return null;
     }
 
     @Override
-    public List<SSOCookieCredential> getSSOCookieCredentials()
-    {
+    public List<SSOCookieCredential> getSSOCookieCredentials() {
         return null;
-    }  
-    
+    }
+
 }

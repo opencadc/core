@@ -79,52 +79,49 @@ import java.io.Serializable;
  * @version $Revision: 245 $
  * @author $Author: jenkinsd $
  */
-public class ConnectionConfig implements Serializable
-{
-    private final static long serialVersionUID = 201103241000L;
-    
-	private String server;
-	private String database;
+public class ConnectionConfig implements Serializable {
+    private static final long serialVersionUID = 201103241000L;
 
-	private String username;
-	private String password;
+    private String server;
+    private String database;
 
-	private String driver;
-	private String url;
+    private String username;
+    private String password;
 
-	public ConnectionConfig(String server, String database,
-		String username, String password, String driver, String url)
-	{
-		this.server = server;
-		this.database = database;
+    private String driver;
+    private String url;
 
-		this.username = username;
-		this.password = password;
+    public ConnectionConfig(String server, String database, String username, String password, String driver,
+            String url) {
+        this.server = server;
+        this.database = database;
 
-		this.driver = driver;
-		this.url = url;
-	}
+        this.username = username;
+        this.password = password;
 
-	// package access: called by DBConfig only
-	void setDriver(String s) { this.driver = s; }
-	void setURL(String s) { this.url = s; }
+        this.driver = driver;
+        this.url = url;
+    }
 
-	public final boolean matches(String server, String database)
-	{
+    // package access: called by DBConfig only
+    void setDriver(String s) {
+        this.driver = s;
+    }
+
+    void setURL(String s) {
+        this.url = s;
+    }
+
+    public final boolean matches(String server, String database) {
         return matches(server, database, true);
     }
 
-    public final boolean matches(final String server, final String database,
-                                 final boolean matchWildcard)
-    {
+    public final boolean matches(final String server, final String database, final boolean matchWildcard) {
         final boolean dbMatch;
 
-        if (matchWildcard)
-        {
+        if (matchWildcard) {
             dbMatch = this.database.equals(database) || isWildcardDatabase();
-        }
-        else
-        {
+        } else {
             dbMatch = this.database.equals(database);
         }
 
@@ -133,68 +130,72 @@ public class ConnectionConfig implements Serializable
 
     /**
      * Obtain whether this configuration allows any database.
+     * 
      * @return True if wildcard (any database), false otherwise.
      */
-    public final boolean isWildcardDatabase()
-    {
+    public final boolean isWildcardDatabase() {
         return this.database.equals("*");
     }
 
-    public String getServer() { return server; }
-	public String getDatabase() { return database; }
-	public String getUsername() { return username; }
-	public String getPassword() { return password; }
-	public String getDriver() { return driver; }
-	public String getURL() { return url; }
+    public String getServer() {
+        return server;
+    }
 
+    public String getDatabase() {
+        return database;
+    }
 
-    public boolean equals(final Object o)
-    {
-        if (this == o)
-        {
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getDriver() {
+        return driver;
+    }
+
+    public String getURL() {
+        return url;
+    }
+
+    public boolean equals(final Object o) {
+        if (this == o) {
             return true;
         }
 
-        if ((o == null) || (getClass() != o.getClass()))
-        {
+        if ((o == null) || (getClass() != o.getClass())) {
             return false;
         }
 
         final ConnectionConfig that = (ConnectionConfig) o;
 
-        if (database != null ? !database.equals(that.database) :
-            that.database != null)
-        {
+        if (database != null ? !database.equals(that.database) : that.database != null) {
             return false;
         }
 
-        if (driver != null ? !driver.equals(that.driver) : that.driver != null)
-        {
+        if (driver != null ? !driver.equals(that.driver) : that.driver != null) {
             return false;
         }
 
-        if (password != null ? !password.equals(that.password) :
-            that.password != null)
-        {
+        if (password != null ? !password.equals(that.password) : that.password != null) {
             return false;
         }
 
-        if (server != null ? !server.equals(that.server) : that.server != null)
-        {
+        if (server != null ? !server.equals(that.server) : that.server != null) {
             return false;
         }
 
-        if (url != null ? !url.equals(that.url) : that.url != null)
-        {
+        if (url != null ? !url.equals(that.url) : that.url != null) {
             return false;
         }
 
-        return !(username != null ? !username.equals(that.username) :
-                 that.username != null);
+        return !(username != null ? !username.equals(that.username) : that.username != null);
     }
 
-    public int hashCode()
-    {
+    public int hashCode() {
         int result = HashUtil.hash(HashUtil.SEED, server);
         result = HashUtil.hash(result, database);
         result = HashUtil.hash(result, username);
@@ -204,4 +205,3 @@ public class ConnectionConfig implements Serializable
         return HashUtil.hash(result, url);
     }
 }
-

@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2016.                            (c) 2016.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -69,6 +69,10 @@
 
 package ca.nrc.cadc.xml;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.jdom2.Attribute;
 import org.jdom2.Document;
 import org.jdom2.Element;
@@ -77,22 +81,16 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 /**
  * JsonInputter
  */
-public class JsonInputter
-{    
-    public JsonInputter()
-    {
+public class JsonInputter {    
+    public JsonInputter() { 
+
     }
 
     public Document input(final String json)
-            throws JSONException
-    {
+            throws JSONException {
         JSONObject rootJson = new JSONObject(json);
         List<String> keys = Arrays.asList(JSONObject.getNames(rootJson));
         List<Namespace> namespaces = new ArrayList<Namespace>();
@@ -101,28 +99,19 @@ public class JsonInputter
 
         String rootKey = null;
         List<Attribute> attributes = new ArrayList<Attribute>();
-        for (String key : keys)
-        {
-            if (!key.startsWith("@xmlns"))
-            {
-                if (key.startsWith("@"))
-                {
+        for (String key : keys) {
+            if (!key.startsWith("@xmlns")) {
+                if (key.startsWith("@")) {
                     String value;
-                    if (rootJson.isNull(key))
-                    {
+                    if (rootJson.isNull(key)) {
                         value = "";
-                    }
-                    else
-                    {
+                    } else {
                         value = getStringValue(rootJson.get(key));
                     }
                     attributes.add(new Attribute(key.substring(1), value));
-                }
-                else
-                {
+                } else {
                     // DOM can only have one root element.
-                    if (rootKey != null)
-                    {
+                    if (rootKey != null) {
                         throw new IllegalStateException("Found multiple root entries");
                     }
                     rootKey = key;
@@ -131,16 +120,14 @@ public class JsonInputter
         }
 
         Object value = rootJson.get(rootKey);
-        if (namespace == null)
-        {
+        if (namespace == null) {
             JSONObject rootChild = (JSONObject) value;
             List<String> rootChildKeys = Arrays.asList(JSONObject.getNames(rootChild));
             namespace = getNamespace(namespaces, rootChild, rootChildKeys);
         }
         
         Element rootElement = new Element(rootKey, namespace);
-        for (Attribute attribute : attributes)
-        {
+        for (Attribute attribute : attributes) {
             rootElement.setAttribute(attribute);
         }
 
@@ -153,68 +140,52 @@ public class JsonInputter
 
     private void processObject(String key, Object value, Element element,
                                Namespace namespace, List<Namespace> namespaces)
-            throws JSONException
-    {
-        if (value == null)
-        {
+            throws JSONException {
+        if (value == null) {
             return;
         }
 
-        if (value instanceof JSONObject)
-        {
+        if (value instanceof JSONObject) {
             processJSONObject((JSONObject) value, element, namespaces);
-        }
-        else
-        {
+        } else {
             element.setText(getStringValue(value));
         }
     }
 
     private void processJSONObject(JSONObject jsonObject, Element element, List<Namespace> namespaces)
-            throws JSONException
-    {
+            throws JSONException {
         List<String> keys = Arrays.asList(JSONObject.getNames(jsonObject));
         Namespace namespace = getNamespace(namespaces, jsonObject, keys);
-        if (namespace == null)
-        {
+        if (namespace == null) {
             namespace = element.getNamespace();
         }
 
-        for (String key : keys)
-        {
-            if (jsonObject.isNull(key))
-            {
+        for (String key : keys) {
+            if (jsonObject.isNull(key)) {
                 continue;
             }
 
             // attribute
-            if (key.startsWith("@"))
-            {
+            if (key.startsWith("@")) {
                 Object value = jsonObject.get(key);
-                if (key.contains(":"))
-                {
+                if (key.contains(":")) {
                     boolean found = false;
                     String prefix = key.substring(1, key.indexOf(":"));
                     String newKey = "@" + key.substring(key.indexOf(":") + 1);
 
-                    for (Namespace ns : namespaces)
-                    {
-                        if (ns.getPrefix().equals(prefix))
-                        {
+                    for (Namespace ns : namespaces) {
+                        if (ns.getPrefix().equals(prefix)) {
                             element.setAttribute(new Attribute(newKey.substring(1), getStringValue(value), ns));
                             found = true;
                             break;
                         }
                     }
                     
-                    if (!found)
-                    {
+                    if (!found) {
                         String msg = "Missing namespace for prefix " + prefix;
                         throw new UnsupportedOperationException(msg);
                     }
-                }
-                else if (!key.equals("@xmlns"))
-                {
+                } else if (!key.equals("@xmlns")) {
                     element.setAttribute(new Attribute(key.substring(1), getStringValue(value)));
                 }
                 continue;
@@ -222,13 +193,10 @@ public class JsonInputter
 
             // text content
             Object value = jsonObject.get(key);
-            if (key.equals("$"))
-            {
-                if (value instanceof JSONArray)
-                {
+            if (key.equals("$")) {
+                if (value instanceof JSONArray) {
                     JSONArray jsonArray = (JSONArray) value;
-                    for (int i = 0; i < jsonArray.length(); i++)
-                    {
+                    for (int i = 0; i < jsonArray.length(); i++) {
                         JSONObject elementValue = (JSONObject) jsonArray.get(i);
                         List<String> elementKeys = Arrays.asList(JSONObject.getNames(elementValue));
                         String elementKey = elementKeys.get(0);
@@ -237,17 +205,14 @@ public class JsonInputter
                         processJSONObject(elementObject, arrayElement, namespaces);
                         element.addContent(arrayElement);
                     }
-                }
-                else
-                {
+                } else {
                     element.setText(getStringValue(value));
                 }
                 continue;
             }
 
             Element child = new Element(key, namespace);
-            if (value instanceof JSONObject)
-            {
+            if (value instanceof JSONObject) {
                 processJSONObject((JSONObject) value, child, namespaces);
             }
 
@@ -258,50 +223,38 @@ public class JsonInputter
     private Namespace getNamespace(List<Namespace> namespaces,
                                    JSONObject jsonObject,
                                    List<String> keys)
-            throws JSONException
-    {
-        for (String key : keys)
-        {
-            if (key.equals("@xmlns"))
-            {
-                if (jsonObject.isNull(key))
-                {
+            throws JSONException {
+        for (String key : keys) {
+            if (key.equals("@xmlns")) {
+                if (jsonObject.isNull(key)) {
                     break;
                 }
+                
                 String uri = jsonObject.getString(key);
                 Namespace namespace = Namespace.getNamespace(uri);
-                if (!namespaces.contains(namespace))
-                {
+                if (!namespaces.contains(namespace)) {
                     namespaces.add(namespace);
                 }
+                
                 return namespace;
             }
         }
         return null;
     }
 
-    private String getStringValue(Object value)
-    {
-        if (value instanceof String)
-        {
+    private String getStringValue(Object value) {
+        if (value instanceof String) {
             return (String) value;
-        }
-        else if (value instanceof Integer ||
-                 value instanceof Double ||
-                 value instanceof Long)
-        {
+        } else if (value instanceof Integer 
+                || value instanceof Double 
+                || value instanceof Long) {
             return ((Number) value).toString();
-        }
-        else if (value instanceof Boolean)
-        {
+        } else if (value instanceof Boolean) {
             return ((Boolean) value).toString();
-        }
-        else
-        {
+        } else {
             String error = "Unknown value " + value.getClass().getSimpleName() + " " + value.toString();
             throw new IllegalArgumentException(error);
         }
     }
-
 }
  

@@ -32,30 +32,28 @@
  ************************************************************************
  */
 
-
 package ca.nrc.cadc.auth;
 
 import java.util.Date;
 
 /**
- * Class that stores a Single-Sign-On cookie credential. The credential can
- * be used to authenticate the user against a given domain name.
+ * Class that stores a Single-Sign-On cookie credential. The credential can be
+ * used to authenticate the user against a given domain name.
  */
-public class SSOCookieCredential
-{
+public class SSOCookieCredential {
     private String ssoCookieValue;
     private String domain;
     private Date expiryDate;
 
     /**
      * Ctor
-     * @param cookieValue value of the cookie to be used in the header request.
-     * This cookie value should be in the form: cookie name = value
-     * @param domain the domain that this cookie applies to. SSO cookies
-     * should only be send to URLs within this domain.
+     * 
+     * @param cookieValue value of the cookie to be used in the header request. This
+     *                    cookie value should be in the form: cookie name = value
+     * @param domain      the domain that this cookie applies to. SSO cookies should
+     *                    only be send to URLs within this domain.
      */
-    public SSOCookieCredential(final String cookieValue, final String domain, final Date expiryDate)
-    {
+    public SSOCookieCredential(final String cookieValue, final String domain, final Date expiryDate) {
         this.ssoCookieValue = cookieValue;
         this.domain = domain;
         this.expiryDate = expiryDate;
@@ -64,21 +62,19 @@ public class SSOCookieCredential
     /**
      * Backward-compatible constructor, for usages prior to v 1.1.0 that do not need
      * expiryDate.
+     * 
      * @param cookieValue
      * @param domain
      */
-    public SSOCookieCredential(final String cookieValue, final String domain)
-    {
+    public SSOCookieCredential(final String cookieValue, final String domain) {
         this(cookieValue, domain, null);
     }
-    
-    public String getSsoCookieValue()
-    {
-        return ssoCookieValue; 
+
+    public String getSsoCookieValue() {
+        return ssoCookieValue;
     }
-    
-    public String getDomain()
-    {
+
+    public String getDomain() {
         return domain;
     }
 
@@ -95,14 +91,12 @@ public class SSOCookieCredential
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         String returnStr = getClass().getSimpleName() + "[" + domain + "," + ssoCookieValue;
         if (expiryDate != null) {
             returnStr += ", " + expiryDate.toString();
         }
-        return returnStr +"]";
+        return returnStr + "]";
     }
-    
-    
+
 }

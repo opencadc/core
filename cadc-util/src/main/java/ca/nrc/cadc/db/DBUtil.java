@@ -77,7 +77,6 @@ import java.util.Properties;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import javax.naming.NoInitialContextException;
 import javax.sql.DataSource;
 
 import org.apache.log4j.Level;
@@ -92,42 +91,37 @@ import org.springframework.transaction.CannotCreateTransactionException;
  * 
  * @author pdowler
  */
-public class DBUtil
-{
+public class DBUtil {
     private static final Logger log = Logger.getLogger(DBUtil.class);
-    
+
     public static String DEFAULT_JNDI_ENV_CONTEXT = "java:/comp/env";
 
     /**
-     * Create a DataSource with a single connection to the server. The DataSource
-     * is tested before return. All failures are thrown as RuntimeException
-     * with a Throwable (cause).
+     * Create a DataSource with a single connection to the server. The DataSource is
+     * tested before return. All failures are thrown as RuntimeException with a
+     * Throwable (cause).
      *
      * @param config
      * @return a connected single connection DataSource
      * @throws DBConfigException
      */
-    public static DataSource getDataSource(ConnectionConfig config)
-        throws DBConfigException
-    {
+    public static DataSource getDataSource(ConnectionConfig config) throws DBConfigException {
         return getDataSource(config, false, true);
     }
-    
+
     /**
-     * Create a DataSource with a single connection to the server.  All failures
-     * are thrown as RuntimeException with a Throwable (cause).
+     * Create a DataSource with a single connection to the server. All failures are
+     * thrown as RuntimeException with a Throwable (cause).
      *
      * @param config
      * @param suppressClose suppress close calls on the underlying Connection
-     * @param test test the datasource before return (might throw)
+     * @param test          test the datasource before return (might throw)
      * @return a connected single connection DataSource
      * @throws DBConfigException
      */
     public static DataSource getDataSource(ConnectionConfig config, boolean suppressClose, boolean test)
-        throws DBConfigException
-    {
-        try
-        {
+            throws DBConfigException {
+        try {
             log.debug("server: " + config.getServer());
             log.debug("driver: " + config.getDriver());
             log.debug("url: " + config.getURL());
@@ -136,113 +130,100 @@ public class DBUtil
             // load JDBC driver
             Class.forName(config.getDriver());
 
-            SingleConnectionDataSource ds = new SingleConnectionDataSource(config.getURL(),
-                    config.getUsername(), config.getPassword(), suppressClose);
+            SingleConnectionDataSource ds = new SingleConnectionDataSource(config.getURL(), config.getUsername(),
+                    config.getPassword(), suppressClose);
 
             Properties props = new Properties();
             props.setProperty("APPLICATIONNAME", getMainClass());
             ds.setConnectionProperties(props);
 
-            if (test)
+            if (test) {
                 testDS(ds, true);
+            }
 
             return ds;
-        }
-        catch(ClassNotFoundException ex)
-        {
+        } catch (ClassNotFoundException ex) {
             throw new DBConfigException("failed to load JDBC driver: " + config.getDriver(), ex);
-        }
-        catch(SQLException ex)
-        {
+        } catch (SQLException ex) {
             throw new DBConfigException("failed to open connection: " + config.getURL(), ex);
         }
-
     }
-    
+
+    /**
+     * This just calls findJNDIDataSource(String).
+     * 
+     * @param dataSource
+     * @return
+     * @throws NamingException
+     * @deprecated
+     */
+    public static DataSource getDataSource(String dataSource) throws NamingException {
+        return findJNDIDataSource(dataSource);
+    }
+
     /**
      * Create a data source with the specified configuration and bind it in a
      * standalone JNDI context so that a later call to getJNDIDataSource(String)
      * will return it. This is for use in command-line apps (not application
-     * servers!!!!) and test code. This method uses the default JDNI environment 
+     * servers!!!!) and test code. This method uses the default JDNI environment
      * context that works in Tomcat App server as the name s
      * 
      * @param dataSourceName
      * @param config
      * @throws NamingException
      */
-    public static void createJNDIDataSource(String dataSourceName, ConnectionConfig config)
-        throws NamingException
-    {
+    public static void createJNDIDataSource(String dataSourceName, ConnectionConfig config) throws NamingException {
         createJNDIDataSource(dataSourceName, DEFAULT_JNDI_ENV_CONTEXT, config);
     }
-    
+
     /**
-     * Create a JNDI DataSOurce resource with the specified name and environment context.
+     * Create a JNDI DataSOurce resource with the specified name and environment
+     * context.
      * 
      * @param dataSourceName
      * @param envContextName
      * @param config
-     * @throws NamingException 
+     * @throws NamingException
      */
     public static void createJNDIDataSource(String dataSourceName, String envContextName, ConnectionConfig config)
-        throws NamingException
-    {
+            throws NamingException {
         log.debug("createDataSource: " + dataSourceName + " START");
         StandaloneContextFactory.initJNDI();
-        
+
         Context initContext = new InitialContext();
         Context envContext = (Context) initContext.lookup(envContextName);
-        if (envContext == null)
-        {
+        if (envContext == null) {
             envContext = initContext.createSubcontext(envContextName);
-        }    
+        }
         log.debug("env: " + envContext);
-        
+
         DataSource ds = getDataSource(config, true, true);
         envContext.bind(dataSourceName, ds);
         log.debug("createDataSource: " + dataSourceName + " DONE");
     }
-    
-    /**
-     * This just calls findJNDIDataSource(String).
-     * 
-     * @param dataSource
-     * @return
-     * @throws NamingException 
-     * @deprecated 
-     */
-    public static DataSource getDataSource(String dataSource)
-        throws NamingException
-    {
-        return findJNDIDataSource(dataSource);
-    }
-    
+
     /**
      * Find a JNDI DataSource in an application server context. This is a
      * convenience method for finding a DataSource via the default context
      * (java:/comp/env) that Tomcat uses.
      * 
      * @param dataSource JNDI name of the data source
-     * @throws NamingException if the context name cannot be resolved
      * @return a DataSource found via JNDI
+     * @throws NamingException if the context name cannot be resolved
      */
-    public static DataSource findJNDIDataSource(String dataSource)
-        throws NamingException
-    {
+    public static DataSource findJNDIDataSource(String dataSource) throws NamingException {
         return findJNDIDataSource(dataSource, DEFAULT_JNDI_ENV_CONTEXT);
     }
-    
+
     /**
      * Find a JNDI DataSource in the specified context.
      * 
      * @param dataSource
      * @param envContextName
      * @return
-     * @throws NamingException 
+     * @throws NamingException
      */
-    public static DataSource findJNDIDataSource(String dataSource, String envContextName)
-        throws NamingException
-    {
+    public static DataSource findJNDIDataSource(String dataSource, String envContextName) throws NamingException {
         log.debug("getDataSource: " + dataSource);
         Context initContext = new InitialContext();
         Context envContext = (Context) initContext.lookup(envContextName);
@@ -250,90 +231,86 @@ public class DBUtil
 
         return ds;
     }
-    
-    
-    
+
     /**
      * Return true if this is a known Spring DAO transient exception.
+     * 
      * @param t
      * @return
      */
-    public static boolean isTransientDBException(Throwable t)
-    {
-        if (t instanceof TransientDataAccessException ||
-            t instanceof CannotGetJdbcConnectionException ||
-            t instanceof CannotCreateTransactionException)
-        {
+    public static boolean isTransientDBException(Throwable t) {
+        if (t instanceof TransientDataAccessException || t instanceof CannotGetJdbcConnectionException
+                || t instanceof CannotCreateTransactionException) {
             return true;
         }
+
         return false;
     }
 
-    private static void testDS(DataSource ds, boolean keepOpen)
-        throws SQLException
-    {
+    private static void testDS(DataSource ds, boolean keepOpen) throws SQLException {
         Connection con = null;
-        try
-        {
+        try {
             con = ds.getConnection();
             DatabaseMetaData meta = con.getMetaData();
-            if (!log.getEffectiveLevel().equals(Level.DEBUG))
+            if (!log.getEffectiveLevel().equals(Level.DEBUG)) {
                 return;
-            log.debug("connected to server: " + meta.getDatabaseProductName()
-                + " " + meta.getDatabaseMajorVersion() + "."
-                + meta.getDatabaseMinorVersion()
-                + " driver: " + meta.getDriverName()
-                + " " + meta.getDriverMajorVersion() + "." + meta.getDriverMinorVersion());
-        }
-        finally
-        {
-            if (!keepOpen && con != null)
-                try { con.close(); }
-                catch (Exception ignore) { }
+            }
+
+            log.debug("connected to server: " + meta.getDatabaseProductName() + " " + meta.getDatabaseMajorVersion()
+                    + "." + meta.getDatabaseMinorVersion() + " driver: " + meta.getDriverName() + " "
+                    + meta.getDriverMajorVersion() + "." + meta.getDriverMinorVersion());
+        } finally {
+            if (!keepOpen && con != null) {
+                try {
+                    con.close();
+                } catch (Exception ignore) {
+                    // do nothing
+                }
+            }
         }
     }
 
     /**
      * Try to infer a suitable application name.
      *
-     * TODO: make this config more generic and accessible to calling code
+     * <p>TODO: make this config more generic and accessible to calling code
      *
      * @return
      */
-    public static String getMainClass()
-    {
+    public static String getMainClass() {
         String ret = "java";
-        try { throw new RuntimeException(); }
-        catch(RuntimeException rex)
-        {
+        try {
+            throw new RuntimeException();
+        } catch (RuntimeException rex) {
             StackTraceElement[] st = rex.getStackTrace();
-            for (int i=0; i<st.length; i++)
-                if (st[i].getClassName().startsWith("ca.nrc.cadc."))
+            for (int i = 0; i < st.length; i++) {
+                if (st[i].getClassName().startsWith("ca.nrc.cadc.")) {
                     ret = st[i].getClassName();
-                
+                }
+            }
         }
         ret = shortenClassName(ret);
         return ret;
     }
-    
-    private static String shortenClassName(String cname)
-    {
-        String ret = cname;
-        
-        // truncate top-level packages
-        if (ret.startsWith("ca.nrc.cadc."))
-            ret = ret.substring("ca.nrc.cadc.".length());
 
-        while (ret.length() > 30) // sybase program_name limit
-        {
+    private static String shortenClassName(String cname) {
+        String ret = cname;
+
+        // truncate top-level packages
+        if (ret.startsWith("ca.nrc.cadc.")) {
+            ret = ret.substring("ca.nrc.cadc.".length());
+        }
+
+        while (ret.length() > 30) {
+            // sybase program_name limit
             // strip off one package name at a time
             int ii = ret.indexOf('.');
-            if (ii > 0)
-                ret = ret.substring(ii+1);
-            else
+            if (ii > 0) {
+                ret = ret.substring(ii + 1);
+            } else {
                 ret = ret.substring(0, 30);
+            }
         }
         return ret;
     }
 }
-

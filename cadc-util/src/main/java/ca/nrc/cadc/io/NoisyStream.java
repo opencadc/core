@@ -76,25 +76,24 @@ package ca.nrc.cadc.io;
  * @version 0.1
  * @author Patrick Dowler
  */
-public interface NoisyStream extends ByteCounter
-{
-	/**
-	 * Sets the size increment between reporting events.
-	 */
-	public void setReportSize(int numbytes);
+public interface NoisyStream extends ByteCounter {
+    /**
+     * Sets the size increment between reporting events.
+     */
+    public void setReportSize(int numbytes);
 
-	/**
-	 * Add a new listener.
-	 */
-	public void addListener(NoisyStreamListener listener);
+    /**
+     * Add a new listener.
+     */
+    public void addListener(NoisyStreamListener listener);
 
-	/**
-	 * Remove the specified listener.
-	 */
-	public void removeListener(NoisyStreamListener listener);
+    /**
+     * Remove the specified listener.
+     */
+    public void removeListener(NoisyStreamListener listener);
 
-	/**
-	 * Remove all listeners.
-	 */
-	public void removeListeners();
+    /**
+     * Remove all listeners.
+     */
+    public void removeListeners();
 }
