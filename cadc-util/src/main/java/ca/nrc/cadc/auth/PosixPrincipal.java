@@ -2,7 +2,7 @@
  ************************************************************************
  ****  C A N A D I A N   A S T R O N O M Y   D A T A   C E N T R E  *****
  *
- * (c) 2016.                            (c) 2016.
+ * (c) 2019.                            (c) 2019.
  * National Research Council            Conseil national de recherches
  * Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
  * All rights reserved                  Tous droits reserves
@@ -23,7 +23,7 @@
  *                                      sation du logiciel.
  *
  *
- * @author adriand
+ * @author yeunga
  *
  * @version $Revision: $
  *
@@ -36,83 +36,74 @@ package ca.nrc.cadc.auth;
 
 import java.io.Serializable;
 import java.security.Principal;
-import java.util.UUID;
 
 /**
- * Class that represents a numeric Principal. This is useful for
- * representing an internal user key reference.
+ * Class that represents a Posix Principal. This is useful for representing a
+ * user with a PosixAccount key reference.
  */
-public class NumericPrincipal implements Principal, Serializable
-{
-    private static final long serialVersionUID = 20140625143750l;
-    private UUID numericID;
+public class PosixPrincipal implements Principal, Serializable {
+    private static final long serialVersionUID = 5423257890488724644L;
+    private int uidNumber;
 
     /**
      * Ctor
-     * @param numericID unique identifier
+     * 
+     * @param uidNumber unique identifier
      */
-    public NumericPrincipal(UUID numericID) {
-        this.numericID = numericID;
+    public PosixPrincipal(int uidNumber) {
+        if (uidNumber < 0) {
+            throw new IllegalArgumentException("invalid uidNumber " + uidNumber);
+        }
+
+        this.uidNumber = uidNumber;
     }
 
     @Override
     public String getName() {
-        return numericID.toString();
+        return Integer.toString(uidNumber);
     }
 
-    public UUID getUUID() {
-        return numericID;
+    public int getUidNumber() {
+        return uidNumber;
     }
 
-    /* (non-Javadoc)
-     * @see java.lang.Object#hashCode()
+    /*
+     * (non-Javadoc)
+     * 
+     * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + numericID.hashCode();
+        result = prime * result + uidNumber;
         return result;
     }
 
-    /* (non-Javadoc)
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
-        
+
         if (obj == null) {
             return false;
         }
-        
-        if (!(obj instanceof NumericPrincipal)) {
+
+        if (getClass() != obj.getClass()) {
             return false;
         }
-        
-        NumericPrincipal other = (NumericPrincipal) obj;
-        if (numericID.equals(other.numericID)) {
-            return true;
+
+        PosixPrincipal other = (PosixPrincipal) obj;
+        if (uidNumber != other.uidNumber) {
+            return false;
         }
-        
-        return false;
+
+        return true;
     }
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getClass().getSimpleName());
-        sb.append("[");
-        if (numericID.getMostSignificantBits() == 0L) {
-            sb.append(numericID.getLeastSignificantBits());
-        } else {
-            sb.append(getName());
-        }
-        
-        sb.append("]");
-        return sb.toString();
+        return "PosixPrincipal [uidNumber=" + uidNumber + "]";
     }
-
 }

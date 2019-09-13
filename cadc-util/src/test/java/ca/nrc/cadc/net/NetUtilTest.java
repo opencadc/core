@@ -79,7 +79,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 
@@ -91,7 +90,7 @@ public class NetUtilTest {
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        Log4jInit.setLevel("ca.nrc.cadc", Level.INFO);
+        Log4jInit.setLevel("ca.nrc.cadc.net", Level.INFO);
     }
 
     @Test
