@@ -71,6 +71,7 @@ package ca.nrc.cadc.auth;
 import ca.nrc.cadc.util.Log4jInit;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -79,90 +80,41 @@ import static org.junit.Assert.*;
  *
  * @author jburke
  */
-public class IdentityTypeTest
-{
+public class IdentityTypeTest {
     private final static Logger log = Logger.getLogger(IdentityTypeTest.class);
-    
+
     @BeforeClass
-    public static void setUpClass()
-    {
+    public static void setUpClass() {
         Log4jInit.setLevel("ca.nrc.cadc.ac", Level.INFO);
     }
+
     /**
      * Test of values method, of class IdentityType.
      */
     @Test
-    public void testValues()
-    {
-        IdentityType[] expResult = new IdentityType[]
-        {
-            IdentityType.X500, IdentityType.OPENID, 
-            IdentityType.USERNAME, IdentityType.USERID,
-            IdentityType.CADC, IdentityType.NUMERICID,
-            IdentityType.COOKIE, IdentityType.ENTRY_DN
-        };
+    public void testValues() {
         IdentityType[] result = IdentityType.values();
-        assertArrayEquals(expResult, result);
-    }
-
-    /**
-     * Test of valueOf method, of class IdentityType.
-     */
-    @Test
-    public void testValueOf()
-    {
-        assertEquals(IdentityType.X500, IdentityType.valueOf("X500"));
-        assertEquals(IdentityType.OPENID, IdentityType.valueOf("OPENID"));
-        assertEquals(IdentityType.USERNAME, IdentityType.valueOf("USERNAME"));
-        assertEquals(IdentityType.CADC, IdentityType.valueOf("CADC"));
-        assertEquals(IdentityType.COOKIE, IdentityType.valueOf("COOKIE"));
-        assertEquals(IdentityType.USERID, IdentityType.valueOf("USERID"));
-        assertEquals(IdentityType.NUMERICID, IdentityType.valueOf("NUMERICID"));
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.length > 0);
     }
 
     /**
      * Test of toValue method, of class IdentityType.
      */
     @Test
-    public void testToValue()
-    {
-        try
-        {
+    public void testToValue() {
+        try {
             IdentityType.toValue("foo");
             fail("invalid value should throw IllegalArgumentException");
+        } catch (IllegalArgumentException ignore) {
         }
-        catch (IllegalArgumentException ignore) {}
-        
-        assertEquals(IdentityType.X500, IdentityType.toValue("X500"));
-        assertEquals(IdentityType.OPENID, IdentityType.toValue("OpenID"));
-        assertEquals(IdentityType.USERID, IdentityType.toValue("userID"));
-        assertEquals(IdentityType.NUMERICID, IdentityType.toValue("numericID"));
-        assertEquals(IdentityType.USERNAME, IdentityType.toValue("HTTP"));
-        assertEquals(IdentityType.CADC, IdentityType.toValue("CADC"));
-        assertEquals(IdentityType.COOKIE, IdentityType.toValue("sessionID"));
-    }
-
-    /**
-     * Test of getValue method, of class IdentityType.
-     */
-    @Test
-    public void testGetValue()
-    {
-        assertEquals("X500", IdentityType.X500.getValue());
-        assertEquals("OpenID", IdentityType.OPENID.getValue());
-        assertEquals("HTTP", IdentityType.USERNAME.getValue());
-        assertEquals("CADC", IdentityType.CADC.getValue());
-        assertEquals("sessionID", IdentityType.COOKIE.getValue());
-        assertEquals("userID", IdentityType.USERID.getValue());
-        assertEquals("numericID", IdentityType.NUMERICID.getValue());
     }
 
     /**
      * Test of checksum method, of class IdentityType.
      */
     @Test
-    public void testChecksum()
-    {
+    public void testChecksum() {
         assertEquals("X500".hashCode(), IdentityType.X500.checksum());
         assertEquals("OpenID".hashCode(), IdentityType.OPENID.checksum());
         assertEquals("HTTP".hashCode(), IdentityType.USERNAME.checksum());
@@ -170,6 +122,7 @@ public class IdentityTypeTest
         assertEquals("sessionID".hashCode(), IdentityType.COOKIE.checksum());
         assertEquals("userID".hashCode(), IdentityType.USERID.checksum());
         assertEquals("numericID".hashCode(), IdentityType.NUMERICID.checksum());
+        assertEquals("POSIX".hashCode(), IdentityType.POSIX.checksum());
     }
-    
+
 }

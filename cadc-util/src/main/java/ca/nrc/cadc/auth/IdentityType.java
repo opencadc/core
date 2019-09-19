@@ -78,10 +78,18 @@ import javax.security.auth.x500.X500Principal;
  * @author jburke
  */
 public enum IdentityType {
-    X500("X500"), OPENID("OpenID"), @Deprecated
-    USERNAME("HTTP"), USERID("userID"), @Deprecated
-    CADC("CADC"), NUMERICID("numericID"), @Deprecated
-    COOKIE("sessionID"), ENTRY_DN("entryDN");
+    X500("X500"),
+    OPENID("OpenID"),
+    @Deprecated
+    USERNAME("HTTP"),
+    USERID("userID"),
+    @Deprecated
+    CADC("CADC"),
+    NUMERICID("numericID"),
+    @Deprecated
+    COOKIE("sessionID"),
+    ENTRY_DN("entryDN"),
+    POSIX("POSIX");
 
     private final String value;
 
@@ -119,6 +127,7 @@ public enum IdentityType {
             put(NumericPrincipal.class.getSimpleName(), IdentityType.NUMERICID);
             put(OpenIdPrincipal.class.getSimpleName(), IdentityType.OPENID);
             put(DNPrincipal.class.getSimpleName(), IdentityType.ENTRY_DN);
+            put(PosixPrincipal.class.getSimpleName(), IdentityType.POSIX);
         }
     };
 }
