@@ -339,6 +339,8 @@ public class DelegationToken implements Serializable {
                     // Treating CADC principal as a NumericPrincipal
                     // check for both for backward cookie compatibility
                     principalSet.add(new NumericPrincipal(UUID.fromString(value)));
+                } else if (key.equalsIgnoreCase(IdentityType.POSIX.getValue())) {
+                    principalSet.add(new PosixPrincipal(Integer.parseInt(value)));
                 } else if (key.equalsIgnoreCase(EXPIRY_LABEL)) {
                     expirytime = new Date(Long.valueOf(value));
                 } else if (key.equalsIgnoreCase(SCOPE_LABEL)) {
