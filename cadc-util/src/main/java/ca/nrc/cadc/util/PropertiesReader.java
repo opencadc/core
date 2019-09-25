@@ -43,7 +43,9 @@ import org.apache.log4j.Logger;
 /**
  * This class enables the reading of configuration properties from a file
  * using the MultiValuedProperties utility
+ *
  * <p>This class will pick up any changes that are made to the file automatically.
+ *
  * <p>If the configuration file becomes unreadable, it will use the properties
  * of the last time the file was successfully read.
  *
@@ -66,7 +68,9 @@ public class PropertiesReader {
 
     /**
      * Constructor.
+     *
      * <p>The properties file, specified by 'fileName' will be read from one of two places:
+     *
      * <p>1) If the system property ca.nrc.cadc.util.PropertiesReader.dir is set, it will use the
      * value of this property as the directory.
      * 2) Otherwise, the file will be read from ${user.home}/config/
