@@ -30,6 +30,7 @@ package ca.nrc.cadc.util;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -38,18 +39,16 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 
+
 /**
  * This class enables the reading of configuration properties from a file
  * using the MultiValuedProperties utility
- *
  * <p>This class will pick up any changes that are made to the file automatically.
- *
  * <p>If the configuration file becomes unreadable, it will use the properties
  * of the last time the file was successfully read.
  *
- * @see ca.nrc.cadc.util.MultiValuedProperties
- *
  * @author majorb
+ * @see ca.nrc.cadc.util.MultiValuedProperties
  */
 public class PropertiesReader {
 
@@ -63,21 +62,19 @@ public class PropertiesReader {
     private String filepath;
 
     // Holder for the last known readable set of properties
-    private static Map<String, MultiValuedProperties> cachedProperties =
-        new ConcurrentHashMap<String, MultiValuedProperties>();
+    private static Map<String, MultiValuedProperties> cachedProperties = new ConcurrentHashMap<>();
 
     /**
      * Constructor.
-     *
      * <p>The properties file, specified by 'fileName' will be read from one of two places:
-     *
      * <p>1) If the system property ca.nrc.cadc.util.PropertiesReader.dir is set, it will use the
-     *    value of this property as the directory.
+     * value of this property as the directory.
      * 2) Otherwise, the file will be read from ${user.home}/config/
      *
      * @param filename The file in which to read.
+     * @throws FileNotFoundException If the provided file is not found or cannot be used.
      */
-    public PropertiesReader(String filename) {
+    public PropertiesReader(String filename) throws FileNotFoundException {
         if (filename == null) {
             throw new IllegalArgumentException("fileName cannot be null.");
         }
@@ -97,8 +94,8 @@ public class PropertiesReader {
         propertiesFile = new File(filepath);
 
         if (!propertiesFile.exists() || !propertiesFile.isFile()) {
-            log.warn("File at " + filepath + " does not exist.");
-            propertiesFile = null;
+            log.error("File at " + filepath + " does not exist.");
+            throw new FileNotFoundException(String.format("File '%s' does not exist or is unusable.", filepath));
         }
     }
 
@@ -127,7 +124,7 @@ public class PropertiesReader {
                 log.warn("No cached resource available at " + filepath);
                 return null;
             }
-            
+
             log.warn("Properties missing at " + filepath + " Using earlier version.");
             properties = cachedVersion;
         } else {
@@ -167,7 +164,7 @@ public class PropertiesReader {
         if (values != null && values.size() > 0) {
             return values.get(0);
         }
-        
+
         return null;
     }
 

@@ -29,6 +29,7 @@
 package ca.nrc.cadc.util;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.util.List;
 
@@ -123,6 +124,16 @@ public class PropertiesReaderTest
             // cleanup
             if (propFile.exists())
                 propFile.delete();
+        }
+    }
+
+    @Test
+    public void testNoSuchFile() {
+        try {
+            new PropertiesReader("/tmp/BOGUSFILE.nope");
+            Assert.fail("Should throw FileNotFoundException.");
+        } catch (FileNotFoundException e) {
+            // Good!
         }
     }
 }
