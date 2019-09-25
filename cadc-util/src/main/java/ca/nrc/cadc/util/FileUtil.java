@@ -167,6 +167,22 @@ public class FileUtil {
     }
 
     /**
+     * Attempt to locate a resource from the given Class's classloader.  This method has the convenience of checking
+     * for a leading slash to support newer Java versions.
+     * @param resourceName  The name of the resource.
+     * @param runningClass  The Class whose ClassLoader to check.
+     * @return  URL of the resource, or null if none found.
+     */
+    public static URL getURLFromResource(String resourceName, Class runningClass) {
+        URL url = runningClass.getClassLoader().getResource(resourceName);
+        if (url == null) {
+            url = runningClass.getClassLoader().getResource("/" + resourceName);
+        }
+
+        return url;
+    }
+
+    /**
      * Obtain a file object from the class path.
      *
      * @param resourceFileName      The file name to look for.
@@ -174,7 +190,7 @@ public class FileUtil {
      * @return                      File object.
      */
     public static File getFileFromResource(String resourceFileName, Class runningClass) {
-        URL url = runningClass.getClassLoader().getResource(resourceFileName);
+        URL url = FileUtil.getURLFromResource(resourceFileName, runningClass);
 
         if (url == null) {
             throw new MissingResourceException("Resource not found: "
