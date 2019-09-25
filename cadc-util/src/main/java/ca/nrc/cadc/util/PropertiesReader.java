@@ -30,7 +30,6 @@ package ca.nrc.cadc.util;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -59,8 +58,8 @@ public class PropertiesReader {
     private static final String DEFAULT_CONFIG_DIR = System.getProperty("user.home") + "/config/";
     public static final String CONFIG_DIR_SYSTEM_PROPERTY = PropertiesReader.class.getName() + ".dir";
 
-
-    private File propertiesFile;
+    // Make final to ensure it is only set once and not later to null.
+    private final File propertiesFile;
     private String filepath;
 
     // Holder for the last known readable set of properties
@@ -76,9 +75,8 @@ public class PropertiesReader {
      * 2) Otherwise, the file will be read from ${user.home}/config/
      *
      * @param filename The file in which to read.
-     * @throws FileNotFoundException If the provided file is not found or cannot be used.
      */
-    public PropertiesReader(String filename) throws FileNotFoundException {
+    public PropertiesReader(String filename) {
         if (filename == null) {
             throw new IllegalArgumentException("fileName cannot be null.");
         }
@@ -97,10 +95,13 @@ public class PropertiesReader {
         this.filepath = configDir + filename;
         propertiesFile = new File(filepath);
 
-        if (!propertiesFile.exists() || !propertiesFile.isFile()) {
-            log.error("File at " + filepath + " does not exist.");
-            throw new FileNotFoundException(String.format("File '%s' does not exist or is unusable.", filepath));
+        if (!canRead()) {
+            log.warn("File at " + filepath + " does not exist or is unusable.");
         }
+    }
+
+    public boolean canRead() {
+        return propertiesFile.exists() && propertiesFile.isFile() && propertiesFile.canRead();
     }
 
     /**
@@ -110,7 +111,7 @@ public class PropertiesReader {
      */
     public MultiValuedProperties getAllProperties() {
         MultiValuedProperties properties = null;
-        if (propertiesFile != null) {
+        if (canRead()) {
             try {
                 InputStream in = new FileInputStream(propertiesFile);
                 properties = new MultiValuedProperties();

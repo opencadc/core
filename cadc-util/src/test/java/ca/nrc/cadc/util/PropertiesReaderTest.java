@@ -128,12 +128,25 @@ public class PropertiesReaderTest
     }
 
     @Test
-    public void testNoSuchFile() {
+    public void testCanNotRead() {
+        final PropertiesReader testSubject = new PropertiesReader("BOGUSFILE.nope");
+        Assert.assertFalse("Should return false readability.", testSubject.canRead());
+    }
+
+    @Test
+    public void testCanRead() throws Exception {
+        final File currDir = new File("./");
+        final File propFile = File.createTempFile("testCanRead", ".tmp", currDir);
+
         try {
-            new PropertiesReader("/tmp/BOGUSFILE.nope");
-            Assert.fail("Should throw FileNotFoundException.");
-        } catch (FileNotFoundException e) {
-            // Good!
+            System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, currDir.getPath());
+            final PropertiesReader testSubject = new PropertiesReader(propFile.getName());
+            Assert.assertTrue("Should be able to read.", testSubject.canRead());
+        } finally {
+            System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, "");
+            if (propFile.exists()) {
+                propFile.delete();
+            }
         }
     }
 }
