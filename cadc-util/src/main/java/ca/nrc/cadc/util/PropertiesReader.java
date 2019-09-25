@@ -38,6 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 
+
 /**
  * This class enables the reading of configuration properties from a file
  * using the MultiValuedProperties utility
@@ -47,9 +48,8 @@ import org.apache.log4j.Logger;
  * <p>If the configuration file becomes unreadable, it will use the properties
  * of the last time the file was successfully read.
  *
- * @see ca.nrc.cadc.util.MultiValuedProperties
- *
  * @author majorb
+ * @see ca.nrc.cadc.util.MultiValuedProperties
  */
 public class PropertiesReader {
 
@@ -58,13 +58,12 @@ public class PropertiesReader {
     private static final String DEFAULT_CONFIG_DIR = System.getProperty("user.home") + "/config/";
     public static final String CONFIG_DIR_SYSTEM_PROPERTY = PropertiesReader.class.getName() + ".dir";
 
-
-    private File propertiesFile;
+    // Make final to ensure it is only set once and not later to null.
+    private final File propertiesFile;
     private String filepath;
 
     // Holder for the last known readable set of properties
-    private static Map<String, MultiValuedProperties> cachedProperties =
-        new ConcurrentHashMap<String, MultiValuedProperties>();
+    private static Map<String, MultiValuedProperties> cachedProperties = new ConcurrentHashMap<>();
 
     /**
      * Constructor.
@@ -72,7 +71,7 @@ public class PropertiesReader {
      * <p>The properties file, specified by 'fileName' will be read from one of two places:
      *
      * <p>1) If the system property ca.nrc.cadc.util.PropertiesReader.dir is set, it will use the
-     *    value of this property as the directory.
+     * value of this property as the directory.
      * 2) Otherwise, the file will be read from ${user.home}/config/
      *
      * @param filename The file in which to read.
@@ -96,10 +95,17 @@ public class PropertiesReader {
         this.filepath = configDir + filename;
         propertiesFile = new File(filepath);
 
-        if (!propertiesFile.exists() || !propertiesFile.isFile()) {
-            log.warn("File at " + filepath + " does not exist.");
-            propertiesFile = null;
+        if (!canRead()) {
+            log.warn("File at " + filepath + " does not exist or is unusable.");
         }
+    }
+
+    /**
+     * Obtain whether the file associated with this Properties Reader can be accessed and read from.
+     * @return  True if the provided file exists in the constrained locations and can be read.  False otherwise.
+     */
+    public boolean canRead() {
+        return propertiesFile.exists() && propertiesFile.isFile() && propertiesFile.canRead();
     }
 
     /**
@@ -109,7 +115,7 @@ public class PropertiesReader {
      */
     public MultiValuedProperties getAllProperties() {
         MultiValuedProperties properties = null;
-        if (propertiesFile != null) {
+        if (canRead()) {
             try {
                 InputStream in = new FileInputStream(propertiesFile);
                 properties = new MultiValuedProperties();
@@ -127,7 +133,7 @@ public class PropertiesReader {
                 log.warn("No cached resource available at " + filepath);
                 return null;
             }
-            
+
             log.warn("Properties missing at " + filepath + " Using earlier version.");
             properties = cachedVersion;
         } else {
@@ -167,7 +173,7 @@ public class PropertiesReader {
         if (values != null && values.size() > 0) {
             return values.get(0);
         }
-        
+
         return null;
     }
 
