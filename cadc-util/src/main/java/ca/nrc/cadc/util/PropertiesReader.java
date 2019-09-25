@@ -100,6 +100,10 @@ public class PropertiesReader {
         }
     }
 
+    /**
+     * Obtain whether the file associated with this Properties Reader can be accessed and read from.
+     * @return  True if the provided file exists in the constrained locations and can be read.  False otherwise.
+     */
     public boolean canRead() {
         return propertiesFile.exists() && propertiesFile.isFile() && propertiesFile.canRead();
     }
