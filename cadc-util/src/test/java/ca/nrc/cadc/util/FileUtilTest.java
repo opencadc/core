@@ -69,17 +69,17 @@
 package ca.nrc.cadc.util;
 
 import org.junit.Test;
+
 import static org.junit.Assert.*;
 
 import java.io.File;
 import java.net.URL;
 
 
-public class FileUtilTest
-{
+public class FileUtilTest {
+
     @Test
-    public void getFileFromResourceSpaceInName() throws Exception
-    {
+    public void getFileFromResourceSpaceInName() throws Exception {
         final File tmpDir = new File("/tmp/go space");
         tmpDir.mkdir();
 
@@ -96,8 +96,7 @@ public class FileUtilTest
     }
 
     @Test
-    public void getFileFromResourcePlusSignInName() throws Exception
-    {
+    public void getFileFromResourcePlusSignInName() throws Exception {
         // Should leave the plus sign in place and NOT decode it!
         final File tmpDir = new File("/tmp/go+space");
         tmpDir.mkdir();
@@ -111,5 +110,13 @@ public class FileUtilTest
                         new URL("file:///tmp/go+space/" + tempFile.getName()));
         assertEquals("Wrong filename", "/tmp/go+space/" + tempFile.getName(),
                      retrieval.getAbsolutePath());
+    }
+
+    @Test
+    public void getURLFromResource() {
+        final URL resultURL = FileUtil.getURLFromResource("bar.xsd", getClass());
+        assertTrue("URL should contain bar.xsd.",
+                   resultURL.toString().contains("build/resources/test/bar.xsd"));
+        assertEquals("Should be a File URL.", "file", resultURL.getProtocol());
     }
 }
