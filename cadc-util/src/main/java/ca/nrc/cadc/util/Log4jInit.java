@@ -158,7 +158,6 @@ public class Log4jInit {
             Logger.getRootLogger().setLevel(Level.ERROR); // must redo after reset
 
             String errorLogFormat = LONG_FORMAT;
-            String infoLogFormat = LONG_INFO_FORMAT;
             String debugLogFormat = SHORT_FORMAT;
             
             if (appName != null) {
@@ -184,6 +183,7 @@ public class Log4jInit {
             infoFilter.setLevelMax(Level.INFO);
             infoFilter.setLevelMin(Level.INFO);
             infoFilter.setAcceptOnMatch(true);
+            String infoLogFormat = LONG_INFO_FORMAT;
             ConsoleAppender conAppenderInfo =
                     new ConsoleAppender(new PatternLayout(infoLogFormat));
             conAppenderInfo.clearFilters();

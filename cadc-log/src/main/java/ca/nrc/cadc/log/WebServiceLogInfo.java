@@ -70,6 +70,7 @@
 package ca.nrc.cadc.log;
 
 import ca.nrc.cadc.auth.HttpPrincipal;
+import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.util.StringUtil;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -79,10 +80,6 @@ import java.util.Set;
 import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
 import org.apache.log4j.Logger;
-
-import ca.nrc.cadc.auth.HttpPrincipal;
-import ca.nrc.cadc.date.DateUtil;
-import ca.nrc.cadc.util.StringUtil;
 
 /**
  * Class to be used by web services to log at INFO level the start and
@@ -121,8 +118,7 @@ public abstract class WebServiceLogInfo {
      *
      * @return
      */
-    public String start()
-    {
+    public String start() {
         return "{" + getPreamble() + "\"phase\":\"start\"," + doit() + "}";
     }
 
@@ -181,8 +177,7 @@ public abstract class WebServiceLogInfo {
                 try {
                     Object o = f.get(this);
                     log.debug(f.getName() + " = " + o);
-                    if (o != null && !f.getName().equals("serviceName"))
-                    {
+                    if (o != null && !f.getName().equals("serviceName")) {
                         String val = sanitize(o);
                         if (sb.length() > 1) { // more than just the opening {
                             sb.append(",");
@@ -237,8 +232,7 @@ public abstract class WebServiceLogInfo {
      *
      * @param elapsedTime
      */
-    public void setElapsedTime(Long elapsedTime)
-    {
+    public void setElapsedTime(Long elapsedTime) {
         this.duration = elapsedTime;
     }
 
