@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2016.                            (c) 2016.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -94,8 +94,7 @@ import org.jdom2.input.sax.XMLReaderSAX2Factory;
  * @author pdowler
  *
  */
-public class XmlUtil
-{
+public class XmlUtil {
     private static Logger log = Logger.getLogger(XmlUtil.class);
     public static final String PARSER = "org.apache.xerces.parsers.SAXParser";
     private static final String GRAMMAR_POOL = "org.apache.xerces.parsers.XMLGrammarCachingConfiguration";
@@ -110,8 +109,7 @@ public class XmlUtil
      * @deprecated 
      */
     public static Document validateXML(Reader reader)
-        throws JDOMException, IOException
-    {
+        throws JDOMException, IOException {
         return buildDocument(reader, null);
     }
     
@@ -126,8 +124,7 @@ public class XmlUtil
      * @deprecated 
      */
     public static Document validateXML(Reader reader, Map<String, String> schemaMap)
-        throws JDOMException, IOException
-    {
+        throws JDOMException, IOException {
         return buildDocument(reader, schemaMap);
     }
     
@@ -140,8 +137,7 @@ public class XmlUtil
      * @throws JDOMException 
      */
     public static Document buildDocument(String xml) 
-        throws JDOMException, IOException
-    {
+        throws JDOMException, IOException {
         return buildDocument(new StringReader(xml));
     }
     
@@ -157,10 +153,10 @@ public class XmlUtil
      * @throws JDOMException 
      */
     public static Document buildDocument(String xml, String schemaNamespace, String schemaResourceFileName)
-        throws IOException, JDOMException
-    {
-        if (schemaNamespace == null || schemaResourceFileName == null)
+        throws IOException, JDOMException {
+        if (schemaNamespace == null || schemaResourceFileName == null) {
             throw new IllegalArgumentException("schemaNamespace and schemaResourceFileName cannot be null");
+        }
             
         Map<String, String> map = new HashMap<String, String>();
         map.put(schemaNamespace, getResourceUrlString(schemaResourceFileName, XmlUtil.class));
@@ -176,8 +172,7 @@ public class XmlUtil
      * @throws JDOMException 
      */
     public static Document buildDocument(InputStream istream) 
-        throws JDOMException, IOException
-    {
+        throws JDOMException, IOException {
         return buildDocument(new InputStreamReader(istream), null);
     }
     
@@ -190,8 +185,7 @@ public class XmlUtil
      * @throws JDOMException 
      */
     public static Document buildDocument(Reader reader) 
-        throws JDOMException, IOException
-    {
+        throws JDOMException, IOException {
         return buildDocument(reader, null);
     }
 
@@ -205,8 +199,7 @@ public class XmlUtil
      * @throws JDOMException 
      */
     public static Document buildDocument(InputStream istream, Map<String, String> schemaMap) 
-        throws JDOMException, IOException
-    {
+        throws JDOMException, IOException {
         return buildDocument(new InputStreamReader(istream), schemaMap);
     }
     
@@ -224,8 +217,7 @@ public class XmlUtil
      * @throws JDOMException 
      */
     public static Document buildDocument(Reader reader, Map<String, String> schemaMap)
-        throws IOException, JDOMException
-    {
+        throws IOException, JDOMException {
         SAXBuilder sb = createBuilder(schemaMap);
         return sb.build(reader);
     }
@@ -236,8 +228,7 @@ public class XmlUtil
      * @param schemaMap
      * @return document
      */
-    public static SAXBuilder createBuilder(Map<String, String> schemaMap)
-    {
+    public static SAXBuilder createBuilder(Map<String, String> schemaMap) {
         boolean validate = (schemaMap != null && !schemaMap.isEmpty());
         XMLReaderJDOMFactory rf = new XMLReaderSAX2Factory(validate, PARSER);
         SAXHandlerFactory sh = new DefaultSAXHandlerFactory();
@@ -247,8 +238,7 @@ public class XmlUtil
         String schemaResource;
         String space = " ";
         StringBuilder sbSchemaLocations = new StringBuilder();
-        if (schemaVal) 
-        {
+        if (schemaVal)  {
             // force local xml and XMLSchema mapping
             schemaResource = XmlUtil.getResourceUrlString(W3CConstants.XML_SCHEMA, XmlUtil.class);
             schemaMap.put(W3CConstants.XML_NS_URI.toASCIIString(), schemaResource);
@@ -256,8 +246,7 @@ public class XmlUtil
             schemaMap.put(W3CConstants.XSI_NS_URI.toASCIIString(), schemaResource);
             
             log.debug("schemaMap.size(): " + schemaMap.size());
-            for (String schemaNSKey : schemaMap.keySet())
-            {
+            for (String schemaNSKey : schemaMap.keySet()) {
                 schemaResource = (String) schemaMap.get(schemaNSKey);
                 sbSchemaLocations.append(schemaNSKey).append(space).append(schemaResource).append(space);
             }
@@ -266,13 +255,13 @@ public class XmlUtil
         }
 
         SAXBuilder builder = new SAXBuilder(rf, sh, jf);
-        if (schemaVal)
-        {
+        if (schemaVal) {
             builder.setFeature("http://xml.org/sax/features/validation", true);
             builder.setFeature("http://apache.org/xml/features/validation/schema", true);
-            if (schemaMap.size() > 0)
+            if (schemaMap.size() > 0) {
                 builder.setProperty("http://apache.org/xml/properties/schema/external-schemaLocation",
                     sbSchemaLocations.toString());
+            }
         }
         return builder;
     }
@@ -285,12 +274,13 @@ public class XmlUtil
      * @param runningClass 
      * @return
      */
-    public static String getResourceUrlString(String resourceFileName, Class<?> runningClass)
-    {
+    public static String getResourceUrlString(String resourceFileName, Class<?> runningClass) {
         String rtn = null;
         URL url = runningClass.getClassLoader().getResource(resourceFileName);
-        if (url == null)
+        if (url == null) {
             throw new MissingResourceException("Resource not found: " + resourceFileName, runningClass.getName(), resourceFileName);
+        }
+        
         rtn = url.toString();
         return rtn;
     }

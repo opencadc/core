@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2016.                            (c) 2016.
+ *  (c) 2019.                            (c) 2019.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -76,8 +76,7 @@ import java.util.Date;
  *
  * @author pdowler
  */
-public class FileMetadata
-{
+public class FileMetadata {
     private String contentType;
     private String contentEncoding;
     private Long contentLength;
@@ -92,9 +91,8 @@ public class FileMetadata
     public FileMetadata() { }
 
     @Override
-    public String toString()
-    {
-        return "FileMetadata["+ fileName + "," + contentType + "," + contentEncoding
+    public String toString() {
+        return "FileMetadata[" + fileName + "," + contentType + "," + contentEncoding
                 + "," + contentLength
                 + "," + md5Sum
                 + "," + lastModified
@@ -105,103 +103,83 @@ public class FileMetadata
                 + "]";
     }
 
-    public String getContentEncoding()
-    {
+    public String getContentEncoding() {
         return contentEncoding;
     }
 
-    public void setContentEncoding(String contentEncoding)
-    {
+    public void setContentEncoding(String contentEncoding) {
         this.contentEncoding = contentEncoding;
     }
 
-    public Long getContentLength()
-    {
+    public Long getContentLength() {
         return contentLength;
     }
 
-    public void setContentLength(Long contentLength)
-    {
+    public void setContentLength(Long contentLength) {
         this.contentLength = contentLength;
     }
 
-    public String getContentType()
-    {
+    public String getContentType() {
         return contentType;
     }
 
-    public void setContentType(String contentType)
-    {
+    public void setContentType(String contentType) {
         this.contentType = contentType;
     }
 
-    public String getFileName()
-    {
+    public String getFileName() {
         return fileName;
     }
 
-    public void setFileName(String fileName)
-    {
+    public void setFileName(String fileName) {
         this.fileName = fileName;
     }
 
-    public String getMd5Sum()
-    {
+    public String getMd5Sum() {
         return md5Sum;
     }
 
-    public void setMd5Sum(String md5Sum)
-    {
+    public void setMd5Sum(String md5Sum) {
         this.md5Sum = md5Sum;
     }
 
-    public Date getLastModified()
-    {
+    public Date getLastModified() {
         return lastModified;
     }
 
-    public void setLastModified(Date lastModified)
-    {
+    public void setLastModified(Date lastModified) {
         this.lastModified = lastModified;
     }
 
-    public Long getUncompressedLength()
-    {
+    public Long getUncompressedLength() {
         return uncompressedLength;
     }
 
-    public void setUncompressedLength(Long uncompressedLength)
-    {
+    public void setUncompressedLength(Long uncompressedLength) {
         this.uncompressedLength = uncompressedLength;
     }
 
-    public String getUncompressedMd5Sum()
-    {
+    public String getUncompressedMd5Sum() {
         return uncompressedMd5Sum;
     }
 
-    public void setUncompressedMd5Sum(String uncompressedMd5Sum)
-    {
+    public void setUncompressedMd5Sum(String uncompressedMd5Sum) {
         this.uncompressedMd5Sum = uncompressedMd5Sum;
     }
 
-    public String getFileCRC()
-    {
+    public String getFileCRC() {
         return fileCRC;
     }
 
-    public void setFileCRC(String fileCRC)
-    {
+    public void setFileCRC(String fileCRC) {
         this.fileCRC = fileCRC;
     }
 
-    public String getUncompressedFileCRC()
-    {
+    public String getUncompressedFileCRC() {
         return uncompressedFileCRC;
     }
 
-    public void setUncompressedFileCRC(String uncompressedFileCRC)
-    {
+    public void setUncompressedFileCRC(String uncompressedFileCRC) {
         this.uncompressedFileCRC = uncompressedFileCRC;
     }
 }

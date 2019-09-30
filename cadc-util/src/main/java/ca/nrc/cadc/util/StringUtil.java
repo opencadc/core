@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2016.                            (c) 2016.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -86,12 +86,11 @@ import java.util.regex.Pattern;
  * Thanks to Rod Johnson for contributing.
  * </p>
  */
-public class StringUtil
-{
+public class StringUtil {
     /**
      * Check if a String has length.
-     * <p><pre>
-     * StringUtil.hasLength(null) = false
+     * 
+     * <p><pre>StringUtil.hasLength(null) = false
      * StringUtil.hasLength("") = false
      * StringUtil.hasLength(" ") = true
      * StringUtil.hasLength("Hello") = true
@@ -100,8 +99,7 @@ public class StringUtil
      * @param str the String to check, may be null
      * @return <code>true</code> if the String is not null and has length
      */
-    public static boolean hasLength(String str)
-    {
+    public static boolean hasLength(String str) {
         return ((str != null) && (str.length() > 0));
     }
 
@@ -109,9 +107,8 @@ public class StringUtil
      * Check if a String has text. More specifically, returns <code>true</code>
      * if the string not <code>null</code>, it's <code>length is &gt; 0</code>, and
      * it has at least one non-whitespace character.
-     * <p>
-     * <pre>
-     * StringUtil.hasText(null) = false
+     * 
+     * <p><pre>StringUtil.hasText(null) = false
      * StringUtil.hasText("") = false
      * StringUtil.hasText(" ") = false
      * StringUtil.hasText("12345") = true
@@ -121,20 +118,16 @@ public class StringUtil
      *
      * @param str the String to check, may be null
      * @return <code>true</code> if the String is not null, length &gt; 0,
-     * and not whitespace only
+     *     and not whitespace only
      * @see Character#isWhitespace
      */
-    public static boolean hasText(String str)
-    {
-        if (!hasLength(str))
-        {
+    public static boolean hasText(String str) {
+        if (!hasLength(str)) {
             return false;
         }
 
-        for (int i = 0; i < str.length(); i++)
-        {
-            if (!Character.isWhitespace(str.charAt(i)))
-            {
+        for (int i = 0; i < str.length(); i++) {
+            if (!Character.isWhitespace(str.charAt(i))) {
                 return true;
             }
         }
@@ -149,17 +142,14 @@ public class StringUtil
      * @return the trimmed String
      * @see Character#isWhitespace
      */
-    public static String trimLeadingWhitespace(String str)
-    {
-        if (str.length() == 0)
-        {
+    public static String trimLeadingWhitespace(String str) {
+        if (str.length() == 0) {
             return str;
         }
 
         StringBuilder buf = new StringBuilder(str);
-        while ((buf.length() > 0) &&
-               Character.isWhitespace(buf.charAt(0)))
-        {
+        while ((buf.length() > 0) 
+               && Character.isWhitespace(buf.charAt(0))) {
             buf.deleteCharAt(0);
         }
 
@@ -173,37 +163,30 @@ public class StringUtil
      * @return the trimmed String
      * @see java.lang.Character#isWhitespace
      */
-    public static String trimTrailingWhitespace(String str)
-    {
-        if (str.length() == 0)
-        {
+    public static String trimTrailingWhitespace(String str) {
+        if (str.length() == 0) {
             return str;
         }
 
         StringBuilder buf = new StringBuilder(str);
-        while ((buf.length() > 0) &&
-               Character.isWhitespace(buf.charAt(buf.length() - 1)))
-        {
+        while ((buf.length() > 0) 
+               && Character.isWhitespace(buf.charAt(buf.length() - 1))) {
             buf.deleteCharAt(buf.length() - 1);
         }
 
         return buf.toString();
     }
 
-    public static boolean contains(final String searchString, final String crit)
-    {
-        if (hasLength(searchString) && hasLength(crit))
-        {
+    public static boolean contains(final String searchString, final String crit) {
+        if (hasLength(searchString) && hasLength(crit)) {
             return searchString.indexOf(crit) >= 0;
         }
 
         return false;
     }
 
-    public static boolean startsWith(final String searchString, final String crit)
-    {
-        if (hasLength(searchString) && hasLength(crit))
-        {
+    public static boolean startsWith(final String searchString, final String crit) {
+        if (hasLength(searchString) && hasLength(crit)) {
             return searchString.startsWith(crit);
         }
 
@@ -220,8 +203,7 @@ public class StringUtil
      *                  otherwise.
      */
     public static boolean startsWithCaseInsensitive(final String src,
-                                                    final String what)
-    {
+                                                    final String what) {
         return src.regionMatches(true, 0, what, 0, what.length());
     }
 
@@ -233,14 +215,10 @@ public class StringUtil
      * @return True if the searchString is in the crit array, False otherwise.
      */
     public static boolean containedIn(final String searchString,
-                                      final String[] crit)
-    {
-        if (hasLength(searchString))
-        {
-            for (int i = 0; i < crit.length; i++)
-            {
-                if (crit[i].equals(searchString))
-                {
+                                      final String[] crit) {
+        if (hasLength(searchString)) {
+            for (int i = 0; i < crit.length; i++) {
+                if (crit[i].equals(searchString)) {
                     return true;
                 }
             }
@@ -259,8 +237,7 @@ public class StringUtil
      * @param toParse command line string to parse
      * @return set of tokens representing the command line arguments.
      */
-    public static String[] parseCmdLineStr(final String toParse)
-    {
+    public static String[] parseCmdLineStr(final String toParse) {
         ArrayList<String> tokens = new ArrayList<String>();
         int currentCharIndex = 0;
         StringBuffer buffer = new StringBuffer();
@@ -268,60 +245,42 @@ public class StringUtil
         char current = ' ';
         String thisToParse = toParse.trim();
         boolean insideQuotes = false;
-        while (currentCharIndex < thisToParse.length())
-        {
+        while (currentCharIndex < thisToParse.length()) {
             previous = current;
             current = thisToParse.charAt(currentCharIndex++);
 
-            if (insideQuotes)
-            {
-                if (current == '\'')
-                {
+            if (insideQuotes) {
+                if (current == '\'') {
                     insideQuotes = false;
-                }
-                else
-                {
+                } else {
                     buffer.append(current);
                 }
-            }
-            else
-            {
-                if ((current == ' ') || (current == '\t'))
-                {
-                    if (previous != '\\')
-                    {
+            } else {
+                if ((current == ' ') || (current == '\t')) {
+                    if (previous != '\\') {
                         // end of an argument
                         tokens.add(buffer.toString());
                         buffer = new StringBuffer();
-                    }
-                    else
-                    {
+                    } else {
                         // space is escaped - treat it as a whitespace and
                         // replace the previous /
                         buffer.setCharAt(buffer.length() - 1, current);
                     }
-                }
-                else if (current == '\'')
-                {
-                    if (previous != '\\')
-                    {
+                } else if (current == '\'') {
+                    if (previous != '\\') {
                         // start quotes
                         insideQuotes = true;
-                    }
-                    else
-                    {
+                    } else {
                         // ' esaped - replace the previous \
                         buffer.setCharAt(buffer.length() - 1, current);
                     }
-                }
-                else
-                {
+                } else {
                     buffer.append(current);
                 }
             }
         }
-        if (buffer.length() > 0)
-        {
+        
+        if (buffer.length() > 0) {
             tokens.add(buffer.toString());
         }
 
@@ -335,24 +294,21 @@ public class StringUtil
      * @return all elements in the format as ["str1", "str2", ...]
      * @author zhangsa
      */
-    public static String toString(String[] strArr)
-    {
-        if (strArr == null)
-        {
+    public static String toString(String[] strArr) {
+        if (strArr == null) {
             return "";
         }
 
         String deli = "";
         StringBuilder sb = new StringBuilder();
         sb.append("[");
-        for (String str : strArr)
-        {
+        for (String str : strArr) {
             sb.append(deli).append("\"").append(str).append("\"");
-            if ("".equals(deli))
-            {
+            if ("".equals(deli)) {
                 deli = ", ";
             }
         }
+        
         sb.append("]");
         return sb.toString();
     }
@@ -365,17 +321,16 @@ public class StringUtil
      * @return
      * @author zhangsa
      */
-    public static String repeat(String str, int num)
-    {
-        if (num <= 0 || str == null)
-        {
+    public static String repeat(String str, int num) {
+        if (num <= 0 || str == null) {
             return "";
         }
+        
         StringBuffer sb = new StringBuffer();
-        for (int i = num; i-- > 0; )
-        {
+        for (int i = num; i-- > 0; ) {
             sb.append(str);
         }
+        
         return sb.toString();
     }
 
@@ -389,34 +344,25 @@ public class StringUtil
      * @author zhangsa
      */
     public static String readFromInputStream(InputStream inputStream, String charsetName)
-            throws IOException
-    {
+            throws IOException {
         StringBuffer sb = new StringBuffer();
         BufferedReader buf = null;
-        try
-        {
+        try {
             buf = new BufferedReader(new InputStreamReader(inputStream, charsetName));
             String line = buf.readLine();
-            while (line != null)
-            {
+            while (line != null) {
                 sb.append(line);
                 sb.append("\n");
                 line = buf.readLine();
             }
-        }
-        finally
-        {
-            if (buf != null)
-            {
-                try
-                {
-                    buf.close();
-                }
-                catch (IOException ignored)
-                {
-                }
+        } finally { 
+            try {
+                buf.close();
+            } catch (IOException ignored) {
+                // no op
             }
         }
+        
         return sb.toString();
     }
 
@@ -429,16 +375,12 @@ public class StringUtil
      * @return True if it matches, false otherwise.
      */
     public static boolean matches(final String input, final String regexp,
-                                  final boolean caseInsensitive)
-    {
+                                  final boolean caseInsensitive) {
         final Pattern p;
 
-        if (caseInsensitive)
-        {
+        if (caseInsensitive) {
             p = Pattern.compile(".*" + regexp + ".*", Pattern.CASE_INSENSITIVE);
-        }
-        else
-        {
+        } else {
             p = Pattern.compile(".*" + regexp + ".*");
         }
 

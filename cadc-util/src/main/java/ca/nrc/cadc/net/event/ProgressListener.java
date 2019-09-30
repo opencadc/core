@@ -75,8 +75,7 @@ package ca.nrc.cadc.net.event;
  *
  * @author pdowler
  */
-public interface ProgressListener extends TransferListener
-{
+public interface ProgressListener extends TransferListener {
     /**
      * @param newBytes number of bytes read/written since last update()
      * @param totalBytes total number of bytes read/written

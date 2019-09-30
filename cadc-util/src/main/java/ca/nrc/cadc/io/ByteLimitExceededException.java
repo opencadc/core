@@ -71,25 +71,21 @@ package ca.nrc.cadc.io;
 
 import java.io.IOException;
 
-public class ByteLimitExceededException extends IOException
-{
-    
+public class ByteLimitExceededException extends IOException {
+
     private long limit;
-    
-    public ByteLimitExceededException(long limit)
-    {
+
+    public ByteLimitExceededException(long limit) {
         super();
         this.limit = limit;
     }
-    
-    public ByteLimitExceededException(String message, long limit)
-    {
+
+    public ByteLimitExceededException(String message, long limit) {
         super(message);
         this.limit = limit;
     }
-    
-    public long getLimit()
-    {
+
+    public long getLimit() {
         return limit;
     }
 

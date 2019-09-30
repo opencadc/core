@@ -69,6 +69,8 @@
 
 package ca.nrc.cadc.net;
 
+import ca.nrc.cadc.net.event.TransferEvent;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -87,18 +89,15 @@ import javax.net.ssl.HttpsURLConnection;
 
 import org.apache.log4j.Logger;
 
-import ca.nrc.cadc.net.event.TransferEvent;
-
 /**
  * Perform an upload (PUT). 
  * 
- * Note: Redirects are never followed.
+ * <p>Note: Redirects are never followed.
  * 
  * @author zhangsa, pdowler
  *
  */
-public class HttpUpload extends HttpTransfer
-{
+public class HttpUpload extends HttpTransfer {
     private static Logger log = Logger.getLogger(HttpUpload.class);
 
     private String contentType;
@@ -110,111 +109,107 @@ public class HttpUpload extends HttpTransfer
     private InputStream istream;
     private OutputStreamWrapper wrapper;
 
-    public HttpUpload(File src, URL dest)
-    {
+    public HttpUpload(File src, URL dest) {
         super(false);
         this.localFile = src;
         this.contentLength = src.length();
         this.remoteURL = dest;
-        if (remoteURL == null)
+        if (remoteURL == null) {
             throw new IllegalArgumentException("destination URL cannot be null");
-        if (localFile == null) 
+        }
+        
+        if (localFile == null) {
             throw new IllegalArgumentException("source File cannot be null");
+        }
     }
 
-    public HttpUpload(InputStream src, URL dest)
-    {
+    public HttpUpload(InputStream src, URL dest) {
         super(false);
         this.istream = src;
         this.remoteURL = dest;
-        if (remoteURL == null)
+        if (remoteURL == null) {
             throw new IllegalArgumentException("destination URL cannot be null");
-        if (istream == null)
+        }
+        
+        if (istream == null) {
             throw new IllegalArgumentException("source InputStream cannot be null");
+        }
     }
 
-    public HttpUpload(OutputStreamWrapper src, URL dest)
-    {
+    public HttpUpload(OutputStreamWrapper src, URL dest) {
         super(false);
         this.wrapper = src;
         this.remoteURL = dest;
-        if (remoteURL == null)
+        if (remoteURL == null) {
             throw new IllegalArgumentException("destination URL cannot be null");
-        if (wrapper == null)
+        }
+        
+        if (wrapper == null) {
             throw new IllegalArgumentException("source OutputStreamWrapper cannot be null");
+        }
     }
     
     // unused
-    private HttpUpload() { super(false); }
+    private HttpUpload() { 
+        super(false); 
+    }
 
-    @Override
-    public void setFollowRedirects(boolean followRedirects)
-    {
-        if (followRedirects)
+    @Override 
+    public void setFollowRedirects(boolean followRedirects) {
+        if (followRedirects) {
             throw new IllegalArgumentException("followRedirects=true not allowed for upload");
+        }
     }
 
     
-    public void setContentEncoding(String contentEncoding)
-    {
+    public void setContentEncoding(String contentEncoding) {
         this.contentEncoding = contentEncoding;
     }
 
-    public void setContentMD5(String contentMD5)
-    {
+    public void setContentMD5(String contentMD5) {
         this.contentMD5 = contentMD5;
     }
 
-    public void setContentLength(Long length)
-    {
+    public void setContentLength(Long length) {
         this.contentLength = length;
     }
 
-    public void setContentType(String contentType)
-    {
+    public void setContentType(String contentType) {
         this.contentType = contentType;
     }
 
-    public String getResponseBody()
-    {
+    public String getResponseBody() {
         return responseBody;
     }
 
     @Override
-    public String toString() { return "HttpUpload[" + remoteURL + "," + localFile + "]"; }
+    public String toString() { 
+        return "HttpUpload[" + remoteURL + "," + localFile + "]"; 
+    }
 
-    public void run()
-    {
+    public void run() {
         // currently not feasible since we would have to be able to rewind the
         // stream (istream) or the wrapper impl would have to be idempotent
         // and invokable multiple times... but with some servers (tomcat 5) that
         // will be bad because it accepts the entire stream before we can check
         // the retry response code
-        if (istream != null || wrapper != null)
-        {
+        if (istream != null || wrapper != null) {
             log.debug("input comes from a stream, disabling retries");
             this.maxRetries = 0;
         }
 
         boolean done = false;
-        while (!done)
-        {
-            try
-            {
+        while (!done) {
+            try {
                 runX();
                 done = true;
-            }
-            catch(TransientException ex)
-            {
-                try
-                {
+            } catch (TransientException ex) {
+                try {
                     long dt = 1000L * ex.getRetryDelay();
-                    log.debug("retry "+numRetries+" sleeping  for " + dt);
+                    log.debug("retry " + numRetries + " sleeping  for " + dt);
                     fireEvent(TransferEvent.RETRYING);
                     Thread.sleep(dt);
-                }
-                catch(InterruptedException iex)
-                {
+                } catch (InterruptedException iex) {
                     log.debug("retry interrupted");
                     this.go = false;
                     done = true;
@@ -224,76 +219,64 @@ public class HttpUpload extends HttpTransfer
     }
 
     private void runX()
-        throws TransientException
-    {
+        throws TransientException {
         log.debug(this.toString());
-        if (!go)
+        if (!go) {
             return; // cancelled while queued, event notification handled in terminate()
+        }
 
         boolean throwTE = false;
-        try
-        {
+        try {
             this.thread = Thread.currentThread();
 
             fireEvent(TransferEvent.CONNECTING);
 
             HttpURLConnection conn = (HttpURLConnection) this.remoteURL.openConnection();
 
-            if (conn instanceof HttpsURLConnection)
-            {
+            if (conn instanceof HttpsURLConnection) {
                 HttpsURLConnection sslConn = (HttpsURLConnection) conn;
                 initHTTPS(sslConn);
             }
 
             doPut(conn);
-        }
-        catch(InterruptedException iex)
-        {
+        } catch (InterruptedException iex) {
             // need to catch this or it looks like a failure instead of a cancel
             this.go = false;
-        }
-        catch(TransientException tex)
-        {
+        } catch (TransientException tex) {
             log.debug("caught: " + tex);
             throwTE = true;
             throw tex;
-        }
-        catch(Throwable t)
-        {
+        } catch (Throwable t) {
             failure = t;
-        }
-        finally
-        {
-            if (istream != null)
-            {
+        } finally {
+            if (istream != null) {
                 log.debug("closing InputStream");
-                try { istream.close(); }
-                catch(Exception ignore) { }
+                try { 
+                    istream.close(); 
+                } catch (Exception ignore) { 
+                    // do nothing
+                }
             }
 
-            synchronized(this) // vs sync block in terminate()
-            {
-                if (thread != null)
-                {
+            synchronized (this) {
+                // vs sync block in terminate()
+                if (thread != null) {
                     // clear interrupt status
-                    if ( Thread.interrupted() )
+                    if (Thread.interrupted()) {
                         go = false;
+                    }
+                    
                     this.thread = null;
                 }
             }
 
-            if (!go)
-            {
+            if (!go) {
                 log.debug("cancelled");
                 fireEvent(TransferEvent.CANCELLED);
-            }
-            else if (failure != null)
-            {
+            } else if (failure != null) {
                 log.debug("failed: " + failure);
                 fireEvent(failure);
-            }
-            else if (!throwTE)
-            {
+            } else if (!throwTE) {
                 log.debug("completed");
                 fireEvent(TransferEvent.COMPLETED);
             }
@@ -301,42 +284,32 @@ public class HttpUpload extends HttpTransfer
     }
 
     private void doPut(HttpURLConnection conn)
-        throws IOException, InterruptedException, TransientException
-    {
+        throws IOException, InterruptedException, TransientException {
         OutputStream ostream = null;
 
-        if (contentLength != null)
-        {
-            try
-            {
+        if (contentLength != null) {
+            try {
                 // Try using the setFixedLengthStreamingMode method that takes a long as a parameter.
                 // (Only available in Java 7 and up)
                 Method longContentLengthMethod = conn.getClass().getMethod("setFixedLengthStreamingMode", long.class);
                 longContentLengthMethod.invoke(conn, new Long(contentLength));
                 log.debug("invoked setFixedLengthStreamingMode(long)");
-            }
-            catch (Exception noCanDo)
-            {
+            } catch (Exception noCanDo) {
                 // Check if the file size is greater than Integer.MAX_VALUE
-                if (contentLength > Integer.MAX_VALUE)
-                {
+                if (contentLength > Integer.MAX_VALUE) {
                     // Cannot set the header length in the standard fashion, so
                     // set it to chunked streaming mode and set a custom header
                     // for use by servers that recognize this attribute
                     conn.setChunkedStreamingMode(bufferSize);
                     conn.setRequestProperty(CADC_CONTENT_LENGTH_HEADER, Long.toString(contentLength));
                     log.debug("invoked setChunkedStreamingMode");
-                }
-                else
-                {
+                } else {
                     // Set the file size with integer representation
                     conn.setFixedLengthStreamingMode((int) contentLength.intValue());
                     log.debug("invoked setFixedLengthStreamingMode(int)");
                 }
             }
-        }
-        else
-        {
+        } else {
             // note: settig the bufferSize to be larger than 8k without a content-length
             // seems to cause troble with apache+ajp+tomcat6 in cases where the actual
             // payload is bigger than 8k but smaller than the buffer: avoid it for now (pdd)
@@ -353,94 +326,87 @@ public class HttpUpload extends HttpTransfer
         // this seems to fail, maybe not allowed with PUT
         //conn.setRequestProperty("User-Agent", userAgent);
 
-        if (contentType != null)
-        {
-            log.debug("set Content-Type="+contentType);
+        if (contentType != null) {
+            log.debug("set Content-Type=" + contentType);
             conn.setRequestProperty("Content-Type", contentType);
         }
-        if (contentEncoding != null)
+        
+        if (contentEncoding != null) {
             conn.setRequestProperty("Content-Encoding", contentEncoding);
-        if (contentMD5 != null)
+        }
+        
+        if (contentMD5 != null) {
             conn.setRequestProperty("Content-MD5", contentMD5);
+        }
 
         setRequestHeaders(conn);
 
-        int bSize = bufferSize;
-        if (localFile != null && localFile.length() < bSize)
-            bSize = (int) localFile.length();
+        int bfSize = bufferSize;
+        if (localFile != null && localFile.length() < bfSize) {
+            bfSize = (int) localFile.length();
+        }
 
         IOException ioex = null;
         FileInputStream fin = null;
         InputStream in = null;
-        try
-        {
+        try {
             ostream = conn.getOutputStream();
 
-            if (localFile != null)
-            {
+            if (localFile != null) {
                 fin = new FileInputStream(localFile);
                 in = fin;
-            }
-            else if (istream != null)
+            } else if (istream != null) {
                 in = istream;
+            }
             
-            if ( !(ostream instanceof BufferedOutputStream) )
-            {
+            if (!(ostream instanceof BufferedOutputStream)) {
                 log.debug("using BufferedOutputStream");
                 ostream = new BufferedOutputStream(ostream, bufferSize);
             }
 
-            if (in != null)
-            {
+            if (in != null) {
                 log.debug("using BufferedInputStream");
                 in = new BufferedInputStream(in, bufferSize);
             }
 
             fireEvent(TransferEvent.TRANSFERING);
 
-            if (in != null)
-                ioLoop(in, ostream, 2*this.bufferSize, 0);
-            else
-                 wrapper.write(ostream);
+            if (in != null) {
+                ioLoop(in, ostream, 2 * this.bufferSize, 0);
+            } else {
+                wrapper.write(ostream);
+            }
 
             log.debug("OutputStream.flush");
             long writeStart = System.currentTimeMillis();
             ostream.flush();
-            if (logIO)
-            {
+            if (logIO) {
                 long flushTime = System.currentTimeMillis() - writeStart;
                 writeTime += flushTime;
                 log.debug("Time (ms) to flush: " + flushTime);
             }
+            
             log.debug("OutputStream.flush OK");
-        }
-        catch(IOException ex)
-        {
+        } catch (IOException ex) {
             ioex = ex;
-            // dealt with below
-        }
-        finally
-        {
-            try
-            {
-                if (ostream != null)
-                {
+            // dealt with be {
+            try {
+                if (ostream != null) {
                     log.debug("OutputStream.close");
                     ostream.close();
                     log.debug("OutputStream.close OK");
                 }
-            }
-            catch(IOException ignore) 
-            {
+            } catch (IOException ignore) {
                 log.debug("OutputStream.close FAIL", ignore);
             }
             
-            try
-            {
-                if (fin != null)
+            try {
+                if (fin != null) {
                     fin.close();
+                }
+            } catch (IOException ignore) { 
+                // do nothing
             }
-            catch(IOException ignore) { }
         }
 
         int code = conn.getResponseCode();
@@ -449,12 +415,10 @@ public class HttpUpload extends HttpTransfer
         captureResponseHeaders(conn);
         
         this.responseCode = code;
-        if (code != HttpURLConnection.HTTP_OK && code != HttpURLConnection.HTTP_CREATED)
-        {
+        if (code != HttpURLConnection.HTTP_OK && code != HttpURLConnection.HTTP_CREATED) {
             String msg = "(" + code + ") " + conn.getResponseMessage();
             checkTransient(code, msg, conn);
-            switch(code)
-            {
+            switch (code) {
                 case HttpURLConnection.HTTP_UNAUTHORIZED:
                     throw new AccessControlException("authentication failed " + msg);
                 case HttpURLConnection.HTTP_FORBIDDEN:
@@ -467,30 +431,33 @@ public class HttpUpload extends HttpTransfer
                     throw new IOException(msg);
             }
         }
-        if (ioex != null) // an error writing that was not detected via response code
+        
+        if (ioex != null) {
+            // an error writing that was not detected via response code
             throw ioex;
+        }
 
         // Write reponse body for retrieval.
         InputStream inputStream = conn.getInputStream();
-        if (inputStream != null)
-        {
+        if (inputStream != null) {
             int smallBufferSize = 512;
             ByteArrayOutputStream byteArrayOstream = new ByteArrayOutputStream();
-            try
-            {
-                if (use_nio)
+            try {
+                if (userNio) {
                     nioLoop(inputStream, byteArrayOstream, smallBufferSize, 0);
-                else
+                } else {
                     ioLoop(inputStream, byteArrayOstream, smallBufferSize, 0);
+                }
+                
                 byteArrayOstream.flush();
                 responseBody = new String(byteArrayOstream.toByteArray(), "UTF-8");
-            }
-            finally
-            {
-                if (byteArrayOstream != null)
-                {
-                    try { byteArrayOstream.close(); }
-                    catch(Exception ignore) { }
+            } finally {
+                if (byteArrayOstream != null) {
+                    try { 
+                        byteArrayOstream.close(); 
+                    } catch (Exception ignore) { 
+                        // don thing
+                    }
                 }
             }
         }

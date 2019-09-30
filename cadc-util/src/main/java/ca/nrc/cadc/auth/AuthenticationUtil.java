@@ -69,8 +69,10 @@
 
 package ca.nrc.cadc.auth;
 
+import ca.nrc.cadc.date.DateUtil;
+import ca.nrc.cadc.net.NetUtil;
+
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.Principal;
@@ -98,17 +100,13 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.log4j.Logger;
 
-import ca.nrc.cadc.date.DateUtil;
-import ca.nrc.cadc.net.NetUtil;
-
 /**
  * Security utility.
  *
  * @author adriand
  * @version $Version$
  */
-public class AuthenticationUtil
-{
+public class AuthenticationUtil {
 
     public static final String AUTH_HEADER = "X-CADC-DelegationToken";
 
@@ -116,34 +114,25 @@ public class AuthenticationUtil
     public static final String AUTHORIZATION_HEADER = "Authorization";
 
     // Mandatory support list of RDN descriptors according to RFC 4512.
-    private static final String[] ORDERED_RDN_KEYS = new String[]
-    {
-        "DC", "CN", "OU", "O", "STREET", "L", "ST", "C", "UID"
-    };
+    private static final String[] ORDERED_RDN_KEYS = new String[] { "DC", "CN", "OU", "O", "STREET", "L", "ST", "C", "UID" };
 
     private static Logger log = Logger.getLogger(AuthenticationUtil.class);
 
-    private static Authenticator getAuthenticator()
-    {
+    private static Authenticator getAuthenticator() {
         String defaultImplClass = Authenticator.class.getName() + "Impl";
         String cname = System.getProperty(Authenticator.class.getName());
         Class c = null;
-        if (cname == null)
-        {
+        if (cname == null) {
             cname = defaultImplClass;
         }
-        try
-        {
+        try {
             c = Class.forName(cname);
             Object o = c.newInstance();
             Authenticator ret = (Authenticator) o;
             log.debug("Authenticator: " + cname);
             return ret;
-        }
-        catch (Throwable t)
-        {
-            if (!defaultImplClass.equals(cname) || c != null)
-            {
+        } catch (Throwable t) {
+            if (!defaultImplClass.equals(cname) || c != null) {
                 log.error("failed to load Authenticator: " + cname, t);
             }
             log.debug("failed to load Authenticator: " + cname, t);
@@ -151,13 +140,14 @@ public class AuthenticationUtil
         log.debug("Authenticator: null");
         return null;
     }
-    
+
     /**
      * Load the available IdentityManager implementation. This utility method will
-     * check the <code>ca.nrc.cadc.auth.IdentityManager</code> system property for
-     * a configured class name (default class name: <code>ca.nrc.cadc.auth.IdentityManagerImpl</code>).
-     * The easiest way for software implementers to customize behavior is to create their 
-     * own IdentityManagerimpl class and add it to the classpath.
+     * check the <code>ca.nrc.cadc.auth.IdentityManager</code> system property for a
+     * configured class name (default class name:
+     * <code>ca.nrc.cadc.auth.IdentityManagerImpl</code>). The easiest way for
+     * software implementers to customize behavior is to create their own
+     * IdentityManagerimpl class and add it to the classpath.
      * 
      * @return an IdentityManager implementation or null if none provided
      */
@@ -184,85 +174,71 @@ public class AuthenticationUtil
         return null;
     }
 
-    private static Subject augmentSubject(Subject s)
-    {
+    private static Subject augmentSubject(Subject s) {
         final Authenticator auth = getAuthenticator();
-        if (auth != null)
-        {
+        if (auth != null) {
             return auth.getSubject(s);
         }
         return s;
     }
 
-    public static Subject getAnonSubject()
-    {
+    public static Subject getAnonSubject() {
         Subject ret = new Subject();
         setAuthMethod(ret, AuthMethod.ANON);
         return ret;
     }
 
     /**
-     * Get the AuthMethod used by the caller. This is normally only meaningful
-     * in server side applications to figure out how the caller authenticated.
+     * Get the AuthMethod used by the caller. This is normally only meaningful in
+     * server side applications to figure out how the caller authenticated.
      *
      * @param s
      * @return
      */
-    public static AuthMethod getAuthMethod(Subject s)
-    {
-        if (s == null)
-        {
+    public static AuthMethod getAuthMethod(Subject s) {
+        if (s == null) {
             return null;
         }
         Set<AuthMethod> m = s.getPublicCredentials(AuthMethod.class);
-        if (m.isEmpty())
-        {
+        if (m.isEmpty()) {
             return null;
         }
         return m.iterator().next();
     }
 
-    private static void setAuthMethod(Subject s, AuthMethod am)
-    {
-        if (s == null || am == null)
-        {
+    private static void setAuthMethod(Subject s, AuthMethod am) {
+        if (s == null || am == null) {
             return;
         }
         s.getPublicCredentials().add(am);
     }
 
     /**
-     * Get an AuthMethod that can be used with credentials from the specified
-     * set.
+     * Get an AuthMethod that can be used with credentials from the specified set.
      *
      * @param subject the subject with credentials
      * @return
      */
-    public static AuthMethod getAuthMethodFromCredentials(Subject subject)
-    {
-        if (subject == null || subject.getPublicCredentials().isEmpty())
-        {
+    public static AuthMethod getAuthMethodFromCredentials(Subject subject) {
+        if (subject == null || subject.getPublicCredentials().isEmpty()) {
             return AuthMethod.ANON;
         }
 
         // web services using CDP and command-line applications with --cert option
         Set cert = subject.getPublicCredentials(X509CertificateChain.class);
-        if (!cert.isEmpty())
-        {
+        if (!cert.isEmpty()) {
             return AuthMethod.CERT;
         }
 
         // command-line applications with --netrc option
         Set pa = subject.getPublicCredentials(PasswordCredentials.class);
-        if (!pa.isEmpty())
-        {
+        if (!pa.isEmpty()) {
             return AuthMethod.PASSWORD;
         }
 
         // ui applications pass cookie(s) along
         Set sso = subject.getPublicCredentials(SSOCookieCredential.class);
-        if (!sso.isEmpty())
-        {
+        if (!sso.isEmpty()) {
             return AuthMethod.COOKIE;
         }
 
@@ -270,86 +246,70 @@ public class AuthenticationUtil
     }
 
     /**
-     * Create a Subject using the given PrincipalExtractor. An implementation of
-     * the PrincipalExtractor interface is used to extract the authentication
-     * information from the incoming request. An implementation for plain
-     * servlet environment is provided here and a Restlet implementation is
-     * currently included in the cadcUWS library.
+     * Create a Subject using the given PrincipalExtractor. An implementation of the
+     * PrincipalExtractor interface is used to extract the authentication
+     * information from the incoming request. An implementation for plain servlet
+     * environment is provided here and a Restlet implementation is currently
+     * included in the cadcUWS library.
      * <p>
      * This method tries to detect the use of a proxy certificate and add the
-     * Principal representing the real identity of the user by comparing the
-     * subject and issuer fields of the certificate and using the issuer
-     * principal when the certificate is self-signed. If the user has connected
-     * anonymously, the returned Subject will have no principals and no
-     * credentials, but should be safe to use with Subject.doAs(...).
+     * Principal representing the real identity of the user by comparing the subject
+     * and issuer fields of the certificate and using the issuer principal when the
+     * certificate is self-signed. If the user has connected anonymously, the
+     * returned Subject will have no principals and no credentials, but should be
+     * safe to use with Subject.doAs(...).
      * </p>
      * <p>
      * This method will also try to load an implementation of the Authenticator
      * interface and use it to process the Subject before return. By default, it
      * will try to load a class named
-     * <code>ca.nrc.cadc.auth.AuthenticatorImpl</code>. Applications may
-     * override this default class name by setting the
-     * <em>ca.nrc.cadc.auth.Authenticator</em> system property to the class name
-     * of their implementation. Note that the default implementation class does
-     * not exist in this library so implementors can provide that exact class
-     * and then not need the system property.
+     * <code>ca.nrc.cadc.auth.AuthenticatorImpl</code>. Applications may override
+     * this default class name by setting the
+     * <em>ca.nrc.cadc.auth.Authenticator</em> system property to the class name of
+     * their implementation. Note that the default implementation class does not
+     * exist in this library so implementors can provide that exact class and then
+     * not need the system property.
      * </p>
      *
      * @param principalExtractor The PrincipalExtractor to provide Principals.
      * @return A new Subject.
      */
-    public static Subject getSubject(PrincipalExtractor principalExtractor)
-    {
-        if (principalExtractor == null)
-        {
+    public static Subject getSubject(PrincipalExtractor principalExtractor) {
+        if (principalExtractor == null) {
             throw new IllegalArgumentException("principalExtractor cannot be null");
         }
 
         final Set<Principal> principals = principalExtractor.getPrincipals();
-        final X509CertificateChain chain
-                = principalExtractor.getCertificateChain();
+        final X509CertificateChain chain = principalExtractor.getCertificateChain();
         final DelegationToken token = principalExtractor.getDelegationToken();
-        final List<SSOCookieCredential> cookieList
-                = principalExtractor.getSSOCookieCredentials();
+        final List<SSOCookieCredential> cookieList = principalExtractor.getSSOCookieCredentials();
 
         AuthMethod am = null;
 
         final Set<Object> publicCred = new HashSet<Object>();
         final Set<Object> privateCred = new HashSet<Object>();
 
-        if (principals.isEmpty())
-        {
+        if (principals.isEmpty()) {
             am = AuthMethod.ANON;
-        }
-        else if (chain != null)
-        {
+        } else if (chain != null) {
             publicCred.add(chain);
             am = AuthMethod.CERT;
-        }
-        else if (token != null)
-        {
+        } else if (token != null) {
             publicCred.add(token);
             am = AuthMethod.TOKEN;
-        }
-        else if (cookieList != null && cookieList.size() != 0)
-        {
+        } else if (cookieList != null && cookieList.size() != 0) {
             publicCred.addAll(cookieList);
             am = AuthMethod.COOKIE;
-        }
-        else
-        {
-            for (final Object o : principals)
-            {
-                if (o instanceof HttpPrincipal)
-                {
+        } else {
+            for (final Object o : principals) {
+                if (o instanceof HttpPrincipal) {
                     am = AuthMethod.PASSWORD;
                     break;
                 }
             }
         }
 
-        final Subject subject = new Subject(false, principals, publicCred,
-                privateCred);
+        final Subject subject = new Subject(false, principals, publicCred, privateCred);
         setAuthMethod(subject, am);
         return augmentSubject(subject);
     }
@@ -361,22 +321,20 @@ public class AuthenticationUtil
      * @return a Subject with all available request content
      * @see #getSubject(PrincipalExtractor)
      */
-    public static Subject getSubject(final HttpServletRequest request)
-    {
+    public static Subject getSubject(final HttpServletRequest request) {
         return getSubject(new ServletPrincipalExtractor(request));
     }
 
     /**
-     * Create a subject with the specified certificate chain and private key.
-     * This method constructs an X509CertificateChain and then calls
+     * Create a subject with the specified certificate chain and private key. This
+     * method constructs an X509CertificateChain and then calls
      * getSubject(X509CertificateChain).
      *
      * @param certs a non-null and non-empty certificate chain
-     * @param key optional private key
+     * @param key   optional private key
      * @return a Subject
      */
-    public static Subject getSubject(X509Certificate[] certs, PrivateKey key)
-    {
+    public static Subject getSubject(X509Certificate[] certs, PrivateKey key) {
         final X509CertificateChain chain = new X509CertificateChain(certs, key);
         return getSubject(chain);
     }
@@ -389,15 +347,13 @@ public class AuthenticationUtil
      * @param chain The X509Certificate chain of certificates, if any.
      * @return An augmented Subject.
      */
-    public static Subject getSubject(X509CertificateChain chain)
-    {
+    public static Subject getSubject(X509CertificateChain chain) {
         Set<Principal> principals = new HashSet<Principal>();
         Set<Object> publicCred = new HashSet<Object>();
         Set privateCred = new HashSet();
 
         // SSL authentication
-        if (chain != null)
-        {
+        if (chain != null) {
             principals.add(chain.getX500Principal());
             publicCred.add(chain);
             // note: we just leave the PrivateKey in the chain (eg public) rather
@@ -418,14 +374,12 @@ public class AuthenticationUtil
      * @param authenticator
      * @return
      */
-    public static Subject getSubject(java.net.Authenticator authenticator)
-    {
+    public static Subject getSubject(java.net.Authenticator authenticator) {
         Set<Principal> principals = new HashSet<Principal>();
         Set<Object> publicCred = new HashSet<Object>();
         Set privateCred = new HashSet();
 
-        if (authenticator != null)
-        {
+        if (authenticator != null) {
             java.net.Authenticator.setDefault(authenticator);
             publicCred.add(new PasswordCredentials()); // tag subject
         }
@@ -437,16 +391,13 @@ public class AuthenticationUtil
 
     // Encode a Subject in the format:
     // Principal Class name[Principal name]
-    public static String encodeSubject(Subject subject)
-    {
-        if (subject == null)
-        {
+    public static String encodeSubject(Subject subject) {
+        if (subject == null) {
             return null;
         }
         StringBuilder sb = new StringBuilder();
 
-        for (final Principal principal : subject.getPrincipals())
-        {
+        for (final Principal principal : subject.getPrincipals()) {
             sb.append(principal.getClass().getName());
             sb.append("[");
             sb.append(NetUtil.encode(principal.getName()));
@@ -460,22 +411,17 @@ public class AuthenticationUtil
      *
      * @return set of user ids extracted from the HttpPrincipals
      */
-    public static Set<String> getUseridsFromSubject()
-    {
+    public static Set<String> getUseridsFromSubject() {
         AccessControlContext acc = AccessController.getContext();
         Subject subject = Subject.getSubject(acc);
 
         Set<String> userids = new HashSet<String>();
-        if (subject != null)
-        {
-            final Set<HttpPrincipal> httpPrincipals
-                    = subject.getPrincipals(HttpPrincipal.class);
-            final Set<CookiePrincipal> cookiePrincipals
-                    = subject.getPrincipals(CookiePrincipal.class);
+        if (subject != null) {
+            final Set<HttpPrincipal> httpPrincipals = subject.getPrincipals(HttpPrincipal.class);
+            final Set<CookiePrincipal> cookiePrincipals = subject.getPrincipals(CookiePrincipal.class);
             String userId;
 
-            for (final HttpPrincipal principal : httpPrincipals)
-            {
+            for (final HttpPrincipal principal : httpPrincipals) {
                 userId = principal.getName();
                 userids.add(userId);
             }
@@ -485,49 +431,35 @@ public class AuthenticationUtil
 
     // Build a Subject from the encoding.
     @SuppressWarnings("unchecked")
-    public static Subject decodeSubject(String s)
-    {
-        if (s == null || s.length() == 0)
-        {
+    public static Subject decodeSubject(String s) {
+        if (s == null || s.length() == 0) {
             return null;
         }
         Subject subject = null;
-        int pStart = 0;
-        int nameStart = s.indexOf("[", pStart);
-        try
-        {
-            while (nameStart != -1)
-            {
+        int prStart = 0;
+        int nameStart = s.indexOf("[", prStart);
+        try {
+            while (nameStart != -1) {
                 int nameEnd = s.indexOf("]", nameStart);
-                if (nameEnd == -1)
-                {
+                if (nameEnd == -1) {
                     log.error("Invalid Principal encoding: " + s);
                     return null;
                 }
-                Class c = Class.forName(s.substring(pStart, nameStart));
-                Class[] args = new Class[]
-                {
-                    String.class
-                };
+                Class c = Class.forName(s.substring(prStart, nameStart));
+                Class[] args = new Class[] { String.class };
                 Constructor constructor = c.getDeclaredConstructor(args);
-                String name = NetUtil
-                        .decode(s.substring(nameStart + 1, nameEnd));
+                String name = NetUtil.decode(s.substring(nameStart + 1, nameEnd));
                 Principal principal = (Principal) constructor.newInstance(name);
-                if (subject == null)
-                {
+                if (subject == null) {
                     subject = new Subject();
                 }
                 subject.getPrincipals().add(principal);
-                pStart = nameEnd + 1;
-                nameStart = s.indexOf("[", pStart);
+                prStart = nameEnd + 1;
+                nameStart = s.indexOf("[", prStart);
             }
-        }
-        catch (IndexOutOfBoundsException ioe)
-        {
+        } catch (IndexOutOfBoundsException ioe) {
             log.error(ioe.getMessage(), ioe);
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
         return subject;
@@ -535,42 +467,35 @@ public class AuthenticationUtil
 
     /**
      * Re-order the pairs in the X500 distinguished name to standard order. This
-     * method causes the pairs to be ordered such that the user parts (CN) is
-     * first and the country (C) is last in the string form of the distinguished
-     * name.
+     * method causes the pairs to be ordered such that the user parts (CN) is first
+     * and the country (C) is last in the string form of the distinguished name.
      *
      * @param p
      * @return ordered principal, possibly the argument if re-order not required
      */
-    public static X500Principal getOrderedForm(X500Principal p)
-    {
-        try
-        {
+    public static X500Principal getOrderedForm(X500Principal p) {
+        try {
             X500Principal ret = p;
             String up = p.getName(X500Principal.RFC2253);
             LdapName dn = new LdapName(up);
             List<Rdn> rdns = dn.getRdns();
             Rdn left = rdns.get(rdns.size() - 1); // LDAP order from right-left
             Rdn right = rdns.get(0);
-            //boolean cnOnLeft = "CN".equalsIgnoreCase(left.getType());
-            boolean cOnleft = "C".equalsIgnoreCase(left.getType());
+            // boolean cnOnLeft = "CN".equalsIgnoreCase(left.getType());
+            boolean cnOnleft = "C".equalsIgnoreCase(left.getType());
             boolean cnOnRight = "CN".equalsIgnoreCase(right.getType());
-            //boolean cOnRight = "C".equalsIgnoreCase(right.getType());
-            boolean flip = (cnOnRight || cOnleft);
+            // boolean cOnRight = "C".equalsIgnoreCase(right.getType());
+            boolean flip = (cnOnRight || cnOnleft);
 
             StringBuilder sb = new StringBuilder();
-            if (flip)
-            {
-                for (Rdn r : rdns) // writing in normal order is actually flipping LDAP order
-                {
+            if (flip) {
+                for (Rdn r : rdns) {
+                    // writing in normal order is actually flipping LDAP order
                     sb.append(r.toString());
                     sb.append(",");
                 }
-            }
-            else
-            {
-                for (int i = rdns.size() - 1; i >= 0; i--)
-                {
+            } else {
+                for (int i = rdns.size() - 1; i >= 0; i--) {
                     sb.append(rdns.get(i));
                     sb.append(",");
                 }
@@ -578,13 +503,10 @@ public class AuthenticationUtil
             ret = new X500Principal(sb.substring(0, sb.length() - 1)); // strip off comma-space
             log.debug("ordered form of " + up + " is " + ret);
             return ret;
-        }
-        catch (InvalidNameException ex)
-        {
+        } catch (InvalidNameException ex) {
             throw new IllegalArgumentException("invalid DN: " + p.getName(), ex);
-        }
-        finally
-        {
+        } finally {
+            // do nothing
         }
     }
 
@@ -594,20 +516,14 @@ public class AuthenticationUtil
      * @param <T> The type of Principal.
      * @return Map of class to collection of string values.
      */
-    public static <T extends Principal>
-            Map<Class<T>, Collection<String>> groupPrincipalsByType()
-    {
-        final Map<Class<T>, Collection<String>> groupedPrincipals
-                = new HashMap<Class<T>, Collection<String>>();
+    public static <T extends Principal> Map<Class<T>, Collection<String>> groupPrincipalsByType() {
+        final Map<Class<T>, Collection<String>> groupedPrincipals = new HashMap<Class<T>, Collection<String>>();
 
-        for (final Principal p : getCurrentSubject().getPrincipals())
-        {
+        for (final Principal p : getCurrentSubject().getPrincipals()) {
             final Class<T> nextPrincipalClass = (Class<T>) p.getClass();
 
-            if (!groupedPrincipals.containsKey(p.getClass()))
-            {
-                groupedPrincipals
-                        .put(nextPrincipalClass, new HashSet<String>());
+            if (!groupedPrincipals.containsKey(p.getClass())) {
+                groupedPrincipals.put(nextPrincipalClass, new HashSet<String>());
             }
 
             groupedPrincipals.get(nextPrincipalClass).add(p.getName());
@@ -617,11 +533,10 @@ public class AuthenticationUtil
     }
 
     /**
-     * Given two principal objects, return true if they represent the same
-     * identity.
+     * Given two principal objects, return true if they represent the same identity.
      * <p>
-     * The equality is defined by each principal type through the equal method,
-     * with the exception of X500Principals: if the principals are instances of
+     * The equality is defined by each principal type through the equal method, with
+     * the exception of X500Principals: if the principals are instances of
      * X500Principal, the cannonical form of their names are compared.
      * </p>
      * Two null principals are considered equal.
@@ -630,15 +545,12 @@ public class AuthenticationUtil
      * @param p2 Principal object 2.
      * @return True if they are equal, false otherwise.
      */
-    public static boolean equals(Principal p1, Principal p2)
-    {
-        if (p1 == null && p2 == null)
-        {
+    public static boolean equals(Principal p1, Principal p2) {
+        if (p1 == null && p2 == null) {
             return true;
         }
 
-        if (p1 == null || p2 == null)
-        {
+        if (p1 == null || p2 == null) {
             return false;
         }
 
@@ -648,35 +560,28 @@ public class AuthenticationUtil
     /**
      * Compare two principals
      */
-    public static int compare(Principal p1, Principal p2)
-    {
-        if (p1 == null || p2 == null)
-        {
+    public static int compare(Principal p1, Principal p2) {
+        if (p1 == null || p2 == null) {
             throw new IllegalArgumentException("Cannot compare null objects");
         }
 
-        if (p1 instanceof X500Principal)
-        {
-            if (p2 instanceof X500Principal)
-            {
+        if (p1 instanceof X500Principal) {
+            if (p2 instanceof X500Principal) {
                 String converted1 = canonizeDistinguishedName(p1.getName());
                 String converted2 = canonizeDistinguishedName(p2.getName());
                 return converted1.compareTo(converted2);
             }
         }
 
-        if (p1 instanceof HttpPrincipal)
-        {
-            if (p2 instanceof HttpPrincipal)
-            {
+        if (p1 instanceof HttpPrincipal) {
+            if (p2 instanceof HttpPrincipal) {
                 HttpPrincipal h1 = (HttpPrincipal) p1;
                 HttpPrincipal h2 = (HttpPrincipal) p2;
                 return h1.toString().compareTo(h2.toString());
             }
         }
 
-        if (p1.getClass().equals(p2.getClass()))
-        {
+        if (p1.getClass().equals(p2.getClass())) {
             return p1.getName().compareTo(p2.getName());
         }
 
@@ -691,9 +596,9 @@ public class AuthenticationUtil
      * <ul>
      * <li>Is all lower case.</li>
      * <li>RDNs are separated by commas and no spaces.</li>
-     * <li>RDNs are in the order specified by ORDERED_RDN_KEYS. If more than one
-     * RDN of the same key exists, these are ordered among each other by their
-     * value by String.compareTo(String another).</li>
+     * <li>RDNs are in the order specified by ORDERED_RDN_KEYS. If more than one RDN
+     * of the same key exists, these are ordered among each other by their value by
+     * String.compareTo(String another).</li>
      * <li>If other RDNs exist in that are not in ORDERED_RDN_KEYS, an
      * IllegalArgumentException is thrown.
      * </ul>
@@ -705,18 +610,14 @@ public class AuthenticationUtil
      * @param dnSrc
      * @return canonized distinguished name
      */
-    public static String canonizeDistinguishedName(String dnSrc)
-    {
-        try
-        {
+    public static String canonizeDistinguishedName(String dnSrc) {
+        try {
             X500Principal x = new X500Principal(dnSrc);
             x = AuthenticationUtil.getOrderedForm(x);
             String ret = x.getName().trim().toLowerCase();
             log.debug(dnSrc + " converted to " + ret);
             return ret;
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             log.debug("Invalid dn", e);
             throw new IllegalArgumentException("Invalid DN: " + dnSrc, e);
         }
@@ -728,14 +629,11 @@ public class AuthenticationUtil
      * @param subject
      * @return X500 Principal
      */
-    public static X500Principal getX500Principal(Subject subject)
-    {
+    public static X500Principal getX500Principal(Subject subject) {
         X500Principal x500Principal = null;
         Set<Principal> principals = subject.getPrincipals();
-        for (Principal principal : principals)
-        {
-            if (principal instanceof X500Principal)
-            {
+        for (Principal principal : principals) {
+            if (principal instanceof X500Principal) {
                 x500Principal = (X500Principal) principal;
             }
         }
@@ -747,58 +645,41 @@ public class AuthenticationUtil
      * subject.
      *
      * @param subject subject holding the certificates to be validated
-     * @throws CertificateException Null subject or no certificates found
+     * @throws CertificateException            Null subject or no certificates found
      * @throws CertificateNotYetValidException certificate not yet valid
-     * @throws CertificateExpiredException certificate is expired
+     * @throws CertificateExpiredException     certificate is expired
      */
     public static void checkCertificates(final Subject subject)
-            throws CertificateException, CertificateNotYetValidException,
-            CertificateExpiredException
-    {
+            throws CertificateException, CertificateNotYetValidException, CertificateExpiredException {
         // check validity
-        if (subject != null)
-        {
-            Set<X509CertificateChain> certs = subject
-                    .getPublicCredentials(X509CertificateChain.class);
-            if (certs.isEmpty())
-            {
+        if (subject != null) {
+            Set<X509CertificateChain> certs = subject.getPublicCredentials(X509CertificateChain.class);
+            if (certs.isEmpty()) {
                 // subject without certs means something went wrong above
-                throw new CertificateException(
-                        "No certificates associated with the subject");
+                throw new CertificateException("No certificates associated with the subject");
             }
-            DateFormat df = DateUtil
-                    .getDateFormat(DateUtil.ISO_DATE_FORMAT, DateUtil.LOCAL);
+            DateFormat df = DateUtil.getDateFormat(DateUtil.ISO_DATE_FORMAT, DateUtil.LOCAL);
             X509CertificateChain chain = certs.iterator().next();
             Date start = null;
             Date end = null;
-            for (X509Certificate c : chain.getChain())
-            {
-                try
-                {
+            for (X509Certificate c : chain.getChain()) {
+                try {
                     start = c.getNotBefore();
                     end = c.getNotAfter();
                     c.checkValidity();
-                }
-                catch (CertificateExpiredException exp)
-                {
+                } catch (CertificateExpiredException exp) {
                     // improve the message
-                    String msg = "certificate has expired (valid from "
-                            + df.format(start) + " to " + df
-                            .format(end) + ")";
+                    String msg = "certificate has expired (valid from " + df.format(start) + " to " + df.format(end)
+                            + ")";
                     throw new CertificateExpiredException(msg);
-                }
-                catch (CertificateNotYetValidException exp)
-                {
+                } catch (CertificateNotYetValidException exp) {
                     // improve the message
-                    String msg = "certificate not yet valid (valid from "
-                            + df.format(start) + " to " + df
-                            .format(end) + ")";
+                    String msg = "certificate not yet valid (valid from " + df.format(start) + " to " + df.format(end)
+                            + ")";
                     throw new CertificateNotYetValidException(msg);
                 }
             }
-        }
-        else
-        {
+        } else {
             throw new CertificateException("No certificates (Null subject)");
         }
     }
@@ -808,43 +689,32 @@ public class AuthenticationUtil
      *
      * @return Current Subject, or null if none.
      */
-    public static Subject getCurrentSubject()
-    {
-        final AccessControlContext accessControlContext
-                = AccessController.getContext();
+    public static Subject getCurrentSubject() {
+        final AccessControlContext accessControlContext = AccessController.getContext();
         return Subject.getSubject(accessControlContext);
     }
 
-    public static Principal createPrincipal(String userID, String idType)
-    {
-        if (IdentityType.X500.getValue().equalsIgnoreCase(idType))
-        {
-            return new X500Principal(
-                    AuthenticationUtil.canonizeDistinguishedName(userID));
+    public static Principal createPrincipal(String userID, String idType) {
+        if (IdentityType.X500.getValue().equalsIgnoreCase(idType)) {
+            return new X500Principal(AuthenticationUtil.canonizeDistinguishedName(userID));
         }
-        if (IdentityType.USERNAME.getValue().equalsIgnoreCase(idType))
-        {
+        if (IdentityType.USERNAME.getValue().equalsIgnoreCase(idType)) {
             return new HttpPrincipal(userID);
         }
-        if (IdentityType.CADC.getValue().equalsIgnoreCase(idType))
-        {
+        if (IdentityType.CADC.getValue().equalsIgnoreCase(idType)) {
             return new NumericPrincipal(UUID.fromString(userID));
         }
         return null;
     }
 
-    public static String getPrincipalType(Principal userID)
-    {
-        if (userID instanceof X500Principal)
-        {
+    public static String getPrincipalType(Principal userID) {
+        if (userID instanceof X500Principal) {
             return IdentityType.X500.getValue().toLowerCase();
         }
-        if (userID instanceof HttpPrincipal)
-        {
+        if (userID instanceof HttpPrincipal) {
             return IdentityType.USERNAME.getValue().toLowerCase();
         }
-        if (userID instanceof NumericPrincipal)
-        {
+        if (userID instanceof NumericPrincipal) {
             return IdentityType.CADC.getValue().toLowerCase();
         }
         return null;

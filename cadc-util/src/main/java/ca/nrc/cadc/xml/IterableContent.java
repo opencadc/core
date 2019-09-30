@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2016.                            (c) 2016.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -93,8 +93,7 @@ import org.jdom2.Namespace;
  * @param <E> The type of jdom content
  * @param <T> The type of object being iterated
  */
-public class IterableContent<E extends Content, T> extends Element
-{
+public class IterableContent<E extends Content, T> extends Element {
     private static Logger log = Logger.getLogger(IterableContent.class);
     
     private static final long serialVersionUID = -3057526491224781782L;
@@ -109,8 +108,7 @@ public class IterableContent<E extends Content, T> extends Element
      * @param iterator The iterator holding the child data
      * @param contentConverter The object that converts child data to jdom content
      */
-    public IterableContent(String name, Namespace ns, Iterator<T> iterator, ContentConverter<E, T> contentConverter)
-    {
+    public IterableContent(String name, Namespace ns, Iterator<T> iterator, ContentConverter<E, T> contentConverter) {
         super(name, ns);
         log.debug("IterableContent contructed.");
         this.iterator = iterator;
@@ -126,8 +124,7 @@ public class IterableContent<E extends Content, T> extends Element
      * @param maxIterations Defines the behaviour in limiting the iterations.
      */
     public IterableContent(String name, Namespace ns, Iterator<T> iterator,
-            ContentConverter<E, T> contentConverter, MaxIterations maxIterations)
-    {
+            ContentConverter<E, T> contentConverter, MaxIterations maxIterations) {
         super(name, ns);
         log.debug("IterableContent contructed.");
         this.iterator = iterator;
@@ -136,68 +133,122 @@ public class IterableContent<E extends Content, T> extends Element
     }
     
     @Override
-    public List<Content> getContent()
-    {
+    public List<Content> getContent() {
         log.debug("Get content called.");
         IterableList<Content, T> iterableList = new IterableList(iterator, contentConverter, maxIterations);
         return iterableList;
     }
     
-    private class IterableList<C extends Content, D> extends ArrayList<C>
-    {
+    private class IterableList<C extends Content, D> extends ArrayList<C> {
         
         private static final long serialVersionUID = 1932716563665349508L;
         private ContentConversionIterator<C, D> iterator;
         
-        public IterableList(Iterator<C> iterator, ContentConverter<C, D> contentConverter, MaxIterations maxIterations)
-        {
+        public IterableList(Iterator<C> iterator, ContentConverter<C, D> contentConverter, MaxIterations maxIterations) {
             super();
             log.debug("IterableList contructed.");
             this.iterator = new ContentConversionIterator(contentConverter, iterator, maxIterations);
         }
         
         @Override
-        public boolean isEmpty()
-        {
+        public boolean isEmpty() {
             log.debug("IterableList.isEmpty() called.");
             return (iterator.isEmpty());
         }
         
         @Override
-        public Iterator<C> iterator()
-        {
+        public Iterator<C> iterator() {
             log.debug("IterableList.iterator() called.");
             return iterator;
         }
         
         // Report an unsupported operation if any of these other list methods are called
-        @Override public boolean add(C c) { throw new UnsupportedOperationException(); }
-        @Override public void add(int i, C c) { throw new UnsupportedOperationException(); }
-        @Override public boolean addAll(Collection<? extends C> c) { throw new UnsupportedOperationException(); }
-        @Override public boolean addAll(int i, Collection<? extends C> c) { throw new UnsupportedOperationException(); }
-        @Override public void clear() { throw new UnsupportedOperationException(); }
-        @Override public boolean contains(Object o) { throw new UnsupportedOperationException(); }
-        @Override public boolean containsAll(Collection<?> c) { throw new UnsupportedOperationException(); }
-        @Override public boolean equals(Object o) { throw new UnsupportedOperationException(); }
-        @Override public C get(int i) { throw new UnsupportedOperationException(); }
-        @Override public int indexOf(Object o) { throw new UnsupportedOperationException(); }
-        @Override public int lastIndexOf(Object o) { throw new UnsupportedOperationException(); }
-        @Override public ListIterator<C> listIterator() { throw new UnsupportedOperationException(); }
-        @Override public C remove(int i) { throw new UnsupportedOperationException(); }
-        @Override public boolean remove(Object o) { throw new UnsupportedOperationException(); }
-        @Override public boolean removeAll(Collection<?> c) { throw new UnsupportedOperationException(); }
-        @Override public boolean retainAll(Collection<?> c) { throw new UnsupportedOperationException(); }
-        @Override public C set(int i, C c) { throw new UnsupportedOperationException(); }
-        @Override public int size() { throw new UnsupportedOperationException(); }
-        @Override public List<C> subList(int i, int j) { throw new UnsupportedOperationException(); }
-        @Override public Object[] toArray() { throw new UnsupportedOperationException(); }
-        @Override public <T> T[] toArray(T[] a) { throw new UnsupportedOperationException(); }
+        @Override public boolean add(C c) { 
+            throw new UnsupportedOperationException(); 
+        }
         
+        @Override public void add(int i, C c) { 
+            throw new UnsupportedOperationException(); 
+        }
+        
+        @Override public boolean addAll(Collection<? extends C> c) { 
+            throw new UnsupportedOperationException(); 
+        }
+        
+        @Override public boolean addAll(int i, Collection<? extends C> c) { 
+            throw new UnsupportedOperationException(); 
+        }
+        
+        @Override public void clear() { 
+            throw new UnsupportedOperationException(); 
+        }
+        
+        @Override public boolean contains(Object o) { 
+            throw new UnsupportedOperationException(); 
+        }
+        
+        @Override public boolean containsAll(Collection<?> c) { 
+            throw new UnsupportedOperationException(); 
+        }
+        
+        @Override public boolean equals(Object o) { 
+            throw new UnsupportedOperationException(); 
+        }
+        
+        @Override public C get(int i) { 
+            throw new UnsupportedOperationException(); 
+        }
+        
+        @Override public int indexOf(Object o) { 
+            throw new UnsupportedOperationException(); 
+        }
+        
+        @Override public int lastIndexOf(Object o) { 
+            throw new UnsupportedOperationException(); 
+        }
+        
+        @Override public ListIterator<C> listIterator() { 
+            throw new UnsupportedOperationException(); 
+        }
+        
+        @Override public C remove(int i) { 
+            throw new UnsupportedOperationException(); 
+        }
+        
+        @Override public boolean remove(Object o) { 
+            throw new UnsupportedOperationException(); 
+        }
+        
+        @Override public boolean removeAll(Collection<?> c) { 
+            throw new UnsupportedOperationException(); 
+        }
+        
+        @Override public boolean retainAll(Collection<?> c) { 
+            throw new UnsupportedOperationException(); 
+        }
+        
+        @Override public C set(int i, C c) { 
+            throw new UnsupportedOperationException(); 
+        }
+        
+        @Override public int size() { 
+            throw new UnsupportedOperationException(); 
+        }
+        
+        @Override public List<C> subList(int i, int j) { 
+            throw new UnsupportedOperationException(); 
+        }
+        
+        @Override public Object[] toArray() { 
+            throw new UnsupportedOperationException(); 
+        }
+        
+        @Override public <T> T[] toArray(T[] a) { 
+            throw new UnsupportedOperationException(); 
+        }        
     }
     
-    private class ContentConversionIterator<A extends Content, B> implements Iterator<A>
-    {
-        
+    private class ContentConversionIterator<A extends Content, B> implements Iterator<A> {
         private ContentConverter<A, B> contentConverter;
         private MaxIterations maxIterations;
         private Iterator<B> iterator;
@@ -207,8 +258,7 @@ public class IterableContent<E extends Content, T> extends Element
         private boolean maxIterationsReachedCalled = false;
         
         ContentConversionIterator(ContentConverter<A, B> contentConverter,
-                Iterator<B> iterator, MaxIterations maxIterations)
-        {
+                Iterator<B> iterator, MaxIterations maxIterations) {
             log.debug("ContentConversionIterator contructed.");
             this.contentConverter = contentConverter;
             this.iterator = iterator;
@@ -218,19 +268,15 @@ public class IterableContent<E extends Content, T> extends Element
             advance();
         }
         
-        private void advance()
-        {
+        private void advance() {
             next = null;
 
-            if (this.iterator.hasNext())
-            {
+            if (this.iterator.hasNext()) {
                 next = this.iterator.next();
             }
             
-            if (maxIterations != null)
-            {
-                if (rowCount >= maxIterations.getMaxIterations())
-                {
+            if (maxIterations != null) {
+                if (rowCount >= maxIterations.getMaxIterations()) {
                     maxIterationsReached = true;
                     next = null;
                 }
@@ -239,16 +285,13 @@ public class IterableContent<E extends Content, T> extends Element
             rowCount++;
         }
         
-        boolean isEmpty()
-        {
+        boolean isEmpty() {
             return (next == null);
         }
 
         @Override
-        public boolean hasNext()
-        {
-            if (maxIterationsReached && !maxIterationsReachedCalled)
-            {
+        public boolean hasNext() {
+            if (maxIterationsReached && !maxIterationsReachedCalled) {
                 maxIterations.maxIterationsReached();
                 maxIterationsReachedCalled = true;
             }
@@ -257,12 +300,12 @@ public class IterableContent<E extends Content, T> extends Element
         }
 
         @Override
-        public A next()
-        {
+        public A next() {
             log.debug("ContentConversionIterator.next");
             
-            if (next == null)
+            if (next == null) {
                 throw new NoSuchElementException();
+            }
 
             // convert the object
             A nextContent = contentConverter.convert(next);
@@ -274,11 +317,8 @@ public class IterableContent<E extends Content, T> extends Element
         }
 
         @Override
-        public void remove()
-        {
+        public void remove() {
             throw new UnsupportedOperationException();
         }
-        
     }
-    
 }

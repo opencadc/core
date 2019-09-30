@@ -67,12 +67,11 @@
 
 package ca.nrc.cadc.db.version;
 
-
 import javax.sql.DataSource;
 import org.apache.log4j.Logger;
 
 /**
- * Backwards compatibility. Using this class with continue to use a table named 
+ * Backwards compatibility. Using this class with continue to use a table named
  * {schema}.ModelVersion as before.
  * 
  * @author pdowler
@@ -80,7 +79,7 @@ import org.apache.log4j.Logger;
 public class ModelVersionDAO extends KeyValueDAO {
     private static final Logger log = Logger.getLogger(ModelVersionDAO.class);
 
-    public ModelVersionDAO(DataSource dataSource, String database, String schema) { 
+    public ModelVersionDAO(DataSource dataSource, String database, String schema) {
         super(dataSource, database, schema, ModelVersion.class);
         this.columnNames = new String[] { "version", "lastModified", "model" };
     }

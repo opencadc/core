@@ -32,90 +32,78 @@
  ************************************************************************
  */
 
-
-
 package ca.nrc.cadc.auth;
 
 import java.io.Serializable;
 import java.security.Principal;
 
 /**
- * Class that represents an openID identity. 
+ * Class that represents an openID identity.
  */
-public class OpenIdPrincipal implements Principal, Serializable
-{
-    private static final long serialVersionUID = 20140625143750l;
+public class OpenIdPrincipal implements Principal, Serializable {
+    private static final long serialVersionUID = 20140625143750L;
 
     private String openID;
 
     /**
      * Ctor
+     * 
      * @param openID
      */
-    public OpenIdPrincipal(final String openID)
-    {
-        if(openID == null)
-        {
+    public OpenIdPrincipal(final String openID) {
+        if (openID == null) {
             throw new IllegalArgumentException("null openID");
         }
         this.openID = openID;
     }
-    
+
     @Override
-    public String getName()
-    {
+    public String getName() {
         return openID;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Object#hashCode()
      */
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result
-                + ((openID == null) ? 0 : openID.hashCode());
+        result = prime * result + ((openID == null) ? 0 : openID.hashCode());
         return result;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
-    public boolean equals(Object obj)
-    {
-        if (this == obj)
-        {
+    public boolean equals(Object obj) {
+        if (this == obj) {
             return true;
         }
-        if (obj == null)
-        {
+        if (obj == null) {
             return false;
         }
-        if (!(obj instanceof OpenIdPrincipal))
-        {
+        if (!(obj instanceof OpenIdPrincipal)) {
             return false;
         }
         OpenIdPrincipal other = (OpenIdPrincipal) obj;
-        if (openID == null)
-        {
-            if (other.openID != null)
-            {
+        if (openID == null) {
+            if (other.openID != null) {
                 return false;
             }
-        }
-        else if (!openID.equals(other.openID))
-        {
+        } else if (!openID.equals(other.openID)) {
             return false;
         }
         return true;
     }
-       
+
     @Override
-    public String toString()
-    {
+    public String toString() {
         return getClass().getSimpleName() + "[" + getName() + "]";
     }
 

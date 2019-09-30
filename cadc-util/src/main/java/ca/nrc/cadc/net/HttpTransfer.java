@@ -107,8 +107,7 @@ import org.apache.log4j.Logger;
  * Base class for HTTP transfers.
  * @author pdowler
  */
-public abstract class HttpTransfer implements Runnable
-{
+public abstract class HttpTransfer implements Runnable {
     private static Logger log = Logger.getLogger(HttpTransfer.class);
 
     /**
@@ -124,13 +123,12 @@ public abstract class HttpTransfer implements Runnable
 
     public static final String SERVICE_RETRY = "Retry-After";
 
-    public static final int DEFAULT_BUFFER_SIZE = 8*1024; // 8KB
+    public static final int DEFAULT_BUFFER_SIZE = 8 * 1024; // 8KB
     // note: the combination of a large buffer, small-ish streamed put w/ no
     // content-length, and tomcat6 fails, plus apache+tomcat seem to have some
     // limits at 8k anyway
 
-    public static enum RetryReason
-    {
+    public static enum RetryReason {
         /**
          * Never retry.
          */
@@ -155,7 +153,9 @@ public abstract class HttpTransfer implements Runnable
 
         private int value;
 
-        private RetryReason(int val) { this.value = val; }
+        private RetryReason(int val) { 
+            this.value = val; 
+        }
     }
 
     /**
@@ -180,7 +180,7 @@ public abstract class HttpTransfer implements Runnable
 
     protected List<HttpRequestProperty> requestProperties;
     protected String userAgent;
-    protected boolean use_nio = false; // throughput not great, needs work before use
+    protected boolean userNio = false; // throughput not great, needs work before use
     protected boolean logIO = false;
     protected long writeTime = 0L;
     protected long readTime = 0L;
@@ -206,47 +206,40 @@ public abstract class HttpTransfer implements Runnable
     
     protected final Map<String,String> responseHeaders = new TreeMap<String,String>();
 
-    static
-    {
+    static {
         String jv = "Java " + System.getProperty("java.version") + ";" + System.getProperty("java.vendor");
         String os = System.getProperty("os.name") + " " + System.getProperty("os.version");
         DEFAULT_USER_AGENT = "OpenCADC/" + HttpTransfer.class.getName() + "/" + jv + "/" + os;
     }
 
-    protected HttpTransfer(boolean followRedirects)
-    {
+    protected HttpTransfer(boolean followRedirects) {
         this.followRedirects = followRedirects;
         this.go = true;
         this.requestProperties = new ArrayList<HttpRequestProperty>();
         this.userAgent = DEFAULT_USER_AGENT;
 
         String bsize = null;
-        try
-        {
+        try {
             bsize = System.getProperty(HttpTransfer.class.getName() + ".bufferSize");
-            if (bsize != null)
-            {
+            if (bsize != null) {
                 int mult = 1;
                 String sz = bsize;
                 bsize = bsize.trim();
-                if (bsize.endsWith("k"))
-                {
+                if (bsize.endsWith("k")) {
                     mult = 1024;
                     sz = bsize.substring(0, bsize.length() - 1);
-                }
-                else if (bsize.endsWith("m"))
-                {
-                    mult = 1024*1024;
+                } else if (bsize.endsWith("m")) {
+                    mult = 1024 * 1024;
                     sz = bsize.substring(0, bsize.length() - 1);
                 }
+                
                 this.bufferSize = mult * Integer.parseInt(sz);
             }
-        }
-        catch(NumberFormatException warn)
-        {
+        } catch (NumberFormatException warn) {
             log.warn("invalid buffer size: " + bsize + ", using default " + DEFAULT_BUFFER_SIZE);
             this.bufferSize = DEFAULT_BUFFER_SIZE;
         }
+        
         log.debug("bufferSize: " + bufferSize);
     }
 
@@ -287,8 +280,7 @@ public abstract class HttpTransfer implements Runnable
      *
      * @param followRedirects
      */
-    public void setFollowRedirects(boolean followRedirects)
-    {
+    public void setFollowRedirects(boolean followRedirects) {
         this.followRedirects = followRedirects;
     }
 
@@ -296,8 +288,7 @@ public abstract class HttpTransfer implements Runnable
      * If the response resulted in a redirect that wasn't followed, it
      * can be retrieved here.
      */
-    public URL getRedirectURL()
-    {
+    public URL getRedirectURL() {
         return redirectURL;
     }
 
@@ -309,8 +300,7 @@ public abstract class HttpTransfer implements Runnable
      *
      * @param maxRetries
      */
-    public void setMaxRetries(int maxRetries)
-    {
+    public void setMaxRetries(int maxRetries) {
         this.maxRetries = maxRetries;
     }
 
@@ -328,22 +318,23 @@ public abstract class HttpTransfer implements Runnable
      * @param retryDelay delay in seconds before retry
      * @param reason
      */
-    public void setRetry(int maxRetries, int retryDelay, RetryReason reason)
-    {
+    public void setRetry(int maxRetries, int retryDelay, RetryReason reason) {
         this.maxRetries = maxRetries;
         this.retryDelay = retryDelay;
         this.retryReason = reason;
     }
 
-    public URL getURL() { return remoteURL; }
+    public URL getURL() { 
+        return remoteURL; 
+    }
 
     /**
      * Set the buffer size in bytes. Transfers allocate a buffer to use in
      * the IO loop and also wrap BufferedInputStream and BufferedOutputStream
      * around the underlying InputStream and OutputStream (if they are not already
      * buffered).
-     * <p>
-     * Note: The buffer size can also be set with the system property
+     * 
+     * <p>Note: The buffer size can also be set with the system property
      * <code>ca.nrc.cadc.net.HttpTransfer.bufferSize</code> which is an integer
      * number of bytes. The value may be specified in KB by appending 'k' or MB by
      * appending 'm' (e.g. 16k or 2m).
@@ -351,22 +342,20 @@ public abstract class HttpTransfer implements Runnable
      * 
      * @param bufferSize
      */
-    public void setBufferSize(int bufferSize)
-    {
+    public void setBufferSize(int bufferSize) {
         this.bufferSize = bufferSize;
     }
 
-    public int getBufferSize()
-    {
+    public int getBufferSize() {
         return bufferSize;
     }
 
 
-    public void setUserAgent(String userAgent)
-    {
+    public void setUserAgent(String userAgent) {
         this.userAgent = userAgent;
-        if (userAgent == null)
+        if (userAgent == null) {
             this.userAgent = DEFAULT_USER_AGENT;
+        }
     }
     
     /**
@@ -374,8 +363,7 @@ public abstract class HttpTransfer implements Runnable
      * be available through getIOReadTime() and getIOWriteTime().
      * @param logIO
      */
-    public void setLogIO(boolean logIO)
-    {
+    public void setLogIO(boolean logIO) {
         this.logIO = logIO;
     }
     
@@ -383,10 +371,11 @@ public abstract class HttpTransfer implements Runnable
      * If logIO is set to true, return the time in milliseconds spent
      * reading from the input stream.  Otherwise, return null.
      */
-    public Long getIOReadTime()
-    {
-        if (logIO)
+    public Long getIOReadTime() {
+        if (logIO) {
             return readTime;
+        }
+        
         return null;
     }
     
@@ -394,10 +383,11 @@ public abstract class HttpTransfer implements Runnable
      * If logIO is set to true, return the time in milliseconds spent
      * writing to the output stream.  Otherwise, return null.
      */
-    public Long getIOWriteTime()
-    {
-        if (logIO)
+    public Long getIOWriteTime() {
+        if (logIO) {
             return writeTime;
+        }
+        
         return null;
     }
 
@@ -409,8 +399,7 @@ public abstract class HttpTransfer implements Runnable
      * @param header
      * @param value
      */
-    public void setRequestProperty(String header, String value)
-    {
+    public void setRequestProperty(String header, String value) {
         requestProperties.add(new HttpRequestProperty(header, value));
     }
 
@@ -421,25 +410,23 @@ public abstract class HttpTransfer implements Runnable
      * @see setRequestProperty
      * @param props
      */
-    public void setRequestProperties(List<HttpRequestProperty> props)
-    {
-        if (props != null)
-        {
+    public void setRequestProperties(List<HttpRequestProperty> props) {
+        if (props != null) {
             log.debug("add request properties: " + props.size());
             this.requestProperties.addAll(props);
         }
     }
 
-    public void setOverwriteChooser(OverwriteChooser overwriteChooser) { this.overwriteChooser = overwriteChooser; }
+    public void setOverwriteChooser(OverwriteChooser overwriteChooser) { 
+        this.overwriteChooser = overwriteChooser; 
+    }
 
-    public void setProgressListener(ProgressListener listener)
-    {
+    public void setProgressListener(ProgressListener listener) {
         this.progressListener = listener;
         fireEvents = (progressListener != null || transferListener != null);
     }
 
-    public void setTransferListener(TransferListener listener)
-    {
+    public void setTransferListener(TransferListener listener) {
         this.transferListener = listener;
         fireEvents = (progressListener != null || transferListener != null);
     }
@@ -449,8 +436,7 @@ public abstract class HttpTransfer implements Runnable
      *
      * @return number of retries performed
      */
-    public int getRetriesPerformed()
-    {
+    public int getRetriesPerformed() {
         return numRetries;
     }
 
@@ -459,8 +445,7 @@ public abstract class HttpTransfer implements Runnable
      *
      * @return HTTP response code or -1 if no HTTP call made
      */
-    public int getResponseCode()
-    {
+    public int getResponseCode() {
         return responseCode;
     }
 
@@ -470,25 +455,26 @@ public abstract class HttpTransfer implements Runnable
 
      * @return the last failure, or null if successful
      */
-    public Throwable getThrowable() { return failure; }
+    public Throwable getThrowable() { 
+        return failure; 
+    }
 
-    public void terminate()
-    {
+    public void terminate() {
         this.fireEvents = false; // prevent run() and future calls to terminate from firing the CANCELLED event
         this.go = false;
-        synchronized(this) // other synchronized block in in the finally part of run()
-        {
-            if (thread != null)
-            {
+        synchronized (this) {
+            // other synchronized block in in the finally part of run()
+            if (thread != null) {
                 // give it a poke just in case it is blocked/slow
                 log.debug("terminate(): interrupting " + thread.getName());
-                try
-                {
+                try {
                     thread.interrupt();
+                } catch (Throwable ignore) { 
+                    // do nothing
                 }
-                catch(Throwable ignore) { }
             }
         }
+        
         fireCancelledEvent();
         this.fireCancelOnce = false;
     }
@@ -501,127 +487,120 @@ public abstract class HttpTransfer implements Runnable
      * @throws TransientException to cause retry
      */
     protected void checkTransient(int code, String msg, HttpURLConnection conn)
-        throws TransientException
-    {
-        if (RetryReason.NONE.equals(retryReason))
+        throws TransientException {
+        if (RetryReason.NONE.equals(retryReason)) {
             return;
+        }
 
         boolean trans = false;
         int dt = 0;
 
         // try to get the retry delay from the response
-        if (code == HttpURLConnection.HTTP_UNAVAILABLE)
-        {
+        if (code == HttpURLConnection.HTTP_UNAVAILABLE) {
             msg = "server busy";
             String retryAfter = conn.getHeaderField(SERVICE_RETRY);
             log.debug("got " + HttpURLConnection.HTTP_UNAVAILABLE + " with " + SERVICE_RETRY + ": " + retryAfter);
-            if (StringUtil.hasText(retryAfter))
-            {
-                try
-                {
+            if (StringUtil.hasText(retryAfter)) {
+                try {
                     dt = Integer.parseInt(retryAfter);
                     trans = true; // retryReason==SERVER satisfied
-                    if (dt > MAX_RETRY_DELAY)
+                    if (dt > MAX_RETRY_DELAY) {
                         dt = MAX_RETRY_DELAY;
-                }
-                catch(NumberFormatException nex)
-                {
+                    }
+                } catch (NumberFormatException nex) {
                     log.warn(SERVICE_RETRY + " after a 503 was not a number: " + retryAfter + ", ignoring");
                 }
             }
         }
 
-        if (RetryReason.TRANSIENT.equals(retryReason))
-        {
-            switch(code)
-            {
+        if (RetryReason.TRANSIENT.equals(retryReason)) {
+            switch (code) {
                 case HttpURLConnection.HTTP_UNAVAILABLE:
                 case HttpURLConnection.HTTP_CLIENT_TIMEOUT:
                 case HttpURLConnection.HTTP_GATEWAY_TIMEOUT:
                 case HttpURLConnection.HTTP_PRECON_FAILED:      // ??
                 case HttpURLConnection.HTTP_PAYMENT_REQUIRED:   // maybe it will become free :-)
                     trans = true;
+                    break;
+                default:
+                    // do nothing
             }
         }
-        if (RetryReason.ALL.equals(retryReason))
-        {
+        
+        if (RetryReason.ALL.equals(retryReason)) {
             trans = true;
         }
 
-        if (trans && numRetries < maxRetries)
-        {
-            if (dt == 0)
-            {
-                if (curRetryDelay == 0)
+        if (trans && numRetries < maxRetries) {
+            if (dt == 0) {
+                if (curRetryDelay == 0) {
                     curRetryDelay = retryDelay;
-                if (curRetryDelay > 0)
-                {
+                }
+                
+                if (curRetryDelay > 0) {
                     dt = curRetryDelay;
                     curRetryDelay *= 2;
-                }
-                else
+                } else {
                     dt = DEFAULT_RETRY_DELAY;
+                }
             }
+            
             numRetries++;
             throw new TransientException(msg, dt);
         }
     }
 
-    protected void findEventID(HttpURLConnection conn)
-    {
+    protected void findEventID(HttpURLConnection conn) {
         String eventHeader = null;
-        if (transferListener != null)
+        if (transferListener != null) {
             eventHeader = transferListener.getEventHeader();
-        if (eventHeader != null)
+        }
+        
+        if (eventHeader != null) {
             this.eventID = conn.getHeaderField(eventHeader);
+        }
     }
 
-    private void fireCancelledEvent()
-    {
-        if (fireCancelOnce)
-        {
+    private void fireCancelledEvent() {
+        if (fireCancelOnce) {
             TransferEvent e = new TransferEvent(this, eventID, remoteURL, localFile, TransferEvent.CANCELLED);
             fireEvent(e);
         }
     }
-    private void fireEvent(TransferEvent e)
-    {
+    
+    private void fireEvent(TransferEvent e) {
         log.debug("fireEvent: " + e);
-        if (transferListener != null)
+        if (transferListener != null) {
             transferListener.transferEvent(e);
-        if (progressListener != null)
+        }
+        
+        if (progressListener != null) {
             progressListener.transferEvent(e);
+        }
     }
 
-    protected void fireEvent(int state)
-    {
+    protected void fireEvent(int state) {
         fireEvent(localFile, state);
     }
 
-    protected void fireEvent(File file, int state)
-    {
+    protected void fireEvent(File file, int state) {
         fireEvent(file, state, null);
     }
 
-    protected void fireEvent(File file, int state, FileMetadata meta)
-    {
-        if (fireEvents)
-        {
+    protected void fireEvent(File file, int state, FileMetadata meta) {
+        if (fireEvents) {
             TransferEvent e = new TransferEvent(this, eventID, remoteURL, file, state);
             e.setFileMetadata(meta);
             fireEvent(e);
         }
     }
 
-    protected void fireEvent(Throwable t)
-    {
+    protected void fireEvent(Throwable t) {
         fireEvent(localFile, t);
     }
 
-    protected void fireEvent(File file, Throwable t)
-    {
-        if (fireEvents)
-        {
+    protected void fireEvent(File file, Throwable t) {
+        if (fireEvents) {
             TransferEvent e = new TransferEvent(this, eventID, remoteURL, file, t);
             fireEvent(e);
         }
@@ -649,24 +628,23 @@ public abstract class HttpTransfer implements Runnable
      * @param ostream
      * @param sz
      * @param startingPos for resumed transfers, this effects the reported value seen by
-     * the progressListener (if set)
+     *     the progressListener (if set)
      * @return string representation of the content md5sum
      * 
      * @throws IOException
      * @throws InterruptedException
      */
     protected String ioLoop(InputStream istream, OutputStream ostream, int sz, long startingPos)
-        throws IOException, InterruptedException
-    {
+        throws IOException, InterruptedException {
         log.debug("ioLoop: using java.io with byte[] buffer size " + sz + " startingPos " + startingPos);
         long readStart = 0;
         long writeStart = 0;
         byte[] buf = new byte[sz];
 
         MessageDigest md5 = null;
-        try { md5 = MessageDigest.getInstance("MD5"); }
-        catch(NoSuchAlgorithmException oops)
-        {
+        try {
+            md5 = MessageDigest.getInstance("MD5"); 
+        } catch (NoSuchAlgorithmException oops) {
             log.warn("failed to create MessageDigest(MD5): " + oops);
         }
         
@@ -675,58 +653,73 @@ public abstract class HttpTransfer implements Runnable
         long tot = startingPos; // non-zero for resumed transfer
         int n = 0;
 
-        if (progressListener != null)
+        if (progressListener != null) {
             progressListener.update(0, tot);
+        }
 
-        while (nb != -1)
-        {
+        while (nb != -1) {
             // check/clear interrupted flag and throw if necessary
-            if ( Thread.interrupted() )
+            if (Thread.interrupted()) {
                 throw new InterruptedException();
+            }
 
-            if (logIO)
+            if (logIO) {
                 readStart = System.currentTimeMillis();
+            }
+            
             nb = istream.read(buf, 0, sz);
-            if (logIO)
+            if (logIO) {
                 readTime += System.currentTimeMillis() - readStart;
+            }
             
             if (requestStartTime != null) {
                 responseLatency = System.currentTimeMillis() - requestStartTime;
             }
             
-            if (nb != -1)
-            {
-                if (nb < sz/2)
-                {
+            if (nb != -1) {
+                if (nb < sz / 2) {
                     // try to get more data: merges a small chunk with a
                     // subsequent one to minimise write calls
-                    if (logIO)
+                    if (logIO) {
                         readStart = System.currentTimeMillis();
-                    nb2 = istream.read(buf, nb, sz-nb);
-                    if (logIO)
+                    }
+                    
+                    nb2 = istream.read(buf, nb, sz - nb);
+                    if (logIO) {
                         readTime += System.currentTimeMillis() - readStart;
-                    if (nb2 > 0)
+                    }
+                    
+                    if (nb2 > 0) {
                         nb += nb2;
+                    }
                 }
+                
                 //log.debug("write buffer: " + nb);
-                if (md5 != null)
+                if (md5 != null) {
                     md5.update(buf, 0, nb);
-                if (logIO) 
+                }
+                
+                if (logIO) {
                     writeStart = System.currentTimeMillis();
+                }
+                
                 ostream.write(buf, 0, nb);
-                if (logIO)
+                if (logIO) {
                     writeTime += System.currentTimeMillis() - writeStart;
+                }
+                
                 tot += nb;
-                if (progressListener != null)
+                if (progressListener != null) {
                     progressListener.update(nb, tot);
+                }
             }
         }
-        if (md5 != null)
-        {
+        if (md5 != null) {
             byte[] md5sum = md5.digest();
             String ret = HexUtil.toHex(md5sum);
             return ret;
         }
+        
         return null;
     }
 
@@ -741,20 +734,20 @@ public abstract class HttpTransfer implements Runnable
      * @throws InterruptedException
      */
     protected void nioLoop(InputStream istream, OutputStream ostream, int sz, long startingPos)
-        throws IOException, InterruptedException
-    {
+        throws IOException, InterruptedException {
         // Note: If NIO is enabled, the logIO option should be added at
         // the same time (see ioLoop).
         
         log.debug("[Download] nioLoop: using java.nio with ByteBuffer size " + sz);
         // check/clear interrupted flag and throw if necessary
-        if ( Thread.interrupted() )
+        if (Thread.interrupted()) {
             throw new InterruptedException();
+        }
         
         MessageDigest md5 = null;
-        try { md5 = MessageDigest.getInstance("MD5"); }
-        catch(NoSuchAlgorithmException oops)
-        {
+        try { 
+            md5 = MessageDigest.getInstance("MD5"); 
+        } catch (NoSuchAlgorithmException oops) {
             log.warn("failed to create MessageDigest(MD5): " + oops);
         }
 
@@ -766,43 +759,39 @@ public abstract class HttpTransfer implements Runnable
 
         ByteBuffer buffer = ByteBuffer.allocate(sz);
 
-        if (progressListener != null)
+        if (progressListener != null) {
             progressListener.update(count, tot);
+        }
 
-        while(count != -1)
-        {
+        while (count != -1) {
             // check/clear interrupted flag and throw if necessary
-            if ( Thread.interrupted() )
+            if (Thread.interrupted()) {
                 throw new InterruptedException();
+            }
 
             count = rbc.read(buffer);
-            if (count != -1)
-            {
+            if (count != -1) {
                 wbc.write((ByteBuffer)buffer.flip());
                 buffer.flip();
                 tot += count;
-                if (progressListener != null)
+                if (progressListener != null) {
                     progressListener.update(count, tot);
+                }
             }
         }
     }
 
-    protected void setRequestSSOCookie(HttpURLConnection conn)
-    {
+    protected void setRequestSSOCookie(HttpURLConnection conn) {
         AccessControlContext acc = AccessController.getContext();
         Subject subj = Subject.getSubject(acc);
-        if (subj != null)
-        {
+        if (subj != null) {
             Set<SSOCookieCredential> cookieCreds = subj
                     .getPublicCredentials(SSOCookieCredential.class);
-            if ((cookieCreds != null) && (cookieCreds.size() > 0))
-            {
+            if ((cookieCreds != null) && (cookieCreds.size() > 0)) {
                 // grab the first cookie that matches the domain
                 boolean found = false;
-                for (SSOCookieCredential cookieCred : cookieCreds)
-                {
-                    if (conn.getURL().getHost().endsWith(cookieCred.getDomain()))
-                    {
+                for (SSOCookieCredential cookieCred : cookieCreds) {
+                    if (conn.getURL().getHost().endsWith(cookieCred.getDomain())) {
                         // HACK ("Pat Said") - this is rather horrenous, but in the java HTTP
                         // library, the cookie isn't sent with the redirect. But it doesn't flag it
                         // as a problem. This flags the problem early, allows us to detect attempts
@@ -820,27 +809,23 @@ public abstract class HttpTransfer implements Runnable
                         break;
                     }
                 }
-                if (!found)
-                {
+                
+                if (!found) {
                     log.debug("setRequestSSOCookie: no cookie for domain: "
                             + conn.getURL().getHost());
                 }
-            }
-            else
-            {
+            } else {
                 log.debug("setRequestSSOCookie: no cookie");
             }
         }
     }
 
-    protected void setRequestHeaders(HttpURLConnection conn)
-    {
+    protected void setRequestHeaders(HttpURLConnection conn) {
         log.debug("custom request properties: " + requestProperties.size());
-        for (HttpRequestProperty rp : requestProperties)
-        {
+        for (HttpRequestProperty rp : requestProperties) {
             String p = rp.getProperty();
             String v = rp.getValue();
-            log.debug("set request property: "+p+"="+v);
+            log.debug("set request property: " + p + "=" + v);
             conn.setRequestProperty(p, v);
         }
     }

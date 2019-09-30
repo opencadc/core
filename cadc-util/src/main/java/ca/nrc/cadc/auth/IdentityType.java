@@ -66,6 +66,7 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.auth;
 
 import java.util.HashMap;
@@ -76,8 +77,7 @@ import javax.security.auth.x500.X500Principal;
  *
  * @author jburke
  */
-public enum IdentityType
-{
+public enum IdentityType {
     X500("X500"),
     OPENID("OpenID"),
     @Deprecated
@@ -88,46 +88,46 @@ public enum IdentityType
     NUMERICID("numericID"),
     @Deprecated
     COOKIE("sessionID"),
-    ENTRY_DN("entryDN");
+    ENTRY_DN("entryDN"),
+    POSIX("POSIX");
 
     private final String value;
 
-    private IdentityType(String value)
-    {
+    private IdentityType(String value) {
         this.value = value;
     }
 
-    public static IdentityType toValue(String s)
-    {
-        for (IdentityType type : values())
-            if (type.value.equals(s))
+    public static IdentityType toValue(String s) {
+        for (IdentityType type : values()) {
+            if (type.value.equals(s)) {
                 return type;
+            }
+        }
+        
         throw new IllegalArgumentException("invalid value: " + s);
     }
 
-    public String getValue()
-    {
+    public String getValue() {
         return value;
     }
 
-    public int checksum()
-    {
+    public int checksum() {
         return value.hashCode();
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return this.getClass().getSimpleName() + "[" + value + "]";
     }
 
-    public static final Map<String, IdentityType> principalIdentityMap = new HashMap<String, IdentityType>() {{
-        put(X500Principal.class.getSimpleName(), IdentityType.X500);
-        put(HttpPrincipal.class.getSimpleName(), IdentityType.USERID);
-        put(NumericPrincipal.class.getSimpleName(), IdentityType.NUMERICID);
-        put(OpenIdPrincipal.class.getSimpleName(), IdentityType.OPENID);
-        put(DNPrincipal.class.getSimpleName(), IdentityType.ENTRY_DN);
-    }};
+    public static final Map<String, IdentityType> principalIdentityMap = new HashMap<String, IdentityType>() {
+        {
+            put(X500Principal.class.getSimpleName(), IdentityType.X500);
+            put(HttpPrincipal.class.getSimpleName(), IdentityType.USERID);
+            put(NumericPrincipal.class.getSimpleName(), IdentityType.NUMERICID);
+            put(OpenIdPrincipal.class.getSimpleName(), IdentityType.OPENID);
+            put(DNPrincipal.class.getSimpleName(), IdentityType.ENTRY_DN);
+            put(PosixPrincipal.class.getSimpleName(), IdentityType.POSIX);
+        }
+    };
 }
-
-

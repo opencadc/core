@@ -74,26 +74,23 @@ package ca.nrc.cadc.net;
  *
  * @author pdowler
  */
-public class HttpRequestProperty 
-{
+public class HttpRequestProperty  {
     private String property;
     private String value;
 
-    public HttpRequestProperty(String property, String value)
-    {
+    public HttpRequestProperty(String property, String value) {
         this.property = property;
         this.value = value;
-        if (property == null || value == null)
+        if (property == null || value == null) {
             throw new IllegalArgumentException("null not allowed: " + property + "," + value);
+        }
     }
 
-    public String getProperty()
-    {
+    public String getProperty() {
         return property;
     }
 
-    public String getValue()
-    {
+    public String getValue() {
         return value;
     }
 }

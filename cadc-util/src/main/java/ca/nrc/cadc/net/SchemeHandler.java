@@ -77,20 +77,19 @@ import java.util.List;
 /**
  * @deprecated
  * Replaced by StorageResolver.
- * Interface for handlers that convert a URI to a URL that allows retrieval.
+ *     Interface for handlers that convert a URI to a URL that allows retrieval.
  * 
  * @author pdowler
  */
 @Deprecated
-public interface SchemeHandler
-{
+public interface SchemeHandler {
     /**
      * Convert the specified URI to one or more URL(s). 
      * 
-     * @throws IllegalArgumentException if the scheme is not equal to the value from getScheme()
-     *         the uri is malformed such that a URL cannot be generated, or the uri is null
      * @param uri the URI to convert
      * @return a URL to the identified resource
+     * @throws IllegalArgumentException if the scheme is not equal to the value from getScheme()
+     *         the uri is malformed such that a URL cannot be generated, or the uri is null
      */
     public List<URL> toURL(URI uri)
         throws IllegalArgumentException;

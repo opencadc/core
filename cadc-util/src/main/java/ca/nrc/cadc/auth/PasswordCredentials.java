@@ -67,21 +67,21 @@
 
 package ca.nrc.cadc.auth;
 
-
 import org.apache.log4j.Logger;
 
 /**
- * Simple placeholder credential object that can be stored in the public credential
- * set of a Subject to indicate that a <code>java.net.Authenticator</code> has been
- * created to provide username and password credentials when requested. This type of
- * credential can only be used in stand-alone applications because the authenticator
- * is a global static that is used by the entire Java VM.
+ * Simple placeholder credential object that can be stored in the public
+ * credential set of a Subject to indicate that a
+ * <code>java.net.Authenticator</code> has been created to provide username and
+ * password credentials when requested. This type of credential can only be used
+ * in stand-alone applications because the authenticator is a global static that
+ * is used by the entire Java VM.
  * 
  * @author pdowler
  */
-public class PasswordCredentials 
-{
+public class PasswordCredentials {
     private static final Logger log = Logger.getLogger(PasswordCredentials.class);
 
-    public PasswordCredentials() { }
+    public PasswordCredentials() {
+    }
 }

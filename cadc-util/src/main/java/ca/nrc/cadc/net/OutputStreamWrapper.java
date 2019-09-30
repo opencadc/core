@@ -83,8 +83,7 @@ import java.io.OutputStream;
  * 
  * @author jburke
  */
-public interface OutputStreamWrapper
-{
+public interface OutputStreamWrapper {
     void write(OutputStream out) 
         throws IOException;
 

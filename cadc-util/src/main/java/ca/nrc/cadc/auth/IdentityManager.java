@@ -73,18 +73,17 @@ import javax.security.auth.Subject;
 
 /**
  * Simple interface to manage the persistence of owner identity. Implementations
- * determine which part of the caller subject the NodeDAO class will store (typically
- * which Principal) and are responsible for for recreating the Subject again to support
- * authorization checks and output of owner metadata.
+ * determine which part of the caller subject the NodeDAO class will store
+ * (typically which Principal) and are responsible for for recreating the
+ * Subject again to support authorization checks and output of owner metadata.
  *
  * @author pdowler
  */
-public interface IdentityManager 
-{
+public interface IdentityManager {
     /**
-     * Create a subject from the specified owner object. This is the reverse
-     * of toOwner(Subject). The returned subject must include at least one
-     * Principal but need not contain any credentials.
+     * Create a subject from the specified owner object. This is the reverse of
+     * toOwner(Subject). The returned subject must include at least one Principal
+     * but need not contain any credentials.
      *
      * @param owner
      * @return
@@ -102,8 +101,8 @@ public interface IdentityManager
     Object toOwner(Subject subject);
 
     /**
-     * Get the SQL TYPE for the column that stores the object
-     * returned by toOwner(Subject);
+     * Get the SQL TYPE for the column that stores the object returned by
+     * toOwner(Subject);
      *
      * @see java.sql.Types
      * @see java.sql.PreparedStatement

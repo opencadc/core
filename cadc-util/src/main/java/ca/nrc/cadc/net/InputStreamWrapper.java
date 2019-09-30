@@ -79,8 +79,7 @@ import java.io.InputStream;
  * @author majorb
  *
  */
-public interface InputStreamWrapper
-{
+public interface InputStreamWrapper {
     /**
      * Read the bytes of the inputStream.
      */

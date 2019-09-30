@@ -78,9 +78,8 @@ package ca.nrc.cadc.io;
  * @author majorb
  *
  */
-public interface ByteCounter
-{
-    
+public interface ByteCounter {
+
     /**
      * Return the number of bytes counted.
      */

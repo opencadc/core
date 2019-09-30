@@ -76,35 +76,28 @@ import java.util.Arrays;
  * @version $Version$
  * @author pdowler
  */
-public class ArrayUtil
-{
-	/**
-	 * Find a string in an array of specified items.
+public class ArrayUtil {
+    /**
+     * Find a string in an array of specified items.
      *
-	 * @param s         The value to find.
-	 * @param as        The array.
+     * @param s         The value to find.
+     * @param as        The array.
      *
-	 * @return          The location of s within the array, or -1 if not found.
-	 */
-	public static <O> int find(final O s, final O[] as)
-	{
-		if (isEmpty(as))
-        {
-			return -1;
-        }
-        else
-        {
-            for (int i = 0; i < as.length; i++)
-            {
-                if (s.equals(as[i]))
-                {
+     * @return          The location of s within the array, or -1 if not found.
+     */
+    public static <O> int find(final O s, final O[] as) {
+        if (isEmpty(as)) {
+            return -1;
+        } else {
+            for (int i = 0; i < as.length; i++) {
+                if (s.equals(as[i])) {
                     return i;
                 }
             }
 
             return -1;
         }
-	}
+    }
 
     /**
      * Match a String in an array of Strings.
@@ -117,15 +110,11 @@ public class ArrayUtil
      *                  found.
      */
     public static int matches(final String regexp, final String[] as,
-                              final boolean caseInsensitive)
-    {
-        if (StringUtil.hasLength(regexp) && !isEmpty(as))
-        {
-            for (int i = 0; i < as.length; i++)
-            {
+                              final boolean caseInsensitive) {
+        if (StringUtil.hasLength(regexp) && !isEmpty(as)) {
+            for (int i = 0; i < as.length; i++) {
                 if (StringUtil.hasLength(as[i])
-                    && StringUtil.matches(as[i], regexp, caseInsensitive))
-                {
+                    && StringUtil.matches(as[i], regexp, caseInsensitive)) {
                     return i;
                 }
             }
@@ -142,8 +131,7 @@ public class ArrayUtil
      * @param <O>           The type of the array/element.
      * @return              True if it is contained, false otherwise.
      */
-    public static <O> boolean contains(final O element, final O[] array)
-    {
+    public static <O> boolean contains(final O element, final O[] array) {
         return !(isEmpty(array) || (element == null))
                && Arrays.asList(array).contains(element);
     }
@@ -154,8 +142,7 @@ public class ArrayUtil
      * @param array     The array to check.
      * @return          True if it is empty, False otherwise.
      */
-    public static <O> boolean isEmpty(final O[] array)
-    {
+    public static <O> boolean isEmpty(final O[] array) {
         return (array == null) || (array.length == 0);
     }
 
@@ -165,8 +152,7 @@ public class ArrayUtil
      * @param array     The array to check.
      * @return          True if it is empty, False otherwise.
      */
-    public static boolean isEmpty(final char[] array)
-    {
+    public static boolean isEmpty(final char[] array) {
         return (array == null) || (array.length == 0);
     }
 
@@ -176,8 +162,7 @@ public class ArrayUtil
      * @param array     The array to check.
      * @return          True if it is empty, False otherwise.
      */
-    public static boolean isEmpty(final int[] array)
-    {
+    public static boolean isEmpty(final int[] array) {
         return (array == null) || (array.length == 0);
     }
 
@@ -187,8 +172,7 @@ public class ArrayUtil
      * @param array     The array to check.
      * @return          True if it is empty, False otherwise.
      */
-    public static boolean isEmpty(final byte[] array)
-    {
+    public static boolean isEmpty(final byte[] array) {
         return (array == null) || (array.length == 0);
     }
 }

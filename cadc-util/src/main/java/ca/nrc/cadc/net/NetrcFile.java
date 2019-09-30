@@ -84,8 +84,7 @@ import org.apache.log4j.Logger;
  *
  * @author pdowler
  */
-public class NetrcFile extends File 
-{
+public class NetrcFile extends File  {
     private static final long serialVersionUID = 201205161150L;
     
     private static final Logger log = Logger.getLogger(NetrcFile.class);
@@ -101,10 +100,9 @@ public class NetrcFile extends File
      * Create a new .netrc file. This always uses ${user.home}/.netrc as the path to the netrc file.
      *
      * @param secureMode if true, passwords are not kept in memory and read from filesystem on every call
-     * to getCredentials(String)
+     *     to getCredentials(String)
      */
-    public NetrcFile(boolean secureMode) 
-    { 
+    public NetrcFile(boolean secureMode)  { 
         super(System.getProperty("user.home"), ".netrc");
         this.secureMode = secureMode;
     }
@@ -114,15 +112,16 @@ public class NetrcFile extends File
      *
      * @param netrcFile File name containing the username/password information.
      */
-    public NetrcFile(String netrcFile)
-    {
+    public NetrcFile(String netrcFile) {
         super(netrcFile);
     }
     
     /**
      * Crate a new .netrc file. This called NetrcFile(true).
      */
-    public NetrcFile() { this(true); }
+    public NetrcFile() { 
+        this(true); 
+    }
     
     /**
      * Read the users .netrc file and find credentials for the specified server.
@@ -131,106 +130,104 @@ public class NetrcFile extends File
      * @param strict require a strict hostname match or also allow default value
      * @return authentication credentials or null
      */
-    public PasswordAuthentication getCredentials(String host, boolean strict)
-    {
+    public PasswordAuthentication getCredentials(String host, boolean strict) {
         return readFromCache(host, strict);
     }
     
     // read entire .netrc file into a char[] buffer.
     private char[] readEntireFile()
-        throws IOException
-    {
+        throws IOException {
         FileReader fr = null;
         char[] c = new char[ (int) length() ];
-        try
-        {
+        try {
             fr = new FileReader(this);
             int n = fr.read(c, 0, c.length);
             int n2 = 1;
-            while (n2 > 0)
-            {
+            while (n2 > 0) {
                 n2 = fr.read(c, n, c.length - n);
-                if (n2 >= 0)
+                if (n2 >= 0) {
                     n += n2;
+                }
             }
-        }
-        catch(IOException ex)
-        {
-            if (c != null)
+        } catch (IOException ex) {
+            if (c != null) {
                 Arrays.fill(c, '0');
+            }
+            
             throw ex;
-        }
-        finally
-        {
-            if (fr != null)
-                try { fr.close(); }
-                catch(IOException ignore) { }
+        } finally {
+            if (fr != null) {
+                try { 
+                    fr.close(); 
+                } catch (IOException ignore) {
+                    // do nothing
+                }
+            }
         }
         return c;
     }
     
-    private PasswordAuthentication readFromCache(String host, boolean strict)
-    {
-        try
-        {
+    private PasswordAuthentication readFromCache(String host, boolean strict) {
+        try {
             initCache();
-            if (cache != null)
-            {
+            if (cache != null) {
                 log.debug("looking for '" + host + "'");
                 Cred defaultCred = null;
-                for (int i=0; i<cache.size(); i++)
-                {
+                for (int i = 0; i < cache.size(); i++) {
                     Cred cred = (Cred) cache.get(i);
                     log.debug("checking '" + cred + "'");
-                    if (cred.machine.equals(host))
+                    if (cred.machine.equals(host)) {
                         return new PasswordAuthentication(cred.login, cred.pword);
-                    if (DEFAULT_MACHINE.equals(cred.machine))
+                    }
+                    
+                    if (DEFAULT_MACHINE.equals(cred.machine)) {
                         defaultCred = cred;
+                    }
                 }
-                if (!strict && defaultCred != null)
+                if (!strict && defaultCred != null) {
                     return new PasswordAuthentication(defaultCred.login, defaultCred.pword);
+                }
             }
-        }
-        finally
-        {
+        } finally {
             clearCache();
         }
+        
         return null;
     }
     
-    private void clearCache()
-    {
-        if (cache == null)
+    private void clearCache() {
+        if (cache == null) {
             return;
-        if (secureMode)
-        {
+        }
+        
+        if (secureMode) {
             // go through and wipe passwords
-            for (int i=0; i<cache.size(); i++)
-            {
+            for (int i = 0; i < cache.size(); i++) {
                 Cred cred = (Cred) cache.get(i);
                 Arrays.fill(cred.pword, '0');
             }
+            
             cache.clear();
             cache = null;
         }
     }
-    private void initCache()
-    {
-        if (cache != null && timestamp == lastModified())
-        {
+    
+    private void initCache() {
+        if (cache != null && timestamp == lastModified()) {
             log.debug("cache is up to date");
             return; // up to date
         }
         
-        if (cache == null)
+        if (cache == null) {
             this.cache = new ArrayList<Cred>();
-        else
+        } else {
             cache.clear();
+        }
+        
         this.timestamp = lastModified();
 
         char[] c = null;
-        try
-        {
+        try {
             log.debug("reading entire file...");
             c = readEntireFile();
             
@@ -241,140 +238,131 @@ public class NetrcFile extends File
             int i = 0;
             boolean inToken = false;
             char lineSep = System.getProperty("line.separator").charAt(0);
-            while (i < c.length)
-            {
-                if (inToken)
-                {
-                    while (i < c.length && c[i] != lineSep) // could leave whitespace on the end
+            while (i < c.length) {
+                if (inToken) {
+                    while (i < c.length && c[i] != lineSep) {
+                        // could leave whitespace on the end
                         i++;
-                    if (i > start)
-                    {
+                    }
+                    
+                    if (i > start) {
                         int e = i;
-                        while (e > start && Character.isWhitespace(c[e-1]))
+                        while (e > start && Character.isWhitespace(c[e - 1])) {
                             e--; // backtrack over trailing whitespace
-                        Cred cred = new Cred(c, start, e-start);
+                        }
+                        
+                        Cred cred = new Cred(c, start, e - start);
                         log.debug("found: " + cred);
-                        if (cred.valid)
+                        if (cred.valid) {
                             cache.add(cred);
+                        }
+                        
                         inToken = false;
                     }
-                }
-                else
-                {
+                } else {
                     // skip intervening whitespace, blank lines, etc
-                    while (i < c.length && Character.isWhitespace(c[i]))
+                    while (i < c.length && Character.isWhitespace(c[i])) {
                         i++;
-                    if (i < c.length)
-                    {
+                    }
+                    
+                    if (i < c.length) {
                         inToken = true;
                         start = i;
                     }
                 }
             }
-                
-        }
-        catch(IOException ex)
-        {
+        } catch (IOException ex) {
             // always clean up fully on failure
             log.warn("failed to read " + this.getAbsolutePath() + ": " + ex);
             clearCache();
-        }
-        finally
-        {
+        } finally {
             // always erase the buffer
-            if (c != null)
+            if (c != null) {
                 Arrays.fill(c, '0');
+            }
         }
     }
     
-    private class Cred
-    {
+    private class Cred {
         boolean valid;
         String machine;
         String login;
         char[] pword;
         
         // create from part of char buffer (one line of netrc file)
-        Cred(char[] cbuf, int offset, int count)
-        {
+        Cred(char[] cbuf, int offset, int count) {
             valid = false;
             int start = offset;
-            int end = offset+count;
+            int end = offset + count;
             int i = offset;
             boolean inToken = true; // assume 
-            while (i < end)
-            {
-                if (inToken)
-                {
+            while (i < end) {
+                if (inToken) {
                     // look for end of this token
-                    while ( i < end && !Character.isWhitespace(cbuf[i]) )
+                    while (i < end && !Character.isWhitespace(cbuf[i])) {
                         i++;
+                    }
+                    
                     // end of token or array
                     int len = i - start;
                     String s = new String(cbuf, start, len);
-                    if ("machine".equals(s))
-                    {
+                    if ("machine".equals(s)) {
                         start = nextToken(cbuf, i, end);
                         i = nextWhitespace(cbuf, start, end);
-                        if (i > start)
-                            machine = new String(cbuf, start, i-start);
-                    }
-                    else  if ("login".equals(s))
-                    {
-                        start = nextToken(cbuf, i, end);
-                        i = nextWhitespace(cbuf, start, end);
-                        if (i > start)
-                            login = new String(cbuf, start, i-start);
-                    }
-                    else if ("password".equals(s))
-                    {
-                        start = nextToken(cbuf, i, end);
-                        i = nextWhitespace(cbuf, start, end);
-                        if (i > start)
-                        {
-                            pword = new char[i-start];
-                            System.arraycopy(cbuf, start, pword, 0, i-start);
-                            
+                        if (i > start) {
+                            machine = new String(cbuf, start, i - start);
                         }
-                    }
-                    else if ("default".equals(s))
-                    {
+                    } else  if ("login".equals(s)) {
+                        start = nextToken(cbuf, i, end);
+                        i = nextWhitespace(cbuf, start, end);
+                        if (i > start) {
+                            login = new String(cbuf, start, i - start);
+                        }
+                    } else if ("password".equals(s)) {
+                        start = nextToken(cbuf, i, end);
+                        i = nextWhitespace(cbuf, start, end);
+                        if (i > start) {
+                            pword = new char[i - start];
+                            System.arraycopy(cbuf, start, pword, 0, i - start);
+                        }
+                    } else if ("default".equals(s)) {
                         machine = "*";
                     }
+                    
                     inToken = false;
-                }
-                else
-                {
+                } else {
                     i = nextToken(cbuf, i, end);
-                    if (i < end)
-                    {
+                    if (i < end) {
                         inToken = true;
                         start = i;
                     }
                 }
             }
+            
             valid = (machine != null && login != null && pword != null);
         }
         
         // find next whitespace character
-        private int nextWhitespace(char[] cbuf, int i, int end)
-        {
+        private int nextWhitespace(char[] cbuf, int i, int end) {
             // skip whitespace
-            while (i < end && !Character.isWhitespace(cbuf[i]))
+            while (i < end && !Character.isWhitespace(cbuf[i])) {
                 i++;
-            return i;
-        }
-        // find start of next token (non-whitespace)
-        private int nextToken(char[] cbuf, int i, int end)
-        {
-            // skip whitespace
-            while (i < end && Character.isWhitespace(cbuf[i]))
-                i++;
+            }
+            
             return i;
         }
         
-        public String toString()
-        {
+        // find start of next token (non-whitespace)
+        private int nextToken(char[] cbuf, int i, int end) {
+            // skip whitespace
+            while (i < end && Character.isWhitespace(cbuf[i])) {
+                i++;
+            }
+            
+            return i;
+        }
+        
+        public String toString() {
             return "Cred[" + machine + "," + login + ",********]";
         }
     }

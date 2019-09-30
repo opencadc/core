@@ -69,6 +69,13 @@
 
 package ca.nrc.cadc.auth;
 
+import ca.nrc.cadc.auth.encoding.TokenEncoderDecoder;
+import ca.nrc.cadc.auth.encoding.TokenEncoding;
+import ca.nrc.cadc.util.Base64;
+import ca.nrc.cadc.util.RsaSignatureGenerator;
+import ca.nrc.cadc.util.RsaSignatureVerifier;
+import ca.nrc.cadc.util.StringUtil;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.Serializable;
@@ -79,13 +86,6 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Date;
 
-import ca.nrc.cadc.auth.encoding.TokenEncoderDecoder;
-import ca.nrc.cadc.auth.encoding.TokenEncoding;
-import ca.nrc.cadc.util.Base64;
-import ca.nrc.cadc.util.RsaSignatureGenerator;
-import ca.nrc.cadc.util.RsaSignatureVerifier;
-import ca.nrc.cadc.util.StringUtil;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
@@ -95,17 +95,14 @@ import javax.security.auth.x500.X500Principal;
 
 import org.apache.log4j.Logger;
 
-
 /**
  * Class that captures the information required to perform delegation (i.e.
- * accessing resources on user's behalf). The required fields are:
- * - the user that delegates
- * - the expirty time
- * - scope of delegation
- * <p>
- * This class can serialize and de-serialize the information into a
- * String token. Optionally, it can sign the serialized token and
- * verify when one is received.
+ * accessing resources on user's behalf). The required fields are: - the user
+ * that delegates - the expirty time - scope of delegation
+ * 
+ * <p>This class can serialize and de-serialize the information into a String
+ * token. Optionally, it can sign the serialized token and verify when one is
+ * received.
  */
 public class DelegationToken implements Serializable {
     private static final Logger log = Logger.getLogger(DelegationToken.class);
@@ -131,8 +128,7 @@ public class DelegationToken implements Serializable {
     public static final String VALUE_DELIM = "=";
 
     public static class ScopeValidator {
-        public void verifyScope(URI scope, String requestURI)
-            throws InvalidDelegationTokenException {
+        public void verifyScope(URI scope, String requestURI) throws InvalidDelegationTokenException {
             throw new InvalidDelegationTokenException("default: invalid scope");
         }
     }
@@ -141,8 +137,8 @@ public class DelegationToken implements Serializable {
      * Constructor.
      *
      * @param user       identity of the delegating user - required
-     * @param scope      - scope of the delegation, i.e. resource that it applies
-     *                   to - optional
+     * @param scope      - scope of the delegation, i.e. resource that it applies to
+     *                   - optional
      * @param expiryTime - the expiry date of this token (UTC)
      */
     public DelegationToken(HttpPrincipal user, URI scope, Date expiryTime, List<String> domains) {
@@ -167,7 +163,8 @@ public class DelegationToken implements Serializable {
      * Constructor.
      *
      * @param principals - sorted set of identity principals (http, x500, cadc)
-     * @param scope      - scope of the delegation, i.e. resource that it applies to - optional
+     * @param scope      - scope of the delegation, i.e. resource that it applies to
+     *                   - optional
      * @param expiryTime - the expiry date of this token (UTC)
      * @param domains    - list of domains that this token could be used for
      */
@@ -190,44 +187,44 @@ public class DelegationToken implements Serializable {
     /**
      * Serializes and signs the object into a string of attribute-value pairs.
      *
-     * @param token the token to format
-     *              the returned string
+     * @param token the token to format the returned string
      * @return String with DelegationToken information
      * @throws IOException         Any IO Errors.
      * @throws InvalidKeyException If the signature cannot be completed.
      */
-    public static String format(DelegationToken token)  throws InvalidKeyException, IOException {
+    public static String format(DelegationToken token) throws InvalidKeyException, IOException {
         return format(token, TokenEncoding.BASE64);
     }
 
     /**
      * Serializes and signs the object into a string of attribute-value pairs.
      *
-     * @param token the token to format
-     *              the returned string
-     * @return String with DelegationToken information, with a "scheme" to indicate the encoding type.
+     * @param token the token to format the returned string
+     * @return String with DelegationToken information, with a "scheme" to indicate
+     *         the encoding type.
      * @throws IOException         Any IO Errors.
      * @throws InvalidKeyException If the signature cannot be completed.
      */
     public static String format(final DelegationToken token, final TokenEncoding tokenEncoding)
-        throws InvalidKeyException, IOException {
+            throws InvalidKeyException, IOException {
         StringBuilder sb = getContent(token);
 
-        //sign and add the signature field
+        // sign and add the signature field
         String toSign = sb.toString();
         log.debug("string to be signed: " + toSign);
         sb.append(FIELD_DELIM);
         sb.append(SIGNATURE_LABEL);
         sb.append(VALUE_DELIM);
 
-        // Signature is always Base64 encoded.  This is necessary because the value of the Signature alone cannot be
+        // Signature is always Base64 encoded. This is necessary because the value of
+        // the Signature alone cannot be
         // easily transported.
         final RsaSignatureGenerator su = new RsaSignatureGenerator();
         final byte[] sig = su.sign(new ByteArrayInputStream(toSign.getBytes()));
         sb.append(new String(Base64.encode(sig)));
 
         return tokenEncoding.name().toLowerCase() + ":"
-            + new String(TOKEN_ENCODER_DECODER.encode(sb.toString().getBytes(), tokenEncoding));
+                + new String(TOKEN_ENCODER_DECODER.encode(sb.toString().getBytes(), tokenEncoding));
     }
 
     // the formatted content without the signature
@@ -286,11 +283,10 @@ public class DelegationToken implements Serializable {
      *
      * @param text       The token string.
      * @param requestURI The HTTP Request URI
-     * @return DelegationToken instance.  Never null.
+     * @return DelegationToken instance. Never null.
      * @throws InvalidDelegationTokenException If the given token cannot be parsed.
      */
-    public static DelegationToken parse(String text, String requestURI)
-        throws InvalidDelegationTokenException {
+    public static DelegationToken parse(String text, String requestURI) throws InvalidDelegationTokenException {
         return parse(text, requestURI, null);
     }
 
@@ -304,7 +300,7 @@ public class DelegationToken implements Serializable {
      * @throws InvalidDelegationTokenException If the given token cannot be parsed.
      */
     public static DelegationToken parse(String text, String requestURI, ScopeValidator sv)
-        throws InvalidDelegationTokenException {
+            throws InvalidDelegationTokenException {
 
         if (text.startsWith(DelegationToken.EXPIRY_LABEL)) {
             final String[] fields = text.split(FIELD_DELIM);
@@ -314,23 +310,8 @@ public class DelegationToken implements Serializable {
         }
     }
 
-    private static DelegationToken parseEncoded(final URI encodedURI, final String requestURI,
-                                                final ScopeValidator scopeValidator)
-        throws InvalidDelegationTokenException {
-
-        if (!StringUtil.hasLength(encodedURI.getScheme())) {
-            throw new InvalidDelegationTokenException("Wrong format for encoded token.");
-        } else {
-            final TokenEncoding tokenEncoding = TokenEncoding.valueOf(encodedURI.getScheme().toUpperCase());
-            final byte[] decodedBytes = TOKEN_ENCODER_DECODER.decode(encodedURI.getSchemeSpecificPart(), tokenEncoding);
-            final String decodedString = new String(decodedBytes);
-
-            return parse(decodedString.split(FIELD_DELIM), decodedString, requestURI, scopeValidator);
-        }
-    }
-
     private static DelegationToken parse(String[] fields, String cookieText, String requestURI, ScopeValidator sv)
-        throws InvalidDelegationTokenException {
+            throws InvalidDelegationTokenException {
         String userid = null;
         Set<Principal> principalSet = new HashSet<>();
         String proxyUser = null;
@@ -353,12 +334,13 @@ public class DelegationToken implements Serializable {
                     proxyUser = value;
                 } else if (key.equalsIgnoreCase(IdentityType.X500.getValue().toLowerCase())) {
                     principalSet.add(new X500Principal(value));
-                }
-                // Treating CADC principal as a NumericPrincipal
-                // check for both for backward cookie compatibility
-                else if (key.equalsIgnoreCase(IdentityType.NUMERICID.getValue())
-                    || key.equalsIgnoreCase(IdentityType.CADC.getValue())) {
+                } else if (key.equalsIgnoreCase(IdentityType.NUMERICID.getValue())
+                        || key.equalsIgnoreCase(IdentityType.CADC.getValue())) {
+                    // Treating CADC principal as a NumericPrincipal
+                    // check for both for backward cookie compatibility
                     principalSet.add(new NumericPrincipal(UUID.fromString(value)));
+                } else if (key.equalsIgnoreCase(IdentityType.POSIX.getValue())) {
+                    principalSet.add(new PosixPrincipal(Integer.parseInt(value)));
                 } else if (key.equalsIgnoreCase(EXPIRY_LABEL)) {
                     expirytime = new Date(Long.valueOf(value));
                 } else if (key.equalsIgnoreCase(SCOPE_LABEL)) {
@@ -410,8 +392,22 @@ public class DelegationToken implements Serializable {
         return new DelegationToken(principalSet, scope, expirytime, domains);
     }
 
-    private static void validateSignature(final String signatureString, final String text) throws
-        InvalidDelegationTokenException {
+    private static DelegationToken parseEncoded(final URI encodedURI, final String requestURI,
+            final ScopeValidator scopeValidator) throws InvalidDelegationTokenException {
+
+        if (!StringUtil.hasLength(encodedURI.getScheme())) {
+            throw new InvalidDelegationTokenException("Wrong format for encoded token.");
+        } else {
+            final TokenEncoding tokenEncoding = TokenEncoding.valueOf(encodedURI.getScheme().toUpperCase());
+            final byte[] decodedBytes = TOKEN_ENCODER_DECODER.decode(encodedURI.getSchemeSpecificPart(), tokenEncoding);
+            final String decodedString = new String(decodedBytes);
+
+            return parse(decodedString.split(FIELD_DELIM), decodedString, requestURI, scopeValidator);
+        }
+    }
+
+    private static void validateSignature(final String signatureString, final String text)
+            throws InvalidDelegationTokenException {
         // validate signature
         try {
             final byte[] signature = Base64.decode(signatureString);
@@ -478,7 +474,6 @@ public class DelegationToken implements Serializable {
         return domains;
     }
 
-
     // TODO: update this to include principals
     @Override
     public String toString() {
@@ -512,9 +507,9 @@ public class DelegationToken implements Serializable {
 
     private void addPrincipal(Principal p) {
         if (p != null) {
-            Set<Principal> pSet = new HashSet<>();
-            pSet.add(p);
-            addPrincipals(pSet);
+            Set<Principal> prSet = new HashSet<>();
+            prSet.add(p);
+            addPrincipals(prSet);
         }
     }
 

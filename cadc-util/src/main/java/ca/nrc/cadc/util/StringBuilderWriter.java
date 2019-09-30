@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2016.                            (c) 2016.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -75,55 +75,47 @@ import java.io.Writer;
 /**
  * Class wraps a Writer around a StringBuilder.
  */
-public class StringBuilderWriter extends Writer
-{
+public class StringBuilderWriter extends Writer {
     private StringBuilder sb;
 
-    public StringBuilderWriter(StringBuilder sb)
-    {
+    public StringBuilderWriter(StringBuilder sb) {
         this.sb = sb;
     }
 
     @Override
-    public void write(char[] cbuf) throws IOException
-    {
+    public void write(char[] cbuf) throws IOException {
         sb.append(cbuf);
     }
 
     @Override
-    public void write(char[] cbuf, int off, int len) throws IOException
-    {
+    public void write(char[] cbuf, int off, int len) throws IOException {
         sb.append(cbuf, off, len);
     }
 
     @Override
-    public void write(int c) throws IOException
-    {
+    public void write(int c) throws IOException {
         sb.append((char) c);
     }
 
     @Override
-    public void write(String str) throws IOException
-    {
+    public void write(String str) throws IOException {
         sb.append(str);
     }
 
     @Override
-    public void write(String str, int off, int len) throws IOException
-    {
+    public void write(String str, int off, int len) throws IOException {
         sb.append(str.substring(off, off + len));
     }
 
     @Override
-    public void flush() throws IOException
-    {}
+    public void flush() throws IOException {
+    }
 
     @Override
     public void close() throws IOException
     {}
 
-    public void reset()
-    {
+    public void reset() {
         sb.setLength(0);
     }
 

@@ -75,9 +75,12 @@ package ca.nrc.cadc.net;
  * 
  * @author pdowler
  */
-public class ResourceNotFoundException extends Exception
-{
-    public ResourceNotFoundException(String s) { super(s); }
+public class ResourceNotFoundException extends Exception {
+    public ResourceNotFoundException(String s) { 
+        super(s); 
+    }
     
-    public ResourceNotFoundException(String s, Throwable cause) { super(s, cause); }
+    public ResourceNotFoundException(String s, Throwable cause) { 
+        super(s, cause); 
+    }
 }

@@ -70,7 +70,6 @@
 
 package ca.nrc.cadc.net;
 
-import java.io.BufferedReader;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -88,8 +87,7 @@ import org.apache.log4j.Logger;
  * 
  * @author pdowler
  */
-public class MultiSchemeHandler implements SchemeHandler
-{
+public class MultiSchemeHandler implements SchemeHandler {
     private static final Logger log = Logger.getLogger(MultiSchemeHandler.class);
 
     private static final String CACHE_FILENAME = MultiSchemeHandler.class.getSimpleName() + ".properties";
@@ -100,39 +98,33 @@ public class MultiSchemeHandler implements SchemeHandler
      * Create a MultiSchemeHandler from the default config. By default, a resource named
      * MultiSchemeHandler.properties is found via the class loader that loaded this class.
      */
-    public MultiSchemeHandler()
-    {
+    public MultiSchemeHandler() {
         this(MultiSchemeHandler.class.getClassLoader().getResource(CACHE_FILENAME));
     }
 
     /**
      * Create a MultiSchemeHandler with configuration loaded from the specified URL.
      *
-     * The config resource has contains URIs (one per line, comments start line with #, blank lines
+     * <p>The config resource has contains URIs (one per line, comments start line with #, blank lines
      * are ignored) with a scheme and a class name of a class that implements the SchemeHandler
      * interface for that particular scheme.
      *
      * @param url
      */
-    public MultiSchemeHandler(URL url)
-    {
-        if (url == null)
-        {
+    public MultiSchemeHandler(URL url) {
+        if (url == null) {
             log.debug("config URL is null: no custom scheme support");
             return;
         }
         
-        try
-        {
+        try {
             Properties props = new Properties();
             props.load(url.openStream());
             Iterator<String> i = props.stringPropertyNames().iterator();
-            while ( i.hasNext() )
-            {
+            while (i.hasNext()) {
                 String scheme = i.next();
                 String cname = props.getProperty(scheme);
-                try
-                {
+                try {
                     log.debug("loading: " + cname);
                     Class c = Class.forName(cname);
                     log.debug("instantiating: " + c);
@@ -140,20 +132,14 @@ public class MultiSchemeHandler implements SchemeHandler
                     log.debug("adding: " + scheme + "," + handler);
                     handlers.put(scheme, handler);
                     log.debug("success: " + scheme + " is supported");
-                }
-                catch(Exception fail)
-                {
+                } catch (Exception fail) {
                     log.warn("failed to load " + cname + ", reason: " + fail);
                 }
             }
-        }
-        catch(Exception ex)
-        {
+        } catch (Exception ex) {
             log.error("failed to read config from " + url, ex);
-        }
-        finally
-        {
-            
+        } finally {
+            // do nothing
         }
     }
     
@@ -170,22 +156,22 @@ public class MultiSchemeHandler implements SchemeHandler
      * @throws UnsupportedOperationException if there is no SchemeHandler for the URI scheme
      */
     public List<URL> toURL(URI uri)
-        throws IllegalArgumentException
-    {
-        if (uri == null)
+        throws IllegalArgumentException {
+        if (uri == null) {
             return null;
+        }
         
         SchemeHandler sh = (SchemeHandler) handlers.get(uri.getScheme());
-        if (sh != null)
+        if (sh != null) {
             return sh.toURL(uri);
+        }
         
         // fallback: hope for the best
-        try 
-        {
+        try  {
             URL url = uri.toURL();
             String frag = uri.getFragment();
-            if (frag != null) // convert fragment to query string: this is horrendous :-(
-            {
+            if (frag != null) {
+                // convert fragment to query string: this is horrendous :-(
                 String s = uri.toString().replace('#', '?');
                 url = new URL(s);
                 /*
@@ -198,12 +184,11 @@ public class MultiSchemeHandler implements SchemeHandler
                 }
                 */
             }
+            
             List<URL> ret = new ArrayList<URL>();
             ret.add(url);
             return ret;
-        }
-        catch(MalformedURLException mex) 
-        { 
+        } catch (MalformedURLException mex)  { 
             throw new IllegalArgumentException("unknown URI scheme: " + uri.getScheme(), mex); 
         }
     }
@@ -215,8 +200,7 @@ public class MultiSchemeHandler implements SchemeHandler
      * @param scheme
      * @param handler
      */
-    public void addSchemeHandler(String scheme, SchemeHandler handler)
-    {
+    public void addSchemeHandler(String scheme, SchemeHandler handler) {
         handlers.put(scheme, handler);
     }
 }

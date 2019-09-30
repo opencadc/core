@@ -68,65 +68,52 @@
 
 package ca.nrc.cadc.net;
 
-import org.apache.log4j.Logger;
-
-import javax.net.ssl.HttpsURLConnection;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.AccessControlException;
+import javax.net.ssl.HttpsURLConnection;
+import org.apache.log4j.Logger;
 
-
-public class HttpDelete extends HttpTransfer
-{
+public class HttpDelete extends HttpTransfer {
     private static final Logger LOGGER = Logger.getLogger(HttpUpload.class);
-
 
     /**
      * Complete constructor.
      *
      * @param resourceURL     The resource to delete.
-     * @param followRedirects True to follow the resource's redirect, or
-     *                        False otherwise.
+     * @param followRedirects True to follow the resource's redirect, or False
+     *                        otherwise.
      */
-    public HttpDelete(final URL resourceURL, final boolean followRedirects)
-    {
+    public HttpDelete(final URL resourceURL, final boolean followRedirects) {
         super(followRedirects);
 
         this.remoteURL = resourceURL;
     }
 
-
     @Override
-    public String toString()
-    {
+    public String toString() {
         return HttpDelete.class.getSimpleName() + "[" + remoteURL + "]";
     }
 
-
     /**
-     * When an object implementing interface <code>Runnable</code> is used
-     * to create a thread, starting the thread causes the object's
-     * <code>run</code> method to be called in that separately executing
-     * thread.
-     * <p>
-     * The general contract of the method <code>run</code> is that it may
-     * take any action whatsoever.
+     * When an object implementing interface <code>Runnable</code> is used to create
+     * a thread, starting the thread causes the object's <code>run</code> method to
+     * be called in that separately executing thread.
+     * 
+     * <p>The general contract of the method <code>run</code> is that it may take any
+     * action whatsoever.
      *
      * @see Thread#run()
      */
     @Override
-    public void run()
-    {
-        try
-        {
+    public void run() {
+        try {
             LOGGER.debug(remoteURL);
             final HttpURLConnection connection = connect();
             verifyDelete(connection);
-        }
-        catch (Throwable t)
-        {
+        } catch (Throwable t) {
             LOGGER.debug("Failed to delete resource.", t);
             failure = t;
         }
@@ -136,27 +123,22 @@ public class HttpDelete extends HttpTransfer
      * Verify the given connection can properly perform the delete.
      *
      * @param connection The open connection.
-     * @throws IOException Any errors waiting for the response code and
-     *                     message.
+     * @throws IOException Any errors waiting for the response code and message.
      */
-    void verifyDelete(final HttpURLConnection connection) throws IOException
-    {
+    void verifyDelete(final HttpURLConnection connection) throws IOException {
         responseCode = connection.getResponseCode();
         // generic capture
         captureResponseHeaders(connection);
-        
+
         final String responseMessage = connection.getResponseMessage();
 
-        switch (responseCode)
-        {
-            case HttpURLConnection.HTTP_OK:
-            {
+        switch (responseCode) {
+            case HttpURLConnection.HTTP_OK: {
                 // Successful deletion.
                 break;
             }
 
-            case HttpURLConnection.HTTP_INTERNAL_ERROR:
-            {
+            case HttpURLConnection.HTTP_INTERNAL_ERROR: {
                 // The service SHALL throw a HTTP 500 status code including an
                 // InternalFault fault in the entity-body if the operation fails
                 //
@@ -173,28 +155,24 @@ public class HttpDelete extends HttpTransfer
 
             case -1:
             case HttpURLConnection.HTTP_FORBIDDEN:
-            case HttpURLConnection.HTTP_UNAUTHORIZED:
-            {
+            case HttpURLConnection.HTTP_UNAUTHORIZED: {
                 // The service SHALL throw a HTTP 401 status code including a
                 // PermissionDenied fault in the entity-body if the user does
                 // not have permissions to perform the operation.
                 //
-                final String msg = (responseMessage == null)
-                                   ? "permission denied" : responseMessage;
+                final String msg = (responseMessage == null) ? "permission denied" : responseMessage;
 
                 throw new AccessControlException(msg);
             }
 
-            case HTTP_LOCKED:
-            {
+            case HTTP_LOCKED: {
                 // The service SHALL throw a HTTP 423 status code if the given
                 // resource is locked, or inaccessible.
                 //
                 throw new AccessControlException(responseMessage);
             }
 
-            case HttpURLConnection.HTTP_NOT_FOUND:
-            {
+            case HttpURLConnection.HTTP_NOT_FOUND: {
                 // The service SHALL throw a HTTP 404 status code including a
                 // FileNotFound fault in the entity-body if the target node
                 // does not exist.
@@ -206,32 +184,25 @@ public class HttpDelete extends HttpTransfer
                 throw new FileNotFoundException(responseMessage);
             }
 
-            default:
-            {
-                LOGGER.error(responseMessage + ". HTTP Code: "
-                             + responseCode);
-                throw new RuntimeException("unexpected failure mode: "
-                                           + responseMessage + "("
-                                           + responseCode + ")");
+            default: {
+                LOGGER.error(responseMessage + ". HTTP Code: " + responseCode);
+                throw new RuntimeException("unexpected failure mode: " + responseMessage + "(" + responseCode + ")");
             }
         }
     }
 
     /**
-     * Setup the HTTP Connection for use.  This does not obtain a status code
-     * or any messages from the remote endpoint, it will only establish a
-     * connection to use.
+     * Setup the HTTP Connection for use. This does not obtain a status code or any
+     * messages from the remote endpoint, it will only establish a connection to
+     * use.
      *
      * @return The HTTPURLConneciton instance.
      * @throws IOException Any connectivity issues.
      */
-    private HttpURLConnection connect() throws IOException
-    {
-        final HttpURLConnection connection =
-                (HttpURLConnection) remoteURL.openConnection();
+    private HttpURLConnection connect() throws IOException {
+        final HttpURLConnection connection = (HttpURLConnection) remoteURL.openConnection();
 
-        if (connection instanceof HttpsURLConnection)
-        {
+        if (connection instanceof HttpsURLConnection) {
             final HttpsURLConnection sslConn = (HttpsURLConnection) connection;
             initHTTPS(sslConn);
         }

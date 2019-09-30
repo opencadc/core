@@ -84,12 +84,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-
 /**
  * Manage authentication cookies.
  */
-public class SSOCookieManager
-{
+public class SSOCookieManager {
 
     public static final String DEFAULT_SSO_COOKIE_NAME = "CADC_SSO";
 
@@ -100,69 +98,53 @@ public class SSOCookieManager
 
     public static final String DOMAINS_PROP_FILE = "ac-domains.properties";
 
-    // Offset to add to the expiry hours.  This is mainly used to set a cookie
-    // date in the past to expire it.  This can be a negative value.
+    // Offset to add to the expiry hours. This is mainly used to set a cookie
+    // date in the past to expire it. This can be a negative value.
     private int offsetExpiryHours = 1;
 
-
     /**
-     * Parse the cookie value.  If validation is successful, then the stream
-     * is read in and a Principal representing the cookie value is returned.
-     * Format of the value is:
-     *    UserPrincipal-PrincipalType-ExpirationDateUTC-Base64SignatureToken
-     *    where:
-     *    UserPrincipal - principal of the user
-     *    PrincipalType - principal type
-     *    ExpirationDateUTC - long representing the expiration Java date in UTC
-     *    Base64SignatureToken - The signature token of the 3 fields above in
-     *                           Base64 format.
+     * Parse the cookie value. If validation is successful, then the stream is read
+     * in and a Principal representing the cookie value is returned. Format of the
+     * value is: UserPrincipal-PrincipalType-ExpirationDateUTC-Base64SignatureToken
+     * where: UserPrincipal - principal of the user PrincipalType - principal type
+     * ExpirationDateUTC - long representing the expiration Java date in UTC
+     * Base64SignatureToken - The signature token of the 3 fields above in Base64
+     * format.
      *
-     * @param value           Cookie value.
-     * @return		The HttpPrincipal decoded if the cookie value can be parsed 
-     *            and validated.
-     * @throws InvalidDelegationTokenException 
+     * @param value Cookie value.
+     * @return The HttpPrincipal decoded if the cookie value can be parsed and
+     *         validated.
+     * @throws InvalidDelegationTokenException
      */
-    public final DelegationToken parse(final String value)
-                    throws IOException, InvalidDelegationTokenException
-    {
+    public final DelegationToken parse(final String value) throws IOException, InvalidDelegationTokenException {
         /*
-        TODO - The DelegationToken class really should be fixed to handle
-        TODO - null values and bad entries.
-        TODO - jenkinsd 2015.07.14
+         * TODO - The DelegationToken class really should be fixed to handle TODO - null
+         * values and bad entries. TODO - jenkinsd 2015.07.14
          */
         DelegationToken token;
 
-        try
-        {
+        try {
             token = DelegationToken.parse(value, SCOPE_URI.toASCIIString(), new CookieScopeValidator());
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             throw new InvalidDelegationTokenException("Bad token." + value);
         }
 
         return token;
     }
 
-
     /**
-     * Generate a new cookie value for the given HttpPrincipal.
-     * Format of the value is:
-     *    HttpPrincipal-ExpirationDateUTC-Base64SignatureToken
-     *    where:
-     *    HttpPrincipal - principal of the user
-     *    ExpirationDateUTC - long representing the expiration Java date in UTC
-     *    Base64SignatureToken - The signature token of the 2 fields above in
-     *                           Base64 format.
+     * Generate a new cookie value for the given HttpPrincipal. Format of the value
+     * is: HttpPrincipal-ExpirationDateUTC-Base64SignatureToken where: HttpPrincipal
+     * - principal of the user ExpirationDateUTC - long representing the expiration
+     * Java date in UTC Base64SignatureToken - The signature token of the 2 fields
+     * above in Base64 format.
      *
      * @param principal The HttpPrincipal to generate the value from.
-     * @return string of the value.  never null.
-     * @throws IOException Any errors with writing and generation.
+     * @return string of the value. never null.
+     * @throws IOException         Any errors with writing and generation.
      * @throws InvalidKeyException Signing key is invalid
      */
-    public final String generate(final HttpPrincipal principal, URI scope)
-            throws InvalidKeyException, IOException
-    {
+    public final String generate(final HttpPrincipal principal, URI scope) throws InvalidKeyException, IOException {
         Set<Principal> principalSet = new HashSet<>();
         principalSet.add(principal);
         return generate(principalSet, scope);
@@ -170,23 +152,22 @@ public class SSOCookieManager
 
     /**
      * Backward-compatible generate function.
+     * 
      * @param principal
      * @return
      * @throws InvalidKeyException
      * @throws IOException
      */
-    public final String generate(final HttpPrincipal principal)
-        throws InvalidKeyException, IOException
-    {
+    public final String generate(final HttpPrincipal principal) throws InvalidKeyException, IOException {
         Set<Principal> principalSet = new HashSet<>();
         principalSet.add(principal);
         return generate(principalSet, null);
     }
 
-
     /**
      * Generate a new cookie value for the set of Principals, scope and expiryDate.
      * Sets a default scope and expiry if either not supplied
+     * 
      * @param principalSet
      * @param scope
      * @param expiryDate
@@ -195,8 +176,7 @@ public class SSOCookieManager
      * @throws IOException
      */
     public final String generate(final Set<Principal> principalSet, URI scope, Date expiryDate)
-        throws InvalidKeyException, IOException
-    {
+            throws InvalidKeyException, IOException {
         if (scope == null) {
             scope = SCOPE_URI;
         }
@@ -204,13 +184,12 @@ public class SSOCookieManager
             expiryDate = getExpirationDate();
         }
         List<String> domainList = null;
-            PropertiesReader propReader = new PropertiesReader(DOMAINS_PROP_FILE);
-            List<String> domainValues = propReader.getPropertyValues("domains");
-            if (domainValues != null && (domainValues.size() > 0)) {
-                domainList = Arrays.asList(domainValues.get(0).split(" "));
-            }
-        DelegationToken token =
-            new DelegationToken(principalSet, scope, expiryDate, domainList);
+        PropertiesReader propReader = new PropertiesReader(DOMAINS_PROP_FILE);
+        List<String> domainValues = propReader.getPropertyValues("domains");
+        if (domainValues != null && (domainValues.size() > 0)) {
+            domainList = Arrays.asList(domainValues.get(0).split(" "));
+        }
+        DelegationToken token = new DelegationToken(principalSet, scope, expiryDate, domainList);
         return DelegationToken.format(token);
     }
 
@@ -218,23 +197,20 @@ public class SSOCookieManager
      * Generate a new cookie value for the set of Principals.
      *
      * @param principalSet The HttpPrincipal to generate the value from.
-     * @return string of the value.  never null.
-     * @throws IOException Any errors with writing and generation.
+     * @return string of the value. never null.
+     * @throws IOException         Any errors with writing and generation.
      * @throws InvalidKeyException Signing key is invalid
      */
-    public final String generate(final Set<Principal> principalSet, URI scope)
-        throws InvalidKeyException, IOException
-    {
+    public final String generate(final Set<Principal> principalSet, URI scope) throws InvalidKeyException, IOException {
         return generate(principalSet, scope, getExpirationDate());
     }
 
     /**
-     * Produce an expiration date.  The default is forty-eight (48) hours.
+     * Produce an expiration date. The default is forty-eight (48) hours.
      *
-     * @return      Date of expiration.  Never null.
+     * @return Date of expiration. Never null.
      */
-    public Date getExpirationDate()
-    {
+    public Date getExpirationDate() {
         final Calendar cal = getCurrentCalendar();
         cal.add(Calendar.HOUR, (SSO_COOKIE_LIFETIME_HOURS * offsetExpiryHours));
 
@@ -244,38 +220,36 @@ public class SSOCookieManager
     /**
      * Testers can override this to provide a consistent test.
      *
-     * @return  Calendar instance.  Never null.
+     * @return Calendar instance. Never null.
      */
-    public Calendar getCurrentCalendar()
-    {
+    public Calendar getCurrentCalendar() {
         return Calendar.getInstance(DateUtil.UTC);
     }
 
-    public void setOffsetExpiryHours(int offsetExpiryHours)
-    {
+    public void setOffsetExpiryHours(int offsetExpiryHours) {
         this.offsetExpiryHours = offsetExpiryHours;
     }
 
     /**
-     * Generate a list of cookies based on the original credentials passed in, one for each
-     * of the supported domains.
+     * Generate a list of cookies based on the original credentials passed in, one
+     * for each of the supported domains.
      *
      * @param cookieValue
      * @param requestURI
      * @return cookieList
      */
     public List<SSOCookieCredential> getSSOCookieCredentials(final String cookieValue, final String requestURI)
-        throws InvalidDelegationTokenException, IOException {
+            throws InvalidDelegationTokenException, IOException {
 
         List<SSOCookieCredential> cookieList = new ArrayList<>();
         DelegationToken cookieToken = DelegationToken.parse(cookieValue, requestURI, new CookieScopeValidator());
 
-        for (String domain: cookieToken.getDomains()) {
+        for (String domain : cookieToken.getDomains()) {
             SSOCookieCredential nextCookie = new SSOCookieCredential(cookieValue, domain, cookieToken.getExpiryTime());
             cookieList.add(nextCookie);
         }
 
         return cookieList;
-     }
+    }
 
 }

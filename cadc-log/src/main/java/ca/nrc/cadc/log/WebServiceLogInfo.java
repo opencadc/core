@@ -65,19 +65,19 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.log;
 
+import ca.nrc.cadc.auth.HttpPrincipal;
+import ca.nrc.cadc.util.StringUtil;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.Set;
-
 import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
-
 import org.apache.log4j.Logger;
 
 import ca.nrc.cadc.auth.HttpPrincipal;
@@ -92,8 +92,8 @@ import ca.nrc.cadc.util.StringUtil;
  * @author majorb
  *
  */
-public abstract class WebServiceLogInfo
-{
+public abstract class WebServiceLogInfo {
+
     private static final Logger log = Logger.getLogger(WebServiceLogInfo.class);
 
     private static final String ANONYMOUS_USER = "anonUser";
@@ -118,6 +118,7 @@ public abstract class WebServiceLogInfo
 
     /**
      * Generates the log.info message for the start of the request.
+     *
      * @return
      */
     public String start()
@@ -127,16 +128,15 @@ public abstract class WebServiceLogInfo
 
     /**
      * Generates the log.info message for the end of the request.
+     *
      * @return
      */
-    public String end()
-    {
+    public String end() {
         this.success = userSuccess;
         return "{" + getPreamble() + "\"phase\":\"end\"," + doit() + "}";
     }
 
-    String doit()
-    {
+    String doit() {
         StringBuilder sb = new StringBuilder();
         populate(sb, this.getClass());
         return sb.toString();
@@ -169,44 +169,41 @@ public abstract class WebServiceLogInfo
         return sb.toString();
     }
 
-    private void populate(StringBuilder sb, Class c)
-    {
-        for (Field f : c.getDeclaredFields())
-        {
+    private void populate(StringBuilder sb, Class c) {
+        for (Field f : c.getDeclaredFields()) {
             log.debug("found field: " + f.getName());
             int m = f.getModifiers();
             boolean inc = true;
             inc = inc && !Modifier.isStatic(m);
             inc = inc && !Modifier.isPrivate(m);
             inc = inc && !Modifier.isTransient(m);
-            if (inc)
-            {
-                try
-                {
+            if (inc) {
+                try {
                     Object o = f.get(this);
                     log.debug(f.getName() + " = " + o);
                     if (o != null && !f.getName().equals("serviceName"))
                     {
                         String val = sanitize(o);
-                        if (sb.length() > 1) // more than just the opening {
+                        if (sb.length() > 1) { // more than just the opening {
                             sb.append(",");
+                        }
                         sb.append("\"").append(f.getName()).append("\"");
                         sb.append(":");
-                        if (o instanceof String)
+                        if (o instanceof String) {
                             sb.append("\"").append(val).append("\"");
-                        else
+                        } else {
                             sb.append(val);
+                        }
                     }
-                }
-                catch(IllegalAccessException ex)
-                {
+                } catch (IllegalAccessException ex) {
                     log.error("BUG: failed to get value for " + f.getName(), ex);
                 }
             }
         }
         Class sc = c.getSuperclass();
-        if (WebServiceLogInfo.class.isAssignableFrom(sc) )
+        if (WebServiceLogInfo.class.isAssignableFrom(sc)) {
             populate(sb, sc);
+        }
     }
 
     static String sanitize(Object o) {
@@ -218,25 +215,26 @@ public abstract class WebServiceLogInfo
 
     /**
      * Set the success/fail boolean.
+     *
      * @param success
      */
-    public void setSuccess(boolean success)
-    {
+    public void setSuccess(boolean success) {
         this.userSuccess = success;
     }
 
     /**
-     * Set the subject.  This will automatically determine the
+     * Set the subject. This will automatically determine the
      * userid for logging.
+     *
      * @param subject
      */
-    public void setSubject(Subject subject)
-    {
+    public void setSubject(Subject subject) {
         this.user = getUser(subject);
     }
 
     /**
      * Set the elapsed time for the request to complete.
+     *
      * @param elapsedTime
      */
     public void setElapsedTime(Long elapsedTime)
@@ -246,58 +244,52 @@ public abstract class WebServiceLogInfo
 
     /**
      * Set the number of bytes transferred in the request.
+     *
      * @param bytes
      */
-    public void setBytes(Long bytes)
-    {
+    public void setBytes(Long bytes) {
         this.bytes = bytes;
     }
 
     /**
      * Set a success or failure message.
+     *
      * @param message
      */
-    public void setMessage(String message)
-    {
-        if (StringUtil.hasText(message))
+    public void setMessage(String message) {
+        if (StringUtil.hasText(message)) {
             this.message = message.trim();
+        }
     }
 
     /**
      * Set jobID. This is normally only needed in requests that create new jobs.
-     * 
-     * @param jobID 
+     *
+     * @param jobID
      */
-    public void setJobID(String jobID)
-    {
-        if (StringUtil.hasText(jobID))
+    public void setJobID(String jobID) {
+        if (StringUtil.hasText(jobID)) {
             this.jobID = jobID.trim();
+        }
     }
 
-    protected String getUser(Subject subject)
-    {
-        try
-        {
-            if (subject != null)
-            {
+    protected String getUser(Subject subject) {
+        try {
+            if (subject != null) {
                 final Set<HttpPrincipal> httpPrincipals = subject.getPrincipals(HttpPrincipal.class);
-                if (!httpPrincipals.isEmpty())
-                {
+                if (!httpPrincipals.isEmpty()) {
                     HttpPrincipal principal = httpPrincipals.iterator().next();
                     this.proxyUser = principal.getProxyUser();
                     return principal.getName();
                 }
 
                 final Set<X500Principal> x500Principals = subject.getPrincipals(X500Principal.class);
-                if (!x500Principals.isEmpty())
-                {
+                if (!x500Principals.isEmpty()) {
                     X500Principal principal = x500Principals.iterator().next();
                     return principal.getName();
                 }
             }
-        }
-        catch (Throwable t)
-        {
+        } catch (Throwable t) {
             // ignore - can't throw exceptions here
         }
 
@@ -307,7 +299,7 @@ public abstract class WebServiceLogInfo
     public void setPath(String path) {
         this.path = path;
     }
-    
+
     public void setRunID(String runID) {
         this.runID = runID;
     }

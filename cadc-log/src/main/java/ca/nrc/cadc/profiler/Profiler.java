@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2016.                            (c) 2016.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.profiler;
 
@@ -81,11 +81,11 @@ import org.apache.log4j.Logger;
  * calls when needed. The log level of the profiler package can be changed dynamically
  * using the LogControlServlet in order to turn-on and turn-off logging of profile data.
  * </p>
- * 
+ *
  * @author pdowler
  */
-public class Profiler 
-{
+public class Profiler {
+
     private static final Logger log = Logger.getLogger(Profiler.class);
 
     private long startTime;
@@ -93,26 +93,23 @@ public class Profiler
 
     protected String caller;
 
-    public Profiler(Class caller)
-    {
+    public Profiler(Class caller) {
         this.caller = caller.getSimpleName();
         this.startTime = System.nanoTime();
         totalTime = 0L;
     }
-    
+
     /**
      * Gather profiling information about a call to the specified operation by
      * the calling class.
-     * 
+     *
      * @param op the name of the operation
      */
-    public void checkpoint(String op)
-    {
+    public void checkpoint(String op) {
         long now = System.nanoTime();
-        long delta = (now - startTime)/1000000L;
-        
-        if (log.isInfoEnabled())
-        {
+        long delta = (now - startTime) / 1000000L;
+
+        if (log.isInfoEnabled()) {
             StringBuilder sb = new StringBuilder();
             sb.append("{").append("\"caller\"");
             sb.append(":");
@@ -120,20 +117,16 @@ public class Profiler
             sb.append(",").append("\"op\"");
             sb.append(":");
             sb.append("\"").append(op).append("\"");
-            if (totalTime > 0)
-            {
+            if (totalTime > 0) {
                 sb.append(",").append("\"delta\"");
                 sb.append(":");
                 sb.append(Long.toString(delta));
             }
             sb.append(",").append("\"time\"");
             sb.append(":");
-            if (totalTime > 0)
-            {
+            if (totalTime > 0) {
                 sb.append(Long.toString(totalTime));
-            }
-            else
-            {
+            } else {
                 sb.append(Long.toString(delta));
             }
             sb.append("}");

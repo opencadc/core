@@ -66,7 +66,10 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.auth;
+
+import ca.nrc.cadc.util.Base64;
 
 import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
@@ -79,21 +82,18 @@ import javax.security.auth.x500.X500Principal;
 
 import org.apache.log4j.Logger;
 
-import ca.nrc.cadc.util.Base64;
-
 /**
  * Class to store an X509Certificate chain.
  *
  * @author pdowler
  */
-public class X509CertificateChain 
-{
+public class X509CertificateChain {
     public static final String CERT_BEGIN = "-----BEGIN CERTIFICATE-----";
-    public static final String CERT_END   = "-----END CERTIFICATE-----";
+    public static final String CERT_END = "-----END CERTIFICATE-----";
     public static final String PRIVATE_KEY_BEGIN = "-----BEGIN RSA PRIVATE KEY-----";
-    public static final String PRIVATE_KEY_END   = "-----END RSA PRIVATE KEY-----";
+    public static final String PRIVATE_KEY_END = "-----END RSA PRIVATE KEY-----";
     public static final String NEW_LINE = System.getProperty("line.separator");
-    
+
     private static Logger log = Logger.getLogger(X509CertificateChain.class);
 
     private X500Principal principal;
@@ -104,9 +104,8 @@ public class X509CertificateChain
     private Date expiryDate;
     private String csrString;
     private String hashKey;
-    
-    public X509CertificateChain(X500Principal principal, PrivateKey privateKey, String csrString) 
-    {
+
+    public X509CertificateChain(X500Principal principal, PrivateKey privateKey, String csrString) {
         this.principal = principal;
         this.csrString = csrString;
         this.key = privateKey;
@@ -115,71 +114,67 @@ public class X509CertificateChain
         this.endEntity = null;
     }
 
-    public X509CertificateChain(Collection<X509Certificate> certs)
-    {
-        if (certs == null || certs.isEmpty())
+    public X509CertificateChain(Collection<X509Certificate> certs) {
+        if (certs == null || certs.isEmpty()) {
             throw new IllegalArgumentException("cannot create X509CertificateChain with no certficates");
+        }
+        
         this.chain = certs.toArray(new X509Certificate[certs.size()]);
         genExpiryDate();
-        
+
         initPrincipal();
         this.hashKey = genHashKey(principal);
     }
 
-    public X509CertificateChain(X509Certificate[] chain, PrivateKey key)
-    {
-        if (chain == null || chain.length == 0)
+    public X509CertificateChain(X509Certificate[] chain, PrivateKey key) {
+        if (chain == null || chain.length == 0) {
             throw new IllegalArgumentException("cannot create X509CertificateChain with no certficates");
+        }
+        
         this.chain = chain;
         genExpiryDate();
-        
+
         this.key = key;
         initPrincipal();
         this.hashKey = genHashKey(principal);
     }
 
-    
-    private void initPrincipal()
-    {
-        for (X509Certificate c : chain)
-        {
+    private void initPrincipal() {
+        for (X509Certificate c : chain) {
             this.endEntity = c;
             X500Principal sp = c.getSubjectX500Principal();
             String sdn = sp.getName(X500Principal.RFC1779);
             X500Principal ip = c.getIssuerX500Principal();
             String idn = ip.getName(X500Principal.RFC1779);
-            log.debug("found: subject=" + sdn+  ", issuer=" + idn);
-            if ( sdn.endsWith(idn) )
-            {
+            log.debug("found: subject=" + sdn + ", issuer=" + idn);
+            if (sdn.endsWith(idn)) {
                 this.principal = ip;
                 this.isProxy = true;
-            }
-            else
+            } else {
                 this.principal = sp;
-            
+            }
+
         }
-        
+
         String canonizedDn = AuthenticationUtil.canonizeDistinguishedName(principal.getName());
-        //TODO: some upstream SSL termination engines (haproxy, tomcat) only pass the first certificate in the
-        // chain which makes the correct method above fail if the proxy certificate has more than two certificates 
-        // in the chain. The following is just a workaround to remove extra leading CN(s):
-        if(canonizedDn.lastIndexOf("cn=") > -1) 
-        {
+        // TODO: some upstream SSL termination engines (haproxy, tomcat) only pass the
+        // first certificate in the
+        // chain which makes the correct method above fail if the proxy certificate has
+        // more than two certificates
+        // in the chain. The following is just a workaround to remove extra leading
+        // CN(s):
+        if (canonizedDn.lastIndexOf("cn=") > -1) {
             canonizedDn = canonizedDn.substring(canonizedDn.lastIndexOf("cn="));
         }
         this.principal = new X500Principal(canonizedDn);
         log.debug("principal: " + principal.getName(X500Principal.RFC1779));
     }
-    
-    public static X509CertificateChain findPrivateKeyChain(Set<Object> publicCredentials)
-    {
-        for (Object credential : publicCredentials)
-        {
-            if (credential instanceof X509CertificateChain)
-            {
+
+    public static X509CertificateChain findPrivateKeyChain(Set<Object> publicCredentials) {
+        for (Object credential : publicCredentials) {
+            if (credential instanceof X509CertificateChain) {
                 X509CertificateChain chain = (X509CertificateChain) credential;
-                if (chain.getPrivateKey() != null)
-                {
+                if (chain.getPrivateKey() != null) {
                     return chain;
                 }
             }
@@ -187,31 +182,27 @@ public class X509CertificateChain
         return null;
     }
 
-    public String certificateString()
-    {
-        if (this.chain == null)
+    public String certificateString() {
+        if (this.chain == null) {
             return null;
-        
+        }
+
         StringBuffer sb = new StringBuffer();
-        
-        for (X509Certificate cert : this.chain)
-        {
-            try
-            {
+
+        for (X509Certificate cert : this.chain) {
+            try {
                 sb.append(CERT_BEGIN);
                 sb.append(NEW_LINE);
                 byte[] bytes = cert.getEncoded();
                 sb.append(Base64.encodeLines64(bytes));
                 sb.append(CERT_END);
                 sb.append(NEW_LINE);
-            }
-            catch (CertificateEncodingException e)
-            {
+            } catch (CertificateEncodingException e) {
                 e.printStackTrace();
-                throw new RuntimeException("Cannot encode X509Certificate to byte[].",e);
+                throw new RuntimeException("Cannot encode X509Certificate to byte[].", e);
             }
         }
-        sb.deleteCharAt(sb.length()-1); // remove the last new line
+        sb.deleteCharAt(sb.length() - 1); // remove the last new line
         return sb.toString();
     }
 
@@ -219,26 +210,22 @@ public class X509CertificateChain
      * @param dn DN to generate the hash key
      * @return hash code corresponding to the CADC canonized version of the DN
      */
-    public static String genHashKey(X500Principal dn)
-    {
-        String dn1 = AuthenticationUtil.canonizeDistinguishedName(dn
-                .getName());
+    public static String genHashKey(X500Principal dn) {
+        String dn1 = AuthenticationUtil.canonizeDistinguishedName(dn.getName());
         return Integer.toString(dn1.hashCode());
     }
 
     /**
      * 
      */
-    private void genExpiryDate()
-    {
+    private void genExpiryDate() {
         Date expiryDate = null;
-        for (X509Certificate cert : this.chain)
-        {
+        for (X509Certificate cert : this.chain) {
             Date notAfter = cert.getNotAfter();
-            if (notAfter != null)
-            {
-                if (expiryDate == null || notAfter.before(expiryDate)) 
+            if (notAfter != null) {
+                if (expiryDate == null || notAfter.before(expiryDate)) {
                     expiryDate = notAfter;
+                }
             }
         }
         this.expiryDate = expiryDate;
@@ -247,90 +234,83 @@ public class X509CertificateChain
     /**
      * @param expiryDate the expiryDate to set
      */
-    public void setExpiryDate(Date expiryDate)
-    {
+    public void setExpiryDate(Date expiryDate) {
         this.expiryDate = expiryDate;
     }
 
     /**
      * @return the expiryDate
      */
-    public Date getExpiryDate()
-    {
+    public Date getExpiryDate() {
         return expiryDate;
     }
 
     /**
      * @param csrString the csrString to set
      */
-    public void setCsrString(String csrString)
-    {
+    public void setCsrString(String csrString) {
         this.csrString = csrString;
     }
 
     /**
      * @return the csrString
      */
-    public String getCsrString()
-    {
+    public String getCsrString() {
         return csrString;
     }
 
-    public X500Principal getPrincipal()
-    {
+    public X500Principal getPrincipal() {
         return principal;
     }
 
-    public void setPrincipal(X500Principal principal)
-    {
+    public void setPrincipal(X500Principal principal) {
         this.principal = principal;
     }
 
-    public PrivateKey getKey()
-    {
+    public PrivateKey getKey() {
         return key;
     }
 
-    public void setKey(PrivateKey key)
-    {
+    public void setKey(PrivateKey key) {
         this.key = key;
     }
 
-    public void setChain(X509Certificate[] chain)
-    {
+    public void setChain(X509Certificate[] chain) {
         this.chain = chain;
         genExpiryDate();
     }
 
-
-
-
-
     /**
      * @param hashKey the hashKey to set
      */
-    public void setHashKey(String hashKey)
-    {
+    public void setHashKey(String hashKey) {
         this.hashKey = hashKey;
     }
-
 
     /**
      * @return the hashKey
      */
-    public String getHashKey()
-    {
+    public String getHashKey() {
         return hashKey;
     }
 
-    public X500Principal getX500Principal() { return principal; }
-    
-    public X509Certificate[] getChain() { return chain; }
+    public X500Principal getX500Principal() {
+        return principal;
+    }
 
-    public PrivateKey getPrivateKey() { return key; }
+    public X509Certificate[] getChain() {
+        return chain;
+    }
 
-    public boolean isProxy() { return isProxy; }
-    
-    public X509Certificate getEndEntity() { return endEntity; }
+    public PrivateKey getPrivateKey() {
+        return key;
+    }
+
+    public boolean isProxy() {
+        return isProxy;
+    }
+
+    public X509Certificate getEndEntity() {
+        return endEntity;
+    }
 }
-

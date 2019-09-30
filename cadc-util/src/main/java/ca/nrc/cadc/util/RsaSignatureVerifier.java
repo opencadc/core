@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2016.                            (c) 2016.
+ *  (c) 2019.                            (c) 2019.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -92,27 +92,26 @@ import org.apache.log4j.Logger;
  * This class is used to verify signed messages. The class requires
  * an RSA public key to verify a message.
  * 
- * The keys are passed to the class via the RsaSignaturePub.key file in the 
+ * <p>The keys are passed to the class via the RsaSignaturePub.key file in the 
  * classpath. This class cannot be instantiated without this file containing
  * public RSA keys.
  * 
- * Format of the keys:
+ * <p>Format of the keys:
  * Public keys in the MessageRSA.keys file must be in PEM TKCS#1These keys are
  * in text format delimited by the following rows: "-----BEGIN PUBLIC KEY-----"
  * and "-----END PUBLIC KEY-----".
  * 
- * There are a variety of tools to generate RSA keys, the most common being
+ * <p>There are a variety of tools to generate RSA keys, the most common being
  * openssl and ssh-keygen. These tools allow for both the generation and 
  * manipulation of keys.
  * 
- * For example, an ssh public key is converted to a PEM TKCS#1 with the command:
+ * <p>For example, an ssh public key is converted to a PEM TKCS#1 with the command:
  * ssh-keygen -f &lt;ssh pub key&gt; -e -m pkcs8. 
  * 
  * @author adriand
  * 
  */
-public class RsaSignatureVerifier
-{
+public class RsaSignatureVerifier {
     private static Logger log = Logger.getLogger(RsaSignatureVerifier.class);
 
     private static final String DEFAULT_CONFIG_DIR = System.getProperty("user.home") + "/config/";
@@ -133,53 +132,41 @@ public class RsaSignatureVerifier
      * Default constructor. This will look for a private key file named RsaSignaturePub.key
      * and use it to verify.
      */
-    public RsaSignatureVerifier()
-    {
+    public RsaSignatureVerifier() {
         this(PUB_KEY_FILE_NAME, false);
     }
     
     public RsaSignatureVerifier(String keyFilename) {
         this(keyFilename, false);
     }
+    
     /**
      * constructor
      * @param keyFilename
      * @param privateKeyExpected - ctor instantiated in the context in which 
-     * a private key is also expected
+     *     a private key is also expected
      */
-    protected RsaSignatureVerifier(String keyFilename, boolean privateKeyExpected)
-    {
+    protected RsaSignatureVerifier(String keyFilename, boolean privateKeyExpected) {
         KeyFactory keyFactory = null;
-        try
-        {
+        try {
             keyFactory = KeyFactory.getInstance(KEY_ALGORITHM);
-        } 
-        catch (NoSuchAlgorithmException e1)
-        {
+        }  catch (NoSuchAlgorithmException e1) {
             throw new RuntimeException("BUG: Wrong algorithm " + KEY_ALGORITHM,
                     e1);
         }
         // try to load the keys
-        try
-        {
+        try {
             // check config dir first
             File keysFile = new File(DEFAULT_CONFIG_DIR, keyFilename);
-            if (!keysFile.exists())
-            {
-                try // find in classpath
-                {
-
-                   keysFile = FileUtil.getFileFromResource(
+            if (!keysFile.exists()) {
+                try { 
+                    // find in classpath 
+                    keysFile = FileUtil.getFileFromResource(
                         keyFilename, this.getClass());
-                }
-                catch (MissingResourceException ex)
-                {
-                    if (privateKeyExpected)
-                    {
+                } catch (MissingResourceException ex) {
+                    if (privateKeyExpected) {
                         return;
-                    }
-                    else
-                    {
+                    } else {
                         throw ex;
                     }
                 }
@@ -188,64 +175,52 @@ public class RsaSignatureVerifier
             log.debug("read pub keys: " + keysFile);
             BufferedReader br = new BufferedReader(new 
                     FileReader(keysFile));
-            try
-            {
+            try {
                 StringBuilder sb = null;
                 boolean readPub = false;
                 String line = null;
-                while ((line = br.readLine()) != null)
-                {
-                    if (line.equalsIgnoreCase(PUB_KEY_START))
-                    {
-                        if (readPub)
-                        {
+                while ((line = br.readLine()) != null) {
+                    if (line.equalsIgnoreCase(PUB_KEY_START)) {
+                        if (readPub) {
                             throw new 
                                 IllegalArgumentException("Corrupted keys file");
                         }
+                        
                         readPub = true;
                         sb = new StringBuilder();
                         continue;
                     }
-                    if (line.equalsIgnoreCase(PUB_KEY_END))
-                    {
-                        if (!readPub)
-                        {
+                    
+                    if (line.equalsIgnoreCase(PUB_KEY_END)) {
+                        if (!readPub) {
                             throw new 
                             IllegalArgumentException("Corrupted keys file");
                         }
+                        
                         readPub = false;
                         String payload = sb.toString();
                         byte[] bytes = Base64.decode(payload);
                         X509EncodedKeySpec publicKeySpec = 
                                 new X509EncodedKeySpec(bytes);
-                        try
-                        {
+                        try {
                             pubKeys.add(keyFactory.generatePublic(publicKeySpec));
-                        } 
-                        catch (InvalidKeySpecException e)
-                        {
+                        } catch (InvalidKeySpecException e) {
                             log.warn("Could not parse public key", e);
                         }
                     }
-                    if (readPub)
-                    {
+                    if (readPub) {
                         sb.append(line);
                     }
                 }
-            } 
-            finally
-            {
+            } finally {
                 br.close();
             }
-        } 
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             String msg = "Could not read keys";
             throw new RuntimeException(msg, e);
         }
         
-        if ( !privateKeyExpected && pubKeys.isEmpty() )
-        {
+        if (!privateKeyExpected && pubKeys.isEmpty()) {
             String msg = "No valid public keys found";
             throw new IllegalStateException(msg);
         }       
@@ -261,61 +236,48 @@ public class RsaSignatureVerifier
      * @throws InvalidKeyException - the provided key is invalid
      */
     public boolean verify(InputStream is, byte[] sigBytes) throws IOException,
-            InvalidKeyException
-    {
-        if (pubKeys.size() == 0)
-        {
+            InvalidKeyException {
+        if (pubKeys.size() == 0) {
             throw new IllegalStateException(
                     "No public keys available for verifying");
         }
-        try
-        {       
+        try {       
             Set<Signature> sigs = new HashSet<Signature>(pubKeys.size());
-            for( PublicKey pubKey : pubKeys)
-            {
+            for (PublicKey pubKey : pubKeys) {
                 Signature sig = getSignature();
                 sig.initVerify(pubKey);
                 sigs.add(sig);
             }
 
             byte[] data = new byte[1024];
-            int nRead = is.read(data);
-            while (nRead > 0)
-            {
-                for (Signature sig : sigs)
-                {
-                    sig.update(data, 0, nRead);
+            int ndRead = is.read(data);
+            while (ndRead > 0) {
+                for (Signature sig : sigs) {
+                    sig.update(data, 0, ndRead);
                 }
-                nRead = is.read(data);
+                ndRead = is.read(data);
             }
-            for (Signature sig : sigs)
-            {
-                if (sig.verify(sigBytes))
-                {
+            
+            for (Signature sig : sigs) {
+                if (sig.verify(sigBytes)) {
                     return true;
                 }
             }
 
             return false;
-        } 
-        catch (SignatureException e)
-        {
+        } catch (SignatureException e) {
             throw new RuntimeException("Signature problem", e);
         }
     }
 
-    public Set<PublicKey> getPublicKeys()
-    {
+    public Set<PublicKey> getPublicKeys() {
         return pubKeys;
     }
     
-    private Signature getSignature()
-    {
-        try
-        {
+    private Signature getSignature() {
+        try {
             return Signature.getInstance(SIG_ALGORITHM);
-        } catch (NoSuchAlgorithmException e)
-        {
+        } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("BUG: Wrong signature algorithm "
                     + SIG_ALGORITHM, e);
         }
