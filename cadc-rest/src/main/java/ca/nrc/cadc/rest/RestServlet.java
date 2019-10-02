@@ -267,7 +267,10 @@ public class RestServlet extends HttpServlet
             
             InlineContentHandler handler = action.getInlineContentHandler();
             SyncInput in = new SyncInput(request, handler);
-            StringBuilder sb = new StringBuilder(in.getComponentPath());
+            StringBuilder sb = new StringBuilder(in.getContextPath());
+            if (in.getComponentPath() != null) {
+                sb.append(in.getComponentPath());
+            }
             if (in.getPath() != null) { 
                 sb.append("/").append(in.getPath());
             }
