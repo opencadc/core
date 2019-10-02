@@ -305,7 +305,7 @@ public abstract class WebServiceLogInfo {
             }
             return path.split("/")[0];
         }
-        return null;
+        return "";
     }
 
 }

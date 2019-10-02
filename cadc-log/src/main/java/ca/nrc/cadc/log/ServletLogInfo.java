@@ -71,6 +71,8 @@ package ca.nrc.cadc.log;
 
 import ca.nrc.cadc.net.NetUtil;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.log4j.Logger;
@@ -98,9 +100,24 @@ public class ServletLogInfo extends WebServiceLogInfo {
         this.ip = NetUtil.getClientIP(request);
         String contextPath = request.getContextPath();
         this.serviceName = this.parseServiceName(contextPath);
-        String pathInfo = request.getPathInfo();
-        if (pathInfo != null && pathInfo.length() > 0) {
-            this.path =  contextPath + pathInfo;
+        String servletPath = request.getServletPath();
+        if (servletPath == null) {
+            servletPath = "";
         }
+        String pathInfo = request.getPathInfo();
+        if (pathInfo == null) {
+            pathInfo = "";
+        }
+        String query = request.getQueryString();
+        if (query == null) {
+            query = "";
+        } else {
+            try {
+                query = "?" + URLDecoder.decode(query, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                log.error(String.format("Error decoding %s because %s", query, e.getMessage()));
+            }
+        }
+        this.path =  contextPath + servletPath + pathInfo + query;
     }
 }
