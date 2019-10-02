@@ -150,7 +150,7 @@ public abstract class InitDatabase {
                 ddls = upgradeSQL;
                 upgrade = true;
             } else if (cur.value != null) {
-                throw new UnsupportedOperationException("doInit: version upgrade not supported: " + cur.value + " -> " + modelVersion);
+                throw new UnsupportedOperationException("doInit: cannot convert version " + cur.value + " (DB) to " + modelVersion + " (software)");
             }
 
             // start transaction
@@ -176,6 +176,16 @@ public abstract class InitDatabase {
             // commit transaction
             txn.commitTransaction();
             return true;
+        } catch (UnsupportedOperationException ex) {
+            log.debug("version incompatibility", ex);
+            if (txn.isOpen()) {
+                try {
+                    txn.rollbackTransaction();
+                } catch (Exception oops) {
+                    log.error("failed to rollback transaction", oops);
+                }
+            }
+            throw ex;
         } catch (Exception ex) {
             log.debug("epic fail", ex);
 
