@@ -252,7 +252,7 @@ public class RestServlet extends HttpServlet
     protected void doit(HttpServletRequest request, HttpServletResponse response,  Class<RestAction> actionClass)
         throws IOException
     {
-        WebServiceLogInfo logInfo = new ServletLogInfo(request);
+        WebServiceLogInfo logInfo = new ServletLogInfo(request, this.getServletName());
         long start = System.currentTimeMillis();
         SyncOutput out = null;
         try
