@@ -94,9 +94,9 @@ public class ServletLogInfo extends WebServiceLogInfo {
      *
      * @param request The HTTP Request.
      */
-    public ServletLogInfo(HttpServletRequest request, String className) {
+    public ServletLogInfo(HttpServletRequest request, Class clz) {
         super();
-        this.className = className;
+        this.clz = clz;
         this.method = request.getMethod().toUpperCase();
         this.ip = NetUtil.getClientIP(request);
         String contextPath = request.getContextPath();

@@ -97,7 +97,7 @@ public abstract class WebServiceLogInfo {
 
     private boolean userSuccess = true;
 
-    protected String className;
+    protected Class clz;
     protected String serviceName;
     protected Long bytes;
     protected String ip;
@@ -158,13 +158,19 @@ public abstract class WebServiceLogInfo {
     }
 
     private String getClassName() {
-        return "\"class\":{\"name\":\"" + className + "\"}";
+        if (clz == null) {
+            return null;
+        } else {
+            return "\"class\":{\"name\":\"" + clz.getSimpleName() + "\"}";
+        }
     }
 
     private String getPreamble() {
         StringBuilder sb = new StringBuilder();
         sb.append(getTimestamp()).append(",");
-        sb.append(getClassName()).append(",");
+        if (getClassName() != null) {
+            sb.append(getClassName()).append(",");
+        }
         sb.append(getServiceName()).append(",");
         sb.append(getThreadName()).append(",");
         sb.append(getLoglevel()).append(",");
@@ -183,7 +189,7 @@ public abstract class WebServiceLogInfo {
                 try {
                     Object o = f.get(this);
                     log.debug(f.getName() + " = " + o);
-                    if (o != null && !f.getName().equals("serviceName") && !f.getName().equals("className")) {
+                    if (o != null && !f.getName().equals("serviceName") && !f.getName().equals("clz")) {
                         String val = sanitize(o);
                         if (sb.length() > 1) { // more than just the opening {
                             sb.append(",");

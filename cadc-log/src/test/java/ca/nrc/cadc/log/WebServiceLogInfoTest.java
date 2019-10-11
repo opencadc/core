@@ -107,7 +107,7 @@ public class WebServiceLogInfoTest {
 
         EasyMock.replay(request);
 
-        WebServiceLogInfo logInfo = new ServletLogInfo(request, "class_name");
+        WebServiceLogInfo logInfo = new ServletLogInfo(request, String.class);
         String start = logInfo.start();
         log.info("testMinimalContentServlet: " + start);
         String end = logInfo.end();
@@ -115,11 +115,11 @@ public class WebServiceLogInfoTest {
         String expected = "\"phase\":\"start\",\"ip\":\"192.168.0.0\",\"method\":\"GET\",\"path\":\"/service_name/servlet_name/remaining/path/of/request?a=1&b=2\"";
         Assert.assertTrue("Wrong start", start.contains(expected));
         Assert.assertTrue("Wrong start", start.contains("\"service\":{\"name\":\"service_name\"}"));
-        Assert.assertTrue("Wrong start", start.contains("\"class\":{\"name\":\"class_name\"}"));
+        Assert.assertTrue("Wrong start", start.contains("\"class\":{\"name\":\"String\"}"));
         expected = "\"phase\":\"end\",\"ip\":\"192.168.0.0\",\"method\":\"GET\",\"path\":\"/service_name/servlet_name/remaining/path/of/request?a=1&b=2\",\"success\":true";
         Assert.assertTrue("Wrong end", end.contains(expected));
         Assert.assertTrue("Wrong end", end.contains("\"service\":{\"name\":\"service_name\"}"));
-        Assert.assertTrue("Wrong end", end.contains("\"class\":{\"name\":\"class_name\"}"));
+        Assert.assertTrue("Wrong end", end.contains("\"class\":{\"name\":\"String\"}"));
 
         EasyMock.verify(request);
     }
@@ -137,13 +137,13 @@ public class WebServiceLogInfoTest {
 
         EasyMock.replay(request);
 
-        WebServiceLogInfo logInfo = new ServletLogInfo(request, "class_name");
+        WebServiceLogInfo logInfo = new ServletLogInfo(request, String.class);
         String start = logInfo.start();
         log.info("testMaximalContentServlet: " + start);
         String expected = "\"phase\":\"start\",\"ip\":\"192.168.0.0\",\"method\":\"GET\",\"path\":\"/service_name/servlet_name/remaining/path/of/request?a=1&b=2\"";
         Assert.assertTrue("Wrong start", start.contains(expected));
         Assert.assertTrue("Wrong start", start.contains("\"service\":{\"name\":\"service_name\"}"));
-        Assert.assertTrue("Wrong start", start.contains("\"class\":{\"name\":\"class_name\"}"));
+        Assert.assertTrue("Wrong start", start.contains("\"class\":{\"name\":\"String\"}"));
         logInfo.setSuccess(false);
         logInfo.setSubject(createSubject("the user", "the proxy"));
         logInfo.setElapsedTime(1234L);
@@ -154,7 +154,7 @@ public class WebServiceLogInfoTest {
         expected = "\"phase\":\"end\",\"bytes\":10,\"ip\":\"192.168.0.0\",\"message\":\"the message\",\"method\":\"GET\",\"path\":\"/service_name/servlet_name/remaining/path/of/request?a=1&b=2\",\"proxyUser\":\"the proxy\",\"success\":false,\"duration\":1234,\"user\":\"the user\"";
         Assert.assertTrue("Wrong end", end.contains(expected));
         Assert.assertTrue("Wrong end", end.contains("\"service\":{\"name\":\"service_name\"}"));
-        Assert.assertTrue("Wrong end", end.contains("\"class\":{\"name\":\"class_name\"}"));
+        Assert.assertTrue("Wrong end", end.contains("\"class\":{\"name\":\"String\"}"));
         EasyMock.verify(request);
     }
 

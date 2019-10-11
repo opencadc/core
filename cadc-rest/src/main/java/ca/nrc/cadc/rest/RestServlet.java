@@ -97,8 +97,7 @@ import org.apache.log4j.Logger;
  *
  * @author pdowler
  */
-public class RestServlet extends HttpServlet
-{
+public class RestServlet extends HttpServlet {
     private static final long serialVersionUID = 201211071520L;
 
     private static final Logger log = Logger.getLogger(RestServlet.class);
@@ -123,8 +122,7 @@ public class RestServlet extends HttpServlet
     protected String componentID;
 
     @Override
-    public void init(ServletConfig config) throws ServletException
-    {
+    public void init(ServletConfig config) throws ServletException {
         super.init(config);
         this.getAction = loadAction(config, "get");
         this.postAction = loadAction(config, "post");
@@ -142,22 +140,16 @@ public class RestServlet extends HttpServlet
         }
     }
 
-    private Class<RestAction> loadAction(ServletConfig config, String method)
-    {
+    private Class<RestAction> loadAction(ServletConfig config, String method) {
         String cname = config.getInitParameter(method);
-        if (cname != null)
-        {
-            try
-            {
+        if (cname != null) {
+            try {
                 Class<RestAction> ret = (Class<RestAction>) Class.forName(cname);
                 log.info(method + ": " + cname + " [loaded]");
                 return ret;
-            }
-            catch(Exception ex)
-            {
+            } catch(Exception ex) {
                 log.error(method + ": " + cname + " [FAILED]", ex);
-            }
-            finally { }
+            } finally { }
         }
         log.debug(method + ": [not configured]");
         return null;
@@ -172,8 +164,7 @@ public class RestServlet extends HttpServlet
      * @throws IOException failure to write output
      */
     protected void handleUnsupportedAction(String action, HttpServletResponse response)
-        throws IOException
-    {
+        throws IOException {
         response.setStatus(400);
         response.setHeader("Content-Type", "text/plain");
         PrintWriter w = response.getWriter();
@@ -183,10 +174,8 @@ public class RestServlet extends HttpServlet
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
-        throws IOException
-    {
-        if (getAction == null)
-        {
+        throws IOException {
+        if (getAction == null) {
             handleUnsupportedAction("GET", response);
             return;
         }
@@ -196,10 +185,8 @@ public class RestServlet extends HttpServlet
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
-        throws IOException
-    {
-        if (postAction == null)
-        {
+        throws IOException {
+        if (postAction == null) {
             handleUnsupportedAction("POST", response);
             return;
         }
@@ -209,10 +196,8 @@ public class RestServlet extends HttpServlet
 
     @Override
     protected void doPut(HttpServletRequest request, HttpServletResponse response)
-        throws IOException
-    {
-        if (putAction == null)
-        {
+        throws IOException {
+        if (putAction == null) {
             handleUnsupportedAction("PUT", response);
             return;
         }
@@ -223,10 +208,8 @@ public class RestServlet extends HttpServlet
 
     @Override
     protected void doDelete(HttpServletRequest request, HttpServletResponse response)
-        throws IOException
-    {
-        if (deleteAction == null)
-        {
+        throws IOException {
+        if (deleteAction == null) {
             handleUnsupportedAction("DELETE", response);
             return;
         }
@@ -237,10 +220,8 @@ public class RestServlet extends HttpServlet
 
     @Override
     protected void doHead(HttpServletRequest request, HttpServletResponse response)
-        throws IOException
-    {
-        if (headAction == null)
-        {
+        throws IOException {
+        if (headAction == null) {
             handleUnsupportedAction("HEAD", response);
             return;
         }
@@ -250,13 +231,11 @@ public class RestServlet extends HttpServlet
     }
 
     protected void doit(HttpServletRequest request, HttpServletResponse response,  Class<RestAction> actionClass)
-        throws IOException
-    {
-        WebServiceLogInfo logInfo = new ServletLogInfo(request, this.getServletName());
+        throws IOException {
+        WebServiceLogInfo logInfo = new ServletLogInfo(request, this.getClass());
         long start = System.currentTimeMillis();
         SyncOutput out = null;
-        try
-        {
+        try {
             Subject subject = AuthenticationUtil.getSubject(request);
             logInfo.setSubject(subject);
 
@@ -283,17 +262,13 @@ public class RestServlet extends HttpServlet
             action.setLogInfo(logInfo);
 
             doit(subject, action);
-        }
-        catch(InstantiationException | IllegalAccessException ex)
-        {
+        } catch(InstantiationException | IllegalAccessException ex) {
             // problem creating the action
             logInfo.setSuccess(false);
             String message = "Could not instantiate " + actionClass + ". " + ex.getMessage();
             logInfo.setMessage(message);
             handleException(out, response, ex, 500, message, true);
-        }
-        catch(AccessControlException | NotAuthenticatedException ex)
-        {
+        } catch(AccessControlException | NotAuthenticatedException ex) {
             // For AccessControlExceptions, return a 401 instead of a 403 here.
             // At this level, it usually means wrong credentials such as invalid delegation
             // token, cookie, etc...
@@ -301,39 +276,28 @@ public class RestServlet extends HttpServlet
             logInfo.setSuccess(true);
             logInfo.setMessage(ex.getMessage());
             handleException(out, response, ex, 401, ex.getMessage(), false);
-        }
-        catch(IllegalArgumentException ex)
-        {
+        } catch(IllegalArgumentException ex) {
             logInfo.setSuccess(true);
             logInfo.setMessage(ex.getMessage());
             handleException(out, response, ex, 400, ex.getMessage(), true);
-        }
-        catch(Throwable t)
-        {
+        } catch(Throwable t) {
             logInfo.setSuccess(false);
             logInfo.setMessage(t.getMessage());
             handleUnexpected(out, response, t);
-        }
-        finally
-        {
+        } finally {
             logInfo.setElapsedTime(System.currentTimeMillis() - start);
             log.info(logInfo.end());
         }
     }
 
     private void doit(Subject subject, RestAction action)
-        throws Exception
-    {
-        if (subject == null)
+        throws Exception {
+        if (subject == null) {
             action.run();
-        else
-        {
-            try
-            {
+        } else {
+            try {
                 Subject.doAs(subject, action);
-            }
-            catch(PrivilegedActionException pex)
-            {
+            } catch(PrivilegedActionException pex) {
                 if (pex.getCause() instanceof ServletException)
                     throw (ServletException) pex.getCause();
                 else if (pex.getCause() instanceof IOException)
@@ -362,28 +326,25 @@ public class RestServlet extends HttpServlet
      */
     protected void handleException(SyncOutput syncOutput, HttpServletResponse response,
     		Throwable ex, int code, String message, boolean showExceptions)
-            throws IOException
-    {
+            throws IOException {
 
         log.debug(message, ex);
 
-        if (syncOutput == null)
-        	syncOutput = new SyncOutput(response);
+        if (syncOutput == null) {
+            syncOutput = new SyncOutput(response);
+        }
 
-        if (!syncOutput.isOpen())
-        {
+        if (!syncOutput.isOpen()) {
             syncOutput.setCode(code);
             syncOutput.setHeader("Content-Type", "text/plain");
             OutputStream os = syncOutput.getOutputStream();
             StringBuilder sb = new StringBuilder();
             sb.append(message);
 
-            if (showExceptions)
-            {
+            if (showExceptions) {
                 sb.append(ex.toString()).append("\n");
                 Throwable cause = ex.getCause();
-                while (cause != null)
-                {
+                while (cause != null) {
                     sb.append("cause: ");
                     sb.append(cause.toString()).append("\n");
                     cause = cause.getCause();
@@ -391,22 +352,22 @@ public class RestServlet extends HttpServlet
             }
 
             os.write(sb.toString().getBytes());
-        }
-        else
+        } else {
             log.error("unexpected situation: SyncOutput is open", ex);
+        }
     }
 
     private void handleUnexpected(SyncOutput out, HttpServletResponse response, Throwable t)
-        throws IOException
-    {
+        throws IOException {
         if (out == null) {
             out = new SyncOutput(response);
         }
         
         log.error("unexpected exception (SyncOutput.isOpen: " + out.isOpen() + ")", t);
 
-        if (out.isOpen())
+        if (out.isOpen()) {
             return;
+        }
 
         out.setCode(500); // internal server error
         out.setHeader("Content-Type", "text/plain");
