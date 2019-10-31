@@ -107,7 +107,8 @@ public class WebServiceLogInfoTest {
 
         EasyMock.replay(request);
 
-        WebServiceLogInfo logInfo = new ServletLogInfo(request, String.class);
+        WebServiceLogInfo logInfo = new ServletLogInfo(request);
+        logInfo.setClass(String.class);
         String start = logInfo.start();
         log.info("testMinimalContentServlet: " + start);
         String end = logInfo.end();
@@ -137,7 +138,8 @@ public class WebServiceLogInfoTest {
 
         EasyMock.replay(request);
 
-        WebServiceLogInfo logInfo = new ServletLogInfo(request, String.class);
+        WebServiceLogInfo logInfo = new ServletLogInfo(request);
+        logInfo.setClass(String.class);
         String start = logInfo.start();
         log.info("testMaximalContentServlet: " + start);
         String expected = "\"phase\":\"start\",\"ip\":\"192.168.0.0\",\"method\":\"GET\",\"path\":\"/service_name/servlet_name/remaining/path/of/request?a=1&b=2\"";

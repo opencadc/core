@@ -309,6 +309,10 @@ public abstract class WebServiceLogInfo {
     public void setRunID(String runID) {
         this.runID = runID;
     }
+
+    public void setClass(Class clz) {
+        this.clz = clz;
+    }
     
     protected String parseServiceName(String path) {
         if (path != null) {
