@@ -71,12 +71,15 @@ package ca.nrc.cadc.log;
 
 import ca.nrc.cadc.auth.HttpPrincipal;
 import ca.nrc.cadc.util.Log4jInit;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class WebServiceLogInfoTest {
@@ -96,68 +99,95 @@ public class WebServiceLogInfoTest {
     
     @Test
     public void testMinimalContentServlet() {
-        HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
-        EasyMock.expect(request.getMethod()).andReturn("Get").once();
-        EasyMock.expect(request.getContextPath()).andReturn("/service_name").once();
-        EasyMock.expect(request.getServletPath()).andReturn("/servlet_name").once();
-        EasyMock.expect(request.getPathInfo()).andReturn("/remaining/path/of/request").once();
-        EasyMock.expect(request.getQueryString()).andReturn("a=1&b=2").once();
-        EasyMock.expect(request.getHeader("X-Forwarded-For")).andReturn(null).once();
-        EasyMock.expect(request.getRemoteAddr()).andReturn("192.168.0.0").once();
+        try {
+            HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
 
-        EasyMock.replay(request);
+            String contextPath = "/service_name";
+            String servletPath = "/servlet_name";
+            String pathInfo = "/path/info";
+            String runID = "A1S2D3F4G5H6J7K8L90";
+            String queryEncoded = URLEncoder.encode("foo=123&bar=abc&runID=" + runID + "&baz=foobar", "UTF-8");
+            String queryDecoded = URLDecoder.decode(queryEncoded);
 
-        WebServiceLogInfo logInfo = new ServletLogInfo(request);
-        logInfo.setClass(String.class);
-        String start = logInfo.start();
-        log.info("testMinimalContentServlet: " + start);
-        String end = logInfo.end();
-        log.info("testMinimalContentServlet: " + end);
-        String expected = "\"phase\":\"start\",\"ip\":\"192.168.0.0\",\"method\":\"GET\",\"path\":\"/service_name/servlet_name/remaining/path/of/request?a=1&b=2\"";
-        Assert.assertTrue("Wrong start", start.contains(expected));
-        Assert.assertTrue("Wrong start", start.contains("\"service\":{\"name\":\"service_name\"}"));
-        Assert.assertTrue("Wrong start", start.contains("\"class\":{\"name\":\"String\"}"));
-        expected = "\"phase\":\"end\",\"ip\":\"192.168.0.0\",\"method\":\"GET\",\"path\":\"/service_name/servlet_name/remaining/path/of/request?a=1&b=2\",\"success\":true";
-        Assert.assertTrue("Wrong end", end.contains(expected));
-        Assert.assertTrue("Wrong end", end.contains("\"service\":{\"name\":\"service_name\"}"));
-        Assert.assertTrue("Wrong end", end.contains("\"class\":{\"name\":\"String\"}"));
+            EasyMock.expect(request.getMethod()).andReturn("Get").once();
+            EasyMock.expect(request.getContextPath()).andReturn(contextPath).once();
+            EasyMock.expect(request.getServletPath()).andReturn(servletPath).once();
+            EasyMock.expect(request.getPathInfo()).andReturn(pathInfo).once();
+            EasyMock.expect(request.getQueryString()).andReturn(queryEncoded).once();
+            EasyMock.expect(request.getHeader("X-Forwarded-For")).andReturn(null).once();
+            EasyMock.expect(request.getRemoteAddr()).andReturn("192.168.0.0").once();
 
-        EasyMock.verify(request);
+            EasyMock.replay(request);
+
+            WebServiceLogInfo logInfo = new ServletLogInfo(request);
+            String start = logInfo.start();
+            log.info("testMinimalContentServlet: " + start);
+            String end = logInfo.end();
+            log.info("testMinimalContentServlet: " + end);
+            String expected = "\"phase\":\"start\",\"ip\":\"192.168.0.0\",\"method\":\"GET\",\"path\":\"/service_name/servlet_name/path/info?" + queryDecoded + "\",\"runID\":\"" + runID + "\"";
+            Assert.assertTrue("Wrong start", start.contains(expected));
+            Assert.assertTrue("Wrong start", start.contains("\"service\":{\"name\":\"service_name\"}"));
+            expected = "\"phase\":\"end\",\"ip\":\"192.168.0.0\",\"method\":\"GET\",\"path\":\"/service_name/servlet_name/path/info?" + queryDecoded + "\",\"runID\":\"" + runID + "\",\"success\":true";
+            Assert.assertTrue("Wrong end", end.contains(expected));
+            Assert.assertTrue("Wrong end", end.contains("\"service\":{\"name\":\"service_name\"}"));
+
+            Assert.assertEquals(logInfo.path, contextPath + servletPath + pathInfo + "?" + queryDecoded);
+            Assert.assertEquals(logInfo.runID, runID);
+
+            EasyMock.verify(request);
+        }
+        catch (Throwable t) {
+            log.error(t.getMessage());
+        }
     }
 
     @Test
     public void testMaximalContentServlet() {
-        HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
-        EasyMock.expect(request.getMethod()).andReturn("Get").once();
-        EasyMock.expect(request.getContextPath()).andReturn("/service_name").once();
-        EasyMock.expect(request.getServletPath()).andReturn("/servlet_name").once();
-        EasyMock.expect(request.getPathInfo()).andReturn("/remaining/path/of/request").once();
-        EasyMock.expect(request.getQueryString()).andReturn("a=1&b=2").once();
-        EasyMock.expect(request.getHeader("X-Forwarded-For")).andReturn(null).once();
-        EasyMock.expect(request.getRemoteAddr()).andReturn("192.168.0.0").once();
+        try {
+            HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
 
-        EasyMock.replay(request);
+            String contextPath = "/service_name";
+            String servletPath = "/servlet_name";
+            String pathInfo = "/path/info";
+            String runID = "A1S2D3F4G5H6J7K8L90";
+            String queryEncoded = URLEncoder.encode("foo=123&bar=abc&runID=" + runID + "&baz=foobar", "UTF-8");
+            String queryDecoded = URLDecoder.decode(queryEncoded);
 
-        WebServiceLogInfo logInfo = new ServletLogInfo(request);
-        logInfo.setClass(String.class);
-        String start = logInfo.start();
-        log.info("testMaximalContentServlet: " + start);
-        String expected = "\"phase\":\"start\",\"ip\":\"192.168.0.0\",\"method\":\"GET\",\"path\":\"/service_name/servlet_name/remaining/path/of/request?a=1&b=2\"";
-        Assert.assertTrue("Wrong start", start.contains(expected));
-        Assert.assertTrue("Wrong start", start.contains("\"service\":{\"name\":\"service_name\"}"));
-        Assert.assertTrue("Wrong start", start.contains("\"class\":{\"name\":\"String\"}"));
-        logInfo.setSuccess(false);
-        logInfo.setSubject(createSubject("the user", "the proxy"));
-        logInfo.setElapsedTime(1234L);
-        logInfo.setBytes(10L);
-        logInfo.setMessage("the message");
-        String end = logInfo.end();
-        log.info("testMaximalContentServlet: " + end);
-        expected = "\"phase\":\"end\",\"bytes\":10,\"ip\":\"192.168.0.0\",\"message\":\"the message\",\"method\":\"GET\",\"path\":\"/service_name/servlet_name/remaining/path/of/request?a=1&b=2\",\"proxyUser\":\"the proxy\",\"success\":false,\"duration\":1234,\"user\":\"the user\"";
-        Assert.assertTrue("Wrong end", end.contains(expected));
-        Assert.assertTrue("Wrong end", end.contains("\"service\":{\"name\":\"service_name\"}"));
-        Assert.assertTrue("Wrong end", end.contains("\"class\":{\"name\":\"String\"}"));
-        EasyMock.verify(request);
+            EasyMock.expect(request.getMethod()).andReturn("Get").once();
+            EasyMock.expect(request.getContextPath()).andReturn(contextPath).once();
+            EasyMock.expect(request.getServletPath()).andReturn(servletPath).once();
+            EasyMock.expect(request.getPathInfo()).andReturn(pathInfo).once();
+            EasyMock.expect(request.getQueryString()).andReturn(queryEncoded).once();
+            EasyMock.expect(request.getHeader("X-Forwarded-For")).andReturn(null).once();
+            EasyMock.expect(request.getRemoteAddr()).andReturn("192.168.0.0").once();
+
+            EasyMock.replay(request);
+
+            WebServiceLogInfo logInfo = new ServletLogInfo(request);
+            String start = logInfo.start();
+            log.info("testMaximalContentServlet: " + start);
+            String expected = "\"phase\":\"start\",\"ip\":\"192.168.0.0\",\"method\":\"GET\",\"path\":\"/service_name/servlet_name/path/info?" + queryDecoded + "\",\"runID\":\"" + runID + "\"";
+            Assert.assertTrue("Wrong start", start.contains(expected));
+            Assert.assertTrue("Wrong start", start.contains("\"service\":{\"name\":\"service_name\"}"));
+            logInfo.setSuccess(false);
+            logInfo.setSubject(createSubject("the user", "the proxy"));
+            logInfo.setElapsedTime(1234L);
+            logInfo.setBytes(10L);
+            logInfo.setMessage("the message");
+            String end = logInfo.end();
+            log.info("testMaximalContentServlet: " + end);
+            expected = "\"phase\":\"end\",\"bytes\":10,\"ip\":\"192.168.0.0\",\"message\":\"the message\",\"method\":\"GET\",\"path\":\"/service_name/servlet_name/path/info?" + queryDecoded + "\",\"runID\":\"" + runID + "\",\"proxyUser\":\"the proxy\",\"success\":false,\"duration\":1234,\"user\":\"the user\"";
+            Assert.assertTrue("Wrong end", end.contains(expected));
+            Assert.assertTrue("Wrong end", end.contains("\"service\":{\"name\":\"service_name\"}"));
+
+            Assert.assertEquals(logInfo.path, contextPath + servletPath + pathInfo + "?" + queryDecoded);
+            Assert.assertEquals(logInfo.runID, runID);
+
+            EasyMock.verify(request);
+        }
+        catch (Throwable t) {
+            log.error(t.getMessage());
+        }
     }
 
     private Subject createSubject(String userid, String proxyUser) {

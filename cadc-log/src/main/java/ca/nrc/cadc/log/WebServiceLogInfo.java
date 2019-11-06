@@ -97,7 +97,6 @@ public abstract class WebServiceLogInfo {
 
     private boolean userSuccess = true;
 
-    protected Class clz;
     protected String serviceName;
     protected Long bytes;
     protected String ip;
@@ -157,20 +156,9 @@ public abstract class WebServiceLogInfo {
         return "\"log\":{\"level\":\"info\"}";
     }
 
-    private String getClassName() {
-        if (clz == null) {
-            return null;
-        } else {
-            return "\"class\":{\"name\":\"" + clz.getSimpleName() + "\"}";
-        }
-    }
-
     private String getPreamble() {
         StringBuilder sb = new StringBuilder();
         sb.append(getTimestamp()).append(",");
-        if (getClassName() != null) {
-            sb.append(getClassName()).append(",");
-        }
         sb.append(getServiceName()).append(",");
         sb.append(getThreadName()).append(",");
         sb.append(getLoglevel()).append(",");
@@ -189,7 +177,7 @@ public abstract class WebServiceLogInfo {
                 try {
                     Object o = f.get(this);
                     log.debug(f.getName() + " = " + o);
-                    if (o != null && !f.getName().equals("serviceName") && !f.getName().equals("clz")) {
+                    if (o != null && !f.getName().equals("serviceName")) {
                         String val = sanitize(o);
                         if (sb.length() > 1) { // more than just the opening {
                             sb.append(",");
@@ -308,10 +296,6 @@ public abstract class WebServiceLogInfo {
 
     public void setRunID(String runID) {
         this.runID = runID;
-    }
-
-    public void setClass(Class clz) {
-        this.clz = clz;
     }
     
     protected String parseServiceName(String path) {

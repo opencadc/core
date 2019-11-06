@@ -25,9 +25,3 @@ dependencies {
 
     testCompile 'junit:junit:4.+'
 }
-// alinga-- 
-jar {
-    from('src/main/java') {
-        include '**/*.java'
-    }
-}

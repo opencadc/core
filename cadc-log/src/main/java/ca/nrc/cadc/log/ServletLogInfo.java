@@ -119,5 +119,18 @@ public class ServletLogInfo extends WebServiceLogInfo {
             }
         }
         this.path =  contextPath + servletPath + pathInfo + query;
+
+        if (query.length() > 0) {
+            String [] parameters = query.substring(1).split("&");
+            for (String key : parameters) {
+                if (key.toLowerCase().startsWith("runid=")) {
+                    String value = key.substring(6);
+                    if (value.length() > 0) {
+                        this.runID = value;
+                    }
+                }
+            }
+        }
     }
+
 }

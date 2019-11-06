@@ -233,7 +233,6 @@ public class RestServlet extends HttpServlet {
     protected void doit(HttpServletRequest request, HttpServletResponse response,  Class<RestAction> actionClass)
         throws IOException {
         WebServiceLogInfo logInfo = new ServletLogInfo(request);
-        logInfo.setClass(this.getClass());
         long start = System.currentTimeMillis();
         SyncOutput out = null;
         try {
