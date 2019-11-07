@@ -71,9 +71,12 @@ package ca.nrc.cadc.log;
 
 import ca.nrc.cadc.net.NetUtil;
 
-import java.util.Enumeration;
-
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Logger;
+
 
 /**
  * Class to be used by web services to log at INFO level the start and
@@ -83,6 +86,8 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class ServletLogInfo extends WebServiceLogInfo {
 
+    private static Logger log = Logger.getLogger(ServletLogInfo.class);
+
     /**
      * Servlet request constructor that automatically
      * determines the path.
@@ -90,58 +95,42 @@ public class ServletLogInfo extends WebServiceLogInfo {
      * @param request The HTTP Request.
      */
     public ServletLogInfo(HttpServletRequest request) {
-        this(request, request.getPathInfo());
-    }
-
-    public ServletLogInfo(HttpServletRequest request, boolean pathIsJobID) {
-        this(request, request.getPathInfo(), true);
-    }
-
-    /**
-     * Servlet request constructor that takes a path
-     * override parameter.
-     *
-     * @param request The HTTP Request.
-     * @param path The path to log.
-     */
-    public ServletLogInfo(HttpServletRequest request, String path) {
-        this(request, path, false);
-    }
-
-    public ServletLogInfo(HttpServletRequest request, String path, String jobID) {
-        this(request, path, false);
-        this.jobID = jobID;
-    }
-
-    public ServletLogInfo(HttpServletRequest request, String path, boolean pathIsJobID) {
         super();
         this.method = request.getMethod().toUpperCase();
-        this.from = NetUtil.getClientIP(request);
-        if (pathIsJobID) {
-            this.jobID = parseJobID(path);
-        } else {
-            this.path = path;
+        this.ip = NetUtil.getClientIP(request);
+        String contextPath = request.getContextPath();
+        this.serviceName = this.parseServiceName(contextPath);
+        String servletPath = request.getServletPath();
+        if (servletPath == null) {
+            servletPath = "";
         }
-        Enumeration<String> paramNames = request.getParameterNames();
-        while (paramNames.hasMoreElements()) {
-            String nextName = paramNames.nextElement();
-            if (nextName.equalsIgnoreCase("runid")) {
-                runID = request.getParameter(nextName);
-                break;
+        String pathInfo = request.getPathInfo();
+        if (pathInfo == null) {
+            pathInfo = "";
+        }
+        String query = request.getQueryString();
+        if (query == null) {
+            query = "";
+        } else {
+            try {
+                query = "?" + URLDecoder.decode(query, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                log.error(String.format("Error decoding %s because %s", query, e.getMessage()));
+            }
+        }
+        this.path =  contextPath + servletPath + pathInfo + query;
+
+        if (query.length() > 0) {
+            String [] parameters = query.substring(1).split("&");
+            for (String key : parameters) {
+                if (key.toLowerCase().startsWith("runid=")) {
+                    String value = key.substring(6);
+                    if (value.length() > 0) {
+                        this.runID = value;
+                    }
+                }
             }
         }
     }
 
-    private String parseJobID(String path) {
-        if (path != null) {
-            if (path.startsWith("/")) {
-                path = path.substring(1);
-            }
-            if (path.endsWith("/")) {
-                path = path.substring(0, path.length() - 1);
-            }
-            return path;
-        }
-        return null;
-    }
 }

@@ -98,6 +98,9 @@ public class Log4jInit {
     private static final String LONG_FORMAT = "%d{" + DateUtil.ISO_DATE_FORMAT
                                               + "} [%t] %-5p %c{1} %x - %m\n";
 
+    // LONG_FORMAT applies to service INFO logging levels
+    private static final String LONG_INFO_FORMAT = "%m\n";
+
     private static List<Writer> logWriters = new ArrayList<Writer>();
     
     static {
@@ -155,13 +158,10 @@ public class Log4jInit {
             Logger.getRootLogger().setLevel(Level.ERROR); // must redo after reset
 
             String errorLogFormat = LONG_FORMAT;
-            String infoLogFormat = LONG_FORMAT;
             String debugLogFormat = SHORT_FORMAT;
             
             if (appName != null) {
                 errorLogFormat = "%d{" + DateUtil.ISO_DATE_FORMAT + "} "
-                                 + appName + " [%t] %-5p %c{1} %x - %m\n";
-                infoLogFormat =  "%d{" + DateUtil.ISO_DATE_FORMAT + "} "
                                  + appName + " [%t] %-5p %c{1} %x - %m\n";
                 debugLogFormat = "%-4r " + appName
                                  + " [%t] %-5p %c{1} %x - %m\n";
@@ -178,11 +178,12 @@ public class Log4jInit {
             conAppenderHigh.addFilter(errorFilter);
             BasicConfigurator.configure(conAppenderHigh);
 
-            // Appender for INFO with LONG_FORMAT message prefix
+            // Appender for INFO with LONG_INFO_FORMAT message prefix
             LevelRangeFilter infoFilter = new LevelRangeFilter();
             infoFilter.setLevelMax(Level.INFO);
             infoFilter.setLevelMin(Level.INFO);
             infoFilter.setAcceptOnMatch(true);
+            String infoLogFormat = LONG_INFO_FORMAT;
             ConsoleAppender conAppenderInfo =
                     new ConsoleAppender(new PatternLayout(infoLogFormat));
             conAppenderInfo.clearFilters();
