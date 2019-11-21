@@ -419,7 +419,9 @@ public class LogControlServlet extends HttpServlet {
                 try {
                     isAuthorizedGroup(authorizer, subject, readOnly);
                     return;
-                } catch (AccessControlException ignore) { }
+                } catch (AccessControlException ignore) {
+                    // failover to next auth method
+                }
             }
         }
 
