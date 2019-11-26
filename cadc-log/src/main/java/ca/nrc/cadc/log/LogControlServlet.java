@@ -167,7 +167,6 @@ public class LogControlServlet extends HttpServlet {
 
     private String authorizerClassName;
     private String accessGroup;
-//    private Authorizer groupAuthorizer;
     private String logControlProperties;
 
     /**
