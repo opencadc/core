@@ -118,15 +118,10 @@ public class LogControlServletTest {
         LogControlServlet testSubject = new LogControlServlet() {
             @Override
             public void init(final ServletConfig config) throws ServletException {}
-
-            @Override
-            Set<Principal> getAuthorizedUserPrincipals() {
-                return new HashSet<Principal>();
-            }
         };
 
         try {
-            boolean authorized = testSubject.isAuthorizedUser(request);
+            boolean authorized = testSubject.isAuthorizedUser(request, new HashSet<Principal>());
             Assert.fail("Should throw AccessControlException");
         } catch (AccessControlException e) { }
     }

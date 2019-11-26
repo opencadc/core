@@ -166,7 +166,8 @@ public class LogControlServlet extends HttpServlet {
     private List<String> packages;
 
     private String authorizerClassName;
-    private Authorizer groupAuthorizer;
+    private String accessGroup;
+//    private Authorizer groupAuthorizer;
     private String logControlProperties;
 
     /**
@@ -228,32 +229,8 @@ public class LogControlServlet extends HttpServlet {
         }
 
         // get the access group and group authorizer
-        String accessGroup = config.getInitParameter(GROUP_PARAM);
+        accessGroup = config.getInitParameter(GROUP_PARAM);
         authorizerClassName = config.getInitParameter(GROUP_AUTHORIZER);
-
-        // instantiate the class if all configuration is present
-        if (authorizerClassName != null) {
-            try {
-                Class authClass = Class.forName(authorizerClassName);
-                if (accessGroup != null) {
-                    try {
-                        Constructor ctor = authClass.getConstructor(String.class);
-                        Object o = ctor.newInstance(accessGroup);
-                        groupAuthorizer = (Authorizer) o;
-                    } catch (NoSuchMethodException ex) {
-                        logger.warn("authorizer " + authorizerClassName + " has no constructor(String), ignoring accessGroup=" + accessGroup);
-                        Object o = authClass.newInstance();
-                        groupAuthorizer = (Authorizer) o;
-                    }
-                } else {
-                    // no-arg constructor
-                    Object o = authClass.newInstance();
-                    groupAuthorizer = (Authorizer) o;
-                }
-            } catch (Exception e) {
-                logger.error("Could not load group authorizer", e);
-            }
-        }
 
         // get the logControl properties file for this service if it exists
         logControlProperties = config.getInitParameter(LOG_CONTROL_PROPERTIES);
@@ -393,26 +370,47 @@ public class LogControlServlet extends HttpServlet {
     private void authorize(HttpServletRequest request, boolean readOnly)
         throws AccessControlException, TransientException {
 
+        // Track exceptions thrown
+        AccessControlException acException = null;
+
         // first check if request user matches authorized config file users
-        try {
-            if (isAuthorizedUser(request)) {
+        Set<Principal> authorizedUsers = getAuthorizedUserPrincipals();
+        if (authorizedUsers.isEmpty()) {
+            logger.info("Authorized users not configured");
+        } else {
+            try {
+                if (isAuthorizedUser(request, authorizedUsers)) {
+                    return;
+                }
+            } catch (Exception e) {
+                if (e instanceof AccessControlException) {
+                    logger.warn("User authorization failed: " + e.getMessage());
+                    acException = (AccessControlException) e;
+                }
+            }
+        }
+
+        // Check for groups configured in servlet init or properties file.
+        Set<String> groupUris = getAuthorizedGroupUris();
+
+        // If no groups configured, and no users configured, then public access and return.
+        // If no groups configured, and a user exception was previously thrown,
+        // throw the user AccessControlException.
+        if (groupUris.isEmpty()) {
+            logger.info("Authorized groups not configured");
+            if (acException == null) {
+                logger.info("Authorization not configured, log control is public.");
                 return;
-            }
-        } catch (Exception e) {
-            if (e instanceof AccessControlException) {
-                logger.warn("User authorization failed: " + e.getMessage());
+            } else {
+                throw acException;
             }
         }
 
-        if (authorizerClassName != null && groupAuthorizer == null) {
-            throw new RuntimeException("CONFIG: group authorizer was configured but failed to load: " + authorizerClassName);
-        }
-
+        // Augment the calling subject.
         Subject subject = AuthenticationUtil.getSubject(request);
         logger.debug(subject.toString());
 
-        // Check group membership using config file properties
-        Set<String> groupUris = getAuthorizedGroupUris();
+        // Check if calling user a member of a configured group.
         for (String groupUri : groupUris) {
             Authorizer authorizer = getAuthorizer(groupUri);
             if (authorizer != null) {
@@ -420,17 +418,18 @@ public class LogControlServlet extends HttpServlet {
                     isAuthorizedGroup(authorizer, subject, readOnly);
                     return;
                 } catch (AccessControlException ignore) {
-                    // failover to next auth method
+                    acException = ignore;
                 }
             }
         }
 
-        // Check membership using servlet init parameters
-        if (groupAuthorizer == null) {
-            logger.warn("Authorization not configured, log control is public.");
-            return;
+        // Group authorization failed, throw AccessControlException.
+        if (acException != null) {
+            String message = "Authorization failed for groups: " + groupUris;
+            throw new AccessControlException((message));
+        } else {
+            logger.info("BUG: all authorization failed, but no exception thrown.");
         }
-        isAuthorizedGroup(groupAuthorizer, subject, readOnly);
     }
 
     /**
@@ -471,18 +470,21 @@ public class LogControlServlet extends HttpServlet {
      * from the properties file.
      *
      * @param request The Http request.
+     * @param authorizedUsers The set of authorized user principals.
      * @return true if the calling Principal matches an authorized principal.
      */
-    boolean isAuthorizedUser(HttpServletRequest request) throws AccessControlException {
+    boolean isAuthorizedUser(HttpServletRequest request, Set<Principal> authorizedUsers)
+        throws AccessControlException {
         String callerName = "unknown";
         ServletPrincipalExtractor principalExtractor = new ServletPrincipalExtractor(request);
         Set<Principal> principals = principalExtractor.getPrincipals();
         for (Principal caller : principals) {
-            if (caller instanceof X500Principal) {
+            if (caller.getName() != null) {
                 callerName = caller.getName();
-                Set<Principal> authorizedPrincipals = getAuthorizedUserPrincipals();
-                for (Principal authorizedPrincipal : authorizedPrincipals) {
-                    if (AuthenticationUtil.equals(authorizedPrincipal, caller)) {
+            }
+            if (caller instanceof X500Principal) {
+                for (Principal authorizedUser : authorizedUsers) {
+                    if (AuthenticationUtil.equals(authorizedUser, caller)) {
                         logger.debug("Authorized user: " + callerName);
                         return true;
                     }
@@ -575,6 +577,9 @@ public class LogControlServlet extends HttpServlet {
             } catch (IllegalArgumentException e) {
                 logger.info("No authorized groupURI's configured");
             }
+        }
+        if (StringUtil.hasLength(accessGroup)) {
+            groupUris.add(accessGroup);
         }
         return groupUris;
     }
