@@ -372,8 +372,11 @@ public class LogControlServlet extends HttpServlet {
         // Track exceptions thrown
         AccessControlException acException = null;
 
+        // Get the logControl properties if they exist.
+        PropertiesReader propertiesReader = getLogControlProperties();
+
         // first check if request user matches authorized config file users
-        Set<Principal> authorizedUsers = getAuthorizedUserPrincipals();
+        Set<Principal> authorizedUsers = getAuthorizedUserPrincipals(propertiesReader);
         if (authorizedUsers.isEmpty()) {
             logger.info("Authorized users not configured");
         } else {
@@ -390,7 +393,7 @@ public class LogControlServlet extends HttpServlet {
         }
 
         // Check for groups configured in servlet init or properties file.
-        Set<String> groupUris = getAuthorizedGroupUris();
+        Set<String> groupUris = getAuthorizedGroupUris(propertiesReader);
 
         // If no groups configured, and no users configured, then public access and return.
         // If no groups configured, and a user exception was previously thrown,
@@ -534,9 +537,8 @@ public class LogControlServlet extends HttpServlet {
      *
      * @return Set of authorized X500Principals, can be an empty Set if none configured.
      */
-    Set<Principal> getAuthorizedUserPrincipals() {
+    Set<Principal> getAuthorizedUserPrincipals(PropertiesReader propertiesReader) {
         Set<Principal> principals = new HashSet<Principal>();
-        PropertiesReader propertiesReader = getLogControlProperties();
         if (propertiesReader != null) {
             try {
                 List<String> properties = propertiesReader.getPropertyValues(USER_DNS_PROPERTY);
@@ -560,9 +562,8 @@ public class LogControlServlet extends HttpServlet {
      *
      * @return Set of authorized groupURI's, can be an empty Set if none configured.
      */
-    Set<String> getAuthorizedGroupUris() {
+    Set<String> getAuthorizedGroupUris(PropertiesReader propertiesReader) {
         Set<String> groupUris = new HashSet<String>();
-        PropertiesReader propertiesReader = getLogControlProperties();
         if (propertiesReader != null) {
             try {
                 List<String> properties = propertiesReader.getPropertyValues(GROUP_URIS_PROPERTY);

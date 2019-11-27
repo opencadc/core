@@ -145,14 +145,9 @@ public class LogControlServletTest {
         LogControlServlet testSubject = new LogControlServlet() {
             @Override
             public void init(final ServletConfig config) throws ServletException {}
-
-            @Override
-            PropertiesReader getLogControlProperties() {
-                return reader;
-            }
         };
 
-        Set<Principal> principals = testSubject.getAuthorizedUserPrincipals();
+        Set<Principal> principals = testSubject.getAuthorizedUserPrincipals(reader);
         Assert.assertNotNull(principals);
         Assert.assertEquals(2, principals.size());
         Assert.assertTrue(principals.contains(new X500Principal(testUser1)));
@@ -178,14 +173,9 @@ public class LogControlServletTest {
         LogControlServlet testSubject = new LogControlServlet() {
             @Override
             public void init(final ServletConfig config) throws ServletException {}
-
-            @Override
-            PropertiesReader getLogControlProperties() {
-                return reader;
-            }
         };
 
-        Set<String> groupUris = testSubject.getAuthorizedGroupUris();
+        Set<String> groupUris = testSubject.getAuthorizedGroupUris(reader);
         Assert.assertNotNull(groupUris);
         Assert.assertEquals(2, groupUris.size());
         Assert.assertTrue(groupUris.contains(testGroup1));
