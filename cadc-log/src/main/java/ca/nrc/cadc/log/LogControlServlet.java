@@ -491,7 +491,7 @@ public class LogControlServlet extends HttpServlet {
      *
      * @param action The PrivilegedExceptionAction
      * @param subject The Subject to check
-     * return true if the calling user is a member of an authorized group, false otherwise.
+     * @return true if the calling user is a member of an authorized group, false otherwise.
      */
     private boolean isAuthorizedGroup(PrivilegedExceptionAction action, Subject subject)
         throws TransientException {
