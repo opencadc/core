@@ -71,7 +71,7 @@ package ca.nrc.cadc.log;
 
 import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.Authorizer;
-import ca.nrc.cadc.auth.ServletPrincipalExtractor;
+import ca.nrc.cadc.cred.client.CredUtil;
 import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.util.Log4jInit;
 import ca.nrc.cadc.util.PropertiesReader;
@@ -81,7 +81,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.security.AccessControlException;
 import java.security.Principal;
 import java.security.PrivilegedActionException;
@@ -374,86 +373,62 @@ public class LogControlServlet extends HttpServlet {
     private void authorize(HttpServletRequest request, boolean readOnly)
         throws AccessControlException, TransientException {
 
-        // Track exceptions thrown
-        AccessControlException acException = null;
+        // Get the calling subject.
+        Subject subject = AuthenticationUtil.getSubject(request, false);
+        logger.debug(subject.toString());
 
         // Get the logControl properties if they exist.
         PropertiesReader propertiesReader = getLogControlProperties();
 
         // first check if request user matches authorized config file users
         Set<Principal> authorizedUsers = getAuthorizedUserPrincipals(propertiesReader);
-        if (authorizedUsers.isEmpty()) {
-            logger.debug("Authorized users not configured");
-        } else {
-            try {
-                doUserCheck(request, authorizedUsers);
-                return;
-            } catch (Exception e) {
-                if (e instanceof AccessControlException) {
-                    logger.warn("User authorization failed: " + e.getMessage());
-                    acException = (AccessControlException) e;
-                }
-            }
+        if (isAuthorizedUser(subject, authorizedUsers)) {
+            logger.info(subject.getPrincipals(X500Principal.class) + " is an authorized user");
+            return;
         }
 
         // Check for groups configured in servlet init or properties file.
         Set<GroupURI> groupUris = getAuthorizedGroupUris(propertiesReader);
 
-        // If no groups configured, and no users configured, then public access and return.
-        // If no groups configured, and a user exception was previously thrown,
-        // throw the user AccessControlException.
-        if (groupUris.isEmpty() && accessGroup == null) {
-            if (acException != null) {
-                throw acException;
-            } else {
-                logger.info("Authorization not configured, log control is public.");
-                return;
-            }
+        // If no user or groups configured, then public access.
+        if (authorizedUsers.isEmpty() && groupUris.isEmpty() && accessGroup == null) {
+            logger.info("Authorization not configured, log control is public.");
+            return;
         }
-        logger.debug("Configured GroupURI's: " + groupUris);
-
-        // Augment the calling subject.
-        Subject subject = AuthenticationUtil.getSubject(request);
-        logger.debug(subject.toString());
 
         // Check if calling user is a member of a properties file group.
-        URI serviceID = null;
-        GroupClient groupClient = null;
-        for (GroupURI groupUri : groupUris) {
-            if (!groupUri.getServiceID().equals(serviceID)) {
-                serviceID = groupUri.getServiceID();
-                groupClient = GroupUtil.getGroupClient(serviceID);
+        try {
+            if (CredUtil.checkCredentials(subject)) {
+                URI serviceID = null;
+                GroupClient groupClient = null;
+                for (GroupURI groupUri : groupUris) {
+                    if (!groupUri.getServiceID().equals(serviceID)) {
+                        serviceID = groupUri.getServiceID();
+                        groupClient = GroupUtil.getGroupClient(serviceID);
+                    }
+                    GroupMemberAction memberCheck = new GroupMemberAction(groupClient, groupUri);
+                    if (isAuthorizedGroup(memberCheck, subject)) {
+                        logger.info(subject.getPrincipals(X500Principal.class) + " is a member of " + groupUri);
+                        return;
+                    }
+                }
             }
-            GroupMemberAction memberCheck = new GroupMemberAction(groupClient, groupUri);
-            try {
-                doGroupCheck(memberCheck, subject);
-                return;
-            } catch (AccessControlException e) {
-                logger.warn("group member check failed: " + e.getMessage());
-                acException = e;
-            }
+        } catch (Exception e) {
+            logger.warn("Credential check failed: " + e.getMessage());
         }
 
         // Check if calling user is a member of a servlet init group.
         Authorizer authorizer = getAuthorizer(accessGroup);
         if (authorizer != null) {
-            try {
-                GroupAuthorizationAction groupCheck = new GroupAuthorizationAction(authorizer, readOnly);
-                doGroupCheck(groupCheck, subject);
+            GroupAuthorizationAction groupCheck = new GroupAuthorizationAction(authorizer, readOnly);
+            if (isAuthorizedGroup(groupCheck, subject)) {
+                logger.info(subject.getPrincipals(X500Principal.class) + " is member of " + accessGroup);
                 return;
-            } catch (AccessControlException e) {
-                logger.warn("group authorization failed: " + e.getMessage());
-                acException = e;
             }
         }
 
         // If all authorization failed, throw AccessControlException.
-        if (acException != null) {
-            logger.debug("final exception: " + acException.getMessage());
-            throw acException;
-        } else {
-            logger.info("BUG: all authorization failed, but no exception thrown.");
-        }
+        throw new AccessControlException("User and group authorization failed.");
     }
 
     /**
@@ -492,30 +467,23 @@ public class LogControlServlet extends HttpServlet {
     /**
      * Checks if the caller Principal matches an authorized Principal
      * from the properties file.
-     *
-     * @param request The Http request.
-     * @param authorizedUsers The set of authorized user principals.
+
+     * @return true if the calling user is an authorized user, false otherwise.
      */
-    void doUserCheck(HttpServletRequest request, Set<Principal> authorizedUsers)
-        throws AccessControlException {
-        String callerName = "unknown";
-        ServletPrincipalExtractor principalExtractor = new ServletPrincipalExtractor(request);
-        Set<Principal> principals = principalExtractor.getPrincipals();
-        for (Principal caller : principals) {
-            if (caller.getName() != null) {
-                callerName = caller.getName();
-            }
-            if (caller instanceof X500Principal) {
+    private boolean isAuthorizedUser(Subject subject, Set<Principal> authorizedUsers) {
+        if (!authorizedUsers.isEmpty()) {
+            Set<X500Principal> principals = subject.getPrincipals(X500Principal.class);
+            for (Principal caller : principals) {
                 for (Principal authorizedUser : authorizedUsers) {
                     if (AuthenticationUtil.equals(authorizedUser, caller)) {
-                        logger.debug("Authorized user: " + callerName);
-                        return;
+                        return true;
                     }
                 }
-                break;
             }
+        } else {
+            logger.debug("Authorized users not configured.");
         }
-        throw new AccessControlException("Unauthorized user: " + callerName);
+        return false;
     }
 
     /**
@@ -523,11 +491,10 @@ public class LogControlServlet extends HttpServlet {
      *
      * @param action The PrivilegedExceptionAction
      * @param subject The Subject to check
-     * @throws AccessControlException
-     * @throws TransientException
+     * return true if the calling user is a member of an authorized group, false otherwise.
      */
-    private void doGroupCheck(PrivilegedExceptionAction action, Subject subject)
-        throws AccessControlException, TransientException {
+    private boolean isAuthorizedGroup(PrivilegedExceptionAction action, Subject subject)
+        throws TransientException {
         try {
             if (subject == null) {
                 action.run();
@@ -536,19 +503,19 @@ public class LogControlServlet extends HttpServlet {
                     Subject.doAs(subject, action);
                 } catch (PrivilegedActionException e) {
                     throw e.getException();
-                } catch (Exception t) {
-                    throw t;
                 }
             }
+            return true;
         } catch (Exception e) {
             if (e instanceof AccessControlException) {
-                throw (AccessControlException) e;
-            }
-            if (e instanceof TransientException) {
+                logger.debug("Group authorization failed: " + e.getMessage());
+            } else if (e instanceof TransientException) {
                 throw (TransientException) e;
+            } else {
+                throw new IllegalStateException(e);
             }
-            throw new IllegalStateException(e);
         }
+        return false;
     }
 
     /**
@@ -564,13 +531,13 @@ public class LogControlServlet extends HttpServlet {
                 List<String> properties = propertiesReader.getPropertyValues(USER_DNS_PROPERTY);
                 if (properties != null) {
                     for (String property : properties) {
-                        if (StringUtil.hasLength(property)) {
+                        if (!property.isEmpty()) {
                             principals.add(new X500Principal(property));
                         }
                     }
                 }
             } catch (IllegalArgumentException e) {
-                logger.debug("No authorized DN's configured");
+                logger.debug("No authorized users configured");
             }
         }
         return principals;
@@ -662,7 +629,9 @@ public class LogControlServlet extends HttpServlet {
         public Object run() throws Exception {
             // GMSClient can throw a RuntimeException for an auth failure.
             try {
-                groupClient.isMember(groupURI);
+                if (!groupClient.isMember(groupURI)) {
+                    throw new AccessControlException("not a member of " + groupURI);
+                }
             } catch (RuntimeException e) {
                 throw new AccessControlException(e.getMessage());
             }
