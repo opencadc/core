@@ -272,9 +272,10 @@ public class AuthenticationUtil {
      * </p>
      *
      * @param principalExtractor The PrincipalExtractor to provide Principals.
+     * @param augmentSubject Whether to augment the subject using Authenticator interface.
      * @return A new Subject.
      */
-    public static Subject getSubject(PrincipalExtractor principalExtractor) {
+    public static Subject getSubject(PrincipalExtractor principalExtractor, boolean augmentSubject) {
         if (principalExtractor == null) {
             throw new IllegalArgumentException("principalExtractor cannot be null");
         }
@@ -311,18 +312,44 @@ public class AuthenticationUtil {
 
         final Subject subject = new Subject(false, principals, publicCred, privateCred);
         setAuthMethod(subject, am);
-        return augmentSubject(subject);
+        if (augmentSubject) {
+            return augmentSubject(subject);
+        }
+        return subject;
+    }
+
+    /**
+     * Convenience method to augment the extracted Subject.
+     *
+     * @param principalExtractor The PrincipalExtractor to provide Principals.
+     * @return A new Subject.
+     */
+    public static Subject getSubject(PrincipalExtractor principalExtractor) {
+        return getSubject(principalExtractor, true);
     }
 
     /**
      * Convenience method that uses a ServletPrincipalExtractor.
      *
      * @param request The HTTP Request.
+     * @param augmentSubject Whether to further augment the subject using an Authentication interface.
+     * @return a Subject with all available request content
+     * @see #getSubject(PrincipalExtractor)
+     */
+    public static Subject getSubject(final HttpServletRequest request, boolean augmentSubject) {
+        return getSubject(new ServletPrincipalExtractor(request), augmentSubject);
+    }
+
+    /**
+     * Convenience method that uses a ServletPrincipalExtractor and augments
+     * the extracted Subject using an Authenticator interface.
+     *
+     * @param request The HTTP Request.
      * @return a Subject with all available request content
      * @see #getSubject(PrincipalExtractor)
      */
     public static Subject getSubject(final HttpServletRequest request) {
-        return getSubject(new ServletPrincipalExtractor(request));
+        return getSubject(new ServletPrincipalExtractor(request), true);
     }
 
     /**

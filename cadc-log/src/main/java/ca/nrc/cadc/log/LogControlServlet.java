@@ -71,19 +71,27 @@ package ca.nrc.cadc.log;
 
 import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.Authorizer;
+import ca.nrc.cadc.cred.client.CredUtil;
 import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.util.Log4jInit;
+import ca.nrc.cadc.util.PropertiesReader;
+import ca.nrc.cadc.util.StringUtil;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
+import java.net.URI;
 import java.security.AccessControlException;
+import java.security.Principal;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
 import javax.security.auth.Subject;
+import javax.security.auth.x500.X500Principal;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -91,6 +99,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.opencadc.gms.GroupClient;
+import org.opencadc.gms.GroupURI;
+import org.opencadc.gms.GroupUtil;
 
 /**
  * Sets up log4j for whichever webapp contains this
@@ -104,7 +115,7 @@ import org.apache.log4j.Logger;
  * log4j levels (upper case, eg INFO).
  * </p>
  * <p>
- * The initially configered packages are set with an init-param
+ * The initially configured packages are set with an init-param
  * named <code>logLevelPackages</code> and value of whitespace-separated
  * package names.
  * </p>
@@ -112,13 +123,29 @@ import org.apache.log4j.Logger;
  * The current configuration can be retrieved with an HTTP GET.
  * </p>
  * <p>
- * The configuration can be modified with an HTTP PIOST to this servlet.
+ * The configuration can be modified with an HTTP POST to this servlet.
  * The currently supported params are <code>level</code> (for example,
  * level=DEBUG) and <code>package</code> (for example, package=ca.nrc.cadc.log).
  * The level parameter is required. The package parameter is optional and
  * may specify a new package to configure
  * or a change in level for an existing package; if no packages are specified, the
  * level is changed for all previously configured packages.
+ * </p>
+ * <p>
+ * Authorization to change logging levels can be configured using the init-param
+ * <code>logAccessGroup</code> which is a URI of a group authorized to change
+ * logging levels, and <code>groupAuthorizer</code> which is a fully qualified
+ * class name of an Authenticator interface used to authenticate that the calling
+ * user is a member of the authorized group.
+ * </p>
+ * <p>
+ * An optional properties file containing authorized users and groups can be configured
+ * using the init-param <code>logControlProperties</code>. The properties file
+ * can contain one or both of the following properties. <code>users</code> is a
+ * space delimited list of distinguished names for authorized users. The calling user
+ * is compared to the list of users to authorize access. <code>groups</code>
+ * is a space delimited list of authorized group URI's. The groupURI's are used
+ * to authenticate that the calling user is a member of an authorized group.
  * </p>
  */
 public class LogControlServlet extends HttpServlet {
@@ -135,11 +162,16 @@ public class LogControlServlet extends HttpServlet {
     private static final String GROUP_PARAM = "logAccessGroup";
     private static final String GROUP_AUTHORIZER = "groupAuthorizer";
 
+    private static final String LOG_CONTROL_PROPERTIES = "logControlProperties";
+    static final String USER_DNS_PROPERTY = "users";
+    static final String GROUP_URIS_PROPERTY = "groups";
+
     private Level level = null;
     private List<String> packages;
 
     private String authorizerClassName;
-    private Authorizer groupAuthorizer;
+    private String accessGroup;
+    private String logControlProperties;
 
     /**
      * Initialize the logging. This method should only get
@@ -200,32 +232,11 @@ public class LogControlServlet extends HttpServlet {
         }
 
         // get the access group and group authorizer
-        String accessGroup = config.getInitParameter(GROUP_PARAM);
+        accessGroup = config.getInitParameter(GROUP_PARAM);
         authorizerClassName = config.getInitParameter(GROUP_AUTHORIZER);
 
-        // instantiate the class if all configuration is present
-        if (authorizerClassName != null) {
-            try {
-                Class authClass = Class.forName(authorizerClassName);
-                if (accessGroup != null) {
-                    try {
-                        Constructor ctor = authClass.getConstructor(String.class);
-                        Object o = ctor.newInstance(accessGroup);
-                        groupAuthorizer = (Authorizer) o;
-                    } catch (NoSuchMethodException ex) {
-                        logger.warn("authorizer " + authorizerClassName + " has no constructor(String), ignoring accessGroup=" + accessGroup);
-                        Object o = authClass.newInstance();
-                        groupAuthorizer = (Authorizer) o;
-                    }
-                } else {
-                    // no-arg constructor
-                    Object o = authClass.newInstance();
-                    groupAuthorizer = (Authorizer) o;
-                }
-            } catch (Exception e) {
-                logger.error("Could not load group authorizer", e);
-            }
-        }
+        // get the logControl properties file for this service if it exists
+        logControlProperties = config.getInitParameter(LOG_CONTROL_PROPERTIES);
 
         // these are here to help detect problems with logging setup
         logger.warn("init complete");
@@ -293,11 +304,11 @@ public class LogControlServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             return;
         } catch (TransientException e) {
-            logger.error("Error calling group authorizer", e);
+            logger.error("Authorization error", e);
             response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
             return;
         } catch (Throwable t) {
-            logger.error("Error calling group authorizer", t);
+            logger.error("Authorization error", t);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             return;
         }
@@ -359,47 +370,232 @@ public class LogControlServlet extends HttpServlet {
     /**
      * Check for proper group membership.
      */
-    private void authorize(HttpServletRequest request, boolean readOnly) throws AccessControlException, TransientException {
-        if (authorizerClassName != null && groupAuthorizer == null) {
-            throw new RuntimeException("CONFIG: group authorizer was configured but failed to load: " + authorizerClassName);
-        }
+    private void authorize(HttpServletRequest request, boolean readOnly)
+        throws AccessControlException, TransientException {
 
-        if (groupAuthorizer == null) {
-            logger.warn("Authorization not configured, log control is public.");
+        // Get the calling subject.
+        Subject subject = AuthenticationUtil.getSubject(request, false);
+        logger.debug(subject.toString());
+
+        // Get the logControl properties if they exist.
+        PropertiesReader propertiesReader = getLogControlProperties();
+
+        // first check if request user matches authorized config file users
+        Set<Principal> authorizedUsers = getAuthorizedUserPrincipals(propertiesReader);
+        if (isAuthorizedUser(subject, authorizedUsers)) {
+            logger.info(subject.getPrincipals(X500Principal.class) + " is an authorized user");
             return;
         }
 
-        Subject subject = AuthenticationUtil.getSubject(request);
-        logger.debug(subject.toString());
+        // Check for groups configured in servlet init or properties file.
+        Set<GroupURI> groupUris = getAuthorizedGroupUris(propertiesReader);
 
-        GroupAuthorizationAction groupCheck = new GroupAuthorizationAction(readOnly);
+        // If no user or groups configured, then public access.
+        if (authorizedUsers.isEmpty() && groupUris.isEmpty() && accessGroup == null) {
+            logger.info("Authorization not configured, log control is public.");
+            return;
+        }
 
+        // Check if calling user is a member of a properties file group.
+        try {
+            if (CredUtil.checkCredentials(subject)) {
+                URI serviceID = null;
+                GroupClient groupClient = null;
+                for (GroupURI groupUri : groupUris) {
+                    if (!groupUri.getServiceID().equals(serviceID)) {
+                        serviceID = groupUri.getServiceID();
+                        groupClient = GroupUtil.getGroupClient(serviceID);
+                    }
+                    GroupMemberAction memberCheck = new GroupMemberAction(groupClient, groupUri);
+                    if (isAuthorizedGroup(memberCheck, subject)) {
+                        logger.info(subject.getPrincipals(X500Principal.class) + " is a member of " + groupUri);
+                        return;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Credential check failed: " + e.getMessage());
+        }
+
+        // Check if calling user is a member of a servlet init group.
+        Authorizer authorizer = getAuthorizer(accessGroup);
+        if (authorizer != null) {
+            GroupAuthorizationAction groupCheck = new GroupAuthorizationAction(authorizer, readOnly);
+            if (isAuthorizedGroup(groupCheck, subject)) {
+                logger.info(subject.getPrincipals(X500Principal.class) + " is member of " + accessGroup);
+                return;
+            }
+        }
+
+        // If all authorization failed, throw AccessControlException.
+        throw new AccessControlException("User and group authorization failed.");
+    }
+
+    /**
+     * Get a Group authorizer for the given group URI.
+     *
+     * @param groupURI groupURI string value.
+     * @return A Group authorizer.
+     */
+    private Authorizer getAuthorizer(String groupURI) {
+        Authorizer authorizer = null;
+        if (authorizerClassName != null) {
+            try {
+                Class authClass = Class.forName(authorizerClassName);
+                if (groupURI != null) {
+                    try {
+                        Constructor ctor = authClass.getConstructor(String.class);
+                        Object o = ctor.newInstance(groupURI);
+                        authorizer = (Authorizer) o;
+                    } catch (NoSuchMethodException ex) {
+                        logger.warn("authorizer " + authorizerClassName + " has no constructor(String), ignoring groupURI=" + groupURI);
+                        Object o = authClass.newInstance();
+                        authorizer = (Authorizer) o;
+                    }
+                } else {
+                    // no-arg constructor
+                    Object o = authClass.newInstance();
+                    authorizer = (Authorizer) o;
+                }
+            } catch (Exception e) {
+                logger.error("Could not load group authorizer for groupURI=" + groupURI, e);
+            }
+        }
+        return authorizer;
+    }
+
+    /**
+     * Checks if the caller Principal matches an authorized Principal
+     * from the properties file.
+
+     * @return true if the calling user is an authorized user, false otherwise.
+     */
+    private boolean isAuthorizedUser(Subject subject, Set<Principal> authorizedUsers) {
+        if (!authorizedUsers.isEmpty()) {
+            Set<X500Principal> principals = subject.getPrincipals(X500Principal.class);
+            for (Principal caller : principals) {
+                for (Principal authorizedUser : authorizedUsers) {
+                    if (AuthenticationUtil.equals(authorizedUser, caller)) {
+                        return true;
+                    }
+                }
+            }
+        } else {
+            logger.debug("Authorized users not configured.");
+        }
+        return false;
+    }
+
+    /**
+     * Check that the subject can perform the action to authorize access.
+     *
+     * @param action The PrivilegedExceptionAction
+     * @param subject The Subject to check
+     * @return true if the calling user is a member of an authorized group, false otherwise.
+     */
+    private boolean isAuthorizedGroup(PrivilegedExceptionAction action, Subject subject)
+        throws TransientException {
         try {
             if (subject == null) {
-                groupCheck.run();
+                action.run();
             } else {
                 try {
-                    Subject.doAs(subject, groupCheck);
+                    Subject.doAs(subject, action);
                 } catch (PrivilegedActionException e) {
                     throw e.getException();
                 }
             }
+            return true;
         } catch (Exception e) {
             if (e instanceof AccessControlException) {
-                throw (AccessControlException) e;
-            }
-            if (e instanceof TransientException) {
+                logger.debug("Group authorization failed: " + e.getMessage());
+            } else if (e instanceof TransientException) {
                 throw (TransientException) e;
+            } else {
+                throw new IllegalStateException(e);
             }
-            throw new IllegalStateException(e);
         }
+        return false;
     }
 
-    class GroupAuthorizationAction implements PrivilegedExceptionAction<Object> {
+    /**
+     * Get a Set of X500Principal's from the logControl properties. Return
+     * an empty set if the properties do not exist or can't be read.
+     *
+     * @return Set of authorized X500Principals, can be an empty Set if none configured.
+     */
+    Set<Principal> getAuthorizedUserPrincipals(PropertiesReader propertiesReader) {
+        Set<Principal> principals = new HashSet<Principal>();
+        if (propertiesReader != null) {
+            try {
+                List<String> properties = propertiesReader.getPropertyValues(USER_DNS_PROPERTY);
+                if (properties != null) {
+                    for (String property : properties) {
+                        if (!property.isEmpty()) {
+                            principals.add(new X500Principal(property));
+                        }
+                    }
+                }
+            } catch (IllegalArgumentException e) {
+                logger.debug("No authorized users configured");
+            }
+        }
+        return principals;
+    }
 
+    /**
+     * Get a Set of groupURI's from the logControl properties. Return
+     * an empty set if the properties do not exist or can't be read.
+     *
+     * @return Set of authorized groupURI's, can be an empty Set if none configured.
+     */
+    Set<GroupURI> getAuthorizedGroupUris(PropertiesReader propertiesReader) {
+        Set<GroupURI> groupUris = new HashSet<GroupURI>();
+        if (propertiesReader != null) {
+            try {
+                List<String> properties = propertiesReader.getPropertyValues(GROUP_URIS_PROPERTY);
+                if (properties != null) {
+                    for (String property : properties) {
+                        if (StringUtil.hasLength(property)) {
+                            try {
+                                groupUris.add(new GroupURI(property));
+                            } catch (IllegalArgumentException e) {
+                                logger.error(property + " is invalid GroupURI because " + e.getMessage());
+                            }
+                        }
+                    }
+                }
+            } catch (IllegalArgumentException e) {
+                logger.info("No authorized groupURI's configured");
+            }
+        }
+        return groupUris;
+    }
+
+    /**
+     * Read the logControl properties file and returns a PropertiesReader.
+     *
+     * @return A PropertiesReader, or null if the properties file does not
+     *          exist or can not be read.
+     */
+    private PropertiesReader getLogControlProperties() {
+        PropertiesReader reader = null;
+        if (logControlProperties != null) {
+            reader = new PropertiesReader(logControlProperties);
+            if (!reader.canRead()) {
+                reader = null;
+            }
+        }
+        return reader;
+    }
+
+    static class GroupAuthorizationAction implements PrivilegedExceptionAction<Object> {
+
+        private Authorizer authorizer;
         private boolean readOnly;
 
-        GroupAuthorizationAction(boolean readOnly) {
+        GroupAuthorizationAction(Authorizer authorizer, boolean readOnly) {
+            this.authorizer = authorizer;
             this.readOnly = readOnly;
         }
 
@@ -407,14 +603,38 @@ public class LogControlServlet extends HttpServlet {
         public Object run() throws Exception {
             try {
                 if (readOnly) {
-                    groupAuthorizer.getReadPermission(null);
+                    authorizer.getReadPermission(null);
                 } else {
-                    groupAuthorizer.getWritePermission(null);
+                    authorizer.getWritePermission(null);
                 }
             } catch (FileNotFoundException e) {
                 throw new IllegalStateException("UnexpectedException", e);
             }
 
+            return null;
+        }
+    }
+
+    static class GroupMemberAction implements PrivilegedExceptionAction<Object> {
+
+        private GroupClient groupClient;
+        private GroupURI groupURI;
+
+        GroupMemberAction(GroupClient groupClient, GroupURI groupURI) {
+            this.groupClient = groupClient;
+            this.groupURI = groupURI;
+        }
+
+        @Override
+        public Object run() throws Exception {
+            // GMSClient can throw a RuntimeException for an auth failure.
+            try {
+                if (!groupClient.isMember(groupURI)) {
+                    throw new AccessControlException("not a member of " + groupURI);
+                }
+            } catch (RuntimeException e) {
+                throw new AccessControlException(e.getMessage());
+            }
             return null;
         }
     }
