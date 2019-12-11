@@ -120,6 +120,7 @@ public class RestServlet extends HttpServlet {
     
     protected String appName;
     protected String componentID;
+    protected boolean augmentSubject = true;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
@@ -131,6 +132,10 @@ public class RestServlet extends HttpServlet {
         this.headAction = loadAction(config, "head");
         this.appName = config.getServletContext().getServletContextName();
         this.componentID = appName  + "." + config.getServletName();
+        String augment = config.getInitParameter("augmentSubject");
+        if (augment != null && augment.equalsIgnoreCase(Boolean.FALSE.toString())) {
+            augmentSubject = false;
+        }
         
         // application specific config
         for (String name : new Enumerator<String>(config.getInitParameterNames())) {
@@ -236,7 +241,8 @@ public class RestServlet extends HttpServlet {
         long start = System.currentTimeMillis();
         SyncOutput out = null;
         try {
-            Subject subject = AuthenticationUtil.getSubject(request);
+            Subject subject = null;
+            subject = AuthenticationUtil.getSubject(request, augmentSubject);
             logInfo.setSubject(subject);
 
             RestAction action = actionClass.newInstance();
