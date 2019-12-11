@@ -174,7 +174,7 @@ public class AuthenticationUtil {
         return null;
     }
 
-    private static Subject augmentSubject(Subject s) {
+    public static Subject augmentSubject(Subject s) {
         final Authenticator auth = getAuthenticator();
         if (auth != null) {
             return auth.getSubject(s);
