@@ -286,6 +286,11 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
             logInfo.setSuccess(true);
             handleException(ex, 409, ex.getMessage(), false, false);
         }
+        catch (ContentExpectationException ex)
+        {
+            logInfo.setSuccess(true);
+            handleException(ex, 412, ex.getMessage(), false, false);
+        }
         catch(ByteLimitExceededException ex)
         {
             logInfo.setSuccess(true);
