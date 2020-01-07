@@ -72,8 +72,9 @@ package ca.nrc.cadc.rest;
 import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.io.ByteLimitExceededException;
 import ca.nrc.cadc.log.WebServiceLogInfo;
-import ca.nrc.cadc.net.ContentExpectationException;
 import ca.nrc.cadc.net.HttpTransfer;
+import ca.nrc.cadc.net.IncorrectContentChecksumException;
+import ca.nrc.cadc.net.IncorrectContentLengthException;
 import ca.nrc.cadc.net.ResourceAlreadyExistsException;
 import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.net.TransientException;
@@ -204,7 +205,8 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
      *  java.security.cert.CertificateException : 403
      *  ca.nrc.cadc.net.ResourceNotFoundException : 404
      *  ca.nrc.cadc.net.ResourceAlreadyExistsException : 409
-     *  ca.nrc.cadc.net.ConentExpectationException : 412
+     *  ca.nrc.cadc.net.IncorrectContentChecksumException : 412
+     *  ca.nrc.cadc.net.IncorrectContentLengthException : 412
      *  ca.nrc.cadc.io.ByteLimitExceededException : 413
      *  ca.nrc.cadc.net.TransientException : 503
      *  java.lang.RuntimeException : 500
@@ -288,7 +290,7 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
             logInfo.setSuccess(true);
             handleException(ex, 409, ex.getMessage(), false, false);
         }
-        catch (ContentExpectationException ex)
+        catch (IncorrectContentChecksumException | IncorrectContentLengthException ex)
         {
             logInfo.setSuccess(true);
             handleException(ex, 412, ex.getMessage(), false, false);

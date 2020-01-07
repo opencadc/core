@@ -69,17 +69,17 @@ package ca.nrc.cadc.net;
 
 /**
  * Exception to convey that the received content did not meet the
- * checksum or length expectations provided by the client.
+ * checksum provided by the client.
  * 
  * @author majorb
  */
-public class ContentExpectationException extends RuntimeException {
+public class IncorrectContentChecksumException extends RuntimeException {
     
-    public ContentExpectationException(String message) {
+    public IncorrectContentChecksumException(String message) {
         super(message);
     }
 
-    public ContentExpectationException(String message, Throwable cause) {
+    public IncorrectContentChecksumException(String message, Throwable cause) {
         super(message, cause);
     }
 
