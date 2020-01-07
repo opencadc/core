@@ -65,7 +65,7 @@
  ************************************************************************
  */
 
-package ca.nrc.cadc.rest;
+package ca.nrc.cadc.net;
 
 /**
  * @author majorb
