@@ -374,7 +374,7 @@ public class LogControlServlet extends HttpServlet {
         throws AccessControlException, TransientException {
 
         // Get the calling subject.
-        Subject subject = AuthenticationUtil.getSubject(request, false);
+        Subject subject = AuthenticationUtil.getSubject(request);
         logger.debug(subject.toString());
 
         // Get the logControl properties if they exist.
