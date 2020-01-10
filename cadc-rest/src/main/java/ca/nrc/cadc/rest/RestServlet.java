@@ -240,6 +240,13 @@ public class RestServlet extends HttpServlet {
         WebServiceLogInfo logInfo = new ServletLogInfo(request);
         long start = System.currentTimeMillis();
         SyncOutput out = null;
+        
+        // failures here indicate:
+        // * attempt and failure to authenticate 
+        //   or missing required authentication result in a 401
+        // * all other failures indicate the service is broken (bug or misconfig) 
+        //   or not handling exceptions correctly (bug) result in a 500 response
+
         try {
             Subject subject = null;
             subject = AuthenticationUtil.getSubject(request, augmentSubject);
@@ -268,25 +275,17 @@ public class RestServlet extends HttpServlet {
             action.setLogInfo(logInfo);
 
             doit(subject, action);
-        } catch(InstantiationException | IllegalAccessException ex) {
+        } catch (InstantiationException | IllegalAccessException ex) {
             // problem creating the action
             logInfo.setSuccess(false);
-            String message = "Could not instantiate " + actionClass + ". " + ex.getMessage();
+            String message = "[BUG] failed to instantiate " + actionClass + " cause: " + ex.getMessage();
             logInfo.setMessage(message);
             handleException(out, response, ex, 500, message, true);
-        } catch(AccessControlException | NotAuthenticatedException ex) {
-            // For AccessControlExceptions, return a 401 instead of a 403 here.
-            // At this level, it usually means wrong credentials such as invalid delegation
-            // token, cookie, etc...
-            // NotAuthenticatedException specifically means wrong credentials.
+        } catch (AccessControlException | NotAuthenticatedException ex) {
             logInfo.setSuccess(true);
             logInfo.setMessage(ex.getMessage());
             handleException(out, response, ex, 401, ex.getMessage(), false);
-        } catch(IllegalArgumentException ex) {
-            logInfo.setSuccess(true);
-            logInfo.setMessage(ex.getMessage());
-            handleException(out, response, ex, 400, ex.getMessage(), true);
-        } catch(Throwable t) {
+        } catch (Throwable t) {
             logInfo.setSuccess(false);
             logInfo.setMessage(t.getMessage());
             handleUnexpected(out, response, t);
@@ -303,15 +302,16 @@ public class RestServlet extends HttpServlet {
         } else {
             try {
                 Subject.doAs(subject, action);
-            } catch(PrivilegedActionException pex) {
-                if (pex.getCause() instanceof ServletException)
+            } catch (PrivilegedActionException pex) {
+                if (pex.getCause() instanceof ServletException) {
                     throw (ServletException) pex.getCause();
-                else if (pex.getCause() instanceof IOException)
+                } else if (pex.getCause() instanceof IOException) {
                     throw (IOException) pex.getCause();
-                else if (pex.getCause() instanceof RuntimeException)
+                } else if (pex.getCause() instanceof RuntimeException) {
                     throw (RuntimeException) pex.getCause();
-                else
+                } else {
                     throw new RuntimeException(pex.getCause());
+                }
             }
         }
     }
@@ -330,9 +330,9 @@ public class RestServlet extends HttpServlet {
      * @param showExceptions show exception(s) in output
      * @throws IOException failure to write to output
      */
-    protected void handleException(SyncOutput syncOutput, HttpServletResponse response,
-    		Throwable ex, int code, String message, boolean showExceptions)
-            throws IOException {
+    protected void handleException(SyncOutput syncOutput, HttpServletResponse response, Throwable ex, int code, 
+            String message, boolean showExceptions)
+        throws IOException {
 
         log.debug(message, ex);
 
@@ -363,8 +363,7 @@ public class RestServlet extends HttpServlet {
         }
     }
 
-    private void handleUnexpected(SyncOutput out, HttpServletResponse response, Throwable t)
-        throws IOException {
+    private void handleUnexpected(SyncOutput out, HttpServletResponse response, Throwable t) throws IOException {
         if (out == null) {
             out = new SyncOutput(response);
         }
