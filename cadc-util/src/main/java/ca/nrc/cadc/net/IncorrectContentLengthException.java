@@ -73,7 +73,7 @@ package ca.nrc.cadc.net;
  * 
  * @author majorb
  */
-public class IncorrectContentLengthException extends RuntimeException {
+public class IncorrectContentLengthException extends PreconditionFailedException {
     
     public IncorrectContentLengthException(String message) {
         super(message);

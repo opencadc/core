@@ -73,7 +73,7 @@ package ca.nrc.cadc.net;
  * 
  * @author majorb
  */
-public class IncorrectContentChecksumException extends RuntimeException {
+public class IncorrectContentChecksumException extends PreconditionFailedException {
     
     public IncorrectContentChecksumException(String message) {
         super(message);
