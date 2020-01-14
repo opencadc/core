@@ -373,8 +373,17 @@ public class LogControlServlet extends HttpServlet {
     private void authorize(HttpServletRequest request, boolean readOnly)
         throws AccessControlException, TransientException {
 
-        // Get the calling subject.
-        Subject subject = AuthenticationUtil.getSubject(request);
+        // Get the calling subject.  If possible, augment the subject,
+        // but if augmenting fails, use the subject provided only.
+        Subject subject;
+
+        try {
+            subject = AuthenticationUtil.getSubject(request);
+        } catch (Exception e) {
+            logger.error("Augment subject failed, using non-augmented subject: " + e.getMessage());
+            subject = AuthenticationUtil.getSubject(request, false);
+        }
+
         logger.debug(subject.toString());
 
         // Get the logControl properties if they exist.
