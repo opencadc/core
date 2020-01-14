@@ -563,6 +563,11 @@ public class HttpPost extends HttpTransfer {
                     throw new AccessControlException("permission denied: " + msg);
                 case HttpURLConnection.HTTP_NOT_FOUND:
                     throw new FileNotFoundException("resource not found " + msg);
+                case HttpURLConnection.HTTP_PRECON_FAILED:
+                    throw new PreconditionFailedException("precondition failed: " + msg);
+                case HttpURLConnection.HTTP_ENTITY_TOO_LARGE:
+                    throw new IOException("upload too large: " + msg);
+                // TODO: map all 4xx response codes to standard exceptions? 
                 default:
                     throw new IOException(msg);
             }

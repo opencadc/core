@@ -425,8 +425,10 @@ public class HttpUpload extends HttpTransfer {
                     throw new AccessControlException("authorization failed " + msg);
                 case HttpURLConnection.HTTP_NOT_FOUND:
                     throw new FileNotFoundException("resource not found " + msg);
+                case HttpURLConnection.HTTP_PRECON_FAILED:
+                    throw new PreconditionFailedException("precondition failed: " + msg);
                 case HttpURLConnection.HTTP_ENTITY_TOO_LARGE:
-                    throw new IOException("No space left - " + msg);
+                    throw new IOException("upload too large: " + msg);
                 default:
                     throw new IOException(msg);
             }

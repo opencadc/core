@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.rest;
 
@@ -73,8 +73,7 @@ import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.io.ByteLimitExceededException;
 import ca.nrc.cadc.log.WebServiceLogInfo;
 import ca.nrc.cadc.net.HttpTransfer;
-import ca.nrc.cadc.net.IncorrectContentChecksumException;
-import ca.nrc.cadc.net.IncorrectContentLengthException;
+import ca.nrc.cadc.net.PreconditionFailedException;
 import ca.nrc.cadc.net.ResourceAlreadyExistsException;
 import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.net.TransientException;
@@ -88,87 +87,87 @@ import org.apache.log4j.Logger;
 
 /**
  * Base REST action class.
- * 
+ *
  * @author pdowler
  */
 public abstract class RestAction implements PrivilegedExceptionAction<Object> {
+
     private static final Logger log = Logger.getLogger(RestAction.class);
-    
+
     public static final String STATE_MODE_KEY = "-" + RestAction.class.getName() + ".state";
     public static final String STATE_OFFLINE = "Offline";
     public static final String STATE_OFFLINE_MSG = "System is offline for maintainence";
     public static final String STATE_READ_ONLY = "ReadOnly";
     public static final String STATE_READ_ONLY_MSG = "System is in read-only mode for maintainence";
     public static final String STATE_READ_WRITE = "ReadWrite";
-    
+
     /**
      * Current readable state. A service is readable in READ_WRITE or READ_ONLY mode.
      * Subclasses that implement application logic must check the readable flag and
      * respond with an appropriate message when necessary.
      */
     protected boolean readable = true;
-    
+
     /**
-     * Current writable state. A service is writable in READ_WRITE mode. Subclasses that 
-     * implement application logic must check the readable flag and respond with an 
+     * Current writable state. A service is writable in READ_WRITE mode. Subclasses that
+     * implement application logic must check the readable flag and respond with an
      * appropriate message when necessary.
      */
     protected boolean writable = true;
 
     /**
-     * The application name is a string unique to the application.  It
+     * The application name is a string unique to the application. It
      * can be used to prefix log messages, JNDI key names, etc. that are common
      * to components of the application.
      */
     protected String appName;
-    
+
     /**
      * The componentID is a string unique to a single instance of RestServlet. It
-     * can be used to prefix log messages, JNDI key names, System properties, etc. 
+     * can be used to prefix log messages, JNDI key names, System properties, etc.
      * It is not a path like one might get from SyncInput.getContextPath() and should
      * never be parsed or interpreted.
      */
     protected String componentID;
-    
+
     /**
      * Map of init params from the web deployment descriptor. This map does not include
      * the init params that configure the http method action classes.
      */
-    protected Map<String,String> initParams;
-    
+    protected Map<String, String> initParams;
+
     /**
      * Wrapper around the HTTP request.
      */
     protected SyncInput syncInput;
-    
+
     /**
      * Wrapper around the HTTP response.
      */
     protected SyncOutput syncOutput;
-    
+
     protected WebServiceLogInfo logInfo;
 
     public static final String URLENCODED = "application/x-www-form-urlencoded";
     public static final String MULTIPART = "multipart/form-data";
 
-    protected RestAction()
-    {
+    protected RestAction() {
         super();
     }
 
     /**
-     * Initialise readable and writable state. This method will only downgrade 
+     * Initialise readable and writable state. This method will only downgrade
      * the state to !readable and !writable and will never restore them to true.
      * In this implementation, the state is stored in system property named
      * with the appName + STATE_MODE_KEY so the state is shared by all endpoints in an
-     * application. 
-     * 
-     * The design philosophy is that an application will set the state via a WebService 
-     * implementation (see cadc-vosi library), which has access to the same appName. 
+     * application.
+     *
+     * The design philosophy is that an application will set the state via a WebService
+     * implementation (see cadc-vosi library), which has access to the same appName.
      * The VOSI AvailabilityServlet supports POST requests to change the state. So,
      * a service operator can POST to the /appName/availability resource, the AvailabilityServlet
      * will call setState(String) on the WebService implementation, and the WebService impl is
-     * responsible for setting the appName + STATE_MODE_KEY system property to one of 
+     * responsible for setting the appName + STATE_MODE_KEY system property to one of
      * STATE_READ_WRITE, STATE_READ_ONLY, or STATE_OFFLINE, and then this method will check the
      * system property and set readable and writable flags. Finally, RestAction subclasses must check
      * the flags and allow or disallow the request.
@@ -184,12 +183,12 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
             writable = false;
         }
     }
-    
+
     /**
-     * Create inline content handler to process non-form data. Non-form data could 
-     * be a document or part of a multi-part request). Null return value is allowed 
+     * Create inline content handler to process non-form data. Non-form data could
+     * be a document or part of a multi-part request). Null return value is allowed
      * if the service never expects non-form data or wants to ignore non-form data.
-     * 
+     *
      * @return configured InlineContentHandler
      */
     abstract protected InlineContentHandler getInlineContentHandler();
@@ -200,24 +199,21 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
      * The following exceptions, when thrown by this function, are
      * automatically mapped into HTTP errors by RestAction class:
      *
-     *  java.lang.IllegalArgumentException : 400
-     *  java.security.AccessControlException : 403
-     *  java.security.cert.CertificateException : 403
-     *  ca.nrc.cadc.net.ResourceNotFoundException : 404
-     *  ca.nrc.cadc.net.ResourceAlreadyExistsException : 409
-     *  ca.nrc.cadc.net.IncorrectContentChecksumException : 412
-     *  ca.nrc.cadc.net.IncorrectContentLengthException : 412
-     *  ca.nrc.cadc.io.ByteLimitExceededException : 413
-     *  ca.nrc.cadc.net.TransientException : 503
-     *  java.lang.RuntimeException : 500
-     *  java.lang.Error : 500
-     * 
+     * java.lang.IllegalArgumentException : 400
+     * java.security.AccessControlException : 403
+     * java.security.cert.CertificateException : 403
+     * ca.nrc.cadc.net.ResourceNotFoundException : 404
+     * ca.nrc.cadc.net.ResourceAlreadyExistsException : 409
+     * ca.nrc.cadc.net.PreconditionFailedException (and subclasses) : 412
+     * ca.nrc.cadc.io.ByteLimitExceededException : 413
+     * ca.nrc.cadc.net.ExpectationFailedException : 417
+     * ca.nrc.cadc.net.TransientException : 503
+     *
      * @throws Exception for standard application failure
      */
     public abstract void doAction() throws Exception;
 
-    public void setLogInfo(WebServiceLogInfo logInfo)
-    {
+    public void setLogInfo(WebServiceLogInfo logInfo) {
         this.logInfo = logInfo;
     }
 
@@ -225,7 +221,7 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
         this.appName = appName;
         initState();
     }
-            
+
     public void setComponentID(String componentID) {
         this.componentID = componentID;
     }
@@ -234,104 +230,64 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
         this.initParams = initParams;
     }
 
-    public void setSyncInput(SyncInput syncInput)
-    {
+    public void setSyncInput(SyncInput syncInput) {
         this.syncInput = syncInput;
     }
 
-    public void setSyncOutput(SyncOutput syncOutput)
-    {
+    public void setSyncOutput(SyncOutput syncOutput) {
         this.syncOutput = syncOutput;
     }
 
     // return Object ignored; method signature from PrivilegedExceptionAction
     @Override
     public Object run()
-        throws Exception
-    {
+            throws Exception {
         boolean ioExceptionOnInput = true;
-        try
-        {
+        try {
             logInfo.setSuccess(false);
-            if (syncInput != null)
-            {
+            if (syncInput != null) {
                 syncInput.init();
                 ioExceptionOnInput = false;
             }
             doAction();
 
             logInfo.setSuccess(true);
-        }
-        catch(NotAuthenticatedException ex) {
+        } catch (NotAuthenticatedException ex) {
             logInfo.setSuccess(true);
             handleException(ex, 401, ex.getMessage(), false, false);
-        }
-        catch(AccessControlException ex)
-        {
+        } catch (AccessControlException ex) {
             logInfo.setSuccess(true);
             handleException(ex, 403, ex.getMessage(), false, false);
-        }
-        catch(CertificateException ex)
-        {
+        } catch (CertificateException ex) {
             handleException(ex, 403, "permission denied -- reason: invalid proxy certficate", false, true);
-        }
-        catch(IllegalArgumentException ex)
-        {
+        } catch (IllegalArgumentException ex) {
             logInfo.setSuccess(true);
             handleException(ex, 400, ex.getMessage(), false, true);
-        }
-        catch(ResourceNotFoundException ex)
-        {
+        } catch (ResourceNotFoundException ex) {
             logInfo.setSuccess(true);
             handleException(ex, 404, ex.getMessage(), false, false);
-        }
-        catch(ResourceAlreadyExistsException ex)
-        {
+        } catch (ResourceAlreadyExistsException ex) {
             logInfo.setSuccess(true);
             handleException(ex, 409, ex.getMessage(), false, false);
-        }
-        catch (IncorrectContentChecksumException | IncorrectContentLengthException ex)
-        {
+        } catch (PreconditionFailedException ex) {
             logInfo.setSuccess(true);
+            //logInfo.setMessage(ex.getClass().getSimpleName() + ": " + ex.getMessage());
             handleException(ex, 412, ex.getMessage(), false, false);
-        }
-        catch(ByteLimitExceededException ex)
-        {
+        } catch (ByteLimitExceededException ex) {
             logInfo.setSuccess(true);
             handleException(ex, 413, ex.getMessage(), false, false);
-        }
-        catch(UnsupportedOperationException ex)
-        {
+        } catch (UnsupportedOperationException ex) {
             logInfo.setSuccess(true);
             handleException(ex, 400, ex.getMessage(), false, false);
-        }
-        catch(TransientException ex)
-        {
+        } catch (TransientException ex) {
             logInfo.setSuccess(true);
             syncOutput.setHeader(HttpTransfer.SERVICE_RETRY, ex.getRetryDelay());
             handleException(ex, 503, "temporarily unavailable: " + syncInput.getPath(), true, false);
-        }
-        catch(IOException ex) {
+        } catch (IOException ex) {
             if (ioExceptionOnInput) {
-                // failed to read input stream
-                logInfo.setSuccess(false);
-                handleException(ex, 500, "failed to read input -- reason: " + ex.getMessage(), false, true);
-            } else {
-                // same as Error below
-                logInfo.setSuccess(false);
-                handleException(ex, 500, "unexpected error: " + syncInput.getPath(), true, true);
+                throw new IOException("failed to read input", ex);
             }
-            
-        }
-        catch(RuntimeException unexpected)
-        {
-            logInfo.setSuccess(false);
-            handleException(unexpected, 500, "unexpected failure: " + syncInput.getPath(), true, true);
-        }
-        catch(Error unexpected)
-        {
-            logInfo.setSuccess(false);
-            handleException(unexpected, 500, "unexpected error: " + syncInput.getPath(), true, true);
+            throw ex;
         }
 
         return null;
@@ -346,25 +302,20 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
      * @param ex exception to handle
      * @param code HTTP status code
      * @param message message body
-     * @param showStackTrace  log stack trace
-     * @param showExceptions  show exceptions in output
+     * @param showStackTrace log stack trace
+     * @param showExceptions show exceptions in output
      * @throws IOException if write to output fails
      */
     protected void handleException(
-        Throwable ex, int code, String message, boolean showStackTrace, boolean showExceptions)
-            throws IOException
-    {
+            Throwable ex, int code, String message, boolean showStackTrace, boolean showExceptions)
+            throws IOException {
         logInfo.setMessage(message);
-        if (showStackTrace)
-        {
+        if (showStackTrace) {
             log.error(message, ex);
-        }
-        else
-        {
+        } else {
             log.debug(message, ex);
         }
-        if (!syncOutput.isOpen())
-        {
+        if (!syncOutput.isOpen()) {
             syncOutput.setCode(code);
             syncOutput.setHeader("Content-Type", "text/plain");
 
@@ -372,12 +323,10 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
             StringBuilder sb = new StringBuilder();
             sb.append(message);
 
-            if (showExceptions)
-            {
+            if (showExceptions) {
                 sb.append(ex.toString()).append("\n");
                 Throwable cause = ex.getCause();
-                while (cause != null)
-                {
+                while (cause != null) {
                     sb.append("cause: ");
                     sb.append(cause.toString()).append("\n");
                     cause = cause.getCause();
@@ -385,9 +334,9 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
             }
 
             os.write(sb.toString().getBytes());
-        }
-        else
+        } else {
             log.error("unexpected situation: SyncOutput is open", ex);
+        }
     }
 
 }
