@@ -24,7 +24,7 @@ dependencies {
     compile 'org.opencadc:cadc-gms:[1.0,2.0)'
     compile 'org.opencadc:cadc-cdp:[1.2,2.0)'
 
-    testCompile 'junit:junit:4.10'
+    testCompile 'junit:junit:4.13'
     testCompile 'org.easymock:easymock:3.6'
 }
 
