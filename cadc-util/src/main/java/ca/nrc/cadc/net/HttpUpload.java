@@ -70,6 +70,7 @@
 package ca.nrc.cadc.net;
 
 import ca.nrc.cadc.net.event.TransferEvent;
+import ca.nrc.cadc.util.StringUtil;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -83,6 +84,7 @@ import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.security.AccessControlException;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -416,7 +418,10 @@ public class HttpUpload extends HttpTransfer {
         
         this.responseCode = code;
         if (code != HttpURLConnection.HTTP_OK && code != HttpURLConnection.HTTP_CREATED) {
-            String msg = "(" + code + ") " + conn.getResponseMessage();
+            String msg = String.format("(%d) %s", code,
+                                       (conn.getErrorStream() != null) ? StringUtil.readFromInputStream(
+                                               conn.getErrorStream(), StandardCharsets.UTF_8.name())
+                                                                       : conn.getResponseMessage());
             checkTransient(code, msg, conn);
             switch (code) {
                 case HttpURLConnection.HTTP_UNAUTHORIZED:
