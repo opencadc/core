@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2020.                            (c) 2020.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -69,15 +69,19 @@
 
 package ca.nrc.cadc.net;
 
+import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.auth.SSLUtil;
 import ca.nrc.cadc.auth.SSOCookieCredential;
 import ca.nrc.cadc.auth.SSOCookieManager;
+import ca.nrc.cadc.io.ByteLimitExceededException;
 import ca.nrc.cadc.net.event.ProgressListener;
 import ca.nrc.cadc.net.event.TransferEvent;
 import ca.nrc.cadc.net.event.TransferListener;
+import ca.nrc.cadc.util.CaseInsensitiveStringComparator;
 import ca.nrc.cadc.util.FileMetadata;
 import ca.nrc.cadc.util.HexUtil;
 import ca.nrc.cadc.util.StringUtil;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -89,11 +93,12 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.security.AccessControlContext;
+import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -111,16 +116,32 @@ public abstract class HttpTransfer implements Runnable {
     private static Logger log = Logger.getLogger(HttpTransfer.class);
 
     /**
-     * Not documented in HttpURLConnection.  Represents a locked resource,
-     * which primarily relates to WebDAV.
+     * Not documented in HttpURLConnection. A client specified Expect(ation)
+     * was not satisfied.
+     */
+    static final int HTTP_EXPECT_FAIL = 417;
+    
+    /**
+     * Not documented in HttpURLConnection. The resource is locked.
      */
     static final int HTTP_LOCKED = 423;
 
-    public static String DEFAULT_USER_AGENT;
+    static {
+        String jv = "Java " + System.getProperty("java.version") + ";" + System.getProperty("java.vendor");
+        String os = System.getProperty("os.name") + " " + System.getProperty("os.version");
+        DEFAULT_USER_AGENT = "OpenCADC/" + HttpTransfer.class.getPackage().getName() + "/" + jv + "/" + os;
+    }
+    
+    public static final String DEFAULT_USER_AGENT;
     public static final String CADC_CONTENT_LENGTH_HEADER = "X-CADC-Content-Length";
     public static final String CADC_STREAM_HEADER = "X-CADC-Stream";
     public static final String CADC_PARTIAL_READ_HEADER = "X-CADC-Partial-Read";
-
+    
+    public static final String CONTENT_ENCODING = "Content-Encoding";
+    public static final String CONTENT_LENGTH = "Content-Length";
+    public static final String CONTENT_MD5 = "Content-MD5";
+    public static final String CONTENT_TYPE = "Content-Type";
+    
     public static final String SERVICE_RETRY = "Retry-After";
 
     public static final int DEFAULT_BUFFER_SIZE = 8 * 1024; // 8KB
@@ -163,7 +184,7 @@ public abstract class HttpTransfer implements Runnable {
      */
     public static final int MAX_RETRY_DELAY = 128;
     public static final int DEFAULT_RETRY_DELAY = 30;
-
+    
     protected int maxRetries = 3;
     protected int retryDelay = 1; // 1, 2, 4 sec
     protected RetryReason retryReason = RetryReason.TRANSIENT;
@@ -172,13 +193,15 @@ public abstract class HttpTransfer implements Runnable {
     protected int curRetryDelay = 0; // scaled after each retry
 
     protected int bufferSize = DEFAULT_BUFFER_SIZE;
-    protected OverwriteChooser overwriteChooser;
+    
     protected ProgressListener progressListener;
     protected TransferListener transferListener;
     protected boolean fireEvents = false;
     protected boolean fireCancelOnce = true;
-
-    protected List<HttpRequestProperty> requestProperties;
+    protected File localFile; // for events
+    
+    public String eventID = null;
+    
     protected String userAgent;
     protected boolean userNio = false; // throughput not great, needs work before use
     protected boolean logIO = false;
@@ -189,33 +212,50 @@ public abstract class HttpTransfer implements Runnable {
     protected Thread thread;
 
     // state set by caller
-    protected URL remoteURL;
-    protected File localFile;
+    protected final URL remoteURL;
+    protected boolean followRedirects;
 
-    // state that observer(s) might be interested in
-    public String eventID = null;
+    
     public Throwable failure;
-
-    protected boolean followRedirects = false;
     protected URL redirectURL;
     protected int responseCode = -1;
+    protected boolean prepareStream;
     
     // latency tracking
     protected Long requestStartTime;
     protected Long responseLatency;
     
-    protected final Map<String,String> responseHeaders = new TreeMap<String,String>();
+    private boolean customSSLSocketFactory = false;
+    private final List<HttpRequestProperty> requestProperties = new ArrayList<HttpRequestProperty>();
+    //private OutputStream requestStream;
+    
+    private final Map<String,String> responseHeaders = new TreeMap<String,String>(new CaseInsensitiveStringComparator());
+    protected InputStream responseStream;
+    private String contentType;
+    private String contentEncoding;
+    private String contentMD5;
+    private long contentLength = -1;
+    private Date lastModified;
+    
+    // error capture
+    protected int maxReadFully = 32 * 1024; // read up to 32k text/* responses into memory
+    
+    // output for run()
+    protected OutputStream responseDestination;
+    protected InputStreamWrapper responseStreamWrapper;
 
-    static {
-        String jv = "Java " + System.getProperty("java.version") + ";" + System.getProperty("java.vendor");
-        String os = System.getProperty("os.name") + " " + System.getProperty("os.version");
-        DEFAULT_USER_AGENT = "OpenCADC/" + HttpTransfer.class.getName() + "/" + jv + "/" + os;
+    protected final void assertNotNull(String name, Object value) {
+        if (value == null) {
+            throw new IllegalArgumentException(name + " cannot be null");
+        }
     }
-
-    protected HttpTransfer(boolean followRedirects) {
+    
+    protected HttpTransfer(URL url, boolean followRedirects) {
+        assertNotNull("url", url);
+        this.remoteURL = url;
         this.followRedirects = followRedirects;
+        
         this.go = true;
-        this.requestProperties = new ArrayList<HttpRequestProperty>();
         this.userAgent = DEFAULT_USER_AGENT;
 
         String bsize = null;
@@ -239,10 +279,158 @@ public abstract class HttpTransfer implements Runnable {
             log.warn("invalid buffer size: " + bsize + ", using default " + DEFAULT_BUFFER_SIZE);
             this.bufferSize = DEFAULT_BUFFER_SIZE;
         }
-        
         log.debug("bufferSize: " + bufferSize);
     }
 
+    /**
+     * Initiate the request and perform all actions up to opening the response stream.
+     * Non-error status can be checked by calling getResponseCode() and errors handled
+     * via the thrown exception. The response can be read by calling getInputStream().
+     * 
+     * @throws ca.nrc.cadc.io.ByteLimitExceededException
+     * @throws ca.nrc.cadc.net.ExpectationFailedException
+     * @throws ca.nrc.cadc.net.ResourceAlreadyExistsException
+     * @throws ca.nrc.cadc.net.ResourceNotFoundException
+     * @throws ca.nrc.cadc.net.TransientException
+     * @throws java.lang.InterruptedException
+     */
+    public abstract void prepare() 
+        throws AccessControlException, 
+            ByteLimitExceededException, ExpectationFailedException, 
+            IllegalArgumentException, PreconditionFailedException, 
+            ResourceAlreadyExistsException, ResourceNotFoundException, 
+            TransientException, IOException, InterruptedException;
+    
+    /**
+     * Call doAction in a loop that retries for TransientException (up to maxRetries
+     * times). Subclasses must override doAction and satisfy the expected behaviour of
+     * prepare or run (depending on where this is used).
+     * 
+     * @throws AccessControlException
+     * @throws ByteLimitExceededException
+     * @throws ExpectationFailedException
+     * @throws IllegalArgumentException
+     * @throws PreconditionFailedException
+     * @throws ResourceAlreadyExistsException
+     * @throws ResourceNotFoundException
+     * @throws TransientException
+     * @throws IOException
+     * @throws InterruptedException 
+     */
+    protected void doActionWithRetryLoop()
+        throws AccessControlException, 
+            ByteLimitExceededException, ExpectationFailedException, 
+            IllegalArgumentException, PreconditionFailedException, 
+            ResourceAlreadyExistsException, ResourceNotFoundException, 
+            TransientException, IOException, InterruptedException {
+        
+        boolean done = false;
+        while (!done) {
+            try {
+                doAction();
+                done = true;
+            } catch (TransientException ex) {
+                try {
+                    long dt = 1000L * ex.getRetryDelay(); // to milliseconds
+                    numRetries++;
+                    if (numRetries == maxRetries) {
+                        log.debug("retry limit reached");
+                        throw ex;
+                    }
+                    log.debug("retry " + numRetries + " sleeping  for " + dt);
+                    Thread.sleep(dt);
+                    fireEvent(TransferEvent.RETRYING);
+                } catch (InterruptedException iex) {
+                    log.debug("retry interrupted");
+                    done = true;
+                }
+            }
+        }
+    }
+    
+    protected void doAction()
+        throws AccessControlException, 
+            ByteLimitExceededException, ExpectationFailedException, 
+            IllegalArgumentException, PreconditionFailedException, 
+            ResourceAlreadyExistsException, ResourceNotFoundException, 
+            TransientException, IOException, InterruptedException {
+        // default: no-op
+    }
+    
+    /**
+     * Run the request to completion. The standard implementation here is to call prepare() 
+     * and then read then response stream. This method will catch all thrown exceptions. 
+     * The status can be checked by calling getResponseCode() and the exception accessed 
+     * via getThrowable().
+     */
+    public void run() {
+        if (failure == null) {
+            try {
+                if (responseStream == null) {
+                    prepare();
+                }
+                readResponse(responseStream);
+            } catch (Throwable t) {
+                this.failure = t;
+            } finally {
+                responseStream = null;
+            }
+        }
+    }
+    
+    /**
+     * Get the response stream. This is only valid after prepare() and not after run().
+     * @return stream for reading the response or null if no response is available
+     */
+    public InputStream getInputStream() {
+        return responseStream;
+    }
+    
+    /**
+     * Convenience: get the content-type returned by the server.
+     * 
+     * @return content-type or null
+     */
+    public String getContentType() {
+        return contentType;
+    }
+
+    /**
+     * Convenience: get the content encoding (usually compression) returned by the server.
+     * 
+     * @return content-encoding or null
+     */
+    public String getContentEncoding() {
+        return contentEncoding;
+    }
+
+    /**
+     * Convenience: get the size of the response.
+     *
+     * @return content-length or -1
+     */
+    public long getContentLength() { 
+        return contentLength; 
+    }
+    
+    /**
+     * Get the MD5 checksum sum of the response.
+     * 
+     * @return the content-md5 or null
+     */
+    public String getContentMD5() { 
+        return contentMD5; 
+    }
+
+    /**
+     * Last-modified timestamp from http header.
+     * 
+     * @return last-modified or null
+     */
+    public Date getLastModified() {
+        return lastModified;
+    }
+    
     /**
      * Latency from start of call to first bytes of response. This could be null if some methods
      * do not or cannot track latency.
@@ -264,7 +452,8 @@ public abstract class HttpTransfer implements Runnable {
         return responseHeaders.get(key);
     }
     
-    protected void captureResponseHeaders(HttpURLConnection con) {
+    private void captureResponseHeaders(HttpURLConnection con) {
+        responseHeaders.clear();
         for (String key : con.getHeaderFields().keySet()) {
             if (key != null) {
                 String value = con.getHeaderField(key);
@@ -272,6 +461,15 @@ public abstract class HttpTransfer implements Runnable {
                     responseHeaders.put(key, value);
                 }
             }
+        }
+        // convenience
+        this.contentType = responseHeaders.get(CONTENT_TYPE);
+        this.contentEncoding = responseHeaders.get(CONTENT_ENCODING);
+        this.contentMD5 = responseHeaders.get(CONTENT_MD5);
+        this.contentLength = con.getContentLengthLong();
+        long lastMod = con.getLastModified();
+        if (lastMod > 0) {
+            this.lastModified = new Date(lastMod);
         }
     }
     
@@ -350,8 +548,7 @@ public abstract class HttpTransfer implements Runnable {
         return bufferSize;
     }
 
-
-    public void setUserAgent(String userAgent) {
+    public final void setUserAgent(String userAgent) {
         this.userAgent = userAgent;
         if (userAgent == null) {
             this.userAgent = DEFAULT_USER_AGENT;
@@ -417,9 +614,7 @@ public abstract class HttpTransfer implements Runnable {
         }
     }
 
-    public void setOverwriteChooser(OverwriteChooser overwriteChooser) { 
-        this.overwriteChooser = overwriteChooser; 
-    }
+    
 
     public void setProgressListener(ProgressListener listener) {
         this.progressListener = listener;
@@ -448,7 +643,6 @@ public abstract class HttpTransfer implements Runnable {
     public int getResponseCode() {
         return responseCode;
     }
-
 
     /**
      * If the transfer ultimately failed, this will return the last failure.
@@ -498,7 +692,7 @@ public abstract class HttpTransfer implements Runnable {
         // try to get the retry delay from the response
         if (code == HttpURLConnection.HTTP_UNAVAILABLE) {
             msg = "server busy";
-            String retryAfter = conn.getHeaderField(SERVICE_RETRY);
+            String retryAfter = responseHeaders.get(SERVICE_RETRY);
             log.debug("got " + HttpURLConnection.HTTP_UNAVAILABLE + " with " + SERVICE_RETRY + ": " + retryAfter);
             if (StringUtil.hasText(retryAfter)) {
                 try {
@@ -518,7 +712,6 @@ public abstract class HttpTransfer implements Runnable {
                 case HttpURLConnection.HTTP_UNAVAILABLE:
                 case HttpURLConnection.HTTP_CLIENT_TIMEOUT:
                 case HttpURLConnection.HTTP_GATEWAY_TIMEOUT:
-                case HttpURLConnection.HTTP_PRECON_FAILED:      // ??
                 case HttpURLConnection.HTTP_PAYMENT_REQUIRED:   // maybe it will become free :-)
                     trans = true;
                     break;
@@ -531,7 +724,7 @@ public abstract class HttpTransfer implements Runnable {
             trans = true;
         }
 
-        if (trans && numRetries < maxRetries) {
+        if (trans) {
             if (dt == 0) {
                 if (curRetryDelay == 0) {
                     curRetryDelay = retryDelay;
@@ -545,8 +738,71 @@ public abstract class HttpTransfer implements Runnable {
                 }
             }
             
-            numRetries++;
             throw new TransientException(msg, dt);
+        }
+    }
+    
+    protected void checkErrors(URL url, HttpURLConnection conn)
+        throws AccessControlException, 
+            ByteLimitExceededException, ExpectationFailedException, IllegalArgumentException,
+            PreconditionFailedException, ResourceAlreadyExistsException, ResourceNotFoundException, 
+            TransientException, IOException, InterruptedException {
+        this.responseCode = conn.getResponseCode();
+        log.debug("checkErrors: " + responseCode + " for " + url);
+        
+        captureResponseHeaders(conn);
+        
+        
+        if (responseCode < 400) {
+            return;
+        }
+        
+        String responseBody = null;
+        log.debug("error: " + contentType + " " + contentLength);
+        if (contentType != null && readFullyType(contentType)
+                && contentLength > 0 && contentLength <= maxReadFully) {
+            responseBody = readResponseBody(conn);
+            log.debug("error: " + contentType + " " + contentLength + " response.length: " + responseBody.length());
+        }
+        
+        checkTransient(responseCode, responseBody, conn);
+        
+        switch (responseCode) {
+            case HttpURLConnection.HTTP_BAD_REQUEST:
+                throw new IllegalArgumentException(responseBody);
+
+            case -1: 
+                if (customSSLSocketFactory) {
+                    // invalid client-cert
+                    throw new NotAuthenticatedException(responseBody);
+                }
+                throw new IOException(responseBody);
+
+            case HttpURLConnection.HTTP_UNAUTHORIZED:
+                throw new NotAuthenticatedException(responseBody);
+            case HttpURLConnection.HTTP_FORBIDDEN:
+            case HTTP_LOCKED:
+                throw new AccessControlException(responseBody);
+            case HttpURLConnection.HTTP_NOT_FOUND:
+                throw new ResourceNotFoundException(responseBody);
+            case HttpURLConnection.HTTP_CONFLICT:
+                throw new ResourceAlreadyExistsException(responseBody);
+            case HttpURLConnection.HTTP_PRECON_FAILED:
+                throw new PreconditionFailedException(responseBody);
+
+            case HttpURLConnection.HTTP_ENTITY_TOO_LARGE:
+                throw new ByteLimitExceededException(responseBody, -1);
+            case HTTP_EXPECT_FAIL:
+                throw new ExpectationFailedException(responseBody);
+
+            case HttpURLConnection.HTTP_INTERNAL_ERROR:
+                throw new RuntimeException(responseBody);
+                
+            case HttpURLConnection.HTTP_UNAVAILABLE:
+                throw new TransientException(responseBody);
+
+            default:
+                throw new IOException(responseBody);
         }
     }
 
@@ -610,6 +866,7 @@ public abstract class HttpTransfer implements Runnable {
      * @param sslConn
      */
     protected void initHTTPS(HttpsURLConnection sslConn) {
+        customSSLSocketFactory = false;
         log.debug("initHTTPS: lazy init");
         AccessControlContext ac = AccessController.getContext();
         Subject s = Subject.getSubject(ac);
@@ -617,6 +874,7 @@ public abstract class HttpTransfer implements Runnable {
         if (sf != null) {
             log.debug("setting SSLSocketFactory on " + sslConn.getClass().getName());
             sslConn.setSSLSocketFactory(sf);
+            customSSLSocketFactory = true;
         }
     }
 
@@ -827,6 +1085,55 @@ public abstract class HttpTransfer implements Runnable {
             String v = rp.getValue();
             log.debug("set request property: " + p + "=" + v);
             conn.setRequestProperty(p, v);
+        }
+        conn.setRequestProperty("User-Agent", userAgent);
+    }
+    
+    private boolean readFullyType(String type) {
+        if (type.startsWith("text/")) {
+            return true;
+        }
+        if (type.startsWith("application/x-votable+xml")) {
+            return true;
+        }
+        return false;
+    }
+    
+    protected void readResponse(InputStream istream) throws IOException, InterruptedException {
+        log.debug("readResponse - START");
+        if (responseStreamWrapper != null) {
+            responseStreamWrapper.read(istream);
+        } else if (responseDestination != null) {
+            if (userNio) {
+                nioLoop(istream, responseDestination, 2 * bufferSize, 0);
+            } else {
+                String md5 = ioLoop(istream, responseDestination, 2 * bufferSize, 0);
+                if (getContentMD5() != null && md5 != null) {
+                    if (!md5.equals(getContentMD5())) {
+                        StringBuilder sb = new StringBuilder();
+                        sb.append("MD5 mismatch: (header) ");
+                        sb.append(getContentMD5()).append(" != ").append(md5).append(" (bytes)");
+                        throw new IncorrectContentChecksumException(sb.toString());
+                    }
+                }
+            }
+        } else {
+            log.debug("response capture not enabled");
+        }
+    }
+    
+    // for reading text content after an error for exception message
+    private String readResponseBody(HttpURLConnection conn)
+        throws IOException, InterruptedException {
+        
+        InputStream istream = conn.getErrorStream();
+        if (istream == null) {
+            istream = conn.getInputStream();
+        }
+        try (ByteArrayOutputStream byteArrayOstream = new ByteArrayOutputStream()) {
+            ioLoop(istream, byteArrayOstream, maxReadFully, 0);
+            byteArrayOstream.flush();
+            return new String(byteArrayOstream.toByteArray(), "UTF-8");
         }
     }
 }

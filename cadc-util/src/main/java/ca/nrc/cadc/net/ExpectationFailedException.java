@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2017.                            (c) 2017.
+*  (c) 2020.                            (c) 2020.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -65,117 +65,24 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.caom2.version;
+package ca.nrc.cadc.net;
 
-
-import ca.nrc.cadc.caom2.persistence.UtilTest;
-import ca.nrc.cadc.db.ConnectionConfig;
-import ca.nrc.cadc.db.DBConfig;
-import ca.nrc.cadc.db.DBUtil;
-import ca.nrc.cadc.util.Log4jInit;
-import javax.sql.DataSource;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Test;
 
 /**
  *
  * @author pdowler
  */
-public class ModelVersionDAOTest
-{
-    private static final Logger log = Logger.getLogger(ModelVersionDAOTest.class);
+public class ExpectationFailedException extends Exception {
+    private static final Logger log = Logger.getLogger(ExpectationFailedException.class);
 
-    static String schema = "caom2";
-
-    static
-    {
-        Log4jInit.setLevel("ca.nrc.cadc.caom2.version", Level.INFO);
-
-        String testSchema = UtilTest.getTestSchema();
-        if (testSchema != null)
-        {
-            schema = testSchema;
-        }
+    public ExpectationFailedException(String msg) {
+        super(msg);
     }
 
-    private static final String MODEL = "FOO";
-    private static final String V1 = "1.0";
-    private static final String V2 = "2.0";
-
-    private DataSource dataSource;
-    private String database;
-
-
-    public ModelVersionDAOTest()
-    {
-        try
-        {
-            database = "cadctest";
-            //schema = System.getProperty("user.name");
-
-            DBConfig dbrc = new DBConfig();
-            ConnectionConfig cc = dbrc.getConnectionConfig("CAOM2_PG_TEST", database);
-            dataSource = DBUtil.getDataSource(cc);
-
-        }
-        catch(Exception ex)
-        {
-            log.error("failed to init DataSource", ex);
-        }
+    public ExpectationFailedException(String msg, Throwable cause) {
+        super(msg, cause);
     }
 
-    @Test
-    public void testRountrip()
-    {
-        try
-        {
-            ModelVersionDAO dao = new ModelVersionDAO(dataSource, database, schema);
-
-            // get && cleanup if necessary
-            ModelVersion mv = dao.get(MODEL);
-            if (mv != null)
-            {
-                String sql = "delete from " + schema + ".ModelVersion where model = '"+MODEL+"'";
-                log.info("cleanup: " + sql);
-                dataSource.getConnection().createStatement().execute(sql);
-            }
-
-            // get null
-            mv = dao.get(MODEL);
-            Assert.assertNotNull(mv);
-            Assert.assertNull(mv.version);   // new
-            Assert.assertNull(mv.lastModified); // new
-
-            // insert
-            mv.version = V1;
-            dao.put(mv);
-
-            ModelVersion inserted = dao.get(MODEL);
-            Assert.assertNotNull(inserted);
-            Assert.assertEquals(mv.getModel(), inserted.getModel());
-            Assert.assertEquals(V1, inserted.version);
-            Assert.assertNotNull(inserted.lastModified);
-
-            Thread.sleep(50l);
-
-            // update
-            mv.version = V2;
-            dao.put(mv);
-
-            ModelVersion updated = dao.get(MODEL);
-            Assert.assertNotNull(updated);
-            Assert.assertEquals(mv.getModel(), updated.getModel());
-            Assert.assertEquals(V2, updated.version);
-            Assert.assertTrue(inserted.lastModified.getTime() < updated.lastModified.getTime());
-        }
-        catch(Exception unexpected)
-        {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
-
-    }
-
+    
 }

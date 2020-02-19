@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2016.                            (c) 2016.
+ *  (c) 2020.                            (c) 2020.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -67,165 +67,107 @@
  ************************************************************************
  */
 
-package ca.nrc.cadc.net.integration;
+package ca.nrc.cadc.net;
 
+import ca.nrc.cadc.util.Log4jInit;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.net.InetAddress;
+import java.io.FileWriter;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
-
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-import ca.nrc.cadc.auth.BasicX509TrustManager;
-import ca.nrc.cadc.net.HttpPost;
-import ca.nrc.cadc.util.FileUtil;
-import ca.nrc.cadc.util.Log4jInit;
-
 /**
- * Unit tests for class HttpPost.
+ * Integration tests for HttpPost.  These tests use the TestServlet
+ * available in project cadcTestServlet.
+ * 
+ * @author majorb
+ *
  */
 public class HttpPostTest
 {
-
     private static Logger log = Logger.getLogger(HttpPostTest.class);
-    private static String TEST_CERT_FN = "proxy.crt";
-    private static String TEST_KEY_FN = "proxy.key";
-    private static File SSL_CERT;
-    private static File SSL_KEY;
-
-    private URL brokenHttpURL;
-    private URL httpsURL;
-    private File srcFile;
-    private byte[] origBytes;
-
-    /**
-     * @throws java.lang.Exception
-     */
-    @BeforeClass
-    public static void setUpBeforeClass() throws Exception
-    {
+    
+    static {
         Log4jInit.setLevel("ca.nrc.cadc.net", Level.INFO);
-        SSL_CERT = FileUtil.getFileFromResource(TEST_CERT_FN, HttpPostTest.class);
-        SSL_KEY = FileUtil.getFileFromResource(TEST_KEY_FN, HttpPostTest.class);
-        System.setProperty(BasicX509TrustManager.class.getName() + ".trust", "true");
     }
-
-    /**
-     * @throws java.lang.Exception
-     */
-    @AfterClass
-    public static void tearDownAfterClass() throws Exception
-    {
-    }
-
-    /**
-     * @throws java.lang.Exception
-     */
-    @Before
-    public void setUp() throws Exception
-    {
-        this.srcFile = File.createTempFile("public"+HttpPostTest.class.getSimpleName(), ".post");
-        Random rnd = new Random();
-        FileOutputStream ostream = new FileOutputStream(srcFile);
-        origBytes = new byte[32*1024];
-        rnd.nextBytes(origBytes);
-        ostream.write(origBytes);
-        ostream.close();
-        srcFile.deleteOnExit();
-        boolean local = true;
-
-        InetAddress localhost = InetAddress.getLocalHost();
-        String hostname = localhost.getCanonicalHostName();
-        this.httpsURL = new URL("https://"+hostname+"/data/pub/TEST/"+srcFile.getName());
-        this.brokenHttpURL = new URL("http://"+hostname+"/data/pub/NoSuchThing/"+srcFile.getName());
-    }
-
-    /**
-     * @throws java.lang.Exception
-     */
-    @After
-    public void tearDown() throws Exception
-    {
-    }
-
-    @Test
-    public void testNullURL1() throws Exception
-    {
-        log.debug("TEST: testNullURL1");
-        URL url = null;
-        Map<String, Object> map = new HashMap<String, Object>(); 
-        map.put("key", new Object());
-        OutputStream os = new ByteArrayOutputStream();
-        try
-        {
-            new HttpPost(url, map, os);
-            Assert.fail("expected IllegalArgumentException");
-        }
-        catch(IllegalArgumentException expected)
-        {
-            log.debug("caught expected: " + expected);
-        }
-        catch (Exception unexpected)
-        {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
+    
+    File srcFile;
+    
+    public HttpPostTest() throws Exception {
+        File tmp = File.createTempFile("public" + HttpUploadTest.class.getSimpleName(), ".in");        
+        FileWriter out = new FileWriter(tmp);
+        out.append("sample input data");
+        out.close();
+        tmp.deleteOnExit();
+        
+        this.srcFile = tmp;
     }
     
     @Test
-    public void testNullURL2() throws Exception
+    public void testPostMap() throws Exception
     {
-        log.debug("TEST: testNullURL2");
-        URL url = null;
-        Map<String, Object> map = new HashMap<String, Object>(); 
-        map.put("key", new Object());
-        try
-        {
-            new HttpPost(url, map, false);
-            Assert.fail("expected IllegalArgumentException");
-        }
-        catch(IllegalArgumentException expected)
-        {
-            log.debug("caught expected: " + expected);
-        }
-        catch (Exception unexpected)
-        {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("IN", "foo");
+        params.put("OPT", "bar");
+        
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        HttpPost post = new HttpPost(new URL("https://httpbin.org/post"), params, bos);
+        post.run();
+        Assert.assertEquals(200, post.getResponseCode());
+        Assert.assertNull("throwable", post.getThrowable());
+        String str = bos.toString("UTF-8");
+        log.info("output:\n" + str);
     }
     
     @Test
-    public void testNullURL3() throws Exception
+    public void testPostFileParam() throws Exception
     {
-        log.debug("TEST: testNullURL3");
-        URL url = null;
-        try
-        {
-            new HttpPost(url, "content", "contentType", false);
-            Assert.fail("expected IllegalArgumentException");
-        }
-        catch(IllegalArgumentException expected)
-        {
-            log.debug("caught expected: " + expected);
-        }
-        catch (Exception unexpected)
-        {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("IN", srcFile);
+        
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        HttpPost post = new HttpPost(new URL("https://httpbin.org/post"), params, bos);
+        post.run();
+        Assert.assertEquals(200, post.getResponseCode());
+        Assert.assertNull("throwable", post.getThrowable());
+        String str = bos.toString("UTF-8");
+        log.info("output:\n" + str);
+    }
+
+    @Test
+    public void testPostFileContent() throws Exception
+    {
+        FileContent fc = new FileContent("sample input data", "text/plain", Charset.forName("UTF-8"));
+        
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        HttpPost post = new HttpPost(new URL("https://httpbin.org/post"), fc, true);
+        post.run();
+        Assert.assertEquals(200, post.getResponseCode());
+        Assert.assertNull("throwable", post.getThrowable());
+        String str = bos.toString("UTF-8");
+        
+        log.info("output:\n" + str);
     }
     
+    
+    
+    //@Test
+    public void testPostRedirect302() throws Exception {
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("url", "https://www.example.net/");
+        params.put("status_code", "302");
+        
+        HttpPost post = new HttpPost(new URL("https://httpbin.org/redirect-to"), params, false);
+        post.run();
+        Assert.assertEquals(302, post.getResponseCode());
+        Assert.assertNull("throwable" + post.getThrowable());
+        Assert.assertNotNull("redirect", post.getRedirectURL());
+        log.info("redirect: " + post.getRedirectURL());
+    }
 }
