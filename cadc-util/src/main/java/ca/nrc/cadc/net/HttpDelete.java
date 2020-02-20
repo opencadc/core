@@ -68,6 +68,7 @@
 
 package ca.nrc.cadc.net;
 
+import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.io.ByteLimitExceededException;
 import ca.nrc.cadc.net.event.TransferEvent;
 import java.io.IOException;
@@ -98,7 +99,7 @@ public class HttpDelete extends HttpTransfer {
 
     @Override
     public void prepare() 
-        throws AccessControlException, 
+        throws AccessControlException, NotAuthenticatedException,
             ByteLimitExceededException, ExpectationFailedException, 
             IllegalArgumentException, PreconditionFailedException, 
             ResourceAlreadyExistsException, ResourceNotFoundException, 
@@ -109,7 +110,7 @@ public class HttpDelete extends HttpTransfer {
     
     @Override
     protected void doAction()
-        throws AccessControlException, 
+        throws AccessControlException, NotAuthenticatedException,
             ByteLimitExceededException, ExpectationFailedException, 
             IllegalArgumentException, PreconditionFailedException, 
             ResourceAlreadyExistsException, ResourceNotFoundException, 

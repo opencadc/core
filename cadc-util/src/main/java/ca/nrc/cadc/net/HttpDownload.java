@@ -69,6 +69,7 @@
 
 package ca.nrc.cadc.net;
 
+import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.io.ByteLimitExceededException;
 import ca.nrc.cadc.net.event.TransferEvent;
 import ca.nrc.cadc.util.FileMetadata;
@@ -314,7 +315,7 @@ public class HttpDownload extends HttpTransfer {
 
     @Override
     public void prepare()
-            throws AccessControlException,
+            throws AccessControlException, NotAuthenticatedException,
             ByteLimitExceededException, ExpectationFailedException,
             IllegalArgumentException, PreconditionFailedException,
             ResourceAlreadyExistsException, ResourceNotFoundException,
@@ -603,7 +604,7 @@ public class HttpDownload extends HttpTransfer {
     }
 
     private void doGet(URL url)
-            throws AccessControlException,
+            throws AccessControlException, NotAuthenticatedException,
             ByteLimitExceededException, ExpectationFailedException, IllegalArgumentException,
             PreconditionFailedException, ResourceAlreadyExistsException, ResourceNotFoundException,
             TransientException, IOException, InterruptedException {

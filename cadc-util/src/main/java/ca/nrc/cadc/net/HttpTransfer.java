@@ -295,7 +295,7 @@ public abstract class HttpTransfer implements Runnable {
      * @throws java.lang.InterruptedException
      */
     public abstract void prepare() 
-        throws AccessControlException, 
+        throws AccessControlException, NotAuthenticatedException,
             ByteLimitExceededException, ExpectationFailedException, 
             IllegalArgumentException, PreconditionFailedException, 
             ResourceAlreadyExistsException, ResourceNotFoundException, 
@@ -318,7 +318,7 @@ public abstract class HttpTransfer implements Runnable {
      * @throws InterruptedException 
      */
     protected void doActionWithRetryLoop()
-        throws AccessControlException, 
+        throws AccessControlException, NotAuthenticatedException,
             ByteLimitExceededException, ExpectationFailedException, 
             IllegalArgumentException, PreconditionFailedException, 
             ResourceAlreadyExistsException, ResourceNotFoundException, 
@@ -349,7 +349,7 @@ public abstract class HttpTransfer implements Runnable {
     }
     
     protected void doAction()
-        throws AccessControlException, 
+        throws AccessControlException, NotAuthenticatedException,
             ByteLimitExceededException, ExpectationFailedException, 
             IllegalArgumentException, PreconditionFailedException, 
             ResourceAlreadyExistsException, ResourceNotFoundException, 
@@ -743,7 +743,7 @@ public abstract class HttpTransfer implements Runnable {
     }
     
     protected void checkErrors(URL url, HttpURLConnection conn)
-        throws AccessControlException, 
+        throws AccessControlException, NotAuthenticatedException,
             ByteLimitExceededException, ExpectationFailedException, IllegalArgumentException,
             PreconditionFailedException, ResourceAlreadyExistsException, ResourceNotFoundException, 
             TransientException, IOException, InterruptedException {

@@ -69,6 +69,7 @@
 
 package ca.nrc.cadc.net;
 
+import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.io.ByteLimitExceededException;
 import ca.nrc.cadc.net.event.TransferEvent;
 import java.io.BufferedInputStream;
@@ -164,7 +165,7 @@ public class HttpUpload extends HttpTransfer {
     
     @Override
     public void prepare() 
-        throws AccessControlException, 
+        throws AccessControlException, NotAuthenticatedException,
             ByteLimitExceededException, ExpectationFailedException, 
             IllegalArgumentException, PreconditionFailedException, 
             ResourceAlreadyExistsException, ResourceNotFoundException, 
@@ -175,7 +176,7 @@ public class HttpUpload extends HttpTransfer {
     
     @Override
     protected void doAction()
-        throws AccessControlException, 
+        throws AccessControlException, NotAuthenticatedException,
             ByteLimitExceededException, ExpectationFailedException, 
             IllegalArgumentException, PreconditionFailedException, 
             ResourceAlreadyExistsException, ResourceNotFoundException, 
@@ -250,7 +251,7 @@ public class HttpUpload extends HttpTransfer {
     }
 
     private void doPut(HttpURLConnection conn)
-        throws AccessControlException, 
+        throws AccessControlException, NotAuthenticatedException,
             ByteLimitExceededException, ExpectationFailedException, 
             IllegalArgumentException, PreconditionFailedException, 
             ResourceAlreadyExistsException, ResourceNotFoundException, 

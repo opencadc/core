@@ -69,6 +69,7 @@
 
 package ca.nrc.cadc.net;
 
+import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.io.ByteLimitExceededException;
 import ca.nrc.cadc.net.event.TransferEvent;
 
@@ -186,7 +187,7 @@ public class HttpPost extends HttpTransfer {
     
     @Override
     public void prepare() 
-        throws AccessControlException, 
+        throws AccessControlException, NotAuthenticatedException,
             ByteLimitExceededException, ExpectationFailedException, 
             IllegalArgumentException, PreconditionFailedException, 
             ResourceAlreadyExistsException, ResourceNotFoundException, 
@@ -197,7 +198,7 @@ public class HttpPost extends HttpTransfer {
     
     @Override
     protected void doAction()
-        throws AccessControlException, 
+        throws AccessControlException, NotAuthenticatedException,
             ByteLimitExceededException, ExpectationFailedException, 
             IllegalArgumentException, PreconditionFailedException, 
             ResourceAlreadyExistsException, ResourceNotFoundException, 
@@ -242,7 +243,7 @@ public class HttpPost extends HttpTransfer {
     }
     
     private void doPost(HttpURLConnection conn)
-        throws AccessControlException, 
+        throws AccessControlException, NotAuthenticatedException,
             ByteLimitExceededException, ExpectationFailedException, 
             IllegalArgumentException, PreconditionFailedException, 
             ResourceAlreadyExistsException, ResourceNotFoundException, 
@@ -282,7 +283,7 @@ public class HttpPost extends HttpTransfer {
     }
     
     private void doPost(HttpURLConnection conn, FileContent input)
-        throws AccessControlException, 
+        throws AccessControlException, NotAuthenticatedException,
             ByteLimitExceededException, ExpectationFailedException, 
             IllegalArgumentException, PreconditionFailedException, 
             ResourceAlreadyExistsException, ResourceNotFoundException, 
@@ -314,7 +315,7 @@ public class HttpPost extends HttpTransfer {
     }
     
     private void doPost(HttpURLConnection conn, Map<String,List<Object>> params, Map<String,Object> uploads)
-        throws AccessControlException, 
+        throws AccessControlException, NotAuthenticatedException,
             ByteLimitExceededException, ExpectationFailedException, 
             IllegalArgumentException, PreconditionFailedException, 
             ResourceAlreadyExistsException, ResourceNotFoundException, 
@@ -387,7 +388,7 @@ public class HttpPost extends HttpTransfer {
     }
     
     private void checkRedirects(URL url, HttpURLConnection conn)
-        throws AccessControlException, 
+        throws AccessControlException, NotAuthenticatedException,
             ByteLimitExceededException, ExpectationFailedException, 
             IllegalArgumentException, PreconditionFailedException, 
             ResourceAlreadyExistsException, ResourceNotFoundException, 
