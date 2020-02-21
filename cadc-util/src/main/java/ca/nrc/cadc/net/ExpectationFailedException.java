@@ -70,7 +70,8 @@ package ca.nrc.cadc.net;
 import org.apache.log4j.Logger;
 
 /**
- *
+ * The server cannot meet the requirements of the Expect request-header field.
+ * 
  * @author pdowler
  */
 public class ExpectationFailedException extends Exception {
@@ -83,6 +84,4 @@ public class ExpectationFailedException extends Exception {
     public ExpectationFailedException(String msg, Throwable cause) {
         super(msg, cause);
     }
-
-    
 }

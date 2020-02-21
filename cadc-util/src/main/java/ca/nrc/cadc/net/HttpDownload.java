@@ -339,7 +339,11 @@ public class HttpDownload extends HttpTransfer {
 
     @Override
     protected void doAction()
-            throws TransientException {
+            throws AccessControlException, NotAuthenticatedException,
+            ByteLimitExceededException, ExpectationFailedException,
+            IllegalArgumentException, PreconditionFailedException,
+            ResourceAlreadyExistsException, ResourceNotFoundException,
+            TransientException, IOException, InterruptedException {
         log.debug(this.toString());
         if (!go) {
             return; // cancelled while queued, event notification handled in terminate()
@@ -380,20 +384,6 @@ public class HttpDownload extends HttpTransfer {
             if (decompress && decompressor != NONE) {
                 fireEvent(decompFile, TransferEvent.DECOMPRESSING);
                 doDecompress();
-            }
-        } catch (InterruptedException iex) {
-            // need to catch this or it looks like a failure instead of a cancel
-            this.go = false;
-        } catch (TransientException tex) {
-            log.debug("caught: " + tex);
-            throwTE = true;
-            throw tex;
-        } catch (AccessControlException | ExpectationFailedException | IllegalArgumentException | PreconditionFailedException | ResourceNotFoundException ex) {
-            failure = ex;
-        } catch (Throwable t) {
-            failure = t;
-            if (log.isDebugEnabled()) {
-                log.debug("unexpected transfer failure", t);
             }
         } finally {
             synchronized (this) {

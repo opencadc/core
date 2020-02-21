@@ -290,17 +290,12 @@ public class HttpUpload extends HttpTransfer {
 
         setRequestHeaders(conn);
 
-        int bfSize = bufferSize;
-        if (srcFile != null && srcFile.length() < bfSize) {
-            bfSize = (int) srcFile.length();
-        }
-
-        IOException ioex = null;
         FileInputStream fin = null;
         InputStream in = null;
         try {
             ostream = conn.getOutputStream();
-
+            fireEvent(TransferEvent.CONNECTED);
+            
             if (srcFile != null) {
                 fin = new FileInputStream(srcFile);
                 in = fin;
@@ -336,9 +331,7 @@ public class HttpUpload extends HttpTransfer {
             }
             
             log.debug("OutputStream.flush OK");
-        } catch (IOException ex) {
-            ioex = ex;
-            // dealt with be {
+        } finally {
             try {
                 if (ostream != null) {
                     log.debug("OutputStream.close");
