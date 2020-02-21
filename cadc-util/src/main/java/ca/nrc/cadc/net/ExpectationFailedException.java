@@ -74,7 +74,7 @@ import org.apache.log4j.Logger;
  * 
  * @author pdowler
  */
-public class ExpectationFailedException extends Exception {
+public class ExpectationFailedException extends RuntimeException {
     private static final Logger log = Logger.getLogger(ExpectationFailedException.class);
 
     public ExpectationFailedException(String msg) {
