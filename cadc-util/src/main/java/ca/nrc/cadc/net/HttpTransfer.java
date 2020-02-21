@@ -752,7 +752,6 @@ public abstract class HttpTransfer implements Runnable {
         
         captureResponseHeaders(conn);
         
-        
         if (responseCode < 400) {
             return;
         }
@@ -1131,7 +1130,7 @@ public abstract class HttpTransfer implements Runnable {
             istream = conn.getInputStream();
         }
         try (ByteArrayOutputStream byteArrayOstream = new ByteArrayOutputStream()) {
-            ioLoop(istream, byteArrayOstream, maxReadFully, 0);
+            ioLoop(istream, byteArrayOstream, bufferSize, 0);
             byteArrayOstream.flush();
             return new String(byteArrayOstream.toByteArray(), "UTF-8");
         }
