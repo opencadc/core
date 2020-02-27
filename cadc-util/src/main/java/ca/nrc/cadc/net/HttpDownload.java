@@ -280,8 +280,12 @@ public class HttpDownload extends HttpTransfer {
         this.decompress = decompress;
     }
 
+    public void setOverwriteChooser(OverwriteChooser overwriteChooser) {
+        this.overwriteChooser = overwriteChooser;
+    }
+    
     /**
-     * Enable forced overwrite of existing destiantion file.
+     * Enable forced overwrite of existing destination file.
      *
      * @param overwrite
      */

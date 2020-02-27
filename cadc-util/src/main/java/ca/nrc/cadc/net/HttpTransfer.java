@@ -589,7 +589,7 @@ public abstract class HttpTransfer implements Runnable {
     }
 
     /**
-     * Set additional request headers. Do not set the same value twice by using this
+     * Set single request headers. Do not set the same value twice by using this
      * method and the specific set methods (like setUserAgent, setContentType, etc) in this
      * class or subclasses.
      *
@@ -601,7 +601,7 @@ public abstract class HttpTransfer implements Runnable {
     }
 
     /**
-     * Set additional request properties. Adds all the specified properties to
+     * Set multiple request properties. Adds all the specified properties to
      * those set with setRequestProperty (if any).
      *
      * @see setRequestProperty
@@ -614,7 +614,15 @@ public abstract class HttpTransfer implements Runnable {
         }
     }
 
-    
+    /**
+     * Get currently set request properties. This list is modifiable up to the point that
+     * prepare() or run() is called.
+     * 
+     * @return current list of request properties
+     */
+    public List<HttpRequestProperty> getRequestProperties() {
+        return requestProperties;
+    }
 
     public void setProgressListener(ProgressListener listener) {
         this.progressListener = listener;
