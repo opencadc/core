@@ -372,8 +372,6 @@ public abstract class HttpTransfer implements Runnable {
                 readResponse(responseStream);
             } catch (Throwable t) {
                 this.failure = t;
-            } finally {
-                responseStream = null;
             }
         }
     }
@@ -1106,30 +1104,39 @@ public abstract class HttpTransfer implements Runnable {
         return false;
     }
     
-    protected void readResponse(InputStream istream) throws IOException, InterruptedException {
+    private void readResponse(InputStream istream) throws IOException, InterruptedException {
         log.debug("readResponse - START");
+        
         if (responseStreamWrapper != null) {
-            responseStreamWrapper.read(istream);
+            try {
+                responseStreamWrapper.read(istream);
+            } finally {
+                responseStream = null;
+            }
         } else if (responseDestination != null) {
-            if (userNio) {
-                nioLoop(istream, responseDestination, 2 * bufferSize, 0);
-            } else {
-                String md5 = ioLoop(istream, responseDestination, 2 * bufferSize, 0);
-                if (getContentMD5() != null && md5 != null) {
-                    if (!md5.equals(getContentMD5())) {
-                        StringBuilder sb = new StringBuilder();
-                        sb.append("MD5 mismatch: (header) ");
-                        sb.append(getContentMD5()).append(" != ").append(md5).append(" (bytes)");
-                        throw new IncorrectContentChecksumException(sb.toString());
+            try {
+                if (userNio) {
+                    nioLoop(istream, responseDestination, 2 * bufferSize, 0);
+                } else {
+                    String md5 = ioLoop(istream, responseDestination, 2 * bufferSize, 0);
+                    if (getContentMD5() != null && md5 != null) {
+                        if (!md5.equals(getContentMD5())) {
+                            StringBuilder sb = new StringBuilder();
+                            sb.append("MD5 mismatch: (header) ");
+                            sb.append(getContentMD5()).append(" != ").append(md5).append(" (bytes)");
+                            throw new IncorrectContentChecksumException(sb.toString());
+                        }
                     }
                 }
+            } finally {
+                responseStream = null;
             }
         } else {
             log.debug("response capture not enabled");
         }
     }
     
-    // for reading text content after an error for exception message
+    // for reading text content into a String, eg. after an error for exception message
     private String readResponseBody(HttpURLConnection conn)
         throws IOException, InterruptedException {
         
@@ -1137,6 +1144,11 @@ public abstract class HttpTransfer implements Runnable {
         if (istream == null) {
             istream = conn.getInputStream();
         }
+        return readResponseBody(istream);
+    }
+    
+    protected String readResponseBody(InputStream istream)
+            throws IOException, InterruptedException {
         try (ByteArrayOutputStream byteArrayOstream = new ByteArrayOutputStream()) {
             ioLoop(istream, byteArrayOstream, bufferSize, 0);
             byteArrayOstream.flush();

@@ -140,6 +140,42 @@ public class HttpUpload extends HttpTransfer {
             throw new IllegalArgumentException("source OutputStreamWrapper cannot be null");
         }
     }
+    
+    /**
+     * @param val
+     * @deprecated use setRequestProperty(String, String)
+     */
+    @Deprecated
+    public void setContentLength(long val) {
+        setRequestProperty(CONTENT_LENGTH, Long.toString(val));
+    }
+    
+    /**
+     * @param val
+     * @deprecated use setRequestProperty(String, String)
+     */
+    @Deprecated
+    public void setContentMD5(String val) {
+        setRequestProperty(CONTENT_MD5, val);
+    }
+    
+    /**
+     * @param val
+     * @deprecated use setRequestProperty(String, String)
+     */
+    @Deprecated
+    public void setContentEncoding(String val) {
+        setRequestProperty(CONTENT_ENCODING, val);
+    }
+    
+    /**
+     * @param val
+     * @deprecated use setRequestProperty(String, String)
+     */
+    @Deprecated
+    public void setContentType(String val) {
+        setRequestProperty(CONTENT_TYPE, val);
+    }
 
     public void setResponseDestination(OutputStream responseDestination) {
         this.responseDestination = responseDestination;

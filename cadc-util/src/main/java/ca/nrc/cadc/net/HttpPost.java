@@ -184,6 +184,37 @@ public class HttpPost extends HttpTransfer {
         return "HttpPost[" + remoteURL + "]"; 
     }
     
+    /**
+     * @return Content-Encoding
+     * @deprecated use getResponseHeader(HttpTransfer.CONTENT_ENCODING)
+     */
+    @Deprecated
+    public String getResponseContentEncoding() {
+        return getResponseHeader(HttpTransfer.CONTENT_ENCODING);
+    }
+
+    /**
+     * @return Content-Type
+     * @deprecated use getResponseHeader(HttpTransfer.CONTENT_TYPE)
+     */
+    @Deprecated
+    public String getResponseContentType() {
+        return getResponseHeader(HttpTransfer.CONTENT_TYPE);
+    }
+    
+    /**
+     * @return response converted to UTF-8 string
+     * @throws java.io.IOException
+     * @throws java.lang.InterruptedException
+     * @deprecated use prepare() and getInputStream()
+     */
+    @Deprecated
+    public String getResponseBody() throws IOException, InterruptedException {
+        if (responseStream != null) {
+            return readResponseBody(responseStream);
+        }
+        return null;
+    }
     
     @Override
     public void prepare() 
