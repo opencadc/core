@@ -205,13 +205,16 @@ public class HttpPost extends HttpTransfer {
     /**
      * @return response converted to UTF-8 string
      * @throws java.io.IOException
-     * @throws java.lang.InterruptedException
      * @deprecated use prepare() and getInputStream()
      */
     @Deprecated
-    public String getResponseBody() throws IOException, InterruptedException {
-        if (responseStream != null) {
-            return readResponseBody(responseStream);
+    public String getResponseBody() throws IOException {
+        try {
+            if (responseStream != null) {
+                return readResponseBody(responseStream);
+            }
+        } catch (InterruptedException ex) {
+            throw new RuntimeException("read interrupted", ex);
         }
         return null;
     }

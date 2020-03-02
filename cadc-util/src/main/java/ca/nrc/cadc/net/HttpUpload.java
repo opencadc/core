@@ -176,6 +176,23 @@ public class HttpUpload extends HttpTransfer {
     public void setContentType(String val) {
         setRequestProperty(CONTENT_TYPE, val);
     }
+    
+    /**
+     * @return response converted to UTF-8 string
+     * @throws java.io.IOException
+     * @deprecated use prepare() and getInputStream()
+     */
+    @Deprecated
+    public String getResponseBody() throws IOException {
+        try {
+            if (responseStream != null) {
+                return readResponseBody(responseStream);
+            }
+        } catch (InterruptedException ex) {
+            throw new RuntimeException("read interrupted", ex);
+        }
+        return null;
+    }
 
     public void setResponseDestination(OutputStream responseDestination) {
         this.responseDestination = responseDestination;
