@@ -69,27 +69,23 @@
 
 package ca.nrc.cadc.auth;
 
+import ca.nrc.cadc.util.FileUtil;
+import ca.nrc.cadc.util.Log4jInit;
 import java.io.File;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLConnection;
-import java.security.KeyStore;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-
 import javax.net.SocketFactory;
 import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManagerFactory;
 import javax.security.auth.Subject;
-
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.After;
@@ -99,9 +95,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import ca.nrc.cadc.util.FileUtil;
-import ca.nrc.cadc.util.Log4jInit;
-
 /**
  * Unit tests for SSLUtil.
  *
@@ -110,11 +103,7 @@ import ca.nrc.cadc.util.Log4jInit;
 public class SSLUtilTest
 {
     private static Logger log = Logger.getLogger(SSLUtilTest.class);
-    //private static String TEST_CERT_FN = "proxy.crt";
-    //private static String TEST_KEY_FN = "proxy.key";
     private static String TEST_PEM_FN = "proxy.pem";
-    //private static File SSL_CERT;
-    //private static File SSL_KEY;
     private static File SSL_PEM;
 
     private static final String KEY_512 =
@@ -180,52 +169,9 @@ public class SSLUtilTest
     public static void setUpBeforeClass() throws Exception
     {
         Log4jInit.setLevel("ca.nrc.cadc.auth", Level.INFO);
-        //SSL_CERT = FileUtil.getFileFromResource(TEST_CERT_FN, SSLUtilTest.class);
-        //SSL_KEY = FileUtil.getFileFromResource(TEST_KEY_FN, SSLUtilTest.class);
         SSL_PEM = FileUtil.getFileFromResource(TEST_PEM_FN, SSLUtilTest.class);
     }
 
-    /**
-     * @throws java.lang.Exception
-     */
-    @AfterClass
-    public static void tearDownAfterClass() throws Exception
-    {
-    }
-
-    /**
-     * @throws java.lang.Exception
-     */
-    @Before
-    public void setUp() throws Exception
-    {
-    }
-
-    /**
-     * @throws java.lang.Exception
-     */
-    @After
-    public void tearDown() throws Exception
-    {
-    }
-
-    /*
-    @Test
-    public void testReadCert() throws Exception
-    {
-        try
-        {
-            KeyStore ks = SSLUtil.getKeyStore(SSL_CERT, SSL_KEY);
-            SSLUtil.printKeyStoreInfo(ks);
-        }
-        catch (Throwable t)
-        {
-            t.printStackTrace();
-            Assert.fail("unexpected exception: " + t);
-        }
-    }
-    */
-    
     @Test
     public void testReadPem() throws Exception
     {
@@ -341,43 +287,6 @@ public class SSLUtilTest
         }
     }
 
-    // Note: this test requies some custom setup: an http server running on
-    // localhost with an invalid (e.g. self-signed) server certificate for
-    // SSL (https) and SSL config requiring a client certificate to get the
-    // root document - this is only here to test the BasicX509TrustManager
-    // local work-around for developers
-
-    //@Test
-    public void testInvalidServerHTTPS() throws Exception
-    {
-        InetAddress localhost = InetAddress.getLocalHost();
-        String hostname = localhost.getCanonicalHostName();
-        URL url = new URL("https://" + hostname + "/");
-
-        try
-        {
-            log.debug("test URL: " + url);
-            testHTTPS(url);
-            Assert.fail("expected an SSLHandshakeException but did not fail");
-        }
-        catch (SSLHandshakeException expected)
-        {
-            log.debug("caught expected exception: " + expected);
-        }
-
-        System.setProperty(BasicX509TrustManager.class.getName() + ".trust", "true");
-        try
-        {
-            log.debug("test URL: " + url);
-            testHTTPS(url);
-        }
-        catch (Throwable t)
-        {
-            t.printStackTrace();
-            Assert.fail("unexpected exception: " + t);
-        }
-    }
-    
     @Test
     public void testPrivateKeyParser() throws Exception
     {

@@ -120,11 +120,33 @@ public class AuthenticationUtilTest
 {
 
     private static Logger log = Logger.getLogger(AuthenticationUtilTest.class);
+    
+    static final String X500_DN = "C=CA, O=Some Org, OU=some.org.unit, CN=Some User";
+    static final String X500_DN_REVERSE = "CN=Some User, OU=some.org.unit, O=Some Org, C=CA";
 
-    @BeforeClass
-    public static void beforeClass()
-    {
+    static {
         Log4jInit.setLevel("ca.nrc.cadc.auth", Level.INFO);
+    }
+    
+    @Test
+    public void testEquiv()
+    {
+        log.debug("testEquiv - START");
+        try
+        {
+            X500Principal p1 = new X500Principal(X500_DN);
+            X500Principal p2 = new X500Principal(X500_DN_REVERSE);
+            Assert.assertTrue(AuthenticationUtil.equals(p1, p2));
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+        finally
+        {
+            log.debug("testGetRootNode - DONE");
+        }
     }
 
     @Test

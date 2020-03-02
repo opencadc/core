@@ -34,7 +34,7 @@
 
 package ca.nrc.cadc.auth;
 
-public class InvalidDelegationTokenException extends Exception {
+public class InvalidDelegationTokenException extends NotAuthenticatedException {
     public InvalidDelegationTokenException(final String msg) {
         super(msg);
     }

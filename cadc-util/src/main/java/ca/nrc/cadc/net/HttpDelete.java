@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2016.                            (c) 2016.
+ *  (c) 2020.                            (c) 2020.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -68,7 +68,9 @@
 
 package ca.nrc.cadc.net;
 
-import java.io.FileNotFoundException;
+import ca.nrc.cadc.auth.NotAuthenticatedException;
+import ca.nrc.cadc.io.ByteLimitExceededException;
+import ca.nrc.cadc.net.event.TransferEvent;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -77,19 +79,17 @@ import javax.net.ssl.HttpsURLConnection;
 import org.apache.log4j.Logger;
 
 public class HttpDelete extends HttpTransfer {
-    private static final Logger LOGGER = Logger.getLogger(HttpUpload.class);
+    private static final Logger log = Logger.getLogger(HttpUpload.class);
 
     /**
      * Complete constructor.
      *
-     * @param resourceURL     The resource to delete.
+     * @param remoteURL     The resource to delete.
      * @param followRedirects True to follow the resource's redirect, or False
      *                        otherwise.
      */
-    public HttpDelete(final URL resourceURL, final boolean followRedirects) {
-        super(followRedirects);
-
-        this.remoteURL = resourceURL;
+    public HttpDelete(final URL remoteURL, final boolean followRedirects) {
+        super(remoteURL, followRedirects);
     }
 
     @Override
@@ -97,122 +97,40 @@ public class HttpDelete extends HttpTransfer {
         return HttpDelete.class.getSimpleName() + "[" + remoteURL + "]";
     }
 
-    /**
-     * When an object implementing interface <code>Runnable</code> is used to create
-     * a thread, starting the thread causes the object's <code>run</code> method to
-     * be called in that separately executing thread.
-     * 
-     * <p>The general contract of the method <code>run</code> is that it may take any
-     * action whatsoever.
-     *
-     * @see Thread#run()
-     */
     @Override
-    public void run() {
-        try {
-            LOGGER.debug(remoteURL);
-            final HttpURLConnection connection = connect();
-            verifyDelete(connection);
-        } catch (Throwable t) {
-            LOGGER.debug("Failed to delete resource.", t);
-            failure = t;
-        }
+    public void prepare() 
+        throws AccessControlException, NotAuthenticatedException,
+            ByteLimitExceededException, ExpectationFailedException, 
+            IllegalArgumentException, PreconditionFailedException, 
+            ResourceAlreadyExistsException, ResourceNotFoundException, 
+            TransientException, IOException, InterruptedException {
+        
+        doActionWithRetryLoop();
     }
-
-    /**
-     * Verify the given connection can properly perform the delete.
-     *
-     * @param connection The open connection.
-     * @throws IOException Any errors waiting for the response code and message.
-     */
-    void verifyDelete(final HttpURLConnection connection) throws IOException {
-        responseCode = connection.getResponseCode();
-        // generic capture
-        captureResponseHeaders(connection);
-
-        final String responseMessage = connection.getResponseMessage();
-
-        switch (responseCode) {
-            case HttpURLConnection.HTTP_OK: {
-                // Successful deletion.
-                break;
-            }
-
-            case HttpURLConnection.HTTP_INTERNAL_ERROR: {
-                // The service SHALL throw a HTTP 500 status code including an
-                // InternalFault fault in the entity-body if the operation fails
-                //
-                // If a parent node in the URI path does not exist then
-                // the service MUST throw a HTTP 500 status code including a
-                // ContainerNotFound fault in the entity-body
-                //
-                // If a parent node in the URI path is a LinkNode,
-                // the service MUST throw a HTTP 500 status code including a
-                // LinkFound fault in the entity-body.
-                //
-                throw new RuntimeException(responseMessage);
-            }
-
-            case -1:
-            case HttpURLConnection.HTTP_FORBIDDEN:
-            case HttpURLConnection.HTTP_UNAUTHORIZED: {
-                // The service SHALL throw a HTTP 401 status code including a
-                // PermissionDenied fault in the entity-body if the user does
-                // not have permissions to perform the operation.
-                //
-                final String msg = (responseMessage == null) ? "permission denied" : responseMessage;
-
-                throw new AccessControlException(msg);
-            }
-
-            case HTTP_LOCKED: {
-                // The service SHALL throw a HTTP 423 status code if the given
-                // resource is locked, or inaccessible.
-                //
-                throw new AccessControlException(responseMessage);
-            }
-
-            case HttpURLConnection.HTTP_NOT_FOUND: {
-                // The service SHALL throw a HTTP 404 status code including a
-                // FileNotFound fault in the entity-body if the target node
-                // does not exist.
-                //
-                // If the target node in the URI path does not exist,
-                // the service MUST throw a HTTP 404 status code including a
-                // FileNotFound fault in the entity-body.
-                //
-                throw new FileNotFoundException(responseMessage);
-            }
-
-            default: {
-                LOGGER.error(responseMessage + ". HTTP Code: " + responseCode);
-                throw new RuntimeException("unexpected failure mode: " + responseMessage + "(" + responseCode + ")");
-            }
-        }
-    }
-
-    /**
-     * Setup the HTTP Connection for use. This does not obtain a status code or any
-     * messages from the remote endpoint, it will only establish a connection to
-     * use.
-     *
-     * @return The HTTPURLConneciton instance.
-     * @throws IOException Any connectivity issues.
-     */
-    private HttpURLConnection connect() throws IOException {
-        final HttpURLConnection connection = (HttpURLConnection) remoteURL.openConnection();
-
-        if (connection instanceof HttpsURLConnection) {
-            final HttpsURLConnection sslConn = (HttpsURLConnection) connection;
+    
+    @Override
+    protected void doAction()
+        throws AccessControlException, NotAuthenticatedException,
+            ByteLimitExceededException, ExpectationFailedException, 
+            IllegalArgumentException, PreconditionFailedException, 
+            ResourceAlreadyExistsException, ResourceNotFoundException, 
+            TransientException, IOException, InterruptedException {
+        
+        log.debug("connect: " + remoteURL);
+        HttpURLConnection conn = (HttpURLConnection) remoteURL.openConnection();
+        conn.setRequestMethod("DELETE");
+        
+        setRequestSSOCookie(conn);
+        if (conn instanceof HttpsURLConnection) {
+            final HttpsURLConnection sslConn = (HttpsURLConnection) conn;
             initHTTPS(sslConn);
         }
 
-        setRequestSSOCookie(connection);
-        connection.setRequestMethod("DELETE");
-        connection.setUseCaches(false);
-        connection.setDoInput(true);
-        connection.setDoOutput(false);
+        conn.setUseCaches(false);
+        conn.setDoInput(true);
+        conn.setDoOutput(false);
 
-        return connection;
+        checkErrors(remoteURL, conn);
+        //this.responseStream = conn.getInputStream(); // setDoOutput(false) above so not needed
     }
 }

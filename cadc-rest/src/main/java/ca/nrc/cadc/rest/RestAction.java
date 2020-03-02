@@ -72,6 +72,7 @@ package ca.nrc.cadc.rest;
 import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.io.ByteLimitExceededException;
 import ca.nrc.cadc.log.WebServiceLogInfo;
+import ca.nrc.cadc.net.ExpectationFailedException;
 import ca.nrc.cadc.net.HttpTransfer;
 import ca.nrc.cadc.net.PreconditionFailedException;
 import ca.nrc.cadc.net.ResourceAlreadyExistsException;
@@ -276,6 +277,9 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
         } catch (ByteLimitExceededException ex) {
             logInfo.setSuccess(true);
             handleException(ex, 413, ex.getMessage(), false, false);
+        } catch (ExpectationFailedException ex) {
+            logInfo.setSuccess(true);
+            handleException(ex, 417, ex.getMessage(), false, false);
         } catch (UnsupportedOperationException ex) {
             logInfo.setSuccess(true);
             handleException(ex, 400, ex.getMessage(), false, false);

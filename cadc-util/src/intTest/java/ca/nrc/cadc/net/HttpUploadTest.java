@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2016.                            (c) 2016.
+ *  (c) 2020.                            (c) 2020.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,125 +62,101 @@
  *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
  *                                       <http://www.gnu.org/licenses/>.
  *
+ *  $Revision: 5 $
  *
  ************************************************************************
  */
 
 package ca.nrc.cadc.net;
 
-
-import java.io.FileNotFoundException;
-import java.net.HttpURLConnection;
+import ca.nrc.cadc.util.Log4jInit;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
-import java.security.AccessControlException;
-
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
 import org.junit.Test;
-import static org.junit.Assert.*;
-import static org.easymock.EasyMock.*;
 
-
-public class HttpDeleteTest
+/**
+ * HTTP PUT from various inputs.
+ * 
+ * @author pdowler
+ */
+public class HttpUploadTest 
 {
-    static Map<String,List<String>> EMPTY = new TreeMap<>();
+    private static Logger log = Logger.getLogger(HttpUploadTest.class);
+
+    static {
+        Log4jInit.setLevel("ca.nrc.cadc.net", Level.DEBUG);
+    }
+    
+    File srcFile;
+    
+    public HttpUploadTest() throws Exception {
+        File tmp = File.createTempFile("public" + HttpUploadTest.class.getSimpleName(), ".in");        
+        FileWriter out = new FileWriter(tmp);
+        out.append("sample input data");
+        out.close();
+        tmp.deleteOnExit();
+        
+        this.srcFile = tmp;
+    }
+
+    @Test
+    public void testPutFile() throws Exception {
+        HttpUpload put = new HttpUpload(srcFile, new URL("https://httpbin.org/put"));
+        put.run();
+        Assert.assertEquals(200, put.getResponseCode());
+        log.debug("throwable?", put.getThrowable());
+        Assert.assertNull("throwable", put.getThrowable());
+    }
     
     @Test
-    public void verifyDeleteOK() throws Exception
-    {
-        final URL resourceURL =
-                new URL("http://mysite.com/resource/go/bye-bye");
-        final HttpDelete testSubject = new HttpDelete(resourceURL, false);
-        final HttpURLConnection mockConnection =
-                createMock(HttpURLConnection.class);
-
-        expect(mockConnection.getResponseCode()).andReturn(200).once();
-        expect(mockConnection.getResponseMessage()).andReturn("OK").once();
-        expect(mockConnection.getHeaderFields()).andReturn(EMPTY).anyTimes();
-
-        replay(mockConnection);
-
-        testSubject.verifyDelete(mockConnection);
-
-        verify(mockConnection);
+    public void testPutFileResponseStream() throws Exception {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        HttpUpload put = new HttpUpload(srcFile, new URL("https://httpbin.org/put"));
+        put.setResponseDestination(bos);
+        put.run();
+        Assert.assertEquals(200, put.getResponseCode());
+        log.debug("throwable?", put.getThrowable());
+        Assert.assertNull("throwable", put.getThrowable());
+        String str = bos.toString("UTF-8");
+        log.info("output:\n" + str);
+    }
+    
+    @Test
+    public void testPutFileResponseWrapper() throws Exception {
+        ResponseWrapper rw = new ResponseWrapper();
+        HttpUpload put = new HttpUpload(srcFile, new URL("https://httpbin.org/put"));
+        put.setResponseStreamWrapper(rw);
+        put.run();
+        Assert.assertEquals(200, put.getResponseCode());
+        log.debug("throwable?", put.getThrowable());
+        Assert.assertNull("throwable", put.getThrowable());
+        String str = rw.response;
+        log.info("output:\n" + str);
     }
 
-    @Test
-    public void verifyDeleteNotFound() throws Exception
-    {
-        final URL resourceURL =
-                new URL("http://mysite.com/resource/go/bye-bye");
-        final HttpDelete testSubject = new HttpDelete(resourceURL, false);
-        final HttpURLConnection mockConnection =
-                createMock(HttpURLConnection.class);
+    private class ResponseWrapper implements InputStreamWrapper {
 
-        expect(mockConnection.getResponseCode()).andReturn(404).once();
-        expect(mockConnection.getResponseMessage()).andReturn("Not Found").once();
-        expect(mockConnection.getHeaderFields()).andReturn(EMPTY).anyTimes();
-
-        replay(mockConnection);
-
-        try
-        {
-            testSubject.verifyDelete(mockConnection);
-            fail("Should throw FileNotFoundException.");
+        String response;
+        @Override
+        public void read(InputStream inputStream) throws IOException {
+            InputStreamReader r = new InputStreamReader(inputStream);
+            StringBuilder sb = new StringBuilder();
+            char[] buf = new char[512];
+            int i = r.read(buf);
+            while (i > 0) {
+                sb.append(buf, 0, i);
+                i = r.read(buf);
+            }
+            this.response = sb.toString();
         }
-        catch (FileNotFoundException e)
-        {
-            // Good!
-        }
-
-        verify(mockConnection);
-    }
-
-    @Test
-    public void verifyDeleteAccessDenied() throws Exception
-    {
-        final URL resourceURL =
-                new URL("http://mysite.com/resource/go/bye-bye");
-        final HttpDelete testSubject = new HttpDelete(resourceURL, false);
-        final HttpURLConnection mockConnection =
-                createMock(HttpURLConnection.class);
-
-        expect(mockConnection.getResponseCode()).andReturn(401).once();
-        expect(mockConnection.getResponseMessage()).andReturn("Unauthorized").once();
-        expect(mockConnection.getHeaderFields()).andReturn(EMPTY).anyTimes();
-
-        replay(mockConnection);
-
-        try
-        {
-            testSubject.verifyDelete(mockConnection);
-            fail("Should throw AccessControlException.");
-        }
-        catch (AccessControlException e)
-        {
-            // Good!
-        }
-
-        verify(mockConnection);
-
-        // Locked test
-
-        reset(mockConnection);
-
-        expect(mockConnection.getResponseCode()).andReturn(423).once();
-        expect(mockConnection.getResponseMessage()).andReturn("Locked").once();
-        expect(mockConnection.getHeaderFields()).andReturn(EMPTY).anyTimes();
-
-        replay(mockConnection);
-
-        try
-        {
-            testSubject.verifyDelete(mockConnection);
-            fail("Should throw AccessControlException.");
-        }
-        catch (AccessControlException e)
-        {
-            // Good!
-        }
-
-        verify(mockConnection);
+        
     }
 }

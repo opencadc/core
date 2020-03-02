@@ -70,9 +70,13 @@
 package ca.nrc.cadc.net;
 
 import ca.nrc.cadc.auth.SSOCookieCredential;
-import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.util.Log4jInit;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.util.Date;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -83,6 +87,7 @@ import org.junit.Test;
 import javax.security.auth.Subject;
 import java.net.URL;
 import java.security.PrivilegedAction;
+import java.util.TreeMap;
 
 
 /**
@@ -98,6 +103,113 @@ public class HttpTransferTest
         Log4jInit.setLevel("ca.nrc.cadc.net", Level.INFO);
     }
 
+    @Test
+    public void testConstructors()
+    {
+        log.debug("TEST: testConstructors");
+        
+        try {
+            URL nurl = null;
+            URL url = new URL("https://www.example.net/robots.txt");
+            InputStream nis = null;
+            OutputStream nbos = null;
+            OutputStream bos = new ByteArrayOutputStream();
+            File nfile = null;
+            File file = new File("/tmp/foo.txt");
+            
+            try
+            {
+                new HttpDownload(nurl, bos);
+                Assert.fail("expected IllegalArgumentException");
+            }
+            catch(IllegalArgumentException expected)
+            {
+                log.debug("caught expected: " + expected);
+            }
+            try
+            {
+                new HttpDownload(url, nbos);
+                Assert.fail("expected IllegalArgumentException");
+            }
+            catch(IllegalArgumentException expected)
+            {
+                log.debug("caught expected: " + expected);
+            }
+            try
+            {
+                new HttpDownload(url, nfile);
+                Assert.fail("expected IllegalArgumentException");
+            }
+            catch(IllegalArgumentException expected)
+            {
+                log.debug("caught expected: " + expected);
+            }
+            
+            try
+            {
+                new HttpUpload(file, nurl);
+                Assert.fail("expected IllegalArgumentException");
+            }
+            catch(IllegalArgumentException expected)
+            {
+                log.debug("caught expected: " + expected);
+            }
+            try
+            {
+                new HttpUpload(nfile, url);
+                Assert.fail("expected IllegalArgumentException");
+            }
+            catch(IllegalArgumentException expected)
+            {
+                log.debug("caught expected: " + expected);
+            }
+            try
+            {
+                new HttpUpload(nis, url);
+                Assert.fail("expected IllegalArgumentException");
+            }
+            catch(IllegalArgumentException expected)
+            {
+                log.debug("caught expected: " + expected);
+            }
+            
+            try
+            {
+                new HttpPost(nurl, new TreeMap<String,Object>(), true);
+                Assert.fail("expected IllegalArgumentException");
+            }
+            catch(IllegalArgumentException expected)
+            {
+                log.debug("caught expected: " + expected);
+            }
+            try
+            {
+                FileContent nfc = null;
+                new HttpPost(url, nfc, true);
+                Assert.fail("expected IllegalArgumentException");
+            }
+            catch(IllegalArgumentException expected)
+            {
+                log.debug("caught expected: " + expected);
+            }
+            
+            try
+            {
+                new HttpDelete(nurl, true);
+                Assert.fail("expected IllegalArgumentException");
+            }
+            catch(IllegalArgumentException expected)
+            {
+                log.debug("caught expected: " + expected);
+            }
+            
+            
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+    
     @Test
     public void testBufferSize() throws Exception
     {
@@ -162,12 +274,14 @@ public class HttpTransferTest
     @Test
     public void setRequestSSOCookie() throws Exception
     {
-        final HttpTransfer testSubject = new HttpTransfer(false)
-        {
+        final URL testURL = new URL("http://www.fr.host.com/my/path/to/file.txt");
+        final HttpTransfer testSubject = new HttpTransfer(testURL, false) {
             @Override
-            public void run()
-            {
-
+            public void prepare() {
+            }
+            
+            @Override
+            public void run() {
             }
         };
 
@@ -179,8 +293,7 @@ public class HttpTransferTest
                 new SSOCookieCredential("VALUE_1", "en.host.com", cookieExpiry));
         subject.getPublicCredentials().add(
                 new SSOCookieCredential("VALUE_2", "fr.host.com", cookieExpiry));
-        final URL testURL =
-                new URL("http://www.fr.host.com/my/path/to/file.txt");
+        
         final HttpURLConnection mockConnection =
                 EasyMock.createMock(HttpURLConnection.class);
 
@@ -206,11 +319,18 @@ public class HttpTransferTest
 
     private class TestDummy extends HttpTransfer
     {
-        TestDummy() { super(true); }
+        TestDummy() throws MalformedURLException { 
+            super(new URL("http://www.fr.host.com/my/path/to/file.txt"), true);
+        }
         
-        public void run()
-        {
+        @Override
+        public void prepare() {
             throw new UnsupportedOperationException();
+        }
+        
+        @Override
+        public void run() {
+            prepare();
         }
         
     }

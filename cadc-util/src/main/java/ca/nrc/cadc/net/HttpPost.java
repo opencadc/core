@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2016.                            (c) 2016.
+*  (c) 2020.                            (c) 2020.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -69,6 +69,8 @@
 
 package ca.nrc.cadc.net;
 
+import ca.nrc.cadc.auth.NotAuthenticatedException;
+import ca.nrc.cadc.io.ByteLimitExceededException;
 import ca.nrc.cadc.net.event.TransferEvent;
 
 import java.io.ByteArrayOutputStream;
@@ -113,12 +115,6 @@ public class HttpPost extends HttpTransfer {
     // request information
     private Map<String,Object> paramMap = new TreeMap<String,Object>(); // removes a lot of checking for null
     private FileContent inputFileContent;
-    private OutputStream outputStream;
-
-    // result information
-    private String responseContentType;
-    private String responseContentEncoding;
-    private String responseBody;
     
     /**
      * HttpPost constructor.  Redirects will be followed.
@@ -129,8 +125,14 @@ public class HttpPost extends HttpTransfer {
      * @param outputStream An output stream to capture the response data.
      */
     public HttpPost(URL url, Map<String, Object> map, OutputStream outputStream) {
+        super(url, true);
+        this.paramMap = map;
+        super.responseDestination = outputStream;
+    }
+    
+    public HttpPost(URL url, Map<String, Object> map, InputStreamWrapper istreamWrapper) {
         this(url, map, true);
-        this.outputStream = outputStream;
+        super.responseStreamWrapper = istreamWrapper;
     }
     
     /**
@@ -141,7 +143,7 @@ public class HttpPost extends HttpTransfer {
      * @param followRedirects Whether or not to follow server redirects.
      */
     public HttpPost(URL url, Map<String, Object> map, boolean followRedirects) {
-        this(url, followRedirects);
+        super(url, followRedirects);
         if (map == null || map.isEmpty()) {
             throw new IllegalArgumentException("parameters cannot be empty.");
         }
@@ -156,7 +158,7 @@ public class HttpPost extends HttpTransfer {
      * @param followRedirects
      */
     public HttpPost(URL url, FileContent input, boolean followRedirects) {
-        this(url, followRedirects);
+        super(url, followRedirects);
         this.inputFileContent = input;
         if (input == null) {
             throw new IllegalArgumentException("input cannot be null");
@@ -177,84 +179,84 @@ public class HttpPost extends HttpTransfer {
         this(url, new FileContent(content, contentType, Charset.forName("UTF-8")), followRedirects);
     }
     
-    private HttpPost(URL url, boolean followRedirects) {
-        super(followRedirects);
-        if (url == null) {
-            throw new IllegalArgumentException("URL cannot be null.");
-        }
-        this.remoteURL = url;
-    }
-
     @Override
     public String toString() { 
         return "HttpPost[" + remoteURL + "]"; 
     }
     
+    /**
+     * @return Content-Encoding
+     * @deprecated use getResponseHeader(HttpTransfer.CONTENT_ENCODING)
+     */
+    @Deprecated
     public String getResponseContentEncoding() {
-        return responseContentEncoding;
+        return getResponseHeader(HttpTransfer.CONTENT_ENCODING);
     }
 
+    /**
+     * @return Content-Type
+     * @deprecated use getResponseHeader(HttpTransfer.CONTENT_TYPE)
+     */
+    @Deprecated
     public String getResponseContentType() {
-        return responseContentType;
+        return getResponseHeader(HttpTransfer.CONTENT_TYPE);
     }
-
+    
     /**
-     * If an OutputStream wasn't supplied in the HttpPost constructor,
-     * the response can be retrieved here.
-     * @return
+     * @return response converted to UTF-8 string
+     * @throws java.io.IOException
+     * @deprecated use prepare() and getInputStream()
      */
-    public String getResponseBody() {
-        return responseBody;
-    }
-
-    /**
-     * Retry on TransientExceptions
-     */
-    public void run() {
-        boolean done = false;
-        while (!done) {
-            try {
-                runX();
-                done = true;
-            } catch (TransientException ex) {
-                try {
-                    long dt = 1000L * ex.getRetryDelay();
-                    log.debug("retry " + numRetries + " sleeping  for " + dt);
-                    fireEvent(TransferEvent.RETRYING);
-                    Thread.sleep(dt);
-                } catch (InterruptedException iex) {
-                    log.debug("retry interrupted");
-                    done = true;
-                }
+    @Deprecated
+    public String getResponseBody() throws IOException {
+        try {
+            if (responseStream != null) {
+                return readResponseBody(responseStream);
             }
+        } catch (InterruptedException ex) {
+            throw new RuntimeException("read interrupted", ex);
         }
+        return null;
     }
-
-    private void runX()
-        throws TransientException {
+    
+    @Override
+    public void prepare() 
+        throws AccessControlException, NotAuthenticatedException,
+            ByteLimitExceededException, ExpectationFailedException, 
+            IllegalArgumentException, PreconditionFailedException, 
+            ResourceAlreadyExistsException, ResourceNotFoundException, 
+            TransientException, IOException, InterruptedException {
+        
+        doActionWithRetryLoop();
+    }
+    
+    @Override
+    protected void doAction()
+        throws AccessControlException, NotAuthenticatedException,
+            ByteLimitExceededException, ExpectationFailedException, 
+            IllegalArgumentException, PreconditionFailedException, 
+            ResourceAlreadyExistsException, ResourceNotFoundException, 
+            TransientException, IOException, InterruptedException {
+        
         log.debug(this.toString());
 
         try {
             this.thread = Thread.currentThread();
             HttpURLConnection conn = (HttpURLConnection) this.remoteURL.openConnection();
-
+            conn.setRequestMethod("POST");
+            setRequestSSOCookie(conn);
             if (conn instanceof HttpsURLConnection) {
                 HttpsURLConnection sslConn = (HttpsURLConnection) conn;
                 initHTTPS(sslConn);
             }
             
             doPost(conn);
-        } catch (TransientException tex) {
-            log.debug("caught: " + tex);
-            throw tex;
-        } catch (Throwable t) {
-            log.debug("caught: " + t, t);
-            failure = t;
+            this.responseStream = conn.getInputStream();
         } finally {
-            if (outputStream != null) {
+            if (responseDestination != null) {
                 log.debug("closing OutputStream");
                 try { 
-                    outputStream.close(); 
+                    responseDestination.close(); 
                 } catch (Exception ignore) { 
                     // do nothing
                 }
@@ -271,18 +273,18 @@ public class HttpPost extends HttpTransfer {
                     this.thread = null;
                 }
             }
-            
-            if (failure != null) {
-                log.debug("failed: " + failure);
-            }
         }
     }
     
     private void doPost(HttpURLConnection conn)
-        throws IOException, InterruptedException, TransientException {
+        throws AccessControlException, NotAuthenticatedException,
+            ByteLimitExceededException, ExpectationFailedException, 
+            IllegalArgumentException, PreconditionFailedException, 
+            ResourceAlreadyExistsException, ResourceNotFoundException, 
+            TransientException, IOException, InterruptedException {
         
         if (inputFileContent != null) {
-            doPost(conn, inputFileContent);
+            HttpPost.this.doPost(conn, inputFileContent);
         } else {
             // separate params from uploads
             Map<String,List<Object>> pmap = new TreeMap<String,List<Object>>();
@@ -308,14 +310,19 @@ public class HttpPost extends HttpTransfer {
                 }
             }
             
-            doPost(conn, pmap, uploads);
+            HttpPost.this.doPost(conn, pmap, uploads);
         }
+        
+        checkRedirects(remoteURL, conn);
     }
     
     private void doPost(HttpURLConnection conn, FileContent input)
-        throws IOException, InterruptedException, TransientException {
-        setRequestSSOCookie(conn);
-        conn.setRequestMethod("POST");
+        throws AccessControlException, NotAuthenticatedException,
+            ByteLimitExceededException, ExpectationFailedException, 
+            IllegalArgumentException, PreconditionFailedException, 
+            ResourceAlreadyExistsException, ResourceNotFoundException, 
+            TransientException, IOException, InterruptedException {
+        
         byte[] buf = input.getBytes();
         String len = Long.toString(buf.length);
         conn.setRequestProperty("Content-Length", len);
@@ -338,13 +345,15 @@ public class HttpPost extends HttpTransfer {
             ostream.close();
         }
         
-        log.debug("POST - done: " + remoteURL.toString());
-        
-        handleResponse(conn);
+        log.debug("POST - send done: " + remoteURL.toString());
     }
     
     private void doPost(HttpURLConnection conn, Map<String,List<Object>> params, Map<String,Object> uploads)
-        throws IOException, InterruptedException, TransientException {
+        throws AccessControlException, NotAuthenticatedException,
+            ByteLimitExceededException, ExpectationFailedException, 
+            IllegalArgumentException, PreconditionFailedException, 
+            ResourceAlreadyExistsException, ResourceNotFoundException, 
+            TransientException, IOException, InterruptedException {
         
         String ctype = "application/x-www-form-urlencoded";
         boolean multi = false;
@@ -354,13 +363,9 @@ public class HttpPost extends HttpTransfer {
             multi = true;
         }
         
-        setRequestSSOCookie(conn);
-        conn.setRequestMethod("POST");
-        
         if (ctype != null) {
             conn.setRequestProperty("Content-Type", ctype);
         }
-        
         log.debug("POST Content-Type: " + ctype);
         
         setRequestHeaders(conn);
@@ -383,7 +388,6 @@ public class HttpPost extends HttpTransfer {
                     sb.append("=");
                     sb.append(URLEncoder.encode(v.toString(), "UTF-8"));
                     sb.append("&");
-                    
                 }
             }
         }
@@ -414,76 +418,41 @@ public class HttpPost extends HttpTransfer {
             writer.close();
         }
 
-        log.debug("POST - done: " + remoteURL.toString());
-        
-        handleResponse(conn);
+        log.debug("POST - send done: " + remoteURL.toString());
     }
     
-    private void handleResponse(HttpURLConnection conn)
-        throws IOException, InterruptedException, TransientException {
-        // generic capture
-        captureResponseHeaders(conn);
+    private void checkRedirects(URL url, HttpURLConnection conn)
+        throws AccessControlException, NotAuthenticatedException,
+            ByteLimitExceededException, ExpectationFailedException, 
+            IllegalArgumentException, PreconditionFailedException, 
+            ResourceAlreadyExistsException, ResourceNotFoundException, 
+            TransientException, IOException, InterruptedException {
         
-        //int statusCode = checkStatusCode(conn);
-        this.responseCode = conn.getResponseCode();
-        this.responseContentType = conn.getContentType();
-        this.responseContentEncoding = conn.getContentEncoding();
-        log.debug("handleResponse: " + responseCode + "|" + responseContentType);
+        super.checkErrors(url, conn);
         
         // check for a redirect
         String location = conn.getHeaderField("Location");
-        if ((responseCode == HttpURLConnection.HTTP_SEE_OTHER
-            || responseCode == HttpURLConnection.HTTP_MOVED_TEMP) 
-            && location != null) {
-            this.redirectURL = new URL(location);
-            log.debug("redirectURL: " + redirectURL);
-            return;
-        }
-        
-        // map some response codes to exceptions
-        checkStatusCode(conn);
-        
-        // read response fully
-        InputStream istream = conn.getInputStream();
-        readResponse(istream);
-    }
-    
-    private void readResponse(InputStream istream)
-        throws IOException, InterruptedException {
-        if (outputStream != null) {
-            if (userNio) {
-                nioLoop(istream, outputStream, 2 * bufferSize, 0);
-            } else {
-                ioLoop(istream, outputStream, 2 * bufferSize, 0);
-            }
-            
-            outputStream.flush();
-            log.debug("wrote response to supplied " + outputStream.getClass().getName());
-        } else {
-            int smallBufferSize = 512;
-            ByteArrayOutputStream byteArrayOstream = new ByteArrayOutputStream();
-            try {
-                if (userNio) {
-                    nioLoop(istream, byteArrayOstream, smallBufferSize, 0);
-                } else {
-                    ioLoop(istream, byteArrayOstream, smallBufferSize, 0);
+        switch (responseCode) {
+            case HttpURLConnection.HTTP_MOVED_TEMP:
+            case HttpURLConnection.HTTP_SEE_OTHER:
+                if (location == null) {
+                    throw new RuntimeException("incomplete server response: status " + responseCode + " with Location: null");
                 }
-                
-                byteArrayOstream.flush();
-                responseBody = new String(byteArrayOstream.toByteArray(), "UTF-8");
-                log.debug("captured response in local String responseBody");
-            } finally {
-                if (byteArrayOstream != null) {
-                    try { 
-                        byteArrayOstream.close(); 
-                    } catch (Exception ignore) { 
-                        // do nothing
-                    }
+                this.redirectURL = new URL(location);
+                log.debug("redirectURL: " + redirectURL);
+                return;
+            case HttpURLConnection.HTTP_MOVED_PERM:
+                if (location == null) {
+                    throw new ResourceNotFoundException("resource " + url + " moved permanently; Location: null");
                 }
-            }
+                this.redirectURL = new URL(location);
+                log.debug("redirectURL: " + redirectURL);
+                return;
+            default:
+                // no-op
         }
     }
-    
+ 
     private void writeFilePart(String fieldName, File uploadFile, OutputStream w, Charset utf8)
         throws IOException {
         StringBuilder sb = new StringBuilder();
@@ -536,43 +505,5 @@ public class HttpPost extends HttpTransfer {
         w.write(sb.toString().getBytes(utf8));
         w.write(uploadContent.getBytes());
         w.flush();
-    }
-    
-    private int checkStatusCode(HttpURLConnection conn)
-        throws IOException, InterruptedException, TransientException {
-        int code = conn.getResponseCode();
-        log.debug("HTTP POST status: " + code + " for " + remoteURL);
-        this.responseCode = code;
-        
-        if (code != HttpURLConnection.HTTP_OK 
-            && code != HttpURLConnection.HTTP_CREATED 
-            && code != HttpURLConnection.HTTP_MOVED_TEMP 
-            && code != HttpURLConnection.HTTP_SEE_OTHER) {
-            this.responseContentType = conn.getContentType();
-            this.responseContentEncoding = conn.getContentEncoding();
-            String msg = "(" + code + ") " + conn.getResponseMessage();
-            InputStream istream = conn.getErrorStream();
-            readResponse(istream);
-            checkTransient(code, msg, conn);
-            switch (code) {
-                case HttpURLConnection.HTTP_NO_CONTENT:
-                    break;
-                case HttpURLConnection.HTTP_UNAUTHORIZED:
-                    throw new AccessControlException("permission denied: " + msg);
-                case HttpURLConnection.HTTP_FORBIDDEN:
-                    throw new AccessControlException("permission denied: " + msg);
-                case HttpURLConnection.HTTP_NOT_FOUND:
-                    throw new FileNotFoundException("resource not found " + msg);
-                case HttpURLConnection.HTTP_PRECON_FAILED:
-                    throw new PreconditionFailedException("precondition failed: " + msg);
-                case HttpURLConnection.HTTP_ENTITY_TOO_LARGE:
-                    throw new IOException("upload too large: " + msg);
-                // TODO: map all 4xx response codes to standard exceptions? 
-                default:
-                    throw new IOException(msg);
-            }
-        }
-        
-        return code;
     }
 }
