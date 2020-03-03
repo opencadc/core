@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2016.                            (c) 2016.
+*  (c) 2020.                            (c) 2020.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -65,46 +65,44 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.rest;
 
 import ca.nrc.cadc.net.ResourceNotFoundException;
+
 import java.io.IOException;
 import java.io.InputStream;
-
 
 /**
  * Services implementing this rest framework must use an
  * implementation of this InlineContentHandler to receive
- * any data sent to the service.  The data may be received
+ * any data sent to the service. The data may be received
  * in name/value pairs or as an unnamed blob the inputstream.
  *
  * @author yeunga
  */
-public interface InlineContentHandler
-{
+public interface InlineContentHandler {
+
     /**
-     * Access the data in the InputStream.
-     *
-     * For multipart POST requests, the accept method will be
-     * called once for each data part.
+     * Access the data in the InputStream. For multipart POST requests, the accept 
+     * method will be called once for each data part.
      *
      * @param name of the data part.
      * @param contentType MIME type of the data.
      * @param inputStream containing the data.
+     * @return Content inline content.
      * @throws InlineContentException for errors storing the data.
      * @throws IOException for errors reading the InputStream.
      * @throws ResourceNotFoundException if the specified destination for the input content is not found
-     * @return Content inline content.
      */
     Content accept(String name, String contentType, InputStream inputStream)
-        throws InlineContentException, IOException, ResourceNotFoundException;
+            throws InlineContentException, IOException, ResourceNotFoundException;
 
-    class Content
-    {
-    	public String name;
-    	public Object value;
+    class Content {
+
+        public String name;
+        public Object value;
     }
 
 }

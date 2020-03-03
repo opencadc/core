@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.rest;
 
@@ -79,52 +79,48 @@ import org.apache.log4j.Logger;
 
 /**
  * Wrapper around an application-server response.
- * 
+ *
  * @author pdowler
  */
-public class SyncOutput
-{
+public class SyncOutput {
+
     private static final Logger log = Logger.getLogger(SyncOutput.class);
 
     private final HttpServletResponse response;
     private OutputStream outputStream;
 
-    public SyncOutput(HttpServletResponse response)
-    {
+    public SyncOutput(HttpServletResponse response) {
         this.response = response;
     }
 
     /**
      * Check is the output stream is open. If true, the header has been committed and additional
      * calls to setHeader will be ignored.
-     * 
+     *
      * @return true if response header committed and output stream has been opened
      */
-    public boolean isOpen()
-    {
+    public boolean isOpen() {
         return (outputStream != null);
     }
 
     /**
      * Compatibility with cadc-uws-server API that is in use.
-     * 
-     * @param code
-     * @deprecated 
+     *
+     * @param code HTTP status code
+     * @deprecated
      */
     @Deprecated
     public void setResponseCode(int code) {
         setCode(code);
     }
-    
+
     /**
      * Set HTTP response code.
-     * 
+     *
      * @param code HTTP response code
      */
-    public void setCode(int code)
-    {
-        if (outputStream != null)
-        {
+    public void setCode(int code) {
+        if (outputStream != null) {
             IllegalStateException e = new IllegalStateException();
             log.warn("OutputStream already open, not setting response code to: " + code, e);
             return;
@@ -134,50 +130,48 @@ public class SyncOutput
 
     /**
      * Set HTTP header.
-     * 
+     *
      * @param key HTTP header name
      * @param value HTTP header value
      */
-    public void setHeader(String key, Object value)
-    {
-        if (outputStream != null)
-        {
+    public void setHeader(String key, Object value) {
+        if (outputStream != null) {
             IllegalStateException e = new IllegalStateException();
             log.warn("OutputStream already open, not setting header: " + key + " to: " + value, e);
             return;
         }
 
-        if (value == null)
+        if (value == null) {
             response.setHeader(key, null);
-        else
+        } else {
             response.setHeader(key, value.toString());
+        }
     }
 
     /**
      * Get the output stream. Calling this method commits the request (see isOpen).
-     * 
-     * @return the output stream for writing the response 
+     *
+     * @return the output stream for writing the response
      * @throws IOException fail to open output stream
      */
     public OutputStream getOutputStream()
-        throws IOException
-    {
-        if (outputStream == null)
-        {
+            throws IOException {
+        if (outputStream == null) {
             log.debug("First open of output stream");
             outputStream = new SafeOutputStream(response.getOutputStream());
         }
         return outputStream;
     }
 
-    private class SafeOutputStream extends FilterOutputStream
-    {
-        SafeOutputStream(OutputStream ostream) { super(ostream); }
+    private class SafeOutputStream extends FilterOutputStream {
+
+        SafeOutputStream(OutputStream ostream) {
+            super(ostream);
+        }
 
         @Override
         public void close()
-            throws IOException
-        {
+                throws IOException {
             // cannot close service output streams
         }
     }

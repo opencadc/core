@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2016.                            (c) 2016.
+*  (c) 2020.                            (c) 2020.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -74,6 +74,7 @@ import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.log.ServletLogInfo;
 import ca.nrc.cadc.log.WebServiceLogInfo;
 import ca.nrc.cadc.util.Enumerator;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -83,12 +84,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
 import javax.security.auth.Subject;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import org.apache.log4j.Logger;
 
 /**
@@ -103,6 +106,7 @@ public class RestServlet extends HttpServlet {
     private static final Logger log = Logger.getLogger(RestServlet.class);
 
     private static final List<String> CITEMS = new ArrayList<String>();
+    
     static {
         CITEMS.add("head");
         CITEMS.add("get");
@@ -152,9 +156,9 @@ public class RestServlet extends HttpServlet {
                 Class<RestAction> ret = (Class<RestAction>) Class.forName(cname);
                 log.info(method + ": " + cname + " [loaded]");
                 return ret;
-            } catch(Exception ex) {
+            } catch (Exception ex) {
                 log.error(method + ": " + cname + " [FAILED]", ex);
-            } finally { }
+            }
         }
         log.debug(method + ": [not configured]");
         return null;
