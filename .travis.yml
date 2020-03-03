@@ -13,7 +13,7 @@ script:
       
     - cd cadc-quality; gradle --info build install || exit -1; cd ..
         
-    - for mod in cadc-util cadc-log; do
+    - for mod in cadc-util cadc-rest cadc-log; do
         cd $mod; gradle checkstyleMain || break -1; cd ..;
       done
 

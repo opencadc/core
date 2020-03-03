@@ -78,12 +78,14 @@ import ca.nrc.cadc.net.PreconditionFailedException;
 import ca.nrc.cadc.net.ResourceAlreadyExistsException;
 import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.net.TransientException;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.security.AccessControlException;
 import java.security.PrivilegedExceptionAction;
 import java.security.cert.CertificateException;
 import java.util.Map;
+
 import org.apache.log4j.Logger;
 
 /**
@@ -163,7 +165,7 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
      * with the appName + STATE_MODE_KEY so the state is shared by all endpoints in an
      * application.
      *
-     * The design philosophy is that an application will set the state via a WebService
+     * <p>The design philosophy is that an application will set the state via a WebService
      * implementation (see cadc-vosi library), which has access to the same appName.
      * The VOSI AvailabilityServlet supports POST requests to change the state. So,
      * a service operator can POST to the /appName/availability resource, the AvailabilityServlet
@@ -192,14 +194,13 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
      *
      * @return configured InlineContentHandler
      */
-    abstract protected InlineContentHandler getInlineContentHandler();
+    protected abstract InlineContentHandler getInlineContentHandler();
 
     /**
-     * Implemented by subclass
+     * Action implemented by subclass. The following exceptions, when thrown by this 
+     * function, are automatically mapped into HTTP errors by RestAction class:
      *
-     * The following exceptions, when thrown by this function, are
-     * automatically mapped into HTTP errors by RestAction class:
-     *
+     * <pre>
      * java.lang.IllegalArgumentException : 400
      * java.security.AccessControlException : 403
      * java.security.cert.CertificateException : 403
@@ -209,6 +210,7 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
      * ca.nrc.cadc.io.ByteLimitExceededException : 413
      * ca.nrc.cadc.net.ExpectationFailedException : 417
      * ca.nrc.cadc.net.TransientException : 503
+     * </pre>
      *
      * @throws Exception for standard application failure
      */

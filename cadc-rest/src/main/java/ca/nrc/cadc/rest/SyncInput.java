@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2019.                            (c) 2019.
+ *  (c) 2020.                            (c) 2020.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -69,20 +69,22 @@
 
 package ca.nrc.cadc.rest;
 
-import ca.nrc.cadc.util.CaseInsensitiveStringComparator;
 import ca.nrc.cadc.net.NetUtil;
 import ca.nrc.cadc.net.ResourceNotFoundException;
+import ca.nrc.cadc.util.CaseInsensitiveStringComparator;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.fileupload.FileItemIterator;
@@ -91,9 +93,6 @@ import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.fileupload.util.Streams;
 import org.apache.log4j.Logger;
-
-import java.net.URI;
-import java.util.Set;
 
 /**
  * Wrapper around the application-server provided request.
@@ -263,9 +262,9 @@ public class SyncInput {
     }
 
     public void init() throws IOException, ResourceNotFoundException {
-        if (request.getMethod().equals("GET") ||
-                request.getMethod().equals("HEAD") ||
-                request.getMethod().equals("DELETE")) {
+        if (request.getMethod().equals("GET")
+                || request.getMethod().equals("HEAD")
+                || request.getMethod().equals("DELETE")) {
             Enumeration<String> names = request.getParameterNames();
             while (names.hasMoreElements()) {
                 String name = names.nextElement();
