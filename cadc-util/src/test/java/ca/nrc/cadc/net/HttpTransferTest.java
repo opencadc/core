@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.net;
 
@@ -89,25 +89,22 @@ import java.net.URL;
 import java.security.PrivilegedAction;
 import java.util.TreeMap;
 
-
 /**
  *
  * @author pdowler
  */
-public class HttpTransferTest 
-{
+public class HttpTransferTest {
+
     private static Logger log = Logger.getLogger(HttpTransferTest.class);
 
-    static
-    {
+    static {
         Log4jInit.setLevel("ca.nrc.cadc.net", Level.INFO);
     }
 
     @Test
-    public void testConstructors()
-    {
+    public void testConstructors() {
         log.debug("TEST: testConstructors");
-        
+
         try {
             URL nurl = null;
             URL url = new URL("https://www.example.net/robots.txt");
@@ -116,106 +113,94 @@ public class HttpTransferTest
             OutputStream bos = new ByteArrayOutputStream();
             File nfile = null;
             File file = new File("/tmp/foo.txt");
-            
-            try
-            {
+
+            try {
                 new HttpDownload(nurl, bos);
                 Assert.fail("expected IllegalArgumentException");
-            }
-            catch(IllegalArgumentException expected)
-            {
+            } catch (IllegalArgumentException expected) {
                 log.debug("caught expected: " + expected);
             }
-            try
-            {
+
+            try {
                 new HttpDownload(url, nbos);
                 Assert.fail("expected IllegalArgumentException");
-            }
-            catch(IllegalArgumentException expected)
-            {
+            } catch (IllegalArgumentException expected) {
                 log.debug("caught expected: " + expected);
             }
-            try
-            {
+
+            try {
                 new HttpDownload(url, nfile);
                 Assert.fail("expected IllegalArgumentException");
-            }
-            catch(IllegalArgumentException expected)
-            {
+            } catch (IllegalArgumentException expected) {
                 log.debug("caught expected: " + expected);
             }
             
-            try
-            {
+            try {
+                new HttpGet(nurl, bos);
+                Assert.fail("expected IllegalArgumentException");
+            } catch (IllegalArgumentException expected) {
+                log.debug("caught expected: " + expected);
+            }
+
+            try {
+                new HttpGet(url, nbos);
+                Assert.fail("expected IllegalArgumentException");
+            } catch (IllegalArgumentException expected) {
+                log.debug("caught expected: " + expected);
+            }
+
+            try {
                 new HttpUpload(file, nurl);
                 Assert.fail("expected IllegalArgumentException");
-            }
-            catch(IllegalArgumentException expected)
-            {
+            } catch (IllegalArgumentException expected) {
                 log.debug("caught expected: " + expected);
             }
-            try
-            {
+
+            try {
                 new HttpUpload(nfile, url);
                 Assert.fail("expected IllegalArgumentException");
-            }
-            catch(IllegalArgumentException expected)
-            {
+            } catch (IllegalArgumentException expected) {
                 log.debug("caught expected: " + expected);
             }
-            try
-            {
+
+            try {
                 new HttpUpload(nis, url);
                 Assert.fail("expected IllegalArgumentException");
-            }
-            catch(IllegalArgumentException expected)
-            {
+            } catch (IllegalArgumentException expected) {
                 log.debug("caught expected: " + expected);
             }
-            
-            try
-            {
-                new HttpPost(nurl, new TreeMap<String,Object>(), true);
+
+            try {
+                new HttpPost(nurl, new TreeMap<String, Object>(), true);
                 Assert.fail("expected IllegalArgumentException");
-            }
-            catch(IllegalArgumentException expected)
-            {
+            } catch (IllegalArgumentException expected) {
                 log.debug("caught expected: " + expected);
             }
-            try
-            {
+            try {
                 FileContent nfc = null;
                 new HttpPost(url, nfc, true);
                 Assert.fail("expected IllegalArgumentException");
-            }
-            catch(IllegalArgumentException expected)
-            {
+            } catch (IllegalArgumentException expected) {
                 log.debug("caught expected: " + expected);
             }
-            
-            try
-            {
+
+            try {
                 new HttpDelete(nurl, true);
                 Assert.fail("expected IllegalArgumentException");
-            }
-            catch(IllegalArgumentException expected)
-            {
+            } catch (IllegalArgumentException expected) {
                 log.debug("caught expected: " + expected);
             }
-            
-            
+
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
-    
+
     @Test
-    public void testBufferSize() throws Exception
-    {
+    public void testBufferSize() throws Exception {
         log.debug("TEST: testBufferSize");
-        try
-        {
+        try {
             String cur = System.getProperty(HttpTransfer.class.getName() + ".bufferSize");
             Assert.assertNull("test setup", cur);
 
@@ -231,55 +216,48 @@ public class HttpTransferTest
 
             System.setProperty(HttpTransfer.class.getName() + ".bufferSize", "32k");
             trans = new TestDummy();
-            Assert.assertEquals("system prop buffer size KB", 32*1024, trans.getBufferSize());
+            Assert.assertEquals("system prop buffer size KB", 32 * 1024, trans.getBufferSize());
 
             System.setProperty(HttpTransfer.class.getName() + ".bufferSize", "2m");
             trans = new TestDummy();
-            Assert.assertEquals("system prop buffer size MB", 2*1024*1024, trans.getBufferSize());
+            Assert.assertEquals("system prop buffer size MB", 2 * 1024 * 1024, trans.getBufferSize());
 
             // bad syntax -> default
             System.setProperty(HttpTransfer.class.getName() + ".bufferSize", "123d");
             trans = new TestDummy();
             Assert.assertEquals("system prop buffer size (invalid)", HttpTransfer.DEFAULT_BUFFER_SIZE, trans.getBufferSize());
 
-        }
-        catch (Exception unexpected)
-        {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
-    }
-    
-    @Test
-    public void testLogIO()
-    {
-        try
-        {
-            HttpTransfer test = new TestDummy();
-            Assert.assertNull(test.getIOReadTime());
-            Assert.assertNull(test.getIOWriteTime());
-            
-            test = new TestDummy();
-            test.setLogIO(true);
-            Assert.assertNotNull(test.getIOReadTime());
-            Assert.assertNotNull(test.getIOWriteTime());
-        }
-        catch (Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
     @Test
-    public void setRequestSSOCookie() throws Exception
-    {
+    public void testLogIO() {
+        try {
+            HttpTransfer test = new TestDummy();
+            Assert.assertNull(test.getIOReadTime());
+            Assert.assertNull(test.getIOWriteTime());
+
+            test = new TestDummy();
+            test.setLogIO(true);
+            Assert.assertNotNull(test.getIOReadTime());
+            Assert.assertNotNull(test.getIOWriteTime());
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+
+    @Test
+    public void setRequestSSOCookie() throws Exception {
         final URL testURL = new URL("http://www.fr.host.com/my/path/to/file.txt");
         final HttpTransfer testSubject = new HttpTransfer(testURL, false) {
             @Override
             public void prepare() {
             }
-            
+
             @Override
             public void run() {
             }
@@ -293,9 +271,9 @@ public class HttpTransferTest
                 new SSOCookieCredential("VALUE_1", "en.host.com", cookieExpiry));
         subject.getPublicCredentials().add(
                 new SSOCookieCredential("VALUE_2", "fr.host.com", cookieExpiry));
-        
-        final HttpURLConnection mockConnection =
-                EasyMock.createMock(HttpURLConnection.class);
+
+        final HttpURLConnection mockConnection
+                = EasyMock.createMock(HttpURLConnection.class);
 
         EasyMock.expect(mockConnection.getURL()).andReturn(testURL).atLeastOnce();
 
@@ -304,11 +282,9 @@ public class HttpTransferTest
 
         EasyMock.replay(mockConnection);
 
-        Subject.doAs(subject, new PrivilegedAction<Object>()
-        {
+        Subject.doAs(subject, new PrivilegedAction<Object>() {
             @Override
-            public Object run()
-            {
+            public Object run() {
                 testSubject.setRequestSSOCookie(mockConnection);
                 return null;
             }
@@ -317,21 +293,21 @@ public class HttpTransferTest
         EasyMock.verify(mockConnection);
     }
 
-    private class TestDummy extends HttpTransfer
-    {
-        TestDummy() throws MalformedURLException { 
+    private class TestDummy extends HttpTransfer {
+
+        TestDummy() throws MalformedURLException {
             super(new URL("http://www.fr.host.com/my/path/to/file.txt"), true);
         }
-        
+
         @Override
         public void prepare() {
             throw new UnsupportedOperationException();
         }
-        
+
         @Override
         public void run() {
             prepare();
         }
-        
+
     }
 }
