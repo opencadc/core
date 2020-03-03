@@ -2,19 +2,19 @@ language: java
 dist: trusty
 sudo: required
 jdk:
-  - openjdk7
   - oraclejdk8
-before_script: openssl s_client -CApath /etc/ssl/certs/ -connect plugins.gradle.org:443 </dev/null | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > /tmp/gradle.crt; sudo keytool -importcert -noprompt -file /tmp/gradle.crt -trustcacerts -keystore $JAVA_HOME/jre/lib/security/cacerts -alias root -storepass changeit;
-script: 
-    - for mod in cadc-util cadc-log cadc-test-servlet; do cd $mod; gradle --info build javadoc install || break -1; cd ..; done
-    - if [ "$TRAVIS_JDK_VERSION" == "oraclejdk8" ] ; then cd cadc-quality; gradle --info build || exit -1; cd ..; else echo "Skipping cadc-quality"; fi
 
-    # checkstyle 
-    - if [[ $TRAVIS_JDK_VERSION == 'oraclejdk8' ]]; then
-        for i in cadc-util cadc-log; do
-           cd $i;
-           gradle checkstyleMain || break -1;
-           cd ..;
-        done
-      fi
+before_script: openssl s_client -CApath /etc/ssl/certs/ -connect plugins.gradle.org:443 </dev/null | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > /tmp/gradle.crt; sudo keytool -importcert -noprompt -file /tmp/gradle.crt -trustcacerts -keystore $JAVA_HOME/jre/lib/security/cacerts -alias root -storepass changeit;
+
+script: 
+    - for mod in cadc-util cadc-log cadc-rest cadc-auth-restlet cadc-http-client cadc-keygen cadc-test-servlet; do 
+        cd $mod; gradle --info build javadoc install || break -1; cd ..; 
+      done
+      
+    - cd cadc-quality; gradle --info build install || exit -1; cd ..
+        
+    - for mod in cadc-util cadc-log; do
+        cd $mod; gradle checkstyleMain || break -1; cd ..;
+      done
+
 

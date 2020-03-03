@@ -146,16 +146,22 @@ public class HttpDownload extends HttpTransfer {
     }
 
     /**
-     * Constructor with default user-agent string.
-     *
      * @see HttpDownload (String, URL, OutputStream)
      * @param src URL to read
      * @param dest output stream to write to
+     * @deprecated use HttpGet
      */
+    @Deprecated
     public HttpDownload(URL src, OutputStream dest) {
         this(null, src, dest);
     }
 
+    /**
+     * @param src
+     * @param dest
+     * @deprecated use HttpGet
+     */
+    @Deprecated
     public HttpDownload(URL src, InputStreamWrapper dest) {
         this(null, src, dest);
     }
@@ -229,7 +235,9 @@ public class HttpDownload extends HttpTransfer {
      * @param userAgent user-agent string to report in HTTP headers
      * @param url URL to read
      * @param dest output stream to write to
+     * @deprecated use HttpGet
      */
+    @Deprecated
     public HttpDownload(String userAgent, URL url, OutputStream dest) {
         super(url, true);
         setUserAgent(userAgent);
@@ -239,6 +247,14 @@ public class HttpDownload extends HttpTransfer {
         this.destStream = dest;
     }
 
+    /**
+     * 
+     * @param userAgent
+     * @param url
+     * @param dest
+     * @deprecated use HttpGet
+     */
+    @Deprecated
     public HttpDownload(String userAgent, URL url, InputStreamWrapper dest) {
         super(url, true);
         setUserAgent(userAgent);
@@ -250,10 +266,6 @@ public class HttpDownload extends HttpTransfer {
 
     @Override
     public String toString() {
-        if (localFile == null) {
-            return "HttpDownload[" + remoteURL + "]";
-        }
-
         return "HttpDownload[" + remoteURL + "," + localFile + "]";
     }
 

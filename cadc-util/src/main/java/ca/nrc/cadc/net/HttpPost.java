@@ -284,7 +284,7 @@ public class HttpPost extends HttpTransfer {
             TransientException, IOException, InterruptedException {
         
         if (inputFileContent != null) {
-            HttpPost.this.doPost(conn, inputFileContent);
+            doPost(conn, inputFileContent);
         } else {
             // separate params from uploads
             Map<String,List<Object>> pmap = new TreeMap<String,List<Object>>();
@@ -310,9 +310,10 @@ public class HttpPost extends HttpTransfer {
                 }
             }
             
-            HttpPost.this.doPost(conn, pmap, uploads);
+            doPost(conn, pmap, uploads);
         }
         
+        checkErrors(remoteURL, conn);
         checkRedirects(remoteURL, conn);
     }
     
@@ -421,37 +422,6 @@ public class HttpPost extends HttpTransfer {
         log.debug("POST - send done: " + remoteURL.toString());
     }
     
-    private void checkRedirects(URL url, HttpURLConnection conn)
-        throws AccessControlException, NotAuthenticatedException,
-            ByteLimitExceededException, ExpectationFailedException, 
-            IllegalArgumentException, PreconditionFailedException, 
-            ResourceAlreadyExistsException, ResourceNotFoundException, 
-            TransientException, IOException, InterruptedException {
-        
-        super.checkErrors(url, conn);
-        
-        // check for a redirect
-        String location = conn.getHeaderField("Location");
-        switch (responseCode) {
-            case HttpURLConnection.HTTP_MOVED_TEMP:
-            case HttpURLConnection.HTTP_SEE_OTHER:
-                if (location == null) {
-                    throw new RuntimeException("incomplete server response: status " + responseCode + " with Location: null");
-                }
-                this.redirectURL = new URL(location);
-                log.debug("redirectURL: " + redirectURL);
-                return;
-            case HttpURLConnection.HTTP_MOVED_PERM:
-                if (location == null) {
-                    throw new ResourceNotFoundException("resource " + url + " moved permanently; Location: null");
-                }
-                this.redirectURL = new URL(location);
-                log.debug("redirectURL: " + redirectURL);
-                return;
-            default:
-                // no-op
-        }
-    }
  
     private void writeFilePart(String fieldName, File uploadFile, OutputStream w, Charset utf8)
         throws IOException {

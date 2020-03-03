@@ -811,6 +811,31 @@ public abstract class HttpTransfer implements Runnable {
         }
     }
 
+    protected void checkRedirects(URL url, HttpURLConnection conn) 
+        throws ResourceNotFoundException, IOException {
+        // check for a redirect
+        String location = conn.getHeaderField("Location");
+        switch (responseCode) {
+            case HttpURLConnection.HTTP_MOVED_TEMP:
+            case HttpURLConnection.HTTP_SEE_OTHER:
+                if (location == null) {
+                    throw new RuntimeException("incomplete server response: status " + responseCode + " with Location: null");
+                }
+                this.redirectURL = new URL(location);
+                log.debug("redirectURL: " + redirectURL);
+                return;
+            case HttpURLConnection.HTTP_MOVED_PERM:
+                if (location == null) {
+                    throw new ResourceNotFoundException("resource " + url + " moved permanently; Location: null");
+                }
+                this.redirectURL = new URL(location);
+                log.debug("redirectURL: " + redirectURL);
+                return;
+            default:
+        // no-op
+        }
+    }
+    
     protected void findEventID(HttpURLConnection conn) {
         String eventHeader = null;
         if (transferListener != null) {
