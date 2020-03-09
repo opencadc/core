@@ -644,6 +644,7 @@ public class HttpDownload extends HttpTransfer {
             requestStartTime = System.currentTimeMillis();
 
             checkErrors(url, conn);
+            checkRedirects(url, conn);
             processHeader(conn);
 
             if (headOnly || (!followRedirects && redirectURL != null)) {
