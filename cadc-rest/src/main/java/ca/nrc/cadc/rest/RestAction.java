@@ -265,7 +265,7 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
             handleException(ex, 403, "permission denied -- reason: invalid proxy certficate", false, true);
         } catch (IllegalArgumentException ex) {
             logInfo.setSuccess(true);
-            handleException(ex, 400, ex.getMessage(), false, true);
+            handleException(ex, 400, ex.getMessage(), false, false);
         } catch (ResourceNotFoundException ex) {
             logInfo.setSuccess(true);
             handleException(ex, 404, ex.getMessage(), false, false);
@@ -327,7 +327,7 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
 
             OutputStream os = syncOutput.getOutputStream();
             StringBuilder sb = new StringBuilder();
-            sb.append(message);
+            sb.append(message).append("\n");
 
             if (showExceptions) {
                 sb.append(ex.toString()).append("\n");

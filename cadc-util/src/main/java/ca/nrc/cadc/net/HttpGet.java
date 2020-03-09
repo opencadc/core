@@ -167,6 +167,23 @@ public class HttpGet extends HttpTransfer {
     }
 
     @Override
+    public void run() {
+        if (headOnly) {
+            if (failure == null) {
+                try {
+                    if (responseStream == null) {
+                        prepare();
+                    }
+                } catch (Throwable t) {
+                    this.failure = t;
+                }
+            }
+        } else {
+            super.run();
+        }
+    }
+
+    @Override
     protected void doAction()
             throws AccessControlException, NotAuthenticatedException,
             ByteLimitExceededException, ExpectationFailedException,
