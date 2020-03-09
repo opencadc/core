@@ -121,7 +121,8 @@ public class HttpGetTest {
             dl.setHeadOnly(true);
             dl.run();
             Assert.assertEquals("response code", 200, dl.getResponseCode());
-            Assert.assertTrue("content-length == 0", dest.toByteArray().length == 0);
+            Assert.assertTrue("no bytes read", dest.toByteArray().length == 0); // did not actually read bytes
+            Assert.assertTrue("content-length", dl.getContentLength() > 0L);
             Assert.assertNotNull("content-type", dl.getContentType());
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);

@@ -17,7 +17,7 @@ sourceCompatibility = 1.7
 
 group = 'org.opencadc'
 
-version = '1.2.15'
+version = '1.2.16'
 
 dependencies {
     compile 'commons-fileupload:commons-fileupload:1.4'
