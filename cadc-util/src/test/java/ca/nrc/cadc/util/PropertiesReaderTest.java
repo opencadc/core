@@ -116,7 +116,7 @@ public class PropertiesReaderTest
             // get the properties
             PropertiesReader propReader = new PropertiesReader("test.properties");
             List<String> prop1 = propReader.getPropertyValues("prop1");
-            Assert.assertNull("should have been null", prop1);
+            Assert.assertTrue("should have been empty", prop1.isEmpty());
         }
         finally
         {

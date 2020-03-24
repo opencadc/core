@@ -257,6 +257,7 @@ public class RestServlet extends HttpServlet {
             logInfo.setSubject(subject);
 
             RestAction action = actionClass.newInstance();
+            action.setServletContext(getServletContext());
             action.setAppName(appName);
             action.setComponentID(componentID);
             action.setInitParams(initParams);

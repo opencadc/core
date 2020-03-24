@@ -74,6 +74,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,16 +90,42 @@ import java.util.Set;
 public class MultiValuedProperties {
     private Map<String, List<String>> props;
 
+    
+    
     public MultiValuedProperties() { }
 
+    /**
+     * Get all values for a property.
+     * 
+     * @param name
+     * @return possibly empty list of values
+     */
     public List<String> getProperty(String name) {
         if (props == null) {
-            return null;
+            throw new IllegalStateException("no properties loaded");
         }
         
-        return props.get(name);
+        List<String> ret = props.get(name);
+        if (ret == null) {
+            ret = Collections.emptyList();
+        }
+        return ret;
     }
 
+    /**
+     * Given the key, return the first value of the property.
+     *
+     * @param key The key to lookup.
+     * @return The first property value or null if it is not set or is missing.
+     */
+    public String getFirstPropertyValue(String key) {
+        List<String> values = getProperty(key);
+        if (!values.isEmpty()) {
+            return values.get(0);
+        }
+        return null;
+    }
+    
     public Set<String> keySet() {
         if (props == null) {
             return null;
@@ -154,4 +181,6 @@ public class MultiValuedProperties {
         //Close the buffered reader
         br.close();
     }
+    
+    
 }

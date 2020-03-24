@@ -148,7 +148,9 @@ public class PropertiesReader {
      *
      * @param key The key to lookup.
      * @return The property values or null if it is not set or is missing.
+     * @deprecated use getAllProperties
      */
+    @Deprecated
     public List<String> getPropertyValues(String key) {
         if (key == null) {
             throw new IllegalArgumentException("Provided key is null.");
@@ -167,7 +169,9 @@ public class PropertiesReader {
      *
      * @param key The key to lookup.
      * @return The first property value or null if it is not set or is missing.
+     * @deprecated use getAllProperties
      */
+    @Deprecated
     public String getFirstPropertyValue(String key) {
         List<String> values = getPropertyValues(key);
         if (values != null && values.size() > 0) {
