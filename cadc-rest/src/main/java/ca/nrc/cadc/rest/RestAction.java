@@ -81,10 +81,14 @@ import ca.nrc.cadc.net.TransientException;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.AccessControlException;
 import java.security.PrivilegedExceptionAction;
 import java.security.cert.CertificateException;
 import java.util.Map;
+
+import javax.servlet.ServletContext;
 
 import org.apache.log4j.Logger;
 
@@ -104,6 +108,9 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
     public static final String STATE_READ_ONLY_MSG = "System is in read-only mode for maintainence";
     public static final String STATE_READ_WRITE = "ReadWrite";
 
+    public static final String URLENCODED = "application/x-www-form-urlencoded";
+    public static final String MULTIPART = "multipart/form-data";
+    
     /**
      * Current readable state. A service is readable in READ_WRITE or READ_ONLY mode.
      * Subclasses that implement application logic must check the readable flag and
@@ -151,8 +158,7 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
 
     protected WebServiceLogInfo logInfo;
 
-    public static final String URLENCODED = "application/x-www-form-urlencoded";
-    public static final String MULTIPART = "multipart/form-data";
+    private ServletContext servletContext;
 
     protected RestAction() {
         super();
@@ -185,6 +191,23 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
         } else if (STATE_READ_ONLY.equals(val)) {
             writable = false;
         }
+    }
+
+    // package for RestServlet use
+    void setServletContext(ServletContext servletContext) {
+        this.servletContext = servletContext;
+    }
+    
+    
+    /**
+     * Get URL to a resource in the application context.
+     * 
+     * @param resource
+     * @return URL to the resource
+     * @throws MalformedURLException if resource name cannot be part of URL
+     */
+    protected URL getResource(String resource) throws MalformedURLException {
+        return servletContext.getResource(resource);
     }
 
     /**

@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2020.                            (c) 2020.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,125 +62,81 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
 */
 
-package ca.nrc.cadc.util;
+package ca.nrc.cadc.rest;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Map;
-import java.util.Set;
+import javax.servlet.ServletContext;
+import org.apache.log4j.Logger;
 
 /**
- * A properties file reader that allows a property to have multiple values.
- * The <code>java.util.Properties</code> class is a HashTable so only permits one
- * value.
- *
+ * Special action that is called once when the application is loaded.
+ * 
  * @author pdowler
  */
-public class MultiValuedProperties {
-    private Map<String, List<String>> props;
-
-    
-    
-    public MultiValuedProperties() { }
+public abstract class InitAction {
+    private static final Logger log = Logger.getLogger(InitAction.class);
 
     /**
-     * Get all values for a property.
+     * The application name is a string unique to the application. It
+     * can be used to prefix log messages, JNDI key names, etc. that are common
+     * to components of the application.
+     */
+    protected String appName;
+
+    /**
+     * The componentID is a string unique to a single instance of RestServlet. It
+     * can be used to prefix log messages, JNDI key names, System properties, etc.
+     * It is not a path like one might get from SyncInput.getContextPath() and should
+     * never be parsed or interpreted.
+     */
+    protected String componentID;
+
+    /**
+     * Map of init params from the web deployment descriptor. This map does not include
+     * the init params that configure the http method action classes.
+     */
+    protected Map<String, String> initParams;
+    
+    private ServletContext servletContext;
+    
+    protected InitAction() { 
+    }
+    
+    // package for RestServlet use
+    void setServletContext(ServletContext servletContext) {
+        this.servletContext = servletContext;
+    }
+    
+    public void setAppName(String appName) {
+        this.appName = appName;
+    }
+
+    public void setComponentID(String componentID) {
+        this.componentID = componentID;
+    }
+
+    public void setInitParams(Map<String, String> initParams) {
+        this.initParams = initParams;
+    }
+    
+    /**
+     * Get URL to a resource in the application context.
      * 
-     * @param name
-     * @return possibly empty list of values
+     * @param resource
+     * @return URL to the resource
+     * @throws MalformedURLException if resource name cannot be part of URL
      */
-    public List<String> getProperty(String name) {
-        if (props == null) {
-            throw new IllegalStateException("no properties loaded");
-        }
-        
-        List<String> ret = props.get(name);
-        if (ret == null) {
-            ret = Collections.emptyList();
-        }
-        return ret;
+    protected URL getResource(String resource) throws MalformedURLException {
+        return servletContext.getResource(resource);
     }
-
+    
     /**
-     * Given the key, return the first value of the property.
-     *
-     * @param key The key to lookup.
-     * @return The first property value or null if it is not set or is missing.
+     * Initialisation implemented by subclass. This method gets called once during startup/deployment.
      */
-    public String getFirstPropertyValue(String key) {
-        List<String> values = getProperty(key);
-        if (!values.isEmpty()) {
-            return values.get(0);
-        }
-        return null;
-    }
-    
-    public Set<String> keySet() {
-        if (props == null) {
-            return null;
-        }
-        
-        return props.keySet();
-    }
-
-    public void load(InputStream istream)
-        throws IOException {
-        this.props = new HashMap<String, List<String>>();
-
-        String strLine;
-        String key;
-        String value;
-        char firstChar;
-        List<String> valueList;
-        int idxColon;
-        int lineLength;
-
-        BufferedReader br = new BufferedReader(new InputStreamReader(istream));
-        //Read File Line By Line
-        while ((strLine = br.readLine()) != null) {
-            strLine = strLine.trim();
-            lineLength = strLine.length();
-            if (lineLength == 0) {
-                continue;
-            }
-
-            firstChar = strLine.charAt(0);
-            if (firstChar == '#' || firstChar == '!') {
-                //comment line {
-                continue;
-            }
-
-            idxColon = strLine.indexOf('=');
-            if (idxColon == 0) {
-                // "=foo"
-                continue;
-            }
-
-            key = strLine.substring(0, idxColon).trim();
-            value = strLine.substring(idxColon + 1).trim();
-
-            valueList = props.get(key);
-            if (valueList == null) {
-                // the key is not in parameters yet
-                valueList = new ArrayList<String>();
-                props.put(key, valueList);
-            }
-            valueList.add(value);
-        }
-        //Close the buffered reader
-        br.close();
-    }
-    
-    
+    public abstract void doInit();
 }

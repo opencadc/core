@@ -55,12 +55,12 @@ public class PropertiesReader {
 
     private static final Logger log = Logger.getLogger(PropertiesReader.class);
 
-    private static final String DEFAULT_CONFIG_DIR = System.getProperty("user.home") + "/config/";
+    private static final String DEFAULT_CONFIG_DIR = System.getProperty("user.home") + "/config";
     public static final String CONFIG_DIR_SYSTEM_PROPERTY = PropertiesReader.class.getName() + ".dir";
 
     // Make final to ensure it is only set once and not later to null.
     private final File propertiesFile;
-    private String filepath;
+    private String cachedPropsKey;
 
     // Holder for the last known readable set of properties
     private static Map<String, MultiValuedProperties> cachedProperties = new ConcurrentHashMap<>();
@@ -86,17 +86,13 @@ public class PropertiesReader {
             configDir = System.getProperty(CONFIG_DIR_SYSTEM_PROPERTY);
         }
 
-        log.debug("Reading from config dir: " + configDir);
-
-        if (!configDir.endsWith("/")) {
-            configDir = configDir + "/";
-        }
-
-        this.filepath = configDir + filename;
-        propertiesFile = new File(filepath);
-
+        
+        propertiesFile = new File(new File(configDir), filename);
+        cachedPropsKey = propertiesFile.getAbsolutePath();
+        log.debug("properties file: " + propertiesFile);
+        
         if (!canRead()) {
-            log.warn("File at " + filepath + " does not exist or is unusable.");
+            log.warn("File at " + propertiesFile + " does not exist or is unusable.");
         }
     }
 
@@ -127,17 +123,18 @@ public class PropertiesReader {
         }
 
         if (properties == null) {
-            log.warn("No file resource available at " + filepath);
-            MultiValuedProperties cachedVersion = cachedProperties.get(filepath);
+            log.warn("No file resource available at " + cachedPropsKey);
+            MultiValuedProperties cachedVersion = cachedProperties.get(cachedPropsKey);
             if (cachedVersion == null) {
-                log.warn("No cached resource available at " + filepath);
+                log.warn("No cached resource available at " + cachedPropsKey);
                 return null;
             }
 
-            log.warn("Properties missing at " + filepath + " Using earlier version.");
+            log.warn("Properties missing at " + cachedPropsKey + " Using earlier version.");
             properties = cachedVersion;
         } else {
-            cachedProperties.put(filepath, properties);
+            cachedProperties.put(cachedPropsKey, properties);
+            log.debug("stored content of " + propertiesFile + " in cache");
         }
 
         return properties;
@@ -148,7 +145,9 @@ public class PropertiesReader {
      *
      * @param key The key to lookup.
      * @return The property values or null if it is not set or is missing.
+     * @deprecated use getAllProperties
      */
+    @Deprecated
     public List<String> getPropertyValues(String key) {
         if (key == null) {
             throw new IllegalArgumentException("Provided key is null.");
@@ -167,7 +166,9 @@ public class PropertiesReader {
      *
      * @param key The key to lookup.
      * @return The first property value or null if it is not set or is missing.
+     * @deprecated use getAllProperties
      */
+    @Deprecated
     public String getFirstPropertyValue(String key) {
         List<String> values = getPropertyValues(key);
         if (values != null && values.size() > 0) {

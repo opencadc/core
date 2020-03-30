@@ -47,17 +47,21 @@ public class PropertiesReaderTest
 
     static
     {
-        Log4jInit.setLevel("ca.nrc.cadc.util", org.apache.log4j.Level.INFO);
+        Log4jInit.setLevel("ca.nrc.cadc.util", org.apache.log4j.Level.DEBUG);
+    }
+    
+    String getTestConfigDir() { 
+        return System.getProperty("user.dir") + "/build/tmp";
     }
 
     @Test
     public void testResilientProperties() throws Exception
     {
 
-        File propFile = new File("test.properties");
+        File propFile = new File(getTestConfigDir(), "testResilientProperties.properties");
         try
         {
-            System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, "./");
+            System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, getTestConfigDir());
             if (!propFile.exists())
                 propFile.createNewFile();
 
@@ -66,7 +70,7 @@ public class PropertiesReaderTest
             out.close();
 
             // get the properties
-            PropertiesReader propReader = new PropertiesReader("test.properties");
+            PropertiesReader propReader = new PropertiesReader(propFile.getName());
             List<String> prop1 = propReader.getPropertyValues("prop1");
             Assert.assertEquals("missing prop 1, value 1", "value1",
                                 prop1.get(0));
@@ -95,7 +99,7 @@ public class PropertiesReaderTest
         }
         finally
         {
-            System.setProperty(PropertiesReader.class.getName() + ".dir", "");
+            System.clearProperty(PropertiesReader.class.getName() + ".dir");
             // cleanup
             if (propFile.exists())
                 propFile.delete();
@@ -106,21 +110,21 @@ public class PropertiesReaderTest
     public void testAllowEmptyPropertiesFile() throws Exception
     {
 
-        File propFile = new File("test.properties");
+        File propFile = new File(getTestConfigDir(), "testAllowEmptyPropertiesFile.properties");
         try
         {
-            System.setProperty(PropertiesReader.class.getName() + ".dir", "./");
+            System.setProperty(PropertiesReader.class.getName() + ".dir", getTestConfigDir());
             if (!propFile.exists())
                 propFile.createNewFile();
 
             // get the properties
-            PropertiesReader propReader = new PropertiesReader("test.properties");
+            PropertiesReader propReader = new PropertiesReader(propFile.getName());
             List<String> prop1 = propReader.getPropertyValues("prop1");
-            Assert.assertNull("should have been null", prop1);
+            Assert.assertTrue("should have been empty", prop1.isEmpty());
         }
         finally
         {
-            System.setProperty(PropertiesReader.class.getName() + ".dir", "");
+            System.clearProperty(PropertiesReader.class.getName() + ".dir");
             // cleanup
             if (propFile.exists())
                 propFile.delete();
@@ -135,15 +139,15 @@ public class PropertiesReaderTest
 
     @Test
     public void testCanRead() throws Exception {
-        final File currDir = new File("./");
-        final File propFile = File.createTempFile("testCanRead", ".tmp", currDir);
+        final File tmpDir = new File(getTestConfigDir());
+        final File propFile = File.createTempFile("testCanRead", ".tmp", tmpDir);
 
         try {
-            System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, currDir.getPath());
+            System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, getTestConfigDir());
             final PropertiesReader testSubject = new PropertiesReader(propFile.getName());
             Assert.assertTrue("Should be able to read.", testSubject.canRead());
         } finally {
-            System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, "");
+            System.clearProperty(PropertiesReader.class.getName() + ".dir");
             if (propFile.exists()) {
                 propFile.delete();
             }
