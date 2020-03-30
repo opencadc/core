@@ -108,6 +108,7 @@ public class RestServlet extends HttpServlet {
     private static final List<String> CITEMS = new ArrayList<String>();
     
     static {
+        CITEMS.add("init");
         CITEMS.add("head");
         CITEMS.add("get");
         CITEMS.add("post");
@@ -134,6 +135,7 @@ public class RestServlet extends HttpServlet {
         this.putAction = loadAction(config, "put");
         this.deleteAction = loadAction(config, "delete");
         this.headAction = loadAction(config, "head");
+        
         this.appName = config.getServletContext().getServletContextName();
         this.componentID = appName  + "." + config.getServletName();
         String augment = config.getInitParameter("augmentSubject");
@@ -147,13 +149,29 @@ public class RestServlet extends HttpServlet {
                 initParams.put(name, config.getInitParameter(name));
             }
         }
+        
+        try {
+            Class<InitAction> initAction = loadAction(config, "init");
+            if (initAction != null) {
+                InitAction action = initAction.newInstance();
+                action.setServletContext(getServletContext());
+                action.setServletContext(getServletContext());
+                action.setAppName(appName);
+                action.setComponentID(componentID);
+                action.setInitParams(initParams);
+                action.doInit();
+            }
+        } catch (Exception ex) {
+            log.error("init failed", ex);
+            throw new ServletException("init failed", ex);
+        }
     }
 
-    private Class<RestAction> loadAction(ServletConfig config, String method) {
+    private <T> Class<T> loadAction(ServletConfig config, String method) {
         String cname = config.getInitParameter(method);
         if (cname != null) {
             try {
-                Class<RestAction> ret = (Class<RestAction>) Class.forName(cname);
+                Class<T> ret = (Class<T>) Class.forName(cname);
                 log.info(method + ": " + cname + " [loaded]");
                 return ret;
             } catch (Exception ex) {

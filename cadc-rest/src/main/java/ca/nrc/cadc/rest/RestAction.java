@@ -200,7 +200,7 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
     
     
     /**
-     * Get URl to a resource in the application context.
+     * Get URL to a resource in the application context.
      * 
      * @param resource
      * @return URL to the resource
