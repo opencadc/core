@@ -1,4 +1,4 @@
-# cadc-test package 
+# cadc-rest package 
 
 The cadc-rest package implements a very simple servlet-action pattern. It is intended to help 
 implement simple web service endpoints by separating the service-specific code from the Servlet
