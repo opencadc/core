@@ -103,7 +103,6 @@ public class HttpUpload extends HttpTransfer {
     private InputStream istream;
     private OutputStreamWrapper wrapper;
     private FileContent fileContent;
-    private Long srcContentLength;
     
     public HttpUpload(File src, URL dest) {
         super(dest, false);
@@ -111,7 +110,7 @@ public class HttpUpload extends HttpTransfer {
         if (srcFile == null) {
             throw new IllegalArgumentException("source File cannot be null");
         }
-        this.srcContentLength = srcFile.length();
+        setRequestProperty(CONTENT_LENGTH, Long.toString(srcFile.length()));
     }
 
     public HttpUpload(FileContent src, URL dest) {
@@ -122,7 +121,7 @@ public class HttpUpload extends HttpTransfer {
         }
         byte[] b = fileContent.getBytes();
         this.istream = new ByteArrayInputStream(b);
-        this.srcContentLength = (long) b.length;
+        setRequestProperty(CONTENT_LENGTH, Long.toString(b.length));
     }
     
     public HttpUpload(InputStream src, URL dest) {
@@ -311,36 +310,6 @@ public class HttpUpload extends HttpTransfer {
             TransientException, IOException, InterruptedException {
         OutputStream ostream = null;
 
-        if (srcContentLength != null) {
-            try {
-                // Try using the setFixedLengthStreamingMode method that takes a long as a parameter.
-                // (Only available in Java 7 and up)
-                Method longContentLengthMethod = conn.getClass().getMethod("setFixedLengthStreamingMode", long.class);
-                longContentLengthMethod.invoke(conn, new Long(srcContentLength));
-                log.debug("invoked setFixedLengthStreamingMode(long)");
-            } catch (Exception noCanDo) {
-                // Check if the file size is greater than Integer.MAX_VALUE
-                if (srcContentLength > Integer.MAX_VALUE) {
-                    // Cannot set the header length in the standard fashion, so
-                    // set it to chunked streaming mode and set a custom header
-                    // for use by servers that recognize this attribute
-                    conn.setChunkedStreamingMode(bufferSize);
-                    conn.setRequestProperty(CADC_CONTENT_LENGTH_HEADER, Long.toString(srcContentLength));
-                    log.debug("invoked setChunkedStreamingMode");
-                } else {
-                    // Set the file size with integer representation
-                    conn.setFixedLengthStreamingMode((int) srcContentLength.intValue());
-                    log.debug("invoked setFixedLengthStreamingMode(int)");
-                }
-            }
-        } else {
-            // note: settig the bufferSize to be larger than 8k without a content-length
-            // seems to cause troble with apache+ajp+tomcat6 in cases where the actual
-            // payload is bigger than 8k but smaller than the buffer: avoid it for now (pdd)
-            conn.setChunkedStreamingMode(8192);
-            log.debug("invoked setChunkedStreamingMode");
-        }
-
         setRequestHeaders(conn);
 
         FileInputStream fin = null;
@@ -367,6 +336,8 @@ public class HttpUpload extends HttpTransfer {
             }
 
             fireEvent(TransferEvent.TRANSFERING);
+            
+            log.warn("before ioLoop: content-length = " + conn.getRequestProperty(CONTENT_LENGTH));
 
             if (in != null) {
                 ioLoop(in, ostream, 2 * this.bufferSize, 0);

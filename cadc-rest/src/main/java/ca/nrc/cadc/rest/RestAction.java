@@ -225,8 +225,8 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
      *
      * <pre>
      * java.lang.IllegalArgumentException : 400
+     * java.security.cert.CertificateException : 403 -- should be 401 with a suitable challenge
      * java.security.AccessControlException : 403
-     * java.security.cert.CertificateException : 403
      * ca.nrc.cadc.net.ResourceNotFoundException : 404
      * ca.nrc.cadc.net.ResourceAlreadyExistsException : 409
      * ca.nrc.cadc.net.PreconditionFailedException (and subclasses) : 412
@@ -297,7 +297,6 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
             handleException(ex, 409, ex.getMessage(), false, false);
         } catch (PreconditionFailedException ex) {
             logInfo.setSuccess(true);
-            //logInfo.setMessage(ex.getClass().getSimpleName() + ": " + ex.getMessage());
             handleException(ex, 412, ex.getMessage(), false, false);
         } catch (ByteLimitExceededException ex) {
             logInfo.setSuccess(true);
