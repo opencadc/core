@@ -304,6 +304,9 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
         } catch (ExpectationFailedException ex) {
             logInfo.setSuccess(true);
             handleException(ex, 417, ex.getMessage(), false, false);
+        }  catch (UnsupportedOperationException ex) {
+            logInfo.setSuccess(true);
+            handleException(ex, 400, ex.getMessage(), false, false);
         } catch (TransientException ex) {
             logInfo.setSuccess(true);
             syncOutput.setHeader(HttpTransfer.SERVICE_RETRY, ex.getRetryDelay());
