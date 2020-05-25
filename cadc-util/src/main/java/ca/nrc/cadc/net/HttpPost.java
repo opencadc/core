@@ -326,8 +326,8 @@ public class HttpPost extends HttpTransfer {
         
         byte[] buf = input.getBytes();
         String len = Long.toString(buf.length);
-        setRequestProperty("Content-Length", len);
-        setRequestProperty("Content-Type", input.getContentType());
+        setRequestProperty(CONTENT_LENGTH, len);
+        setRequestProperty(CONTENT_TYPE, input.getContentType());
         
         setRequestHeaders(conn);
         
@@ -363,7 +363,7 @@ public class HttpPost extends HttpTransfer {
         }
         
         if (ctype != null) {
-            conn.setRequestProperty("Content-Type", ctype);
+            conn.setRequestProperty(CONTENT_TYPE, ctype);
         }
         log.debug("POST Content-Type: " + ctype);
         
@@ -379,7 +379,7 @@ public class HttpPost extends HttpTransfer {
             for (Object v : pe.getValue()) {
                 if (multi) {
                     sb.append(LINE_FEED).append("--" + MULTIPART_BOUNDARY);
-                    sb.append(LINE_FEED).append("Content-Disposition: form-data; name=\"" + pe.getKey() + "\"");
+                    sb.append(LINE_FEED).append("Content-Disposition: form-data; name=\"").append(pe.getKey()).append("\"");
                     sb.append(LINE_FEED);
                     sb.append(LINE_FEED).append(v.toString());
                 } else {
@@ -425,8 +425,8 @@ public class HttpPost extends HttpTransfer {
         throws IOException {
         StringBuilder sb = new StringBuilder();
         sb.append(LINE_FEED).append("--" + MULTIPART_BOUNDARY);
-        sb.append(LINE_FEED).append("Content-Disposition: form-data; name=\"" + fieldName + "\";"
-            + " filename=\"" + uploadFile.getName() + "\"");
+        sb.append(LINE_FEED).append("Content-Disposition: form-data; name=\"").append(fieldName)
+                .append("\";").append(" filename=\"").append(uploadFile.getName()).append("\"");
         sb.append(LINE_FEED);
         sb.append(LINE_FEED);
         
@@ -456,14 +456,14 @@ public class HttpPost extends HttpTransfer {
         throws IOException {
         StringBuilder sb = new StringBuilder();
         log.debug("writeFilePart: " + uploadContent.getContentType());
-        sb.append(LINE_FEED).append("--" + MULTIPART_BOUNDARY);
+        sb.append(LINE_FEED).append("--").append(MULTIPART_BOUNDARY);
         // 'filename' for data entry is needed so this data is treated as
         // stream input by the accepting web service
-        sb.append(LINE_FEED).append("Content-Disposition: form-data; name=\"" + fieldName + "\";"
-            + " filename=\"dummyFile\"");
+        sb.append(LINE_FEED).append("Content-Disposition: form-data; name=\"").append(fieldName).append("\";")
+                .append(" filename=\"dummyFile\"");
 
         if (uploadContent.getContentType() != null) {
-            sb.append(LINE_FEED).append("Content-Type: " + uploadContent.getContentType());
+            sb.append(LINE_FEED).append(CONTENT_TYPE).append(": ").append(uploadContent.getContentType());
         }
         
         sb.append(LINE_FEED);
