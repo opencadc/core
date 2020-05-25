@@ -326,10 +326,8 @@ public class HttpPost extends HttpTransfer {
         
         byte[] buf = input.getBytes();
         String len = Long.toString(buf.length);
-        conn.setRequestProperty("Content-Length", len);
-        log.debug("POST Content-Length: " + len);
-        conn.setRequestProperty("Content-Type", input.getContentType());
-        log.debug("POST Content-Type: " + input.getContentType());
+        setRequestProperty("Content-Length", len);
+        setRequestProperty("Content-Type", input.getContentType());
         
         setRequestHeaders(conn);
         

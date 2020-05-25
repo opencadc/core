@@ -1110,11 +1110,32 @@ public abstract class HttpTransfer implements Runnable {
 
     protected void setRequestHeaders(HttpURLConnection conn) {
         log.debug("custom request properties: " + requestProperties.size());
+        boolean doChunked = false;
+        if (conn.getDoOutput()) {
+            doChunked = true;
+        }
         for (HttpRequestProperty rp : requestProperties) {
             String p = rp.getProperty();
             String v = rp.getValue();
             log.debug("set request property: " + p + "=" + v);
-            conn.setRequestProperty(p, v);
+            if (CONTENT_LENGTH.equalsIgnoreCase(p)) {
+                try {
+                    long len = Long.parseLong(v);
+                    conn.setFixedLengthStreamingMode(len);
+                    doChunked = false;
+                } catch (NumberFormatException ex) {
+                    throw new IllegalArgumentException("invalid " + CONTENT_LENGTH + " header value: " + v);
+                }
+            } else {
+                // default to string value
+                conn.setRequestProperty(p, v);
+            }
+        }
+        if (doChunked) {
+            // note: setting the bufferSize to be larger than 8k without a content-length
+            // seems to cause trouble with apache+ajp+tomcat in cases where the actual
+            // payload is bigger than 8k but smaller than the buffer: avoid it for now (pdd)
+            conn.setChunkedStreamingMode(8192);
         }
         conn.setRequestProperty("User-Agent", userAgent);
     }
