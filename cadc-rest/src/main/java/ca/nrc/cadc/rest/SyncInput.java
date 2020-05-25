@@ -112,6 +112,14 @@ public class SyncInput {
         throws IOException {
         this.request = request;
         this.inlineContentHandler = handler;
+        if (log.isDebugEnabled()) {
+            Enumeration<String> e = request.getHeaderNames();
+            while (e.hasMoreElements()) {
+                String k = e.nextElement();
+                String v = request.getHeader(k);
+                log.debug("request header: " + k + " = " + v);
+            }
+        }
     }
 
     /**
