@@ -73,6 +73,7 @@ import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.auth.SSLUtil;
 import ca.nrc.cadc.auth.SSOCookieCredential;
 import ca.nrc.cadc.auth.SSOCookieManager;
+import ca.nrc.cadc.io.ByteCountInputStream;
 import ca.nrc.cadc.io.ByteLimitExceededException;
 import ca.nrc.cadc.net.event.ProgressListener;
 import ca.nrc.cadc.net.event.TransferEvent;
@@ -238,7 +239,7 @@ public abstract class HttpTransfer implements Runnable {
     private Date lastModified;
     
     // error capture
-    protected int maxReadFully = 32 * 1024; // read up to 32k text/* responses into memory
+    protected int maxReadFully = 32 * 1024; // read up to 32k text responses into memory
     
     // output for run()
     protected OutputStream responseDestination;
@@ -761,14 +762,9 @@ public abstract class HttpTransfer implements Runnable {
         if (responseCode < 400) {
             return;
         }
-        
-        String responseBody = null;
         log.debug("error: " + contentType + " " + contentLength);
-        if (contentType != null && readFullyType(contentType)
-                && contentLength > 0 && contentLength <= maxReadFully) {
-            responseBody = readResponseBody(conn);
-            log.debug("error: " + contentType + " " + contentLength + " response.length: " + responseBody.length());
-        }
+        String responseBody = readResponseBody(conn);
+        log.debug("error: " + contentType + " " + contentLength + " response.length: " + responseBody.length());
         
         checkTransient(responseCode, responseBody, conn);
         
@@ -1140,16 +1136,6 @@ public abstract class HttpTransfer implements Runnable {
         conn.setRequestProperty("User-Agent", userAgent);
     }
     
-    private boolean readFullyType(String type) {
-        if (type.startsWith("text/")) {
-            return true;
-        }
-        if (type.startsWith("application/x-votable+xml")) {
-            return true;
-        }
-        return false;
-    }
-    
     private void readResponse(InputStream istream) throws IOException, InterruptedException {
         log.debug("readResponse - START");
         
@@ -1195,8 +1181,13 @@ public abstract class HttpTransfer implements Runnable {
     
     protected String readResponseBody(InputStream istream)
             throws IOException, InterruptedException {
+        ByteCountInputStream bcis = new ByteCountInputStream(istream, maxReadFully);
         try (ByteArrayOutputStream byteArrayOstream = new ByteArrayOutputStream()) {
-            ioLoop(istream, byteArrayOstream, bufferSize, 0);
+            try {
+                ioLoop(bcis, byteArrayOstream, bufferSize, 0);
+            } catch (ByteLimitExceededException truncated) {
+                log.debug("error response body truncated", truncated);
+            }
             byteArrayOstream.flush();
             return new String(byteArrayOstream.toByteArray(), "UTF-8");
         }
