@@ -84,6 +84,7 @@ import ca.nrc.cadc.util.HexUtil;
 import ca.nrc.cadc.util.StringUtil;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -763,9 +764,9 @@ public abstract class HttpTransfer implements Runnable {
             return;
         }
         log.debug("error: " + contentType + " " + contentLength);
-        String responseBody = readResponseBody(conn);
+        String responseBody = readErrorFromResponseBody(conn);
         log.debug("error: " + contentType + " " + contentLength + " response.length: " + responseBody.length());
-        
+
         checkTransient(responseCode, responseBody, conn);
         
         switch (responseCode) {
@@ -1169,14 +1170,18 @@ public abstract class HttpTransfer implements Runnable {
     }
     
     // for reading text content into a String, eg. after an error for exception message
-    private String readResponseBody(HttpURLConnection conn)
+    private String readErrorFromResponseBody(HttpURLConnection conn)
         throws IOException, InterruptedException {
-        
-        InputStream istream = conn.getErrorStream();
-        if (istream == null) {
-            istream = conn.getInputStream();
+        try {
+            InputStream istream = conn.getErrorStream();
+            if (istream == null) {
+                istream = conn.getInputStream();
+            }
+            return readResponseBody(istream);
+        } catch (IOException ignore) {
+            log.debug("no response body");
         }
-        return readResponseBody(istream);
+        return "";
     }
     
     protected String readResponseBody(InputStream istream)
