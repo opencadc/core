@@ -129,6 +129,23 @@ public class HttpGetTest {
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
+    
+    @Test
+    public void testHeadNotFound() throws Exception {
+        log.debug("TEST: testHeadNotFound");
+        URL src = notFoundURL;
+        ByteArrayOutputStream dest = new ByteArrayOutputStream();
+        try {
+            HttpGet dl = new HttpGet(src, dest);
+            dl.setHeadOnly(true);
+            dl.run();
+            Assert.assertEquals("response code", 404, dl.getResponseCode());
+            Assert.assertTrue("no bytes read", dest.toByteArray().length == 0); // did not actually read bytes
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
 
     @Test
     public void testPrepareInputStream() throws Exception {
@@ -307,12 +324,11 @@ public class HttpGetTest {
             ByteArrayOutputStream dest = new ByteArrayOutputStream(8192);
             HttpGet dl = new HttpGet(src, dest);
             dl.run();
-            Throwable t = dl.getThrowable();
             Assert.assertEquals("response code", 403, dl.getResponseCode());
+            Throwable t = dl.getThrowable();
+            log.debug("found exception: " + t);
             Assert.assertNotNull(t);
             Assert.assertTrue("throwable should be AccessControlException", t instanceof AccessControlException);
-            log.debug("found expected exception: " + t.toString());
-            //Assert.assertTrue(t.getMessage().startsWith("permission denied"));
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
