@@ -72,14 +72,15 @@ import java.io.OutputStream;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingQueue;
-
 import org.apache.log4j.Logger;
 
 /**
  * This class performs two-threaded IO through a queue of bytes.
  * 
  * @author majorb
+ * @deprecated 
  */
+@Deprecated
 public class ThreadedIO {
     
     private static Logger log = Logger.getLogger(ThreadedIO.class);
