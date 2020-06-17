@@ -121,6 +121,7 @@ public class MultiBufferIO {
      * 
      * @param input source/producer
      * @param output sink/consumer
+     * @throws InterruptedException if the main thread gets an interrupt
      * @throws ReadException if input.read() fails
      * @throws WriteException if output.write() fails
      */
@@ -154,20 +155,24 @@ public class MultiBufferIO {
         
         try {
             while (w.fail == null) {
-                log.debug("reader: wait for buffer...");
+                // check/clear interrupted flag and throw if necessary
+                if (Thread.interrupted()) {
+                    throw new InterruptedException();
+                }
+                //log.debug("reader: wait for buffer...");
                 Item buf = rq.take();
                 if (buf.num == -1) {
                     return null; // done
                 }
-                log.debug("reader: read from stream...");
+                //log.debug("reader: read from stream...");
                 buf.num = istream.read(buf.buffer);
-                log.debug("reader: queue buffer: " + buf.num);
+                //log.debug("reader: queue buffer: " + buf.num);
                 wq.put(buf);
                 if (buf.num == -1) {
                     return null; // done
                 }
             }
-            log.debug("reader: detected writer.fail: " + w.fail);
+            //log.debug("reader: detected writer.fail: " + w.fail);
             return null;
         } catch (Exception ex) {
             Item term = new Item(0);
@@ -204,15 +209,19 @@ public class MultiBufferIO {
            
             try {
                 while (true) {
-                    log.debug("writer: wait for buffer...");
+                    // check/clear interrupted flag and throw if necessary
+                    if (Thread.interrupted()) {
+                        throw new InterruptedException();
+                    }
+                    //log.debug("writer: wait for buffer...");
                     Item buf = wq.take();
-                    log.debug("writer: got buffer " + buf.num);
+                    //log.debug("writer: got buffer " + buf.num);
                     if (buf.num == -1) {
                         return; // done
                     }
                     //log.debug("writer: write to stream...");
                     ostream.write(buf.buffer, 0, buf.num);
-                    log.debug("writer: recycle buffer...");
+                    //log.debug("writer: recycle buffer...");
                     rq.put(buf);
                 }
             } catch (Exception ex) {
