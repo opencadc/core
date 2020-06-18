@@ -69,176 +69,39 @@ package ca.nrc.cadc.io;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.concurrent.Callable;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.LinkedBlockingQueue;
-
-import org.apache.log4j.Logger;
 
 /**
  * This class performs two-threaded IO through a queue of bytes.
  * 
  * @author majorb
+ * @deprecated use MultiBufferIO
  */
-public class ThreadedIO {
+@Deprecated
+public class ThreadedIO extends MultiBufferIO {
     
-    private static Logger log = Logger.getLogger(ThreadedIO.class);
-    
-    private static int DEFAULT_BUFFER_SIZE_BYTES = 2 ^ 13; // = 8192
-    private static int DEFAULT_MAX_QUEUE_SIZE_BUFFERS = 8; // = 65 536
-    
-    private int bufferSize = DEFAULT_BUFFER_SIZE_BYTES;
-    private int maxQueueSize = DEFAULT_MAX_QUEUE_SIZE_BUFFERS;
-    
-    /**
-     * Default no-arg constructor.
-     */
     public ThreadedIO() {
+        super();
     }
     
     /**
      * Override the default buffer size and max queue size.
-     * @param bufferSize The size of each byte[] in the queue (bytes)
-     * @param maxQueueSize The max size of the queue
+     * @param bufferSize bufferSize in MultiBufferIO
+     * @param maxQueueSize numBuffers in MultiBufferIO
      */
     public ThreadedIO(int bufferSize, int maxQueueSize) {
-        this.bufferSize = bufferSize;
-        this.maxQueueSize = maxQueueSize;
+        super(maxQueueSize, bufferSize);
     }
 
     /**
-     * Stream between the input stream and output stream until all bytes
-     * are read or until a read or write exception occurs.
+     * Calls MultiBufferIO.copy(InputStream, OutputStream).
+     * 
      * @param out The byte destination.
      * @param in The byte source.
+     * @throws InterruptedException if the main thread gets an interrupt
      * @throws ReadException If a failure occurred reading from in.
      * @throws WriteException If a failure occurred writing to out.
      */
-    public void ioLoop(OutputStream out, InputStream in) throws ReadException, WriteException {
-
-        Throwable producerThrowable = null;
-        Throwable consumerThrowable = null;
-        
-        try {
-            LinkedBlockingQueue<QueueItem> queue = new LinkedBlockingQueue<QueueItem>(maxQueueSize);
-                
-            QueueProducer producer = new QueueProducer(queue, in);
-            QueueConsumer consumer = new QueueConsumer(queue, out);
-            FutureTask<Throwable> producerTask = new FutureTask<Throwable>(producer);
-            FutureTask<Throwable> consumerTask = new FutureTask<Throwable>(consumer);
-            Thread producerThread = new Thread(producerTask);
-            Thread consumerThread = new Thread(consumerTask);
-            producer.consumer = consumerThread;
-            consumer.producer = producerThread;
-            
-            consumerThread.start();
-            producerThread.start();
-            
-            producerThrowable = producerTask.get();
-            consumerThrowable = consumerTask.get();
-                
-        } catch (Throwable t) {
-            String message = "i/o loop failed";
-            log.error(message, t);
-            throw new IllegalStateException(message, t);
-        }
-        
-        if (producerThrowable != null) {
-            String message = "failed reading from input stream";
-            throw new ReadException(message, producerThrowable);
-        }
-        if (consumerThrowable != null) {
-            String message = "failed writing to output stream"; 
-            throw new WriteException(message, consumerThrowable);
-        }
-        
+    public void ioLoop(OutputStream out, InputStream in) throws InterruptedException, ReadException, WriteException {
+        copy(in, out);
     }
-    
-    private class QueueProducer implements Callable<Throwable> {
-        
-        LinkedBlockingQueue<QueueItem> queue;
-        InputStream in;
-        Thread consumer;
-        
-        QueueProducer(LinkedBlockingQueue<QueueItem> queue, InputStream in) {
-            this.queue = queue;
-            this.in = in;
-        }
-
-        @Override
-        public Throwable call() throws Exception {
-            try {
-                QueueItem next;
-                byte[] buffer = new byte[bufferSize];
-                int bytesRead = in.read(buffer);
-                while (bytesRead > 0) {        
-                    next = new QueueItem(buffer, bytesRead);
-                    queue.put(next);
-                    buffer = new byte[bufferSize];
-                    bytesRead = in.read(buffer);
-                    log.debug("read " + bytesRead + " bytes: " + new String(buffer));
-                }
-                log.debug("sending stop control to consumer");
-                next = new QueueItem(null, 0);
-                next.stop = true;
-                queue.put(next);
-                return null;
-            } catch (InterruptedException e) {
-                log.debug("Producer interrupted", e);
-                return null;
-            } catch (Throwable t) {
-                consumer.interrupt();
-                return t;
-            }
-        }
-    }
-    
-    private class QueueConsumer implements Callable<Throwable> {
-        
-        LinkedBlockingQueue<QueueItem> queue;
-        OutputStream out;
-        Thread producer;
-        
-        QueueConsumer(LinkedBlockingQueue<QueueItem> queue, OutputStream out) {
-            this.queue = queue;
-            this.out = out;
-        }
-
-        @Override
-        public Throwable call() throws Exception {
-            QueueItem next;
-            try {
-                next = queue.take();
-                while (!next.stop) {
-                    out.write(next.data, 0, next.length);
-                    log.debug("wrote " + next.length + " bytes: " + new String(next.data));
-                    next = queue.take();
-                    if (log.isDebugEnabled() && next.stop) {
-                        log.debug("received stop control from producer");
-                    }
-                }
-                out.flush();
-                return null;
-            } catch (InterruptedException e) {
-                log.debug("consumer interrupted", e);
-                return null;
-            } catch (Throwable t) {
-                producer.interrupt();
-                return t;
-            }
-        }
-    } 
-    
-    private class QueueItem {
-        byte[] data;
-        int length;
-        boolean stop = false;
-        
-        QueueItem(byte[] data, int length) {
-            this.data = data;
-            this.length = length;
-        }
-
-    }
-    
 }
