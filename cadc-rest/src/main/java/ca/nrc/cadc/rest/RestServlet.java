@@ -69,15 +69,22 @@
 
 package ca.nrc.cadc.rest;
 
+import ca.nrc.cadc.auth.AuthMethod;
 import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.log.ServletLogInfo;
 import ca.nrc.cadc.log.WebServiceLogInfo;
+import ca.nrc.cadc.net.ResourceNotFoundException;
+import ca.nrc.cadc.reg.Standards;
+import ca.nrc.cadc.reg.client.LocalAuthority;
+import ca.nrc.cadc.reg.client.RegistryClient;
 import ca.nrc.cadc.util.Enumerator;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.URI;
+import java.net.URL;
 import java.security.AccessControlException;
 import java.security.PrivilegedActionException;
 import java.util.ArrayList;
@@ -293,6 +300,7 @@ public class RestServlet extends HttpServlet {
             log.info(logInfo.start());
             
             out = new SyncOutput(response);
+            setAuthenticateHeader(out);
             action.setSyncInput(in);
             action.setSyncOutput(out);
             action.setLogInfo(logInfo);
@@ -402,5 +410,27 @@ public class RestServlet extends HttpServlet {
         OutputStream os = out.getOutputStream();
         String message = "unexpected exception: " + t;
         os.write(message.getBytes());
+    }
+    
+    /**
+     * Set the WWW-Authenticate header so clients know how to obtain authentication tokens.
+     */
+    private void setAuthenticateHeader(SyncOutput out) throws IOException, ResourceNotFoundException {
+        // find the token URL
+        LocalAuthority localAuthority = new LocalAuthority();
+        URI tokenServiceURI = localAuthority.getServiceURI(Standards.SECURITY_METHOD_TOKEN.toString());
+        RegistryClient regClient = new RegistryClient();
+        URL tokenURL = regClient.getServiceURL(tokenServiceURI, Standards.SECURITY_METHOD_TOKEN, AuthMethod.ANON);
+        
+        // set a header for tokens
+        StringBuilder sb = new StringBuilder();
+        sb.append("vo-sso securitymethod=").append(Standards.SECURITY_METHOD_TOKEN.toString()).append("\n");
+        sb.append("accessURL=").append(tokenURL);
+        out.addHeader("WWW-Authenticate", sb.toString());
+        
+        // set a second header for client certificates
+        sb = new StringBuilder();
+        sb.append("vo-sso securitymethod=").append(Standards.SECURITY_METHOD_CERT);
+        out.addHeader("WWW-Authenticate", sb.toString());
     }
 }
