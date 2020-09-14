@@ -424,13 +424,13 @@ public class RestServlet extends HttpServlet {
         
         // set a header for tokens
         StringBuilder sb = new StringBuilder();
-        sb.append("vo-sso securitymethod=").append(Standards.SECURITY_METHOD_TOKEN.toString()).append("\n");
-        sb.append("accessURL=").append(tokenURL);
+        sb.append("vo-sso securitymethod=\"").append(Standards.SECURITY_METHOD_TOKEN.toString()).append("\", ");
+        sb.append("accessURL=\"").append(tokenURL).append("\"");
         out.addHeader("WWW-Authenticate", sb.toString());
         
         // set a second header for client certificates
         sb = new StringBuilder();
-        sb.append("vo-sso securitymethod=").append(Standards.SECURITY_METHOD_CERT);
+        sb.append("vo-sso securitymethod=\"").append(Standards.SECURITY_METHOD_CERT).append("\"");
         out.addHeader("WWW-Authenticate", sb.toString());
     }
 }
