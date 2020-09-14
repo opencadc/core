@@ -307,6 +307,27 @@ public class AuthenticationUtil {
                     am = AuthMethod.PASSWORD;
                     break;
                 }
+                if (o instanceof BearerTokenPrincipal) {
+                    BearerTokenPrincipal bearerTokenPrincipal = (BearerTokenPrincipal) o;
+                    String tokenValue = bearerTokenPrincipal.getName();
+                    // only parse the token and add public credentials if augmenting the subject
+                    // (to support non-cadc style bearer tokens)
+                    if (augmentSubject) {
+                        try {
+                            DelegationToken parsedBearerToken = DelegationToken.parse(tokenValue, bearerTokenPrincipal.requestURI);
+                            bearerTokenPrincipal.user = parsedBearerToken.getUser();
+                            publicCred.add(parsedBearerToken);
+                        } catch (InvalidDelegationTokenException ex) {
+                            log.debug("invalid DelegationToken: " + tokenValue, ex);
+                            throw new NotAuthenticatedException("invalid delegation token. " + ex.getMessage());
+                        } catch (RuntimeException ex) {
+                            log.debug("invalid DelegationToken: " + tokenValue, ex);
+                            throw new NotAuthenticatedException("invalid delegation token. " + ex.getMessage());
+                        }
+                    }
+                    am = AuthMethod.TOKEN;
+                    break;
+                }
             }
         }
 

@@ -82,6 +82,8 @@ public class BearerTokenPrincipal implements Principal, Serializable {
     private static final String prefix = "Bearer ";
 
     private final String token;
+    public String requestURI;
+    public HttpPrincipal user;
 
     public BearerTokenPrincipal(final String authorizationHeader) {
         if (!isBearerToken(authorizationHeader)) {

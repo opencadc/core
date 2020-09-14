@@ -157,7 +157,9 @@ public class ServletPrincipalExtractor implements PrincipalExtractor {
 
         String authToken = request.getHeader(AuthenticationUtil.AUTHORIZATION_HEADER);
         if (BearerTokenPrincipal.isBearerToken(authToken)) {
-            principals.add(new BearerTokenPrincipal(authToken));
+            BearerTokenPrincipal bearerTokenPrincipal = new BearerTokenPrincipal(authToken);
+            bearerTokenPrincipal.requestURI = request.getRequestURI();
+            principals.add(bearerTokenPrincipal);
         }
 
         // add HttpPrincipal
