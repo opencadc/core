@@ -81,6 +81,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.AccessControlException;
 import java.security.Principal;
 import java.security.PrivilegedActionException;
@@ -567,9 +568,9 @@ public class LogControlServlet extends HttpServlet {
                     for (String property : properties) {
                         if (StringUtil.hasLength(property)) {
                             try {
-                                groupUris.add(new GroupURI(property));
-                            } catch (IllegalArgumentException e) {
-                                logger.error(property + " is invalid GroupURI because " + e.getMessage());
+                                groupUris.add(new GroupURI(new URI(property)));
+                            } catch (IllegalArgumentException | URISyntaxException e) {
+                                logger.error("invalid GroupURI: " + property, e);
                             }
                         }
                     }
