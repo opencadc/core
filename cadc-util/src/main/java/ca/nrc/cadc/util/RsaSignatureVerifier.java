@@ -179,7 +179,7 @@ public class RsaSignatureVerifier {
     /**
      * Init public keys from file.
      * 
-     * @param keyFilename
+     * @param keysFile
      */
     protected void init(File keysFile) {
         KeyFactory keyFactory = null;
