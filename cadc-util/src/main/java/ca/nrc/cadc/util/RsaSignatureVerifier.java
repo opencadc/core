@@ -132,46 +132,64 @@ public class RsaSignatureVerifier {
      * Default constructor. This will look for a private key file named RsaSignaturePub.key
      * and use it to verify.
      */
+    @Deprecated
     public RsaSignatureVerifier() {
-        this(PUB_KEY_FILE_NAME, false);
+        this(PUB_KEY_FILE_NAME);
     }
     
+    @Deprecated
     public RsaSignatureVerifier(String keyFilename) {
-        this(keyFilename, false);
+        File keyFile = findFile(keyFilename);
+        init(keyFile);
+    }
+    
+    public RsaSignatureVerifier(File keyFile) {
+        if (!keyFile.exists()) {
+            throw new MissingResourceException(keyFile.getAbsolutePath(), null, null);
+        }
+        init(keyFile);
+    }
+    
+    // ctors for use by RsaSignatureGenerator subclass
+    @Deprecated
+    public RsaSignatureVerifier(String keyFilename, boolean isPrivateKeyFile) {
+        File keyFile = findFile(keyFilename);
+        if (!isPrivateKeyFile) {
+            init(keyFile);
+        }
+    }
+    
+    protected RsaSignatureVerifier(File keyFile, boolean isPrivateKeyFile) {
+        if (!keyFile.exists()) {
+            throw new MissingResourceException(keyFile.getAbsolutePath(), null, null);
+        }
+        if (!isPrivateKeyFile) {
+            init(keyFile);
+        }
+    }
+    
+    protected final File findFile(String fname) throws MissingResourceException {
+        File ret = new File(DEFAULT_CONFIG_DIR, fname);
+        if (!ret.exists()) {
+            ret = FileUtil.getFileFromResource(fname, this.getClass());
+        }
+        return ret;
     }
     
     /**
-     * constructor
+     * Init public keys from file.
+     * 
      * @param keyFilename
-     * @param privateKeyExpected - ctor instantiated in the context in which 
-     *     a private key is also expected
      */
-    protected RsaSignatureVerifier(String keyFilename, boolean privateKeyExpected) {
+    protected void init(File keysFile) {
         KeyFactory keyFactory = null;
         try {
             keyFactory = KeyFactory.getInstance(KEY_ALGORITHM);
         }  catch (NoSuchAlgorithmException e1) {
-            throw new RuntimeException("BUG: Wrong algorithm " + KEY_ALGORITHM,
-                    e1);
+            throw new RuntimeException("BUG: Wrong algorithm " + KEY_ALGORITHM, e1);
         }
         // try to load the keys
         try {
-            // check config dir first
-            File keysFile = new File(DEFAULT_CONFIG_DIR, keyFilename);
-            if (!keysFile.exists()) {
-                try { 
-                    // find in classpath 
-                    keysFile = FileUtil.getFileFromResource(
-                        keyFilename, this.getClass());
-                } catch (MissingResourceException ex) {
-                    if (privateKeyExpected) {
-                        return;
-                    } else {
-                        throw ex;
-                    }
-                }
-            }
-            
             log.debug("read pub keys: " + keysFile);
             BufferedReader br = new BufferedReader(new 
                     FileReader(keysFile));
@@ -220,7 +238,7 @@ public class RsaSignatureVerifier {
             throw new RuntimeException(msg, e);
         }
         
-        if (!privateKeyExpected && pubKeys.isEmpty()) {
+        if (pubKeys.isEmpty()) {
             String msg = "No valid public keys found";
             throw new IllegalStateException(msg);
         }       

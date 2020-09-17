@@ -134,12 +134,25 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier {
      * Default constructor. This will look for a private key file named RsaSignaturePriv.key
      * and use it to sign.
      */
+    @Deprecated
     public RsaSignatureGenerator() {
         this(PRIV_KEY_FILE_NAME);
     }
     
+    @Deprecated
     public RsaSignatureGenerator(String keyFilename) {
         super(keyFilename, true);
+        File keyFile = findFile(keyFilename); // again - ugh
+        initPrivateKey(keyFile);
+    }
+    
+    public RsaSignatureGenerator(File keyFile) {
+        super(keyFile, true);
+        initPrivateKey(keyFile);
+    }
+    
+    private void initPrivateKey(File keysFile) {
+        
         KeyFactory keyFactory = null;
         try {
             keyFactory = KeyFactory.getInstance(KEY_ALGORITHM);
@@ -149,9 +162,6 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier {
         }
         // try to load the keys
         try {
-            File keysFile = FileUtil.getFileFromResource(
-                    keyFilename, this.getClass());
-
             BufferedReader br = new BufferedReader(new FileReader(keysFile));
             try {
                 StringBuilder sb = null;
@@ -266,7 +276,7 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier {
         }
     }
 
-    
+    @Deprecated
     public static void genKeyPair(String directory) 
         throws FileNotFoundException { 
         genKeyPair(new File(directory));
