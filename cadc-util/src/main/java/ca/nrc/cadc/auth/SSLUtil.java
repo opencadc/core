@@ -761,4 +761,26 @@ public class SSLUtil {
             }
         }
     }
+
+    /**
+     * Renew the provided subject with the principals and credentials provided by the certificate.  This is useful for
+     * long running authenticated processes where the expiry of the Subject could occur during processing.  Callers
+     * will ideally call this as part of a schedule or during a natural break in job execution.
+     *
+     * <p>This method is <b>NOT</b> threadsafe!  Because the provided Subject will be put into an inconsistent state
+     * while it is being updated, ensure that it is wrapped in a synchronized block <i>before</i> calling this method.
+     *
+     * @param currentSubject    The Subject to be modified.
+     * @param certificate       A new certificate used to replace the existing principals and credentials of the
+     *                          given Subject.
+     */
+    public static void renewSubject(final Subject currentSubject, final File certificate) {
+        final Subject subject = SSLUtil.createSubject(certificate);
+
+        currentSubject.getPrincipals().clear();
+        currentSubject.getPrincipals().addAll(subject.getPrincipals());
+
+        currentSubject.getPublicCredentials().clear();
+        currentSubject.getPublicCredentials().addAll(subject.getPublicCredentials());
+    }
 }
