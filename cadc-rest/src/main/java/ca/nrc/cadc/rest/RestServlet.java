@@ -71,6 +71,7 @@ package ca.nrc.cadc.rest;
 
 import ca.nrc.cadc.auth.AuthMethod;
 import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.auth.HttpPrincipal;
 import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.log.ServletLogInfo;
 import ca.nrc.cadc.log.WebServiceLogInfo;
@@ -86,10 +87,12 @@ import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URL;
 import java.security.AccessControlException;
+import java.security.Principal;
 import java.security.PrivilegedActionException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import javax.security.auth.Subject;
@@ -300,10 +303,12 @@ public class RestServlet extends HttpServlet {
             log.info(logInfo.start());
             
             out = new SyncOutput(response);
-            setAuthenticateHeader(out);
             action.setSyncInput(in);
             action.setSyncOutput(out);
             action.setLogInfo(logInfo);
+            
+            setAuthenticateHeader(out);
+            setVOAuthenticatedHeader(subject, out);
 
             doit(subject, action);
         } catch (InstantiationException | IllegalAccessException ex) {
@@ -416,11 +421,12 @@ public class RestServlet extends HttpServlet {
      * Set the WWW-Authenticate header so clients know how to obtain authentication tokens.
      */
     private void setAuthenticateHeader(SyncOutput out) throws IOException, ResourceNotFoundException {
+        log.debug("Setting WWW-Authenticate header");
         // find the token URL
         LocalAuthority localAuthority = new LocalAuthority();
-        URI tokenServiceURI = localAuthority.getServiceURI(Standards.SECURITY_METHOD_TOKEN.toString());
+        URI tokenServiceURI = localAuthority.getServiceURI(Standards.UMS_LOGIN_01.toString());
         RegistryClient regClient = new RegistryClient();
-        URL tokenURL = regClient.getServiceURL(tokenServiceURI, Standards.SECURITY_METHOD_TOKEN, AuthMethod.ANON);
+        URL tokenURL = regClient.getServiceURL(tokenServiceURI, Standards.UMS_LOGIN_01, AuthMethod.ANON);
         
         // set a header for tokens
         StringBuilder sb = new StringBuilder();
@@ -432,5 +438,27 @@ public class RestServlet extends HttpServlet {
         sb = new StringBuilder();
         sb.append("vo-sso securitymethod=\"").append(Standards.SECURITY_METHOD_CERT).append("\"");
         out.addHeader("WWW-Authenticate", sb.toString());
+    }
+    
+    /**
+     * Set the X-VO-Authenticated header if the user is known. Use the HttpPrincipal if
+     * available, otherwise whatever is present.
+     */
+    private void setVOAuthenticatedHeader(Subject subject, SyncOutput out) throws IOException, ResourceNotFoundException {
+        if (!AuthenticationUtil.getAuthMethodFromCredentials(subject).equals(AuthMethod.ANON)) {
+            log.debug("Setting X-VO-Authenticated header");
+            Set<HttpPrincipal> useridPrincipals = subject.getPrincipals(HttpPrincipal.class);
+            if (!useridPrincipals.isEmpty()) {
+                HttpPrincipal userid = useridPrincipals.iterator().next();
+                out.addHeader("X-VO-Authenticated", userid.getName());
+                return;
+            }
+            Set<Principal> allPrincipals = subject.getPrincipals();
+            if (!allPrincipals.isEmpty()) {
+                Principal principal = allPrincipals.iterator().next();
+                out.addHeader("X-VO-Authenticated", principal.getName());
+                return;
+            }
+        }
     }
 }
