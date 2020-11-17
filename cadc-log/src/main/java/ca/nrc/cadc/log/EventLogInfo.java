@@ -97,8 +97,8 @@ public class EventLogInfo {
 
     // name of the application
     private String applicationName;
-	// ID of this application instance
-    private String instanceID;
+    // ID of this application instance
+    private String thread;
     // label for this action or this type of event
     private String label;
     
@@ -109,15 +109,21 @@ public class EventLogInfo {
     // event life cycle: create | propagate
     protected EventLifeCycle lifeCycle;
     // time to process the event, or 
-    //      to start getting results, or
-    //      to finish getting results
+    //      to start getting results
     protected Long duration;
+    // key/value in the start of an iteration, e.g. lastModified date or bucket
+    protected EventStartKVP start;
+    // value (of lastModified date or bucket) within an iteration
+    protected String value;
+    // method used by the event, e.g. PUT, QUERY
+    protected String method;
     protected Boolean success;
 
-    public EventLogInfo(String appName, String label) {
-    	this.applicationName = appName;
-    	this.instanceID = Thread.currentThread().getName();
-    	this.label = label;
+    public EventLogInfo(String appName, String label, String method) {
+        this.applicationName = appName;
+        this.thread = Thread.currentThread().getName();
+        this.label = label;
+        this.method = method;
     }
 
     /**
@@ -156,7 +162,8 @@ public class EventLogInfo {
     }
 
     private String getTimestamp() {
-        DateFormat format = DateUtil.getDateFormat(DateUtil.ISO_DATE_FORMAT,  DateUtil.UTC);
+        DateFormat format = DateUtil.getDateFormat(DateUtil.ISO_DATE_FORMAT, 
+            DateUtil.UTC);
         Date date = new Date(System.currentTimeMillis());
         return "\"@timestamp\":\"" + format.format(date) + "\"";
     }
@@ -165,8 +172,8 @@ public class EventLogInfo {
         return "\"application\":{\"name\":\"" + applicationName + "\"}";
     }
 
-    private String getInstanceID() {
-        return "\"instanceID\":{\"name\":\"" + instanceID + "\"}";
+    private String getThread() {
+        return "\"thread\":{\"name\":\"" + thread + "\"}";
     }
 
     private String getLabel() {
@@ -181,7 +188,7 @@ public class EventLogInfo {
         StringBuilder sb = new StringBuilder();
         sb.append(getTimestamp()).append(",");
         sb.append(getApplicationName()).append(",");
-        sb.append(getInstanceID()).append(",");
+        sb.append(getThread()).append(",");
         sb.append(getLabel()).append(",");
         sb.append(getLoglevel()).append(",");
         return sb.toString();
@@ -199,18 +206,26 @@ public class EventLogInfo {
                 try {
                     Object o = f.get(this);
                     log.debug(f.getName() + " = " + o);
-                    if ( o != null) {
-	                    String val = sanitize(o);
-	                    if (sb.length() > 1) { // more than just the opening {
-	                        sb.append(",");
-	                    }
-	                    sb.append("\"").append(f.getName()).append("\"");
-	                    sb.append(":");
-	                    if (o instanceof String) {
-	                        sb.append("\"").append(val).append("\"");
-	                    } else {
-	                        sb.append(val);
-	                    }
+                    if (o != null) {
+                        String val = sanitize(o);
+                        if (sb.length() > 1) { // more than just the opening {
+                            sb.append(",");
+                        }
+                        sb.append("\"").append(f.getName()).append("\"");
+                        sb.append(":");
+                        if (o instanceof String) {
+                            sb.append("\"").append(val).append("\"");
+                        } else {
+                            if (f.getName().equals("start")) {
+                                EventStartKVP startKVP = ((EventStartKVP) o);
+                                sb.append("{\"key\":" 
+                                    + startKVP.getEventStartKey() 
+                                    + ",\"value\":\"" + startKVP.getValue() 
+                                    + "\"}");
+                            } else {
+                                sb.append(val);
+                            }
+                        }
                     }
                 } catch (IllegalAccessException ex) {
                     log.error("BUG: failed to get value for " + f.getName(), ex);
@@ -232,26 +247,26 @@ public class EventLogInfo {
      * @param entityID
      */
     public void setEntityID(UUID entityID) {
-		this.entityID = entityID;
-	}
+        this.entityID = entityID;
+    }
 
     /**
      * Set the Artifact URI, if available.
      *
      * @param artifactURI
      */
-	public void setArtifactURI(URI artifactURI) {
-		this.artifactURI = artifactURI;
-	}
+    public void setArtifactURI(URI artifactURI) {
+        this.artifactURI = artifactURI;
+    }
 
     /**
      * Set the event life cycle.
      *
      * @param lifeCycle
      */
-	public void setLifeCycle(EventLifeCycle lifeCycle) {
-		this.lifeCycle = lifeCycle;
-	}
+    public void setLifeCycle(EventLifeCycle lifeCycle) {
+        this.lifeCycle = lifeCycle;
+    }
 
     /**
      * Set the elapsed time for the event to complete or to start getting results.
@@ -260,6 +275,24 @@ public class EventLogInfo {
      */
     public void setElapsedTime(Long elapsedTime) {
         this.duration = elapsedTime;
+    }
+
+    /**
+     * Set the key/value pair of the starting item of the event.
+     *
+     * @param kvp
+     */
+    public void setStartKVP(EventStartKVP kvp) {
+        this.start = kvp;
+    }
+
+    /**
+     * Set the value of an item of the event, after the starting item.
+     *
+     * @param value
+     */
+    public void setValue(String value) {
+        this.value = value;
     }
 
     /**

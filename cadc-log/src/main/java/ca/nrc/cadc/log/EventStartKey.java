@@ -70,10 +70,10 @@
 package ca.nrc.cadc.log;
 
 /**
- *
+ * The key used in an event start.
  * @author yeunga
  */
-public enum EventLifeCycle {
-    CREATE,
-    PROPAGATE
+public enum EventStartKey {
+    LASTMODIFIED,
+    BUCKET
 }
