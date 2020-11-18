@@ -177,7 +177,7 @@ public class EventLogInfo {
     }
 
     private String getLabel() {
-        return "\"label\":{\"name\":\"" + label + "\"}";
+        return "\"label\":\"" + label + "\"";
     }
 
     private String getLoglevel() {
