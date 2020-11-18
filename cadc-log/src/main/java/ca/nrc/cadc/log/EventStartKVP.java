@@ -99,8 +99,8 @@ public class EventStartKVP {
         }
     
         if (value == null) {
-	    value = "null";
-	}
+            value = "null";
+        }
 
         this.key = key;
         this.value = value;
