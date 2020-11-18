@@ -93,11 +93,15 @@ public class EventStartKVP {
      * @param value  value of the event start
      */
     public EventStartKVP(EventStartKey key, String value) {
-        if (key == null || !StringUtil.hasText(value)) {
-            String msg = "'key' or 'value' must not be null or an emtpy string";
+        if (key == null) {
+            String msg = "'key' must not be null";
             throw new IllegalArgumentException(msg);
         }
     
+        if (value == null) {
+	    value = "null";
+	}
+
         this.key = key;
         this.value = value;
     }
