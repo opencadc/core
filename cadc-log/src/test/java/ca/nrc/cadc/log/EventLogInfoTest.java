@@ -118,10 +118,12 @@ public class EventLogInfoTest {
         eventLogInfo.setElapsedTime(duration);
         eventLogInfo.setEntityID(entityID);
         eventLogInfo.setLifeCycle(lifeCycle);
+        eventLogInfo.setUrls(3);
+        eventLogInfo.setAttempts(1);
         eventLogInfo.setSuccess(userSuccess);
         String singleEventLog = eventLogInfo.singleEvent();
         
-        String expected = "\"application\":{\"name\":\"singleEventLogInfoTest\"},\"thread\":{\"name\":\"singleEventTestThreadName\"},\"label\":\"singleEventLabel\",\"log\":{\"level\":\"info\"},\"event\":\"single\",\"entityID\":00000000-0000-0000-0000-000000000064,\"artifactURI\":cadc:TEST/singleFile.fits,\"lifeCycle\":PROPAGATE,\"method\":\"PUT\",\"total\":0,\"duration\"";
+        String expected = "\"application\":{\"name\":\"singleEventLogInfoTest\"},\"thread\":{\"name\":\"singleEventTestThreadName\"},\"label\":\"singleEventLabel\",\"log\":{\"level\":\"info\"},\"event\":\"single\",\"entityID\":00000000-0000-0000-0000-000000000064,\"artifactURI\":cadc:TEST/singleFile.fits,\"lifeCycle\":PROPAGATE,\"method\":\"PUT\",\"urls\":3,\"attempts\":1,\"duration\"";
         Assert.assertTrue("Wrong single event log", singleEventLog.contains(expected));
         String expectedSuccess = "\"success\":true";
         Assert.assertTrue("Wrong single event log, expected success to be true", singleEventLog.contains(expectedSuccess));
@@ -152,7 +154,7 @@ public class EventLogInfoTest {
         eventLogInfo.setStartKVP(startKVP);
         String startEventLog = eventLogInfo.start();
         
-        String expected = "\"application\":{\"name\":\"startEventLogInfoTest\"},\"thread\":{\"name\":\"startEventTestThreadName\"},\"label\":\"startEventLabel\",\"log\":{\"level\":\"info\"},\"event\":\"start\",\"entityID\":00000000-0000-0000-0000-000000000064,\"artifactURI\":cadc:TEST/startFile.fits,\"lifeCycle\":CREATE,\"start\":{\"key\":LASTMODIFIED,\"value\":\"2020-11-07T12:18:03.694\"},\"method\":\"QUERY\",\"total\":0,\"duration\"";
+        String expected = "\"application\":{\"name\":\"startEventLogInfoTest\"},\"thread\":{\"name\":\"startEventTestThreadName\"},\"label\":\"startEventLabel\",\"log\":{\"level\":\"info\"},\"event\":\"start\",\"entityID\":00000000-0000-0000-0000-000000000064,\"artifactURI\":cadc:TEST/startFile.fits,\"lifeCycle\":CREATE,\"start\":{\"key\":LASTMODIFIED,\"value\":\"2020-11-07T12:18:03.694\"},\"method\":\"QUERY\",\"duration\"";
         Assert.assertTrue("Wrong start event log", startEventLog.contains(expected));
         String expectedSuccess = "\"success\":";
         Assert.assertFalse("Wrong single event log, expected to have no success field", startEventLog.contains(expectedSuccess));
@@ -180,6 +182,7 @@ public class EventLogInfoTest {
         eventLogInfo.setEntityID(entityID);
         eventLogInfo.setLifeCycle(lifeCycle);
         eventLogInfo.setTotal(100);
+        eventLogInfo.setMessage("no error");
 
         try {
             // test null success
@@ -192,7 +195,7 @@ public class EventLogInfoTest {
         // test null success
         eventLogInfo.setSuccess(true);
         String endEventLog = eventLogInfo.end();
-        String expected = "\"application\":{\"name\":\"endEventLogInfoTest\"},\"thread\":{\"name\":\"endEventTestThreadName\"},\"label\":\"endEventLabel\",\"log\":{\"level\":\"info\"},\"event\":\"end\",\"entityID\":00000000-0000-0000-0000-000000000064,\"artifactURI\":cadc:TEST/endFile.fits,\"lifeCycle\":PROPAGATE,\"method\":\"QUERY\",\"total\":100,\"duration\"";
+        String expected = "\"application\":{\"name\":\"endEventLogInfoTest\"},\"thread\":{\"name\":\"endEventTestThreadName\"},\"label\":\"endEventLabel\",\"log\":{\"level\":\"info\"},\"event\":\"end\",\"entityID\":00000000-0000-0000-0000-000000000064,\"artifactURI\":cadc:TEST/endFile.fits,\"lifeCycle\":PROPAGATE,\"method\":\"QUERY\",\"message\":\"no error\",\"total\":100,\"duration\"";
         Assert.assertTrue("Wrong end event log", endEventLog.contains(expected));
         String expectedSuccess = "\"success\":true";
         Assert.assertTrue("Wrong end event log, expected success field to be true", endEventLog.contains(expectedSuccess));

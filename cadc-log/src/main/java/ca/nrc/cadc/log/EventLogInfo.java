@@ -110,8 +110,14 @@ public class EventLogInfo {
     protected String value;
     // method used by the event, e.g. PUT, QUERY
     protected String method;
+    // number of locations an artifact is available in
+    protected Integer urls;
+    // number of retries attempted, e.g. when sync'ing a file
+    protected Integer attempts;
+    // a message associated with an event, e.g. error message
+    protected String message;
     // indicates the number of items processed
-    protected int total;
+    protected Integer total;
     // time to process the event, or 
     //      to start getting results
     protected Long duration;
@@ -309,6 +315,33 @@ public class EventLogInfo {
      */
     public void setTotal(int num) {
         this.total = num;
+    }
+
+    /**
+     * Set the number of locations available for an artifact.
+     *
+     * @param size
+     */
+    public void setUrls(int size) {
+        this.urls = size;
+    }
+
+    /**
+     * Set the number of retries attempted.
+     *
+     * @param num
+     */
+    public void setAttempts(int num) {
+        this.attempts = num;
+    }
+
+    /**
+     * Set the message associated with an event.
+     *
+     * @param msg
+     */
+    public void setMessage(String msg) {
+        this.message = msg;
     }
 
     /**
