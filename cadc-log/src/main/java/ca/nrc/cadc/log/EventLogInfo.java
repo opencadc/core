@@ -91,10 +91,6 @@ public class EventLogInfo {
 
     private static final Logger log = Logger.getLogger(EventLogInfo.class);
 
-    // indicate if event was successful, applies to a single event or the end
-    // of a long event
-    private boolean userSuccess = true;
-
     // name of the application
     private String applicationName;
     // ID of this application instance
@@ -108,15 +104,17 @@ public class EventLogInfo {
     protected URI artifactURI;
     // event life cycle: create | propagate
     protected EventLifeCycle lifeCycle;
-    // time to process the event, or 
-    //      to start getting results
-    protected Long duration;
     // key/value in the start of an iteration, e.g. lastModified date or bucket
     protected EventStartKVP start;
     // value (of lastModified date or bucket) within an iteration
     protected String value;
     // method used by the event, e.g. PUT, QUERY
     protected String method;
+    // indicates the number of items processed
+    protected int total;
+    // time to process the event, or 
+    //      to start getting results
+    protected Long duration;
     protected Boolean success;
 
     public EventLogInfo(String appName, String label, String method) {
@@ -128,30 +126,39 @@ public class EventLogInfo {
 
     /**
      * Generates the log.info message for the start of the request.
+     * success field is not required and will be ignored if set.
      *
      * @return
      */
     public String start() {
+        if (success != null) {
+            this.success = null;
+            log.warn("success = " + success + " was ignored for start event");
+        }
         return "{" + getPreamble() + "\"event\":\"start\"," + doit() + "}";
     }
 
     /**
      * Generates the log.info message for the end of the request.
+     * success field is required.
      *
      * @return
      */
     public String end() {
-        this.success = userSuccess;
+        if (success == null) {
+            String msg = "success value is required for end event";
+            throw new IllegalArgumentException(msg);
+        }
         return "{" + getPreamble() + "\"event\":\"end\"," + doit() + "}";
     }
 
     /**
      * Generates the log.info message for a single event.
+     * success field is optional
      *
      * @return
      */
     public String singleEvent() {
-        this.success = userSuccess;
         return "{" + getPreamble() + "\"event\":\"single\"," + doit() + "}";
     }
 
@@ -296,12 +303,21 @@ public class EventLogInfo {
     }
 
     /**
-     * Set the success/fail boolean.
+     * Set the total number of items processed.
      *
-     * @param success
+     * @param num
      */
-    public void setSuccess(boolean success) {
-        this.userSuccess = success;
+    public void setTotal(int num) {
+        this.total = num;
+    }
+
+    /**
+     * Set the success/fail Boolean.
+     *
+     * @param isSuccessful
+     */
+    public void setSuccess(Boolean isSuccessful) {
+        this.success = isSuccessful;
     }
 
 }

@@ -71,6 +71,8 @@ package ca.nrc.cadc.log;
 
 import ca.nrc.cadc.util.Log4jInit;
 
+import static org.junit.Assert.fail;
+
 import java.net.URI;
 import java.util.UUID;
 
@@ -95,80 +97,105 @@ public class EventLogInfoTest {
     }
     
     @Test
-    public void testSingleEvent() {
-    	String appName = "singleEventLogInfoTest";
-    	String thread = "singleEventTestThreadName";
-    	String label = "singleEventLabel";
-    	UUID entityID = new UUID(0L, 100L);
-    	URI artifactURI = URI.create("cadc:TEST/singleFile.fits");
-    	EventLifeCycle lifeCycle = EventLifeCycle.PROPAGATE;
-    	Boolean userSuccess = true;
-    	
-        try {
-        	Thread.currentThread().setName(thread);
-        	long startTime = System.currentTimeMillis();
-        	Thread.sleep(50); // sleep for 50 ms
-        	long endTime = System.currentTimeMillis();
-        	long duration = endTime - startTime;
-        	String method = "PUT";
-        	
-        	EventLogInfo eventLogInfo = new EventLogInfo(appName, label, method);
-        	eventLogInfo.setArtifactURI(artifactURI);
-        	eventLogInfo.setElapsedTime(duration);
-        	eventLogInfo.setEntityID(entityID);
-        	eventLogInfo.setLifeCycle(lifeCycle);
-        	eventLogInfo.setSuccess(userSuccess);
-        	String singleEventLog = eventLogInfo.singleEvent();
-        	
-        	String expected = "\"application\":{\"name\":\"singleEventLogInfoTest\"},\"thread\":{\"name\":\"singleEventTestThreadName\"},\"label\":{\"name\":\"singleEventLabel\"},\"log\":{\"level\":\"info\"},\"event\":\"single\",\"entityID\":00000000-0000-0000-0000-000000000064,\"artifactURI\":cadc:TEST/singleFile.fits,\"lifeCycle\":PROPAGATE,\"duration\"";
-            Assert.assertTrue("Wrong single event log", singleEventLog.contains(expected));
-        	String expectedMethod = "\"method\":\"PUT\"";
-            Assert.assertTrue("Wrong single event log, expected PUT method", singleEventLog.contains(expectedMethod));
-        	String expectedSuccess = "\"success\":true";
-            Assert.assertTrue("Wrong single event log, expected success to be true", singleEventLog.contains(expectedSuccess));
-        }
-        catch (Throwable t) {
-            log.error(t.getMessage());
-        }
+    public void testSingleEvent() throws Throwable {
+        String appName = "singleEventLogInfoTest";
+        String thread = "singleEventTestThreadName";
+        String label = "singleEventLabel";
+        UUID entityID = new UUID(0L, 100L);
+        URI artifactURI = URI.create("cadc:TEST/singleFile.fits");
+        EventLifeCycle lifeCycle = EventLifeCycle.PROPAGATE;
+        Boolean userSuccess = true;
+    
+        Thread.currentThread().setName(thread);
+        long startTime = System.currentTimeMillis();
+        Thread.sleep(50); // sleep for 50 ms
+        long endTime = System.currentTimeMillis();
+        long duration = endTime - startTime;
+        String method = "PUT";
+        
+        EventLogInfo eventLogInfo = new EventLogInfo(appName, label, method);
+        eventLogInfo.setArtifactURI(artifactURI);
+        eventLogInfo.setElapsedTime(duration);
+        eventLogInfo.setEntityID(entityID);
+        eventLogInfo.setLifeCycle(lifeCycle);
+        eventLogInfo.setSuccess(userSuccess);
+        String singleEventLog = eventLogInfo.singleEvent();
+        
+        String expected = "\"application\":{\"name\":\"singleEventLogInfoTest\"},\"thread\":{\"name\":\"singleEventTestThreadName\"},\"label\":\"singleEventLabel\",\"log\":{\"level\":\"info\"},\"event\":\"single\",\"entityID\":00000000-0000-0000-0000-000000000064,\"artifactURI\":cadc:TEST/singleFile.fits,\"lifeCycle\":PROPAGATE,\"method\":\"PUT\",\"total\":0,\"duration\"";
+        Assert.assertTrue("Wrong single event log", singleEventLog.contains(expected));
+        String expectedSuccess = "\"success\":true";
+        Assert.assertTrue("Wrong single event log, expected success to be true", singleEventLog.contains(expectedSuccess));
     }
 
     @Test
-    public void testStartEvent() {
-    	String appName = "startEventLogInfoTest";
-    	String thread = "startEventTestThreadName";
-    	String label = "startEventLabel";
-    	UUID entityID = new UUID(0L, 100L);
-    	URI artifactURI = URI.create("cadc:TEST/startFile.fits");
-    	EventLifeCycle lifeCycle = EventLifeCycle.CREATE;
-    	
-        try {
-        	Thread.currentThread().setName(thread);
-        	long startTime = System.currentTimeMillis();
-        	Thread.sleep(100); // sleep for 100 ms
-        	long endTime = System.currentTimeMillis();
-        	long duration = endTime - startTime;
-        	String method = "QUERY";
-        	
-        	EventLogInfo eventLogInfo = new EventLogInfo(appName, label, method);
-        	eventLogInfo.setArtifactURI(artifactURI);
-        	eventLogInfo.setElapsedTime(duration);
-        	eventLogInfo.setEntityID(entityID);
-        	eventLogInfo.setLifeCycle(lifeCycle);
-        	EventStartKVP startKVP = new EventStartKVP(EventStartKey.LASTMODIFIED, "2020-11-07T12:18:03.694");
-        	eventLogInfo.setStartKVP(startKVP);
-        	String singleEventLog = eventLogInfo.start();
-        	
-        	String expected = "\"application\":{\"name\":\"startEventLogInfoTest\"},\"thread\":{\"name\":\"startEventTestThreadName\"},\"label\":{\"name\":\"startEventLabel\"},\"log\":{\"level\":\"info\"},\"event\":\"start\",\"entityID\":00000000-0000-0000-0000-000000000064,\"artifactURI\":cadc:TEST/startFile.fits,\"lifeCycle\":CREATE,\"duration\"";
-            Assert.assertTrue("Wrong start event log", singleEventLog.contains(expected));
-        	String expectedMethod = "\"method\":\"QUERY\"";
-            Assert.assertTrue("Wrong single event log, expected QUERY method", singleEventLog.contains(expectedMethod));
-            String expectedStart = "\"start\":{\"key\":LASTMODIFIED,\"value\":\"2020-11-07T12:18:03.694\"}";
-            Assert.assertTrue("Wrong single event log, expected start", singleEventLog.contains(expectedStart));
-        	String expectedSuccess = "\"success\":";
-            Assert.assertFalse("Wrong single event log, expected to have no success field", singleEventLog.contains(expectedSuccess));
-        }
-        catch (Throwable t) {
-            log.error(t.getMessage());
-        }
+    public void testStartEvent() throws Throwable {
+        String appName = "startEventLogInfoTest";
+        String thread = "startEventTestThreadName";
+        String label = "startEventLabel";
+        UUID entityID = new UUID(0L, 100L);
+        URI artifactURI = URI.create("cadc:TEST/startFile.fits");
+        EventLifeCycle lifeCycle = EventLifeCycle.CREATE;
+
+        Thread.currentThread().setName(thread);
+        long startTime = System.currentTimeMillis();
+        Thread.sleep(100); // sleep for 100 ms
+        long endTime = System.currentTimeMillis();
+        long duration = endTime - startTime;
+        String method = "QUERY";
+        
+        EventLogInfo eventLogInfo = new EventLogInfo(appName, label, method);
+        eventLogInfo.setArtifactURI(artifactURI);
+        eventLogInfo.setElapsedTime(duration);
+        eventLogInfo.setEntityID(entityID);
+        eventLogInfo.setLifeCycle(lifeCycle);
+        EventStartKVP startKVP = new EventStartKVP(EventStartKey.LASTMODIFIED, "2020-11-07T12:18:03.694");
+        eventLogInfo.setStartKVP(startKVP);
+        String startEventLog = eventLogInfo.start();
+        
+        String expected = "\"application\":{\"name\":\"startEventLogInfoTest\"},\"thread\":{\"name\":\"startEventTestThreadName\"},\"label\":\"startEventLabel\",\"log\":{\"level\":\"info\"},\"event\":\"start\",\"entityID\":00000000-0000-0000-0000-000000000064,\"artifactURI\":cadc:TEST/startFile.fits,\"lifeCycle\":CREATE,\"start\":{\"key\":LASTMODIFIED,\"value\":\"2020-11-07T12:18:03.694\"},\"method\":\"QUERY\",\"total\":0,\"duration\"";
+        Assert.assertTrue("Wrong start event log", startEventLog.contains(expected));
+        String expectedSuccess = "\"success\":";
+        Assert.assertFalse("Wrong single event log, expected to have no success field", startEventLog.contains(expectedSuccess));
     }
+
+    @Test
+    public void testEndEvent() throws Throwable {
+        String appName = "endEventLogInfoTest";
+        String thread = "endEventTestThreadName";
+        String label = "endEventLabel";
+        UUID entityID = new UUID(0L, 100L);
+        URI artifactURI = URI.create("cadc:TEST/endFile.fits");
+        EventLifeCycle lifeCycle = EventLifeCycle.PROPAGATE;
+
+        Thread.currentThread().setName(thread);
+        long startTime = System.currentTimeMillis();
+        Thread.sleep(100); // sleep for 100 ms
+        long endTime = System.currentTimeMillis();
+        long duration = endTime - startTime;
+        String method = "QUERY";
+        
+        EventLogInfo eventLogInfo = new EventLogInfo(appName, label, method);
+        eventLogInfo.setArtifactURI(artifactURI);
+        eventLogInfo.setElapsedTime(duration);
+        eventLogInfo.setEntityID(entityID);
+        eventLogInfo.setLifeCycle(lifeCycle);
+        eventLogInfo.setTotal(100);
+
+        try {
+            // test null success
+            String endEventLog = eventLogInfo.end();
+            fail("Should have thrown an IllegalArgumentException due to success being null");
+        } catch (IllegalArgumentException ex) {
+            // expected
+        }
+
+        // test null success
+        eventLogInfo.setSuccess(true);
+        String endEventLog = eventLogInfo.end();
+        String expected = "\"application\":{\"name\":\"endEventLogInfoTest\"},\"thread\":{\"name\":\"endEventTestThreadName\"},\"label\":\"endEventLabel\",\"log\":{\"level\":\"info\"},\"event\":\"end\",\"entityID\":00000000-0000-0000-0000-000000000064,\"artifactURI\":cadc:TEST/endFile.fits,\"lifeCycle\":PROPAGATE,\"method\":\"QUERY\",\"total\":100,\"duration\"";
+        Assert.assertTrue("Wrong end event log", endEventLog.contains(expected));
+        String expectedSuccess = "\"success\":true";
+        Assert.assertTrue("Wrong end event log, expected success field to be true", endEventLog.contains(expectedSuccess));
+    }
+
 }
