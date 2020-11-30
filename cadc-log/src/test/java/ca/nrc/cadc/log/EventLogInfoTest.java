@@ -74,6 +74,8 @@ import ca.nrc.cadc.util.Log4jInit;
 import static org.junit.Assert.fail;
 
 import java.net.URI;
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.log4j.Level;
@@ -123,7 +125,7 @@ public class EventLogInfoTest {
         eventLogInfo.setSuccess(userSuccess);
         String singleEventLog = eventLogInfo.singleEvent();
         
-        String expected = "\"application\":{\"name\":\"singleEventLogInfoTest\"},\"thread\":{\"name\":\"singleEventTestThreadName\"},\"label\":\"singleEventLabel\",\"log\":{\"level\":\"info\"},\"event\":\"single\",\"entityID\":00000000-0000-0000-0000-000000000064,\"artifactURI\":cadc:TEST/singleFile.fits,\"lifeCycle\":PROPAGATE,\"method\":\"PUT\",\"urls\":3,\"attempts\":1,\"duration\"";
+        String expected = "\"application\":{\"name\":\"singleEventLogInfoTest\"},\"thread\":{\"name\":\"singleEventTestThreadName\"},\"label\":\"singleEventLabel\",\"log\":{\"level\":\"info\"},\"event\":\"single\",\"entityID\":\"00000000-0000-0000-0000-000000000064\",\"artifactURI\":\"cadc:TEST/singleFile.fits\",\"lifeCycle\":\"PROPAGATE\",\"method\":\"PUT\",\"urls\":3,\"attempts\":1,\"duration\"";
         Assert.assertTrue("Wrong single event log", singleEventLog.contains(expected));
         String expectedSuccess = "\"success\":true";
         Assert.assertTrue("Wrong single event log, expected success to be true", singleEventLog.contains(expectedSuccess));
@@ -150,11 +152,12 @@ public class EventLogInfoTest {
         eventLogInfo.setElapsedTime(duration);
         eventLogInfo.setEntityID(entityID);
         eventLogInfo.setLifeCycle(lifeCycle);
-        EventStartKVP startKVP = new EventStartKVP(EventStartKey.LASTMODIFIED, "2020-11-07T12:18:03.694");
-        eventLogInfo.setStartKVP(startKVP);
+        Map<EventIteratorKey, String> iteratorItem = new EnumMap<EventIteratorKey, String>(EventIteratorKey.class);
+        iteratorItem.put(EventIteratorKey.LASTMODIFIED, "2020-11-07T12:18:03.694");
+        eventLogInfo.setIteratorItem(iteratorItem);
         String startEventLog = eventLogInfo.start();
         
-        String expected = "\"application\":{\"name\":\"startEventLogInfoTest\"},\"thread\":{\"name\":\"startEventTestThreadName\"},\"label\":\"startEventLabel\",\"log\":{\"level\":\"info\"},\"event\":\"start\",\"entityID\":00000000-0000-0000-0000-000000000064,\"artifactURI\":cadc:TEST/startFile.fits,\"lifeCycle\":CREATE,\"start\":{\"key\":LASTMODIFIED,\"value\":\"2020-11-07T12:18:03.694\"},\"method\":\"QUERY\",\"duration\"";
+        String expected = "\"application\":{\"name\":\"startEventLogInfoTest\"},\"thread\":{\"name\":\"startEventTestThreadName\"},\"label\":\"startEventLabel\",\"log\":{\"level\":\"info\"},\"event\":\"start\",\"entityID\":\"00000000-0000-0000-0000-000000000064\",\"artifactURI\":\"cadc:TEST/startFile.fits\",\"lifeCycle\":\"CREATE\",\"iteratorItem\":{\"key\":LASTMODIFIED,\"value\":\"2020-11-07T12:18:03.694\"},\"method\":\"QUERY\",\"duration\"";
         Assert.assertTrue("Wrong start event log", startEventLog.contains(expected));
         String expectedSuccess = "\"success\":";
         Assert.assertFalse("Wrong single event log, expected to have no success field", startEventLog.contains(expectedSuccess));
@@ -195,7 +198,7 @@ public class EventLogInfoTest {
         // test null success
         eventLogInfo.setSuccess(true);
         String endEventLog = eventLogInfo.end();
-        String expected = "\"application\":{\"name\":\"endEventLogInfoTest\"},\"thread\":{\"name\":\"endEventTestThreadName\"},\"label\":\"endEventLabel\",\"log\":{\"level\":\"info\"},\"event\":\"end\",\"entityID\":00000000-0000-0000-0000-000000000064,\"artifactURI\":cadc:TEST/endFile.fits,\"lifeCycle\":PROPAGATE,\"method\":\"QUERY\",\"message\":\"no error\",\"total\":100,\"duration\"";
+        String expected = "\"application\":{\"name\":\"endEventLogInfoTest\"},\"thread\":{\"name\":\"endEventTestThreadName\"},\"label\":\"endEventLabel\",\"log\":{\"level\":\"info\"},\"event\":\"end\",\"entityID\":\"00000000-0000-0000-0000-000000000064\",\"artifactURI\":\"cadc:TEST/endFile.fits\",\"lifeCycle\":\"PROPAGATE\",\"method\":\"QUERY\",\"message\":\"no error\",\"total\":100,\"duration\"";
         Assert.assertTrue("Wrong end event log", endEventLog.contains(expected));
         String expectedSuccess = "\"success\":true";
         Assert.assertTrue("Wrong end event log, expected success field to be true", endEventLog.contains(expectedSuccess));

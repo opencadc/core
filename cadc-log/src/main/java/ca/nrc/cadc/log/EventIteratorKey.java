@@ -70,10 +70,10 @@
 package ca.nrc.cadc.log;
 
 /**
- * The key used in an event start.
+ * The key used in an event iterator.
  * @author yeunga
  */
-public enum EventStartKey {
+public enum EventIteratorKey {
     LASTMODIFIED,
     BUCKET
 }

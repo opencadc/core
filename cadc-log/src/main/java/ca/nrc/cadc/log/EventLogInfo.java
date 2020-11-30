@@ -75,6 +75,7 @@ import java.lang.reflect.Modifier;
 import java.net.URI;
 import java.text.DateFormat;
 import java.util.Date;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
@@ -98,16 +99,16 @@ public class EventLogInfo {
     // label for this action or this type of event
     private String label;
     
-    // entity ID from the object being processed
+    // entity ID from the object being processed, it is stored as a String
+    // because it needs to appear in the info message as a String
     protected UUID entityID;
-    // Artifact.uri if available
+    // Artifact.uri if available, it is stored as a String because it needs to
+    // appear in the info message as a String
     protected URI artifactURI;
     // event life cycle: create | propagate
     protected EventLifeCycle lifeCycle;
-    // key/value in the start of an iteration, e.g. lastModified date or bucket
-    protected EventStartKVP start;
-    // value (of lastModified date or bucket) within an iteration
-    protected String value;
+    // key/value of the item in an iteration, e.g. lastModified date or bucket
+    protected Map<EventIteratorKey, String> iteratorItem;
     // method used by the event, e.g. PUT, QUERY
     protected String method;
     // number of locations an artifact is available in
@@ -226,15 +227,13 @@ public class EventLogInfo {
                         }
                         sb.append("\"").append(f.getName()).append("\"");
                         sb.append(":");
-                        if (o instanceof String) {
+                        if (o instanceof String || f.getName().equals("lifeCycle") || f.getName().equals("entityID") || f.getName().equals("artifactURI")) {
                             sb.append("\"").append(val).append("\"");
                         } else {
-                            if (f.getName().equals("start")) {
-                                EventStartKVP startKVP = ((EventStartKVP) o);
-                                sb.append("{\"key\":" 
-                                    + startKVP.getEventStartKey() 
-                                    + ",\"value\":\"" + startKVP.getValue() 
-                                    + "\"}");
+                            if (f.getName().equals("iteratorItem")) {
+                                Map<EventIteratorKey, String> iteratorItem = ((Map<EventIteratorKey, String>) o);
+                                EventIteratorKey key = (EventIteratorKey) iteratorItem.keySet().toArray()[0];
+                                sb.append("{\"key\":" + key + ",\"value\":\"" + iteratorItem.get(key) + "\"}");
                             } else {
                                 sb.append(val);
                             }
@@ -291,21 +290,12 @@ public class EventLogInfo {
     }
 
     /**
-     * Set the key/value pair of the starting item of the event.
+     * Set the key/value pair of the iterating item of the event.
      *
      * @param kvp
      */
-    public void setStartKVP(EventStartKVP kvp) {
-        this.start = kvp;
-    }
-
-    /**
-     * Set the value of an item of the event, after the starting item.
-     *
-     * @param value
-     */
-    public void setValue(String value) {
-        this.value = value;
+    public void setIteratorItem(Map<EventIteratorKey, String> kvp) {
+        this.iteratorItem = kvp;
     }
 
     /**
