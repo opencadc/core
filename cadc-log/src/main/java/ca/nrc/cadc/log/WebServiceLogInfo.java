@@ -166,6 +166,29 @@ public abstract class WebServiceLogInfo {
         return sb.toString();
     }
 
+    // handle Lists, refer to GroupLogInfo.addedMembers
+    // currently only List<String> is handled
+    private void populateList(StringBuilder sb, Object o) {
+        sb.append("[");
+        if (!((List) o).isEmpty()) {
+            boolean isFirstElement = true;
+            if (((List) o).get(0) instanceof String) {
+                List<String> elements = (List<String>) o;
+                for (String element : elements) {
+                    if (isFirstElement) {
+                        isFirstElement = false;
+                    } else {
+                        sb.append(",");
+                    }
+                    sb.append("\"");
+                    sb.append(element);
+                    sb.append("\"");
+                }
+            }
+        }
+        sb.append("]");
+    }
+    
     private void populate(StringBuilder sb, Class c) {
         for (Field f : c.getDeclaredFields()) {
             log.debug("found field: " + f.getName());
@@ -186,25 +209,7 @@ public abstract class WebServiceLogInfo {
                         sb.append("\"").append(f.getName()).append("\"");
                         sb.append(":");
                         if (o instanceof List<?>) {
-                            // handle Lists, refer to GroupLogInfo.addedMembers
-                            sb.append("[");
-                            if (!((List) o).isEmpty()) {
-                                boolean isFirstElement = true;
-                                if (((List) o).get(0) instanceof String) {
-                                    List<String> elements = (List<String>) o;
-                                    for (String element : elements) {
-                                        if (isFirstElement) {
-                                            isFirstElement = false;
-                                        } else {
-                                            sb.append(",");
-                                        }
-                                        sb.append("\"");
-                                        sb.append(element);
-                                        sb.append("\"");
-                                    }
-                                }
-                            }
-                            sb.append("]");
+                            populateList(sb, o);
                         } else if (o instanceof String) {
                             sb.append("\"").append(val).append("\"");
                         } else {
