@@ -168,11 +168,12 @@ public abstract class WebServiceLogInfo {
 
     // handle Lists, refer to GroupLogInfo.addedMembers
     // currently only List<String> is handled
-    private void populateList(StringBuilder sb, Object o) {
+    private void populateList(StringBuilder sb, List<?> o) {
         sb.append("[");
-        if (!((List) o).isEmpty()) {
+        if (!(o.isEmpty())) {
             boolean isFirstElement = true;
-            if (((List) o).get(0) instanceof String) {
+            if (o.get(0) instanceof String) {
+                @SuppressWarnings("unchecked")
                 List<String> elements = (List<String>) o;
                 for (String element : elements) {
                     if (isFirstElement) {
@@ -189,7 +190,7 @@ public abstract class WebServiceLogInfo {
         sb.append("]");
     }
     
-    private void populate(StringBuilder sb, Class c) {
+    private void populate(StringBuilder sb, Class<?> c) {
         for (Field f : c.getDeclaredFields()) {
             log.debug("found field: " + f.getName());
             int m = f.getModifiers();
@@ -209,7 +210,7 @@ public abstract class WebServiceLogInfo {
                         sb.append("\"").append(f.getName()).append("\"");
                         sb.append(":");
                         if (o instanceof List<?>) {
-                            populateList(sb, o);
+                            populateList(sb, (List<?>) o);
                         } else if (o instanceof String) {
                             sb.append("\"").append(val).append("\"");
                         } else {
@@ -221,7 +222,7 @@ public abstract class WebServiceLogInfo {
                 }
             }
         }
-        Class sc = c.getSuperclass();
+        Class<?> sc = c.getSuperclass();
         if (WebServiceLogInfo.class.isAssignableFrom(sc)) {
             populate(sb, sc);
         }
