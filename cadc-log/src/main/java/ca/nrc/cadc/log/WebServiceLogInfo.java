@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2020.                            (c) 2020.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -76,6 +76,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.text.DateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
@@ -179,12 +180,32 @@ public abstract class WebServiceLogInfo {
                     log.debug(f.getName() + " = " + o);
                     if (o != null && !f.getName().equals("serviceName")) {
                         String val = sanitize(o);
-                        if (sb.length() > 1) { // more than just the opening {
+                        if (sb.length() > 1) { // more than just the opening 
                             sb.append(",");
-                        }
+                        } 
                         sb.append("\"").append(f.getName()).append("\"");
                         sb.append(":");
-                        if (o instanceof String) {
+                        if (o instanceof List<?>) {
+                            // handle Lists, refer to GroupLogInfo.addedMembers
+                            sb.append("[");
+                            if (!((List) o).isEmpty()) {
+                                boolean isFirstElement = true;
+                                if (((List) o).get(0) instanceof String) {
+                                    List<String> elements = (List<String>) o;
+                                    for (String element : elements) {
+                                        if (isFirstElement) {
+                                            isFirstElement = false;
+                                        } else {
+                                            sb.append(",");
+                                        }
+                                        sb.append("\"");
+                                        sb.append(element);
+                                        sb.append("\"");
+                                    }
+                                }
+                            }
+                            sb.append("]");
+                        } else if (o instanceof String) {
                             sb.append("\"").append(val).append("\"");
                         } else {
                             sb.append(val);
