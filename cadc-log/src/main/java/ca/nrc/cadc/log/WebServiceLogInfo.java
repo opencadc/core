@@ -78,6 +78,8 @@ import java.text.DateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
+
 import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
 import org.apache.log4j.Logger;
@@ -172,18 +174,17 @@ public abstract class WebServiceLogInfo {
         sb.append("[");
         if (!(o.isEmpty())) {
             boolean isFirstElement = true;
-            if (o.get(0) instanceof String) {
-                @SuppressWarnings("unchecked")
-                List<String> elements = (List<String>) o;
-                for (String element : elements) {
-                    if (isFirstElement) {
-                        isFirstElement = false;
-                    } else {
-                        sb.append(",");
-                    }
-                    sb.append("\"");
-                    sb.append(element);
-                    sb.append("\"");
+            for (Object element : o) {
+                String val = sanitize(element);
+                if (isFirstElement) {
+                    isFirstElement = false;
+                } else {
+                    sb.append(",");
+                }
+                if (element instanceof String || element instanceof UUID) {
+                    sb.append("\"").append(val).append("\"");
+                } else {
+                    sb.append(val);
                 }
             }
         }
