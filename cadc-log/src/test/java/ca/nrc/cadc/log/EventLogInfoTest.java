@@ -125,7 +125,7 @@ public class EventLogInfoTest {
         eventLogInfo.setSuccess(userSuccess);
         String singleEventLog = eventLogInfo.singleEvent();
         
-        String expected = "\"application\":{\"name\":\"singleEventLogInfoTest\"},\"thread\":{\"name\":\"singleEventTestThreadName\"},\"label\":\"singleEventLabel\",\"log\":{\"level\":\"info\"},\"event\":\"single\",\"entityID\":\"00000000-0000-0000-0000-000000000064\",\"artifactURI\":\"cadc:TEST/singleFile.fits\",\"lifeCycle\":\"PROPAGATE\",\"method\":\"PUT\",\"urls\":3,\"attempts\":1,\"duration\"";
+        String expected = "\"application\":{\"name\":\"singleEventLogInfoTest\",\"class\":\"singleEventLabel\"},\"thread\":{\"name\":\"singleEventTestThreadName\"},\"log\":{\"level\":\"info\"},\"event\":{\"type\":\"single\",\"entityID\":\"00000000-0000-0000-0000-000000000064\",\"artifactURI\":\"cadc:TEST/singleFile.fits\",\"lifeCycle\":\"PROPAGATE\",\"operation\":\"PUT\",\"urls\":3,\"attempts\":1,\"duration\"";
         Assert.assertTrue("Wrong single event log", singleEventLog.contains(expected));
         String expectedSuccess = "\"success\":true";
         Assert.assertTrue("Wrong single event log, expected success to be true", singleEventLog.contains(expectedSuccess));
@@ -157,7 +157,7 @@ public class EventLogInfoTest {
         eventLogInfo.setIteratorItem(iteratorItem);
         String startEventLog = eventLogInfo.start();
         
-        String expected = "\"application\":{\"name\":\"startEventLogInfoTest\"},\"thread\":{\"name\":\"startEventTestThreadName\"},\"label\":\"startEventLabel\",\"log\":{\"level\":\"info\"},\"event\":\"start\",\"entityID\":\"00000000-0000-0000-0000-000000000064\",\"artifactURI\":\"cadc:TEST/startFile.fits\",\"lifeCycle\":\"CREATE\",\"iteratorItem\":{\"key\":LASTMODIFIED,\"value\":\"2020-11-07T12:18:03.694\"},\"method\":\"QUERY\",\"duration\"";
+        String expected = "\"application\":{\"name\":\"startEventLogInfoTest\",\"class\":\"startEventLabel\"},\"thread\":{\"name\":\"startEventTestThreadName\"},\"log\":{\"level\":\"info\"},\"event\":{\"type\":\"start\",\"entityID\":\"00000000-0000-0000-0000-000000000064\",\"artifactURI\":\"cadc:TEST/startFile.fits\",\"lifeCycle\":\"CREATE\",\"iteratorItem\":{\"key\":LASTMODIFIED,\"value\":\"2020-11-07T12:18:03.694\"},\"operation\":\"QUERY\",\"duration\"";
         Assert.assertTrue("Wrong start event log", startEventLog.contains(expected));
         String expectedSuccess = "\"success\":";
         Assert.assertFalse("Wrong single event log, expected to have no success field", startEventLog.contains(expectedSuccess));
@@ -198,7 +198,7 @@ public class EventLogInfoTest {
         // test null success
         eventLogInfo.setSuccess(true);
         String endEventLog = eventLogInfo.end();
-        String expected = "\"application\":{\"name\":\"endEventLogInfoTest\"},\"thread\":{\"name\":\"endEventTestThreadName\"},\"label\":\"endEventLabel\",\"log\":{\"level\":\"info\"},\"event\":\"end\",\"entityID\":\"00000000-0000-0000-0000-000000000064\",\"artifactURI\":\"cadc:TEST/endFile.fits\",\"lifeCycle\":\"PROPAGATE\",\"method\":\"QUERY\",\"message\":\"no error\",\"total\":100,\"duration\"";
+        String expected = "\"application\":{\"name\":\"endEventLogInfoTest\",\"class\":\"endEventLabel\"},\"thread\":{\"name\":\"endEventTestThreadName\"},\"log\":{\"level\":\"info\"},\"event\":{\"type\":\"end\",\"entityID\":\"00000000-0000-0000-0000-000000000064\",\"artifactURI\":\"cadc:TEST/endFile.fits\",\"lifeCycle\":\"PROPAGATE\",\"operation\":\"QUERY\",\"message\":\"no error\",\"total\":100,\"duration\"";
         Assert.assertTrue("Wrong end event log", endEventLog.contains(expected));
         String expectedSuccess = "\"success\":true";
         Assert.assertTrue("Wrong end event log, expected success field to be true", endEventLog.contains(expectedSuccess));

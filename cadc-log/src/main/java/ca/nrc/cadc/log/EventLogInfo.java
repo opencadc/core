@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2020.                            (c) 2020.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -96,9 +96,11 @@ public class EventLogInfo {
     private String applicationName;
     // ID of this application instance
     private String thread;
-    // label for this action or this type of event
-    private String label;
-    
+    // name of class where this action or this type of event takes place
+    private String className;
+
+    // type of event: start, end, single
+    protected String type;
     // entity ID from the object being processed, it is stored as a String
     // because it needs to appear in the info message as a String
     protected UUID entityID;
@@ -109,8 +111,8 @@ public class EventLogInfo {
     protected EventLifeCycle lifeCycle;
     // key/value of the item in an iteration, e.g. lastModified date or bucket
     protected Map<EventIteratorKey, String> iteratorItem;
-    // method used by the event, e.g. PUT, QUERY
-    protected String method;
+    // operation used by the event, e.g. PUT, QUERY
+    protected String operation;
     // number of locations an artifact is available in
     protected Integer urls;
     // number of retries attempted, e.g. when sync'ing a file
@@ -123,12 +125,12 @@ public class EventLogInfo {
     //      to start getting results
     protected Long duration;
     protected Boolean success;
-
-    public EventLogInfo(String appName, String label, String method) {
+    
+    public EventLogInfo(String appName, String clsName, String op) {
         this.applicationName = appName;
         this.thread = Thread.currentThread().getName();
-        this.label = label;
-        this.method = method;
+        this.className = clsName;
+        this.operation = op;
     }
 
     /**
@@ -142,7 +144,8 @@ public class EventLogInfo {
             this.success = null;
             log.warn("success = " + success + " was ignored for start event");
         }
-        return "{" + getPreamble() + "\"event\":\"start\"," + doit() + "}";
+        this.type = "start";
+        return getLogInfo();
     }
 
     /**
@@ -156,7 +159,8 @@ public class EventLogInfo {
             String msg = "success value is required for end event";
             throw new IllegalArgumentException(msg);
         }
-        return "{" + getPreamble() + "\"event\":\"end\"," + doit() + "}";
+        this.type = "end";
+        return getLogInfo();
     }
 
     /**
@@ -166,49 +170,29 @@ public class EventLogInfo {
      * @return
      */
     public String singleEvent() {
-        return "{" + getPreamble() + "\"event\":\"single\"," + doit() + "}";
+        this.type = "single";
+        return getLogInfo();
     }
-
-    String doit() {
-        StringBuilder sb = new StringBuilder();
-        populate(sb, this.getClass());
-        return sb.toString();
-    }
-
-    private String getTimestamp() {
-        DateFormat format = DateUtil.getDateFormat(DateUtil.ISO_DATE_FORMAT, 
-            DateUtil.UTC);
-        Date date = new Date(System.currentTimeMillis());
-        return "\"@timestamp\":\"" + format.format(date) + "\"";
-    }
-
-    private String getApplicationName() {
-        return "\"application\":{\"name\":\"" + applicationName + "\"}";
-    }
-
-    private String getThread() {
-        return "\"thread\":{\"name\":\"" + thread + "\"}";
-    }
-
-    private String getLabel() {
-        return "\"label\":\"" + label + "\"";
-    }
-
-    private String getLoglevel() {
-        return "\"log\":{\"level\":\"info\"}";
-    }
-
+    
     private String getPreamble() {
         StringBuilder sb = new StringBuilder();
         sb.append(getTimestamp()).append(",");
-        sb.append(getApplicationName()).append(",");
+        sb.append(getApplication()).append(",");
         sb.append(getThread()).append(",");
-        sb.append(getLabel()).append(",");
         sb.append(getLoglevel()).append(",");
         return sb.toString();
     }
 
-    private void populate(StringBuilder sb, Class c) {
+    static String sanitize(Object o) {
+        String ret = o.toString();
+        ret = ret.replaceAll("\"", "\'"); // double to single quote
+        ret = ret.replaceAll("\\s+", " "); // multiple whitespace to single space
+        return ret;
+    }
+
+    private String getLogInfo() {
+        Class<?> c = this.getClass();
+        StringBuilder sb = new StringBuilder();
         for (Field f : c.getDeclaredFields()) {
             log.debug("found field: " + f.getName());
             int m = f.getModifiers();
@@ -222,7 +206,7 @@ public class EventLogInfo {
                     log.debug(f.getName() + " = " + o);
                     if (o != null) {
                         String val = sanitize(o);
-                        if (sb.length() > 1) { // more than just the opening {
+                        if (sb.length() > 1) { // more than just the opening 
                             sb.append(",");
                         }
                         sb.append("\"").append(f.getName()).append("\"");
@@ -244,13 +228,35 @@ public class EventLogInfo {
                 }
             }
         }
+        return "{" + getPreamble() + "\"event\":{" + sb.toString() + "}}";
+    }
+    
+
+    private String getTimestamp() {
+        DateFormat format = DateUtil.getDateFormat(DateUtil.ISO_DATE_FORMAT, 
+            DateUtil.UTC);
+        Date date = new Date(System.currentTimeMillis());
+        return "\"@timestamp\":\"" + format.format(date) + "\"";
     }
 
-    static String sanitize(Object o) {
-        String ret = o.toString();
-        ret = ret.replaceAll("\"", "\'"); // double to single quote
-        ret = ret.replaceAll("\\s+", " "); // multiple whitespace to single space
-        return ret;
+    private String getApplication() {
+        return "\"application\":{" + getApplicationName() + "," + getClassName() + "}";
+    }
+
+    private String getApplicationName() {
+        return "\"name\":\"" + applicationName + "\"";
+    }
+
+    private String getThread() {
+        return "\"thread\":{\"name\":\"" + thread + "\"}";
+    }
+
+    private String getClassName() {
+        return "\"class\":\"" + className + "\"";
+    }
+
+    private String getLoglevel() {
+        return "\"log\":{\"level\":\"info\"}";
     }
 
     /**
@@ -342,5 +348,4 @@ public class EventLogInfo {
     public void setSuccess(Boolean isSuccessful) {
         this.success = isSuccessful;
     }
-
 }
