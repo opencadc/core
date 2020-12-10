@@ -119,13 +119,14 @@ public class EventLogInfoTest {
         eventLogInfo.setArtifactURI(artifactURI);
         eventLogInfo.setElapsedTime(duration);
         eventLogInfo.setEntityID(entityID);
+        eventLogInfo.setAdditionalInfo("more info");
         eventLogInfo.setLifeCycle(lifeCycle);
         eventLogInfo.setUrls(3);
         eventLogInfo.setAttempts(1);
         eventLogInfo.setSuccess(userSuccess);
         String singleEventLog = eventLogInfo.singleEvent();
         
-        String expected = "\"application\":{\"name\":\"singleEventLogInfoTest\",\"class\":\"singleEventLabel\"},\"thread\":{\"name\":\"singleEventTestThreadName\"},\"log\":{\"level\":\"info\"},\"event\":{\"type\":\"single\",\"entityID\":\"00000000-0000-0000-0000-000000000064\",\"artifactURI\":\"cadc:TEST/singleFile.fits\",\"lifeCycle\":\"PROPAGATE\",\"operation\":\"PUT\",\"urls\":3,\"attempts\":1,\"duration\"";
+        String expected = "\"application\":{\"name\":\"singleEventLogInfoTest\",\"class\":\"singleEventLabel\"},\"thread\":{\"name\":\"singleEventTestThreadName\"},\"log\":{\"level\":\"info\"},\"event\":{\"type\":\"single\",\"entityID\":\"00000000-0000-0000-0000-000000000064\",\"artifactURI\":\"cadc:TEST/singleFile.fits\",\"lifeCycle\":\"PROPAGATE\",\"operation\":\"PUT\",\"additionalInfo\":\"more info\",\"urls\":3,\"attempts\":1,\"duration\"";
         Assert.assertTrue("Wrong single event log", singleEventLog.contains(expected));
         String expectedSuccess = "\"success\":true";
         Assert.assertTrue("Wrong single event log, expected success to be true", singleEventLog.contains(expectedSuccess));

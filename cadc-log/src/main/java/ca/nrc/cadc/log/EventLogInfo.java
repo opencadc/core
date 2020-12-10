@@ -113,6 +113,8 @@ public class EventLogInfo {
     protected Map<EventIteratorKey, String> iteratorItem;
     // operation used by the event, e.g. PUT, QUERY
     protected String operation;
+    // additional information about the event, e.g. artifact collision
+    protected String additionalInfo;
     // number of locations an artifact is available in
     protected Integer urls;
     // number of retries attempted, e.g. when sync'ing a file
@@ -311,6 +313,15 @@ public class EventLogInfo {
      */
     public void setTotal(int num) {
         this.total = num;
+    }
+
+    /**
+     * Set additional information related to the event.
+     *
+     * @param info
+     */
+    public void setAdditionalInfo(String info) {
+        this.additionalInfo = info;
     }
 
     /**
