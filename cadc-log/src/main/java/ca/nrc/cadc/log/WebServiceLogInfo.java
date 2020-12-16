@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2020.                            (c) 2020.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -76,7 +76,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.text.DateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
+import java.util.UUID;
+
 import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
 import org.apache.log4j.Logger;
@@ -165,7 +168,30 @@ public abstract class WebServiceLogInfo {
         return sb.toString();
     }
 
-    private void populate(StringBuilder sb, Class c) {
+    // handle Lists, refer to GroupLogInfo.addedMembers
+    // currently only List<String> is handled
+    private void populateList(StringBuilder sb, List<?> o) {
+        sb.append("[");
+        if (!(o.isEmpty())) {
+            boolean isFirstElement = true;
+            for (Object element : o) {
+                String val = sanitize(element);
+                if (isFirstElement) {
+                    isFirstElement = false;
+                } else {
+                    sb.append(",");
+                }
+                if (element instanceof String || element instanceof UUID) {
+                    sb.append("\"").append(val).append("\"");
+                } else {
+                    sb.append(val);
+                }
+            }
+        }
+        sb.append("]");
+    }
+    
+    private void populate(StringBuilder sb, Class<?> c) {
         for (Field f : c.getDeclaredFields()) {
             log.debug("found field: " + f.getName());
             int m = f.getModifiers();
@@ -179,12 +205,14 @@ public abstract class WebServiceLogInfo {
                     log.debug(f.getName() + " = " + o);
                     if (o != null && !f.getName().equals("serviceName")) {
                         String val = sanitize(o);
-                        if (sb.length() > 1) { // more than just the opening {
+                        if (sb.length() > 1) { // more than just the opening 
                             sb.append(",");
-                        }
+                        } 
                         sb.append("\"").append(f.getName()).append("\"");
                         sb.append(":");
-                        if (o instanceof String) {
+                        if (o instanceof List<?>) {
+                            populateList(sb, (List<?>) o);
+                        } else if (o instanceof String) {
                             sb.append("\"").append(val).append("\"");
                         } else {
                             sb.append(val);
@@ -195,7 +223,7 @@ public abstract class WebServiceLogInfo {
                 }
             }
         }
-        Class sc = c.getSuperclass();
+        Class<?> sc = c.getSuperclass();
         if (WebServiceLogInfo.class.isAssignableFrom(sc)) {
             populate(sb, sc);
         }

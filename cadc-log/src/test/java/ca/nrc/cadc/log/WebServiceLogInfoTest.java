@@ -71,8 +71,14 @@ package ca.nrc.cadc.log;
 
 import ca.nrc.cadc.auth.HttpPrincipal;
 import ca.nrc.cadc.util.Log4jInit;
+
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.log4j.Level;
@@ -89,6 +95,87 @@ public class WebServiceLogInfoTest {
         Log4jInit.setLevel("ca.nrc.cadc.log", Level.INFO);
     }
 
+    private class LogInfoWithTestAttributes extends WebServiceLogInfo {
+        
+        protected List<Integer> intList;
+        protected List<String> strList;
+        protected List<UUID> uuidList;
+        
+        public LogInfoWithTestAttributes() {
+            super();
+        }
+        
+        public void setStrList(List<String> listOfStr) {
+            this.strList = listOfStr;
+        }
+
+        public void setIntList(List<Integer> listOfInt) {
+            this.intList = listOfInt;
+        }
+
+        public void setUUIDList(List<UUID> listOfUUID) {
+            this.uuidList = listOfUUID;
+        }
+    }
+    
+    @Test
+    public void testListAttributes() {
+        
+        // test empty lists
+        LogInfoWithTestAttributes emptyListLogInfo = new LogInfoWithTestAttributes();
+        List<String> emptyStrList = Arrays.asList();
+        List<Integer> emptyIntList = Arrays.asList();
+        List<UUID> emptyUUIDList = Arrays.asList();
+        emptyListLogInfo.setStrList(emptyStrList);
+        emptyListLogInfo.setIntList(emptyIntList);
+        emptyListLogInfo.setUUIDList(emptyUUIDList);
+        String start = emptyListLogInfo.start();
+        log.info("testEmptyList: " + start);
+        String expected = "\"phase\":\"start\",\"intList\":[],\"strList\":[],\"uuidList\":[]";
+        Assert.assertTrue("Wrong start", start.contains(expected));
+        
+        // test non-empty list of String
+        LogInfoWithTestAttributes nonEmptyStrListLogInfo = new LogInfoWithTestAttributes();
+        List<String> strList = Arrays.asList("string1", "string2", "string3");
+        nonEmptyStrListLogInfo.setStrList(strList);
+        start = nonEmptyStrListLogInfo.start();
+        log.info("testListOfStrings: " + start);
+        expected = "\"phase\":\"start\",\"strList\":[\"string1\",\"string2\",\"string3\"]";
+        Assert.assertTrue("Wrong start", start.contains(expected));
+        
+        // test non-empty list of quoted and spaced String
+        LogInfoWithTestAttributes quotedStrListLogInfo = new LogInfoWithTestAttributes();
+        List<String> quotedStrList = Arrays.asList("John\"s", "spa  c   ed", "Mary\"s");
+        quotedStrListLogInfo.setStrList(quotedStrList);
+        start = quotedStrListLogInfo.start(); 
+        log.info("testListOfQuotedStrings: " + start);
+        expected = "\"phase\":\"start\",\"strList\":[\"John's\",\"spa c ed\",\"Mary's\"]";
+        Assert.assertTrue("Wrong start", start.contains(expected));
+        
+        // test non-empty list of Integers
+        LogInfoWithTestAttributes nonEmptyIntListLogInfo = new LogInfoWithTestAttributes();
+        List<Integer> intList = Arrays.asList(1, 2, 3);
+        nonEmptyIntListLogInfo.setIntList(intList);
+        start = nonEmptyIntListLogInfo.start();
+        log.info("testListOfIntegers: " + start);
+        expected = "\"phase\":\"start\",\"intList\":[1,2,3]";
+        Assert.assertTrue("Wrong start", start.contains(expected));
+        
+        // test non-empty list of UUIDs
+        LogInfoWithTestAttributes nonEmptyUUIDListLogInfo = new LogInfoWithTestAttributes();
+        UUID uuid1 = UUID.randomUUID();
+        UUID uuid2 = UUID.randomUUID();
+        UUID uuid3 = UUID.randomUUID();
+        List<UUID> uuidList = Arrays.asList(uuid1, uuid2, uuid3);
+        nonEmptyUUIDListLogInfo.setUUIDList(uuidList);
+        start = nonEmptyUUIDListLogInfo.start();
+        log.info("testListOfUUIDs: " + start);
+        expected = "\"phase\":\"start\",\"uuidList\":[\"" + uuid1 + "\",\"" + uuid2 + "\",\"" + uuid3 +"\"]";
+        Assert.assertTrue("Wrong start", start.contains(expected));
+        
+        
+    }
+    
     @Test
     public void testSanitize() {
         String sketchy = "sketchy \"json\" content\n in     this     message";
@@ -98,96 +185,86 @@ public class WebServiceLogInfoTest {
     }
     
     @Test
-    public void testMinimalContentServlet() {
-        try {
-            HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
+    public void testMinimalContentServlet() throws Exception {
+        HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
 
-            String contextPath = "/service_name";
-            String servletPath = "/servlet_name";
-            String pathInfo = "/path/info";
-            String runID = "A1S2D3F4G5H6J7K8L90";
-            String queryEncoded = URLEncoder.encode("foo=123&bar=abc&runID=" + runID + "&baz=foobar", "UTF-8");
-            String queryDecoded = URLDecoder.decode(queryEncoded);
+        String contextPath = "/service_name";
+        String servletPath = "/servlet_name";
+        String pathInfo = "/path/info";
+        String runID = "A1S2D3F4G5H6J7K8L90";
+        String queryEncoded = URLEncoder.encode("foo=123&bar=abc&runID=" + runID + "&baz=foobar", "UTF-8");
+        String queryDecoded = URLDecoder.decode(queryEncoded);
 
-            EasyMock.expect(request.getMethod()).andReturn("Get").once();
-            EasyMock.expect(request.getContextPath()).andReturn(contextPath).once();
-            EasyMock.expect(request.getServletPath()).andReturn(servletPath).once();
-            EasyMock.expect(request.getPathInfo()).andReturn(pathInfo).once();
-            EasyMock.expect(request.getQueryString()).andReturn(queryEncoded).once();
-            EasyMock.expect(request.getHeader("X-Forwarded-For")).andReturn(null).once();
-            EasyMock.expect(request.getRemoteAddr()).andReturn("192.168.0.0").once();
+        EasyMock.expect(request.getMethod()).andReturn("Get").once();
+        EasyMock.expect(request.getContextPath()).andReturn(contextPath).once();
+        EasyMock.expect(request.getServletPath()).andReturn(servletPath).once();
+        EasyMock.expect(request.getPathInfo()).andReturn(pathInfo).once();
+        EasyMock.expect(request.getQueryString()).andReturn(queryEncoded).once();
+        EasyMock.expect(request.getHeader("X-Forwarded-For")).andReturn(null).once();
+        EasyMock.expect(request.getRemoteAddr()).andReturn("192.168.0.0").once();
 
-            EasyMock.replay(request);
+        EasyMock.replay(request);
 
-            WebServiceLogInfo logInfo = new ServletLogInfo(request);
-            String start = logInfo.start();
-            log.info("testMinimalContentServlet: " + start);
-            String end = logInfo.end();
-            log.info("testMinimalContentServlet: " + end);
-            String expected = "\"phase\":\"start\",\"ip\":\"192.168.0.0\",\"method\":\"GET\",\"path\":\"/service_name/servlet_name/path/info?" + queryDecoded + "\",\"runID\":\"" + runID + "\"";
-            Assert.assertTrue("Wrong start", start.contains(expected));
-            Assert.assertTrue("Wrong start", start.contains("\"service\":{\"name\":\"service_name\"}"));
-            expected = "\"phase\":\"end\",\"ip\":\"192.168.0.0\",\"method\":\"GET\",\"path\":\"/service_name/servlet_name/path/info?" + queryDecoded + "\",\"runID\":\"" + runID + "\",\"success\":true";
-            Assert.assertTrue("Wrong end", end.contains(expected));
-            Assert.assertTrue("Wrong end", end.contains("\"service\":{\"name\":\"service_name\"}"));
+        WebServiceLogInfo logInfo = new ServletLogInfo(request);
+        String start = logInfo.start();
+        log.info("testMinimalContentServlet: " + start);
+        String end = logInfo.end();
+        log.info("testMinimalContentServlet: " + end);
+        String expected = "\"phase\":\"start\",\"ip\":\"192.168.0.0\",\"method\":\"GET\",\"path\":\"/service_name/servlet_name/path/info?" + queryDecoded + "\",\"runID\":\"" + runID + "\"";
+        Assert.assertTrue("Wrong start", start.contains(expected));
+        Assert.assertTrue("Wrong start", start.contains("\"service\":{\"name\":\"service_name\"}"));
+        expected = "\"phase\":\"end\",\"ip\":\"192.168.0.0\",\"method\":\"GET\",\"path\":\"/service_name/servlet_name/path/info?" + queryDecoded + "\",\"runID\":\"" + runID + "\",\"success\":true";
+        Assert.assertTrue("Wrong end", end.contains(expected));
+        Assert.assertTrue("Wrong end", end.contains("\"service\":{\"name\":\"service_name\"}"));
 
-            Assert.assertEquals(logInfo.path, contextPath + servletPath + pathInfo + "?" + queryDecoded);
-            Assert.assertEquals(logInfo.runID, runID);
+        Assert.assertEquals(logInfo.path, contextPath + servletPath + pathInfo + "?" + queryDecoded);
+        Assert.assertEquals(logInfo.runID, runID);
 
-            EasyMock.verify(request);
-        }
-        catch (Throwable t) {
-            log.error(t.getMessage());
-        }
+        EasyMock.verify(request);
     }
 
     @Test
-    public void testMaximalContentServlet() {
-        try {
-            HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
+    public void testMaximalContentServlet() throws Exception {
+        HttpServletRequest request = EasyMock.createMock(HttpServletRequest.class);
 
-            String contextPath = "/service_name";
-            String servletPath = "/servlet_name";
-            String pathInfo = "/path/info";
-            String runID = "A1S2D3F4G5H6J7K8L90";
-            String queryEncoded = URLEncoder.encode("foo=123&bar=abc&runID=" + runID + "&baz=foobar", "UTF-8");
-            String queryDecoded = URLDecoder.decode(queryEncoded);
+        String contextPath = "/service_name";
+        String servletPath = "/servlet_name";
+        String pathInfo = "/path/info";
+        String runID = "A1S2D3F4G5H6J7K8L90";
+        String queryEncoded = URLEncoder.encode("foo=123&bar=abc&runID=" + runID + "&baz=foobar", "UTF-8");
+        String queryDecoded = URLDecoder.decode(queryEncoded);
 
-            EasyMock.expect(request.getMethod()).andReturn("Get").once();
-            EasyMock.expect(request.getContextPath()).andReturn(contextPath).once();
-            EasyMock.expect(request.getServletPath()).andReturn(servletPath).once();
-            EasyMock.expect(request.getPathInfo()).andReturn(pathInfo).once();
-            EasyMock.expect(request.getQueryString()).andReturn(queryEncoded).once();
-            EasyMock.expect(request.getHeader("X-Forwarded-For")).andReturn(null).once();
-            EasyMock.expect(request.getRemoteAddr()).andReturn("192.168.0.0").once();
+        EasyMock.expect(request.getMethod()).andReturn("Get").once();
+        EasyMock.expect(request.getContextPath()).andReturn(contextPath).once();
+        EasyMock.expect(request.getServletPath()).andReturn(servletPath).once();
+        EasyMock.expect(request.getPathInfo()).andReturn(pathInfo).once();
+        EasyMock.expect(request.getQueryString()).andReturn(queryEncoded).once();
+        EasyMock.expect(request.getHeader("X-Forwarded-For")).andReturn(null).once();
+        EasyMock.expect(request.getRemoteAddr()).andReturn("192.168.0.0").once();
 
-            EasyMock.replay(request);
+        EasyMock.replay(request);
 
-            WebServiceLogInfo logInfo = new ServletLogInfo(request);
-            String start = logInfo.start();
-            log.info("testMaximalContentServlet: " + start);
-            String expected = "\"phase\":\"start\",\"ip\":\"192.168.0.0\",\"method\":\"GET\",\"path\":\"/service_name/servlet_name/path/info?" + queryDecoded + "\",\"runID\":\"" + runID + "\"";
-            Assert.assertTrue("Wrong start", start.contains(expected));
-            Assert.assertTrue("Wrong start", start.contains("\"service\":{\"name\":\"service_name\"}"));
-            logInfo.setSuccess(false);
-            logInfo.setSubject(createSubject("the user", "the proxy"));
-            logInfo.setElapsedTime(1234L);
-            logInfo.setBytes(10L);
-            logInfo.setMessage("the message");
-            String end = logInfo.end();
-            log.info("testMaximalContentServlet: " + end);
-            expected = "\"phase\":\"end\",\"bytes\":10,\"ip\":\"192.168.0.0\",\"message\":\"the message\",\"method\":\"GET\",\"path\":\"/service_name/servlet_name/path/info?" + queryDecoded + "\",\"runID\":\"" + runID + "\",\"proxyUser\":\"the proxy\",\"success\":false,\"duration\":1234,\"user\":\"the user\"";
-            Assert.assertTrue("Wrong end", end.contains(expected));
-            Assert.assertTrue("Wrong end", end.contains("\"service\":{\"name\":\"service_name\"}"));
+        WebServiceLogInfo logInfo = new ServletLogInfo(request);
+        String start = logInfo.start();
+        log.info("testMaximalContentServlet: " + start);
+        String expected = "\"phase\":\"start\",\"ip\":\"192.168.0.0\",\"method\":\"GET\",\"path\":\"/service_name/servlet_name/path/info?" + queryDecoded + "\",\"runID\":\"" + runID + "\"";
+        Assert.assertTrue("Wrong start", start.contains(expected));
+        Assert.assertTrue("Wrong start", start.contains("\"service\":{\"name\":\"service_name\"}"));
+        logInfo.setSuccess(false);
+        logInfo.setSubject(createSubject("the user", "the proxy"));
+        logInfo.setElapsedTime(1234L);
+        logInfo.setBytes(10L);
+        logInfo.setMessage("the message");
+        String end = logInfo.end();
+        log.info("testMaximalContentServlet: " + end);
+        expected = "\"phase\":\"end\",\"bytes\":10,\"ip\":\"192.168.0.0\",\"message\":\"the message\",\"method\":\"GET\",\"path\":\"/service_name/servlet_name/path/info?" + queryDecoded + "\",\"proxyUser\":\"the proxy\",\"runID\":\"" + runID + "\",\"success\":false,\"duration\":1234,\"user\":\"the user\"";
+        Assert.assertTrue("Wrong end", end.contains(expected));
+        Assert.assertTrue("Wrong end", end.contains("\"service\":{\"name\":\"service_name\"}"));
 
-            Assert.assertEquals(logInfo.path, contextPath + servletPath + pathInfo + "?" + queryDecoded);
-            Assert.assertEquals(logInfo.runID, runID);
+        Assert.assertEquals(logInfo.path, contextPath + servletPath + pathInfo + "?" + queryDecoded);
+        Assert.assertEquals(logInfo.runID, runID);
 
-            EasyMock.verify(request);
-        }
-        catch (Throwable t) {
-            log.error(t.getMessage());
-        }
+        EasyMock.verify(request);
     }
 
     private Subject createSubject(String userid, String proxyUser) {
