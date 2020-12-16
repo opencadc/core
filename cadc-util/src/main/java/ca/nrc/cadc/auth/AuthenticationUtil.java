@@ -112,6 +112,12 @@ public class AuthenticationUtil {
 
     // HTTP/1.1 Authorization header as defined by RFC 7235
     public static final String AUTHORIZATION_HEADER = "Authorization";
+    
+    // HTTP/1.1 WWW-Authenticate header
+    public static final String AUTHENTICATE_HEADER = "WWW-Authenticate";
+    
+    // IVOA header to indicate successful authentication.  Value is a principal name.
+    public static final String VO_AUTHENTICATED_HEADER = "X-VO-Authenticated";
 
     // Mandatory support list of RDN descriptors according to RFC 4512.
     private static final String[] ORDERED_RDN_KEYS = new String[] { "DC", "CN", "OU", "O", "STREET", "L", "ST", "C", "UID" };

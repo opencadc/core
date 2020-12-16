@@ -307,8 +307,7 @@ public class RestServlet extends HttpServlet {
             action.setSyncOutput(out);
             action.setLogInfo(logInfo);
             
-            setAuthenticateHeader(out);
-            setVOAuthenticatedHeader(subject, out);
+            setVOAuthenticateHeaders(subject, out);
 
             doit(subject, action);
         } catch (InstantiationException | IllegalAccessException ex) {
@@ -418,47 +417,53 @@ public class RestServlet extends HttpServlet {
     }
     
     /**
-     * Set the WWW-Authenticate header so clients know how to obtain authentication tokens.
-     */
-    private void setAuthenticateHeader(SyncOutput out) throws IOException, ResourceNotFoundException {
-        log.debug("Setting WWW-Authenticate header");
-        // find the token URL
-        LocalAuthority localAuthority = new LocalAuthority();
-        URI tokenServiceURI = localAuthority.getServiceURI(Standards.UMS_LOGIN_01.toString());
-        RegistryClient regClient = new RegistryClient();
-        URL tokenURL = regClient.getServiceURL(tokenServiceURI, Standards.UMS_LOGIN_01, AuthMethod.ANON);
-        
-        // set a header for tokens
-        StringBuilder sb = new StringBuilder();
-        sb.append("vo-sso securitymethod=\"").append(Standards.SECURITY_METHOD_TOKEN.toString()).append("\", ");
-        sb.append("accessURL=\"").append(tokenURL).append("\"");
-        out.addHeader("WWW-Authenticate", sb.toString());
-        
-        // set a second header for client certificates
-        sb = new StringBuilder();
-        sb.append("vo-sso securitymethod=\"").append(Standards.SECURITY_METHOD_CERT).append("\"");
-        out.addHeader("WWW-Authenticate", sb.toString());
-    }
-    
-    /**
-     * Set the X-VO-Authenticated header if the user is known. Use the HttpPrincipal if
+     * If the user has authenticated, set the X-VO-Authenticated. Use the HttpPrincipal if
      * available, otherwise whatever is present.
+     * 
+     * Otherwise set the WWW-Authenticate header so clients know how to obtain
+     * authentication tokens.
      */
-    private void setVOAuthenticatedHeader(Subject subject, SyncOutput out) throws IOException, ResourceNotFoundException {
-        if (!AuthenticationUtil.getAuthMethodFromCredentials(subject).equals(AuthMethod.ANON)) {
-            log.debug("Setting X-VO-Authenticated header");
+    private void setVOAuthenticateHeaders(Subject subject, SyncOutput out) throws IOException, ResourceNotFoundException {
+        if (AuthenticationUtil.getAuthMethodFromCredentials(subject).equals(AuthMethod.ANON)) {
+            // Not authenticated...
+            
+            log.debug("Setting " + AuthenticationUtil.AUTHENTICATE_HEADER + " header");
+            // find the token URL
+            LocalAuthority localAuthority = new LocalAuthority();
+            URI loginServiceURI = localAuthority.getServiceURI(Standards.SECURITY_METHOD_PASSWORD.toString());
+            URI authorizeServiceURI = localAuthority.getServiceURI(Standards.SECURITY_METHOD_OAUTH.toString());
+            RegistryClient regClient = new RegistryClient();
+            URL loginURL = regClient.getServiceURL(loginServiceURI, Standards.SECURITY_METHOD_PASSWORD, AuthMethod.ANON);
+            URL authorizeURL = regClient.getServiceURL(authorizeServiceURI, Standards.SECURITY_METHOD_OAUTH, AuthMethod.ANON);
+            
+            // set a header for info on how to obtain tokens with username/password over tls
+            StringBuilder sb = new StringBuilder();
+            sb.append("vo-token standardID=\"").append(Standards.SECURITY_METHOD_PASSWORD.toString()).append("\", ");
+            sb.append("accessURL=\"").append(loginURL).append("\"");
+            out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
+            
+            // set a header for info on how to obtain tokens with OAuth2 authorize
+            sb = new StringBuilder();
+            sb.append("vo-token standardID=\"").append(Standards.SECURITY_METHOD_OAUTH.toString()).append("\", ");
+            sb.append("accessURL=\"").append(authorizeURL).append("\"");
+            out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
+        } else {
+            // Authenticated...
+            
+            log.debug("Setting " + AuthenticationUtil.VO_AUTHENTICATED_HEADER + " header");
             Set<HttpPrincipal> useridPrincipals = subject.getPrincipals(HttpPrincipal.class);
             if (!useridPrincipals.isEmpty()) {
                 HttpPrincipal userid = useridPrincipals.iterator().next();
-                out.addHeader("X-VO-Authenticated", userid.getName());
+                out.addHeader(AuthenticationUtil.VO_AUTHENTICATED_HEADER, userid.getName());
                 return;
             }
             Set<Principal> allPrincipals = subject.getPrincipals();
             if (!allPrincipals.isEmpty()) {
                 Principal principal = allPrincipals.iterator().next();
-                out.addHeader("X-VO-Authenticated", principal.getName());
+                out.addHeader(AuthenticationUtil.VO_AUTHENTICATED_HEADER, principal.getName());
                 return;
             }
         }
     }
+    
 }
