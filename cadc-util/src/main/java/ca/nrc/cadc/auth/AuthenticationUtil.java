@@ -247,6 +247,11 @@ public class AuthenticationUtil {
         if (!sso.isEmpty()) {
             return AuthMethod.COOKIE;
         }
+        
+        Set token = subject.getPublicCredentials(DelegationToken.class);
+        if (!token.isEmpty()) {
+            return AuthMethod.TOKEN;
+        }
 
         return AuthMethod.ANON;
     }
