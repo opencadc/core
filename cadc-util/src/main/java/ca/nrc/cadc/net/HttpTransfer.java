@@ -760,7 +760,7 @@ public abstract class HttpTransfer implements Runnable {
         
         captureResponseHeaders(conn);
         
-        if (responseCode < 400) {
+        if (responseCode <= 100 && responseCode < 400) {
             return;
         }
         log.debug("error: " + contentType + " " + contentLength);
