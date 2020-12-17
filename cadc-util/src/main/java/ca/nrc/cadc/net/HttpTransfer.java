@@ -69,6 +69,9 @@
 
 package ca.nrc.cadc.net;
 
+import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.auth.BearerTokenPrincipal;
+import ca.nrc.cadc.auth.DelegationToken;
 import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.auth.SSLUtil;
 import ca.nrc.cadc.auth.SSOCookieCredential;
@@ -97,10 +100,12 @@ import java.nio.channels.WritableByteChannel;
 import java.security.AccessControlContext;
 import java.security.AccessControlException;
 import java.security.AccessController;
+import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1066,10 +1071,24 @@ public abstract class HttpTransfer implements Runnable {
         }
     }
 
-    protected void setRequestSSOCookie(HttpURLConnection conn) {
+    protected void setRequestAuthHeaders(HttpURLConnection conn) {
         AccessControlContext acc = AccessController.getContext();
         Subject subj = Subject.getSubject(acc);
         if (subj != null) {
+            
+            // tokens
+            Set<BearerTokenPrincipal> tokens = subj.getPrincipals(BearerTokenPrincipal.class);
+            if (tokens != null && !tokens.isEmpty()) {
+                Iterator<BearerTokenPrincipal> tokenIt = tokens.iterator();
+                BearerTokenPrincipal next = null;
+                while (tokenIt.hasNext()) {
+                    next = tokenIt.next();
+                    String token = next.getName();
+                    conn.setRequestProperty(AuthenticationUtil.AUTHORIZATION_HEADER, "Bearer " + token);
+                }
+            }
+            
+            // cookies
             Set<SSOCookieCredential> cookieCreds = subj
                     .getPublicCredentials(SSOCookieCredential.class);
             if ((cookieCreds != null) && (cookieCreds.size() > 0)) {
