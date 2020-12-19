@@ -163,7 +163,7 @@ public class Log4jInit
             BasicConfigurator.resetConfiguration();
             Logger.getRootLogger().setLevel(Level.ERROR); // must redo after reset
 
-            boolean messageOnly = Boolean.getBoolean("ca.nrc.cadc.util.Log4jInit.mesageOnly");
+            boolean messageOnly = "true".equals(Log4jInit.class.getName() + ".mesageOnly");
             String errorLogFormat = LONG_FORMAT;
             String infoLogFormat = LONG_FORMAT;
             String debugLogFormat = SHORT_FORMAT;
