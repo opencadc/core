@@ -286,7 +286,7 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
             handleException(ex, 403, ex.getMessage(), false, false);
         } catch (CertificateException ex) {
             handleException(ex, 403, "permission denied -- reason: invalid proxy certficate", false, true);
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException | UnsupportedOperationException | InlineContentException ex) {
             logInfo.setSuccess(true);
             handleException(ex, 400, ex.getMessage(), false, false);
         } catch (ResourceNotFoundException ex) {
@@ -304,9 +304,6 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
         } catch (ExpectationFailedException ex) {
             logInfo.setSuccess(true);
             handleException(ex, 417, ex.getMessage(), false, false);
-        } catch (UnsupportedOperationException ex) {
-            logInfo.setSuccess(true);
-            handleException(ex, 400, ex.getMessage(), false, false);
         } catch (TransientException ex) {
             logInfo.setSuccess(true);
             syncOutput.setHeader(HttpTransfer.SERVICE_RETRY, ex.getRetryDelay());
@@ -346,11 +343,9 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
         if (!syncOutput.isOpen()) {
             syncOutput.setCode(code);
             syncOutput.setHeader("Content-Type", "text/plain");
-
-            OutputStream os = syncOutput.getOutputStream();
+            
             StringBuilder sb = new StringBuilder();
             sb.append(message).append("\n");
-
             if (showExceptions) {
                 sb.append(ex.toString()).append("\n");
                 Throwable cause = ex.getCause();
@@ -360,8 +355,11 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
                     cause = cause.getCause();
                 }
             }
-
-            os.write(sb.toString().getBytes());
+            byte[] out = sb.toString().getBytes();
+            syncOutput.setHeader("Content-Length", Integer.toString(out.length));
+            
+            OutputStream os = syncOutput.getOutputStream();
+            os.write(out);
         } else {
             log.error("unexpected situation: SyncOutput is open", ex);
         }

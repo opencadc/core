@@ -87,10 +87,11 @@ public class SyncOutput {
     private static final Logger log = Logger.getLogger(SyncOutput.class);
 
     private final HttpServletResponse response;
-    private OutputStream outputStream;
+    private SafeOutputStream outputStream;
 
     public SyncOutput(HttpServletResponse response) {
         this.response = response;
+        this.outputStream = null;
     }
 
     /**
@@ -100,7 +101,8 @@ public class SyncOutput {
      * @return true if response header committed and output stream has been opened
      */
     public boolean isOpen() {
-        return (outputStream != null);
+        log.debug("OutputStream open: " + (this.outputStream != null && this.outputStream.isOpen()));
+        return (this.outputStream != null && this.outputStream.isOpen());
     }
 
     /**
@@ -120,12 +122,12 @@ public class SyncOutput {
      * @param code HTTP response code
      */
     public void setCode(int code) {
-        if (outputStream != null) {
+        if (isOpen()) {
             IllegalStateException e = new IllegalStateException();
             log.warn("OutputStream already open, not setting response code to: " + code, e);
             return;
         }
-        response.setStatus(code);
+        this.response.setStatus(code);
     }
 
     /**
@@ -135,16 +137,16 @@ public class SyncOutput {
      * @param value HTTP header value
      */
     public void setHeader(String key, Object value) {
-        if (outputStream != null) {
+        if (isOpen()) {
             IllegalStateException e = new IllegalStateException();
             log.warn("OutputStream already open, not setting header: " + key + " to: " + value, e);
             return;
         }
 
         if (value == null) {
-            response.setHeader(key, null);
+            this.response.setHeader(key, null);
         } else {
-            response.setHeader(key, value.toString());
+            this.response.setHeader(key, value.toString());
         }
     }
     
@@ -169,30 +171,82 @@ public class SyncOutput {
     }
 
     /**
-     * Get the output stream. Calling this method commits the request (see isOpen).
+     * Get the output stream.
+     *  ** Calling this method no longer commits the request. **
      *
      * @return the output stream for writing the response
      * @throws IOException fail to open output stream
      */
     public OutputStream getOutputStream()
             throws IOException {
-        if (outputStream == null) {
-            log.debug("First open of output stream");
-            outputStream = new SafeOutputStream(response.getOutputStream());
+        if (this.outputStream == null) {
+            log.debug("getOutputStream called");
+            this.outputStream = new SafeOutputStream();
         }
-        return outputStream;
+        return this.outputStream;
     }
 
+    /**
+     * OutputStream that does not allow the stream to be closed,
+     * and does not open the OutputStream (committing the response)
+     * until a write method is called.
+     */
     private class SafeOutputStream extends FilterOutputStream {
 
-        SafeOutputStream(OutputStream ostream) {
-            super(ostream);
+        SafeOutputStream() {
+            super(null);
         }
 
         @Override
         public void close()
                 throws IOException {
             // cannot close service output streams
+            log.debug("close()");
         }
+
+        @Override
+        public void flush()
+            throws IOException {
+            if (this.out == null) {
+                log.debug("flush - first open of OutputStream");
+                this.out = response.getOutputStream();
+            }
+            super.flush();
+        }
+
+        @Override
+        public void write(int b)
+            throws IOException {
+            if (this.out == null) {
+                log.debug("write(int b) - first open of OutputStream");
+                this.out = response.getOutputStream();
+            }
+            super.write(b);
+        }
+
+        @Override
+        public void write(byte[] b)
+            throws IOException {
+            if (this.out == null) {
+                log.debug("write(byte[] b) - first open of OutputStream");
+                this.out = response.getOutputStream();
+            }
+            super.write(b);
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len)
+            throws IOException {
+            if (this.out == null) {
+                log.debug("write(byte[] b, int off, int len) - first open of OutputStream");
+                this.out = response.getOutputStream();
+            }
+            super.write(b, off, len);
+        }
+
+        boolean isOpen() {
+            return (this.out != null);
+        }
+
     }
 }

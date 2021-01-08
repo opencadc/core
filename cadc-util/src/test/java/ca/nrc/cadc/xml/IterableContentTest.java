@@ -74,13 +74,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import junit.framework.Assert;
-
 import org.apache.log4j.Logger;
 import org.jdom2.Content;
 import org.jdom2.Element;
 import org.jdom2.Namespace;
 import org.junit.Test;
+import org.junit.Assert;
 
 import ca.nrc.cadc.util.Log4jInit;
 
@@ -147,7 +146,7 @@ public class IterableContentTest
             try { contentList.size(); Assert.fail("Should be unsupported."); } catch (UnsupportedOperationException e) {};
             try { contentList.subList(0, 0); Assert.fail("Should be unsupported."); } catch (UnsupportedOperationException e) {};
             try { contentList.toArray(); Assert.fail("Should be unsupported."); } catch (UnsupportedOperationException e) {};
-            try { contentList.toArray(null); Assert.fail("Should be unsupported."); } catch (UnsupportedOperationException e) {};
+            try { contentList.toArray(new Content[0]); Assert.fail("Should be unsupported."); } catch (UnsupportedOperationException e) {};
             
             Assert.assertFalse("should not be empty.", contentList.isEmpty());
             Iterator<Content> it = contentList.iterator();
