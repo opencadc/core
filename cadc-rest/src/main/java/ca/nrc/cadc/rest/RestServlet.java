@@ -73,8 +73,10 @@ import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.log.ServletLogInfo;
 import ca.nrc.cadc.log.WebServiceLogInfo;
+import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.util.Enumerator;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -304,6 +306,10 @@ public class RestServlet extends HttpServlet {
             String message = "[BUG] failed to instantiate " + actionClass + " cause: " + ex.getMessage();
             logInfo.setMessage(message);
             handleException(out, response, ex, 500, message, true);
+        } catch (FileNotFoundException | ResourceNotFoundException ex) {
+            logInfo.setSuccess(false);
+            logInfo.setMessage(ex.getMessage());
+            handleException(out, response, ex, 404, ex.getMessage(), true);
         } catch (AccessControlException | NotAuthenticatedException ex) {
             logInfo.setSuccess(true);
             logInfo.setMessage(ex.getMessage());
