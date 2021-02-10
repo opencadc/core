@@ -245,4 +245,26 @@ public class DateUtilTest
         }
     }
 
+    @Test
+    public void testHttp_Date()
+        throws Exception
+    {
+        try
+        {
+            DateFormat df = DateUtil.getDateFormat(DateUtil.HTTP_DATE_FORMAT, DateUtil.GMT);
+            
+            // https://tools.ietf.org/html/rfc7231#section-7.1.1.1
+            String rfc7231 = "Sun, 06 Nov 1994 08:49:37 GMT";
+            
+            Date d = df.parse(rfc7231);
+            Assert.assertNotNull(d);
+            String actual = df.format(d);
+            Assert.assertEquals(rfc7231, actual);
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
 }
