@@ -84,7 +84,6 @@ import ca.nrc.cadc.util.HexUtil;
 import ca.nrc.cadc.util.StringUtil;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -414,7 +413,7 @@ public abstract class HttpTransfer implements Runnable {
     }
     
     /**
-     * Get the MD5 checksum sum of the response.
+     * Convenience: Get the MD5 checksum sum of the response.
      * 
      * @return the content-md5 or null
      */
@@ -599,7 +598,7 @@ public abstract class HttpTransfer implements Runnable {
     public void setRequestProperty(String header, String value) {
         requestProperties.add(new HttpRequestProperty(header, value));
     }
-
+    
     /**
      * Set multiple request properties. Adds all the specified properties to
      * those set with setRequestProperty (if any).
