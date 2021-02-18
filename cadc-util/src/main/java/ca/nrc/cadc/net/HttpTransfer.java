@@ -415,7 +415,7 @@ public abstract class HttpTransfer implements Runnable {
     /**
      * Convenience: Get the MD5 checksum sum of the response.
      * 
-     * @return the content-md5 or null
+     * @return the MD5 checksum in hex form or null
      */
     public String getContentMD5() { 
         return contentMD5; 
@@ -598,7 +598,7 @@ public abstract class HttpTransfer implements Runnable {
     public void setRequestProperty(String header, String value) {
         requestProperties.add(new HttpRequestProperty(header, value));
     }
-    
+
     /**
      * Set multiple request properties. Adds all the specified properties to
      * those set with setRequestProperty (if any).
