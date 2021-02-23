@@ -70,6 +70,7 @@
 package ca.nrc.cadc.net;
 
 import ca.nrc.cadc.auth.SSOCookieCredential;
+import ca.nrc.cadc.util.HexUtil;
 import ca.nrc.cadc.util.Log4jInit;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -77,6 +78,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Date;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -291,6 +295,243 @@ public class HttpTransferTest {
         });
 
         EasyMock.verify(mockConnection);
+    }
+
+    @Test
+    public void testGetDigest() throws Exception {
+        try {
+            String input = "Hello World";
+            MessageDigest md = MessageDigest.getInstance("md5");
+            byte[] md5Bytes = md.digest(input.getBytes(StandardCharsets.UTF_8));
+            String md5Hex = HexUtil.toHex(md5Bytes);
+
+            md = MessageDigest.getInstance("sha-1");
+            byte[] sha1Bytes = md.digest(input.getBytes(StandardCharsets.UTF_8));
+            String sha1Hex = HexUtil.toHex(sha1Bytes);
+
+            md = MessageDigest.getInstance("sha-256");
+            byte[] sha256Bytes = md.digest(input.getBytes(StandardCharsets.UTF_8));
+            String sha256Hex = HexUtil.toHex(sha256Bytes);
+
+            md = MessageDigest.getInstance("sha-384");
+            byte[] sha384Bytes = md.digest(input.getBytes(StandardCharsets.UTF_8));
+            String sha384Hex = HexUtil.toHex(sha384Bytes);
+
+            md = MessageDigest.getInstance("sha-512");
+            byte[] sha512Bytes = md.digest(input.getBytes(StandardCharsets.UTF_8));
+            String sha512Hex = HexUtil.toHex(sha512Bytes);
+
+            String digest;
+            URI uri;
+            String algorithm;
+            String checksum;
+
+            /**
+             * Invalid digest checksums.
+             */
+            digest = null;
+            uri = HttpTransfer.parseDigest(digest);
+            Assert.assertNull("uri is not null", uri);
+
+            digest = "";
+            uri = HttpTransfer.parseDigest(digest);
+            Assert.assertNull("uri is not null", uri);
+
+            digest = "a";
+            try {
+                uri = HttpTransfer.parseDigest(digest);
+                Assert.fail("IllegalArgumentException not thrown");
+            }
+            catch (IllegalArgumentException expected) {
+                Assert.assertTrue(expected.getMessage().contains("Expected digest format"));
+            }
+
+            digest = "a=";
+            try {
+                uri = HttpTransfer.parseDigest(digest);
+                Assert.fail("IllegalArgumentException not thrown");
+            }
+            catch (IllegalArgumentException expected) {
+                Assert.assertTrue(expected.getMessage().contains("Unable to parse checksum"));
+            }
+
+            digest = "=b";
+            try {
+                uri = HttpTransfer.parseDigest(digest);
+                Assert.fail("IllegalArgumentException not thrown");
+            }
+            catch (IllegalArgumentException expected) {
+                Assert.assertTrue(expected.getMessage().contains("Unable to parse algorithm"));
+            }
+
+            digest = "=";
+            try {
+                uri = HttpTransfer.parseDigest(digest);
+                Assert.fail("IllegalArgumentException not thrown");
+            }
+            catch (IllegalArgumentException expected) {
+                Assert.assertTrue(expected.getMessage().contains("Unable to parse algorithm"));
+            }
+
+            digest = "a=b";
+            try {
+                uri = HttpTransfer.parseDigest(digest);
+                Assert.fail("IllegalArgumentException not thrown");
+            }
+            catch (IllegalArgumentException expected) {
+                Assert.assertTrue(expected.getMessage().contains("Unsupported algorithm"));
+            }
+
+            digest = "md5=";
+            try {
+                uri = HttpTransfer.parseDigest(digest);
+                Assert.fail("IllegalArgumentException not thrown");
+            }
+            catch (IllegalArgumentException expected) {
+                Assert.assertTrue(expected.getMessage().contains("Unable to parse checksum"));
+            }
+
+            digest = "=" + md5Hex;
+            try {
+                uri = HttpTransfer.parseDigest(digest);
+                Assert.fail("IllegalArgumentException not thrown");
+            }
+            catch (IllegalArgumentException expected) {
+                Assert.assertTrue(expected.getMessage().contains("Unable to parse algorithm"));
+            }
+
+            digest = "md6=" + md5Hex;
+            try {
+                uri = HttpTransfer.parseDigest(digest);
+                Assert.fail("IllegalArgumentException not thrown");
+            }
+            catch (IllegalArgumentException expected) {
+                Assert.assertTrue(expected.getMessage().contains("Unsupported algorithm"));
+            }
+
+            digest = "md5=" + md5Hex.substring(0, md5Hex.length() - 2);
+            try {
+                uri = HttpTransfer.parseDigest(digest);
+                Assert.fail("IllegalArgumentException not thrown");
+            }
+            catch (IllegalArgumentException expected) {
+                Assert.assertTrue(expected.getMessage().contains("Invalid MD5 checksum"));
+            }
+
+            digest = "sha-1=" + sha1Hex.substring(0, sha1Hex.length() - 2);
+            try {
+                uri = HttpTransfer.parseDigest(digest);
+                Assert.fail("IllegalArgumentException not thrown");
+            }
+            catch (IllegalArgumentException expected) {
+                Assert.assertTrue(expected.getMessage().contains("Invalid SHA-1 checksum"));
+            }
+
+            digest = "sha-256="  + sha256Hex.substring(0, sha256Hex.length() - 2);;
+            try {
+                uri = HttpTransfer.parseDigest(digest);
+                Assert.fail("IllegalArgumentException not thrown");
+            }
+            catch (IllegalArgumentException expected) {
+                Assert.assertTrue(expected.getMessage().contains("Invalid SHA-256 checksum"));
+            }
+
+            digest = "sha-384=" + sha384Hex.substring(0, sha384Hex.length() - 2);;
+            try {
+                uri = HttpTransfer.parseDigest(digest);
+                Assert.fail("IllegalArgumentException not thrown");
+            }
+            catch (IllegalArgumentException expected) {
+                Assert.assertTrue(expected.getMessage().contains("Invalid SHA-384 checksum"));
+            }
+
+            digest = "sha-512="  + sha512Hex.substring(0, sha512Hex.length() - 2);;
+            try {
+                uri = HttpTransfer.parseDigest(digest);
+                Assert.fail("IllegalArgumentException not thrown");
+            }
+            catch (IllegalArgumentException expected) {
+                Assert.assertTrue(expected.getMessage().contains("Invalid SHA-512 checksum"));
+            }
+
+            /*
+             * Valid digest checksums.
+             */
+            // md5 16 bytes, 32 chars
+            algorithm = "md5";
+            try {
+                uri = HttpTransfer.parseDigest(String.format("%s=%s",algorithm, md5Hex));
+                Assert.assertNotNull("uri is null", uri);
+                Assert.assertEquals(URI.create(String.format("%s:%s",algorithm, md5Hex)), uri);
+            }
+            catch (IllegalArgumentException expected) {
+                Assert.fail("IllegalArgumentException: " + expected.getMessage());
+            }
+
+            // base64 encode of md5
+            algorithm = "md5";
+            checksum = HttpTransfer.base64Encode(md5Hex);
+            try {
+                uri = HttpTransfer.parseDigest(String.format("%s=%s",algorithm, checksum));
+                Assert.assertNotNull("uri is null", uri);
+                Assert.assertEquals(URI.create(String.format("%s:%s",algorithm, md5Hex)), uri);
+            }
+            catch (IllegalArgumentException expected) {
+                Assert.fail("IllegalArgumentException: " + expected.getMessage());
+            }
+
+            // SHA-1 20 bytes, 40 chars
+            algorithm = "sha-1";
+            checksum = HttpTransfer.base64Encode(sha1Hex);
+            try {
+                uri = HttpTransfer.parseDigest(String.format("%s=%s",algorithm, checksum));
+                Assert.assertNotNull("uri is null", uri);
+                Assert.assertEquals(URI.create(String.format("%s:%s",algorithm, sha1Hex)), uri);
+            }
+            catch (IllegalArgumentException expected) {
+                Assert.fail("IllegalArgumentException: " + expected.getMessage());
+            }
+
+            // SHA-256 32 bytes, 64 chars
+            algorithm = "sha-256";
+            checksum = HttpTransfer.base64Encode(sha256Hex);
+            try {
+                uri = HttpTransfer.parseDigest(String.format("%s=%s",algorithm, checksum));
+                Assert.assertNotNull("uri is null", uri);
+                Assert.assertEquals(URI.create(String.format("%s:%s",algorithm, sha256Hex)), uri);
+            }
+            catch (IllegalArgumentException expected) {
+                Assert.fail("IllegalArgumentException: " + expected.getMessage());
+            }
+
+            // SHA-384 48 bytes, 96 chars
+            algorithm = "sha-384";
+            checksum = HttpTransfer.base64Encode(sha384Hex);
+            try {
+                uri = HttpTransfer.parseDigest(String.format("%s=%s",algorithm, checksum));
+                Assert.assertNotNull("uri is null", uri);
+                Assert.assertEquals(URI.create(String.format("%s:%s",algorithm, sha384Hex)), uri);
+            }
+            catch (IllegalArgumentException expected) {
+                Assert.fail("IllegalArgumentException: " + expected.getMessage());
+            }
+
+            // SHA-512 64 bytes, 128 chars
+            algorithm = "sha-512";
+            checksum = HttpTransfer.base64Encode(sha512Hex);
+            try {
+                uri = HttpTransfer.parseDigest(String.format("%s=%s",algorithm, checksum));
+                Assert.assertNotNull("uri is null", uri);
+                Assert.assertEquals(URI.create(String.format("%s:%s",algorithm, sha512Hex)), uri);
+            }
+            catch (IllegalArgumentException expected) {
+                Assert.fail("IllegalArgumentException: " + expected.getMessage());
+            }
+
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
     }
 
     private class TestDummy extends HttpTransfer {

@@ -88,17 +88,20 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.charset.StandardCharsets;
 import java.security.AccessControlContext;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -142,6 +145,7 @@ public abstract class HttpTransfer implements Runnable {
     public static final String CONTENT_LENGTH = "Content-Length";
     public static final String CONTENT_MD5 = "Content-MD5";
     public static final String CONTENT_TYPE = "Content-Type";
+    public static final String DIGEST = "Digest";
     
     public static final String SERVICE_RETRY = "Retry-After";
 
@@ -177,6 +181,32 @@ public abstract class HttpTransfer implements Runnable {
 
         private RetryReason(int val) { 
             this.value = val; 
+        }
+    }
+
+    /**
+     * Supported algorithm's in Digest header.
+     */
+    public enum Algorithm {
+        MD5("md5"),
+        SHA1("sha-1"),
+        SHA256("sha-256"),
+        SHA384("sha-384"),
+        SHA512("sha-512");
+
+        public final String value;
+
+        private Algorithm(String value) {
+            this.value = value;
+        }
+
+        public static Algorithm fromString(String value) {
+            for (Algorithm algorithm : Algorithm.values()) {
+                if (algorithm.value.equalsIgnoreCase(value)) {
+                    return algorithm;
+                }
+            }
+            throw new IllegalArgumentException(String.format("Algorithm not found for value %s", value));
         }
     }
 
@@ -237,6 +267,7 @@ public abstract class HttpTransfer implements Runnable {
     private String contentMD5;
     private long contentLength = -1;
     private Date lastModified;
+    private String digest;
     
     // error capture
     protected int maxReadFully = 32 * 1024; // read up to 32k text responses into memory
@@ -429,6 +460,110 @@ public abstract class HttpTransfer implements Runnable {
     public Date getLastModified() {
         return lastModified;
     }
+
+    /**
+     * Disgest checksum from http header.
+     * @return digest or null
+     */
+    public URI getDigest() {
+        return parseDigest(this.digest);
+    }
+
+    /**
+     * Parse the given digest and return a URI of the form: {algorithm}:{checksum in hex}
+     * @param digest value to parse
+     * @return digest URI
+     */
+    public static URI parseDigest(String digest) {
+        if (!StringUtil.hasLength(digest)) {
+            return null;
+        }
+
+        int index = digest.indexOf('=');
+        if (index == -1) {
+            throw new IllegalArgumentException(String.format("Expected digest format <algorithm>=<checksum value> "
+                                                                 + "found %s", digest));
+        }
+        String scheme = digest.substring(0, index).trim();
+        String checksumValue = digest.substring(index + 1).trim();
+
+        if (scheme.length() == 0) {
+            throw new IllegalArgumentException(String.format("Unable to parse algorithm, expected format "
+                                                                 + "<algorithm>=<checksum value> found %s",
+                                                             digest));
+        }
+        if (checksumValue.length() == 0) {
+            throw new IllegalArgumentException(String.format("Unable to parse checksum, expected format "
+                                                                 + "<algorithm>=<checksum value> found %s",
+                                                             digest));
+        }
+
+        Algorithm algorithm;
+        try {
+            algorithm = Algorithm.fromString(scheme);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(String.format("Unsupported algorithm %s, supported algorithm's: "
+                                                                 + "md5, sha-1, sha-256, sha-384, sha-512", scheme));
+        }
+
+        // For a MD5 checksum, determine if the checksum value is hex or base64
+        boolean isHex = true;
+        if (algorithm == Algorithm.MD5) {
+            for (int i = 0; i < checksumValue.length(); i++) {
+                if (Character.digit(checksumValue.charAt(i), 16) == -1) {
+                    isHex = false;
+                    break;
+                }
+            }
+            if (!isHex) {
+                // decode MD5 base64 checksum into hex
+                checksumValue = base64Decode(checksumValue);
+            }
+            if (checksumValue.length() != 32) {
+                throw new IllegalArgumentException(String.format("Invalid MD5 checksum, expected 32 hex chars, "
+                                                                      + "found %s in %s",
+                                                                  checksumValue.length(), checksumValue));
+            }
+        } else {
+            // decode all other algorithms checksum into hex
+            checksumValue = base64Decode(checksumValue);
+        }
+
+        if (algorithm == Algorithm.SHA1 && checksumValue.length() != 40) {
+            throw new IllegalArgumentException(String.format("Invalid SHA-1 checksum, expected 40 chars, "
+                                                                 + "found %s in %s",
+                                                             checksumValue.length(), checksumValue));
+        }
+
+        if (algorithm == Algorithm.SHA256 && checksumValue.length() != 64) {
+            throw new IllegalArgumentException(String.format("Invalid SHA-256 checksum, expected 64 chars, "
+                                                                 + "found %s in %s",
+                                                             checksumValue.length(), checksumValue));
+        }
+
+        if (algorithm == Algorithm.SHA384 && checksumValue.length() != 96) {
+            throw new IllegalArgumentException(String.format("Invalid SHA-384 checksum, expected 96 chars, "
+                                                                 + "found %s in %s",
+                                                             checksumValue.length(), checksumValue));
+        }
+
+        if (algorithm == Algorithm.SHA512 && checksumValue.length() != 128) {
+            throw new IllegalArgumentException(String.format("Invalid SHA-512 checksum, expected 128 chars, "
+                                                                 + "found %s in %s",
+                                                             checksumValue.length(), checksumValue));
+        }
+
+        return URI.create(algorithm.value + ":" + checksumValue);
+    }
+
+    public static String base64Encode(String value) {
+        return Base64.getEncoder().encodeToString(value.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public static String base64Decode(String value) {
+        byte[] decoded = Base64.getDecoder().decode(value.getBytes(StandardCharsets.UTF_8));
+        return new String(decoded, StandardCharsets.UTF_8);
+    }
     
     /**
      * Latency from start of call to first bytes of response. This could be null if some methods
@@ -470,6 +605,7 @@ public abstract class HttpTransfer implements Runnable {
         if (lastMod > 0) {
             this.lastModified = new Date(lastMod);
         }
+        this.digest = responseHeaders.get(DIGEST);
     }
     
     /**
