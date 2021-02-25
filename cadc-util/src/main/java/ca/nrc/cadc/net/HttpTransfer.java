@@ -142,7 +142,7 @@ public abstract class HttpTransfer implements Runnable {
     public static final String CONTENT_LENGTH = "Content-Length";
     public static final String CONTENT_MD5 = "Content-MD5";
     public static final String CONTENT_TYPE = "Content-Type";
-    public static final String DIGEST = "DigestUtil";
+    public static final String DIGEST = "Digest";
     
     public static final String SERVICE_RETRY = "Retry-After";
 
