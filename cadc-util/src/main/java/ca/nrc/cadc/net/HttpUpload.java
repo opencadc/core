@@ -80,7 +80,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.AccessControlException;
@@ -250,6 +249,7 @@ public class HttpUpload extends HttpTransfer {
             conn.setDoInput(true);
             conn.setDoOutput(true);
         
+            setRequestHeaders(conn);
             setRequestSSOCookie(conn);
             if (conn instanceof HttpsURLConnection) {
                 HttpsURLConnection sslConn = (HttpsURLConnection) conn;
@@ -309,8 +309,6 @@ public class HttpUpload extends HttpTransfer {
             ResourceAlreadyExistsException, ResourceNotFoundException, 
             TransientException, IOException, InterruptedException {
         OutputStream ostream = null;
-
-        setRequestHeaders(conn);
 
         FileInputStream fin = null;
         InputStream in = null;

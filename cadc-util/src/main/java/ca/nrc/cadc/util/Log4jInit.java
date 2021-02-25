@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2020.                            (c) 2020.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -98,9 +98,9 @@ public class Log4jInit {
     private static final String LONG_FORMAT = "%d{" + DateUtil.ISO_DATE_FORMAT
                                               + "} [%t] %-5p %c{1} %x - %m\n";
 
-    // LONG_FORMAT applies to service INFO logging levels
-    private static final String LONG_INFO_FORMAT = "%m\n";
-
+    // LONG_FORMAT applies to machine oriented INFO logging levels
+    private static final String MESSAGE_ONLY_FORMAT = "%m\n";
+    
     private static List<Writer> logWriters = new ArrayList<Writer>();
     
     static {
@@ -157,12 +157,23 @@ public class Log4jInit {
             BasicConfigurator.resetConfiguration();
             Logger.getRootLogger().setLevel(Level.ERROR); // must redo after reset
 
+            boolean messageOnly = "true".equals(System.getProperty(Log4jInit.class.getName() + ".messageOnly"));
             String errorLogFormat = LONG_FORMAT;
+            String infoLogFormat = LONG_FORMAT;
             String debugLogFormat = SHORT_FORMAT;
+            if (messageOnly) {
+                infoLogFormat = MESSAGE_ONLY_FORMAT;
+            }
             
             if (appName != null) {
                 errorLogFormat = "%d{" + DateUtil.ISO_DATE_FORMAT + "} "
                                  + appName + " [%t] %-5p %c{1} %x - %m\n";
+
+                if (!messageOnly) {
+                    infoLogFormat =  "%d{" + DateUtil.ISO_DATE_FORMAT + "} "
+                                     + appName + " [%t] %-5p %c{1} %x - %m\n";
+                }
+
                 debugLogFormat = "%-4r " + appName
                                  + " [%t] %-5p %c{1} %x - %m\n";
             }
@@ -178,12 +189,11 @@ public class Log4jInit {
             conAppenderHigh.addFilter(errorFilter);
             BasicConfigurator.configure(conAppenderHigh);
 
-            // Appender for INFO with LONG_INFO_FORMAT message prefix
+            // Appender for INFO with LONG_FORMAT message prefix
             LevelRangeFilter infoFilter = new LevelRangeFilter();
             infoFilter.setLevelMax(Level.INFO);
             infoFilter.setLevelMin(Level.INFO);
             infoFilter.setAcceptOnMatch(true);
-            String infoLogFormat = LONG_INFO_FORMAT;
             ConsoleAppender conAppenderInfo =
                     new ConsoleAppender(new PatternLayout(infoLogFormat));
             conAppenderInfo.clearFilters();

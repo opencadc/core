@@ -126,6 +126,10 @@ public class DateUtil {
      */
     public static final String ISO8601_DATE_FORMAT_MSLOCAL = "yyyy-MM-dd'T'HH:mm:ss.SSS";
 
+    public static final String HTTP_DATE_FORMAT = "EEE, dd MMM yyyy HH:mm:ss z";
+    
+    public static final TimeZone GMT = TimeZone.getTimeZone("GMT");
+    
     public static final TimeZone UTC = TimeZone.getTimeZone("UTC");
 
     public static final TimeZone LOCAL = TimeZone.getDefault();
