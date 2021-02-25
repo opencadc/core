@@ -76,13 +76,13 @@ import java.util.Base64;
 import org.apache.log4j.Logger;
 
 /**
- * Class to represent a Digest HTTP header.
+ * Utility class for the Digest HTTP header.
  */
-public class Digest {
-    private static Logger log = Logger.getLogger(Digest.class);
+public class DigestUtil {
+    private static Logger log = Logger.getLogger(DigestUtil.class);
 
     /**
-     * Supported algorithm's in Digest header.
+     * Supported algorithm's in DigestUtil header.
      */
     public enum Algorithm {
         MD5("md5"),

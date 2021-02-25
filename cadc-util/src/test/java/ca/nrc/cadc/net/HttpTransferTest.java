@@ -70,7 +70,6 @@
 package ca.nrc.cadc.net;
 
 import ca.nrc.cadc.auth.SSOCookieCredential;
-import ca.nrc.cadc.util.HexUtil;
 import ca.nrc.cadc.util.Log4jInit;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -78,9 +77,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.util.Date;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
