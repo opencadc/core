@@ -70,6 +70,7 @@
 package ca.nrc.cadc.net;
 
 import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.auth.AuthorizationToken;
 import ca.nrc.cadc.auth.BearerTokenPrincipal;
 import ca.nrc.cadc.auth.DelegationToken;
 import ca.nrc.cadc.auth.NotAuthenticatedException;
@@ -1077,20 +1078,17 @@ public abstract class HttpTransfer implements Runnable {
         if (subj != null) {
             
             // tokens
-            Set<BearerTokenPrincipal> tokens = subj.getPrincipals(BearerTokenPrincipal.class);
+            Set<AuthorizationToken> tokens = subj.getPublicCredentials(AuthorizationToken.class);
             if (tokens != null && !tokens.isEmpty()) {
-                Iterator<BearerTokenPrincipal> tokenIt = tokens.iterator();
-                BearerTokenPrincipal next = null;
-                while (tokenIt.hasNext()) {
-                    next = tokenIt.next();
-                    String token = next.getName();
-                    conn.setRequestProperty(AuthenticationUtil.AUTHORIZATION_HEADER, "Bearer " + token);
+                for (AuthorizationToken next : tokens) {
+                    conn.setRequestProperty(
+                        AuthenticationUtil.AUTHORIZATION_HEADER,
+                        next.getName() + " " + next.getValue());
                 }
             }
             
             // cookies
-            Set<SSOCookieCredential> cookieCreds = subj
-                    .getPublicCredentials(SSOCookieCredential.class);
+            Set<SSOCookieCredential> cookieCreds = subj.getPublicCredentials(SSOCookieCredential.class);
             if ((cookieCreds != null) && (cookieCreds.size() > 0)) {
                 // grab the first cookie that matches the domain
                 boolean found = false;

@@ -116,20 +116,15 @@ public class SSOCookieManager {
      *         validated.
      * @throws InvalidDelegationTokenException
      */
-    public final DelegationToken parse(final String value) throws IOException, InvalidDelegationTokenException {
-        /*
-         * TODO - The DelegationToken class really should be fixed to handle TODO - null
-         * values and bad entries. TODO - jenkinsd 2015.07.14
-         */
-        DelegationToken token;
-
+    public final DelegationToken parse(final String value) throws InvalidDelegationTokenException {
+        if (value == null) {
+            throw new IllegalArgumentException("value required");
+        }
         try {
-            token = DelegationToken.parse(value, SCOPE_URI.toASCIIString(), new CookieScopeValidator());
+            return DelegationToken.parse(value);
         } catch (Exception e) {
             throw new InvalidDelegationTokenException("Bad token." + value);
         }
-
-        return token;
     }
 
     /**
@@ -238,11 +233,11 @@ public class SSOCookieManager {
      * @param requestURI
      * @return cookieList
      */
-    public List<SSOCookieCredential> getSSOCookieCredentials(final String cookieValue, final String requestURI)
-            throws InvalidDelegationTokenException, IOException {
+    public List<SSOCookieCredential> getSSOCookieCredentials(final String cookieValue)
+            throws InvalidDelegationTokenException {
 
         List<SSOCookieCredential> cookieList = new ArrayList<>();
-        DelegationToken cookieToken = DelegationToken.parse(cookieValue, requestURI, new CookieScopeValidator());
+        DelegationToken cookieToken = DelegationToken.parse(cookieValue);
 
         for (String domain : cookieToken.getDomains()) {
             SSOCookieCredential nextCookie = new SSOCookieCredential(cookieValue, domain, cookieToken.getExpiryTime());

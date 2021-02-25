@@ -71,9 +71,12 @@ package ca.nrc.cadc.auth;
 
 import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.net.NetUtil;
+import ca.nrc.cadc.util.StringUtil;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.security.AccessControlContext;
+import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.Principal;
 import java.security.PrivateKey;
@@ -183,7 +186,15 @@ public class AuthenticationUtil {
     public static Subject augmentSubject(Subject s) {
         final Authenticator auth = getAuthenticator();
         if (auth != null) {
-            return auth.getSubject(s);
+            return auth.augment(s);
+        }
+        return s;
+    }
+    
+    public static Subject validateSubject(Subject s) throws NotAuthenticatedException {
+        final Authenticator auth = getAuthenticator();
+        if (auth != null) {
+            return auth.validate(s);
         }
         return s;
     }
@@ -293,8 +304,6 @@ public class AuthenticationUtil {
 
         final Set<Principal> principals = principalExtractor.getPrincipals();
         final X509CertificateChain chain = principalExtractor.getCertificateChain();
-        final DelegationToken token = principalExtractor.getDelegationToken();
-        final List<SSOCookieCredential> cookieList = principalExtractor.getSSOCookieCredentials();
 
         AuthMethod am = null;
 
@@ -306,47 +315,72 @@ public class AuthenticationUtil {
         } else if (chain != null) {
             publicCred.add(chain);
             am = AuthMethod.CERT;
-        } else if (token != null) {
-            publicCred.add(token);
-            am = AuthMethod.TOKEN;
-        } else if (cookieList != null && cookieList.size() != 0) {
-            publicCred.addAll(cookieList);
-            am = AuthMethod.COOKIE;
         } else {
             for (final Object o : principals) {
                 if (o instanceof HttpPrincipal) {
                     am = AuthMethod.PASSWORD;
                     break;
                 }
-                if (o instanceof BearerTokenPrincipal) {
-                    BearerTokenPrincipal bearerTokenPrincipal = (BearerTokenPrincipal) o;
-                    String tokenValue = bearerTokenPrincipal.getName();
-                    // only parse the token and add public credentials if augmenting the subject
-                    // (to support non-cadc style bearer tokens)
-                    if (augmentSubject) {
-                        try {
-                            DelegationToken parsedBearerToken = DelegationToken.parse(tokenValue, bearerTokenPrincipal.requestURI);
-                            bearerTokenPrincipal.user = parsedBearerToken.getUser();
-                            publicCred.add(parsedBearerToken);
-                        } catch (InvalidDelegationTokenException ex) {
-                            log.debug("invalid DelegationToken: " + tokenValue, ex);
-                            throw new NotAuthenticatedException("invalid delegation token. " + ex.getMessage());
-                        } catch (RuntimeException ex) {
-                            log.debug("invalid DelegationToken: " + tokenValue, ex);
-                            throw new NotAuthenticatedException("invalid delegation token. " + ex.getMessage());
-                        }
-                    }
+                if (o instanceof DelegationTokenPrincipal || o instanceof BearerTokenPrincipal) {
                     am = AuthMethod.TOKEN;
+                    break;
+                }
+                if (o instanceof CookiePrincipal) {
+                    am = AuthMethod.COOKIE;
                     break;
                 }
             }
         }
 
-        final Subject subject = new Subject(false, principals, publicCred, privateCred);
+        Subject subject = new Subject(false, principals, publicCred, privateCred);
+        subject = validateSubject(subject);
         setAuthMethod(subject, am);
         if (augmentSubject) {
             return augmentSubject(subject);
         }
+        return subject;
+    }
+    
+    /**
+     * Method to validate CADC-style cookie and token principals
+     * @param subject
+     * @return
+     * @throws AccessControlException
+     */
+    public static Subject validateTokens(Subject subject) throws NotAuthenticatedException {
+        
+        // cookies
+        Set<CookiePrincipal> cookiePrincipals = subject.getPrincipals(CookiePrincipal.class);
+        if (!cookiePrincipals.isEmpty()) {
+            SSOCookieManager ssoCookieManager = new SSOCookieManager();
+            for (CookiePrincipal p : cookiePrincipals) {
+                DelegationToken cookieToken = ssoCookieManager.parse(p.getValue());
+                subject.getPrincipals().addAll(cookieToken.getIdentityPrincipals());
+                List<SSOCookieCredential> cookieCredentialList =
+                    ssoCookieManager.getSSOCookieCredentials(p.getValue());
+                subject.getPublicCredentials().addAll(cookieCredentialList);
+                subject.getPublicCredentials().add(Scope);
+            }
+        }
+        
+        // delegation tokens
+        Set<DelegationTokenPrincipal> delegationPrincipals = subject.getPrincipals(DelegationTokenPrincipal.class);
+        for (DelegationTokenPrincipal p : delegationPrincipals) {
+            String tokenValue = p.getName();
+            DelegationToken parsedDelegationToken = DelegationToken.parse(tokenValue);
+            subject.getPrincipals().add(parsedDelegationToken.getUser());
+            subject.getPublicCredentials().add(AuthorizationToken-withscope(parsedDelegationToken));
+        }
+        
+        // bearer tokens
+        Set<BearerTokenPrincipal> bearerPrincipals = subject.getPrincipals(BearerTokenPrincipal.class);
+        for (BearerTokenPrincipal p : bearerPrincipals) {
+            String tokenValue = p.getName();
+            DelegationToken parsedBearerToken = DelegationToken.parse(tokenValue);
+            subject.getPrincipals().add(parsedBearerToken.getUser());
+            subject.getPublicCredentials().add(AuthorizationToken-withscope(parsedDelegationToken));
+        }
+        
         return subject;
     }
 

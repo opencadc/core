@@ -72,22 +72,39 @@ package ca.nrc.cadc.auth;
 import javax.security.auth.Subject;
 
 /**
- * Subject modification interface.
+ * Subject validation and modification interface.
  *
  * @author pdowler
  */
 public interface Authenticator {
+    
+    /**
+     * If necessary, validate any principals in the subject.  Some principals,
+     * such as X500Principal, do not require validation as that is done with
+     * TLS.  Others, such as cookies and tokens, need to be validated.
+     * Failed validation must result in an AccessControlException
+     * On successful validation, implementations can consider adding any
+     * reusable credentials to the subject's public credentials set for
+     * use later.
+     * 
+     * @param subject The subject, with principals, to validate.
+     * @return The validated subject.
+     * @throws NotAuthenticatedException If validation fails.
+     */
+    public Subject validate(final Subject subject) throws NotAuthenticatedException;
+    
     /**
      * Modify a Subject and return it. Implementations can modify the specified
      * Subject by adding identities (Principals) or credentials. The argument
      * subject will typically have an HttpPrinncipal if the request went through
      * HTTP authentication, or an X500principal if the user authenticated via SSL
-     * with client certficate. The typical usage is to add additional principals
+     * with client certificate. The typical usage is to add additional principals
      * with internal identity information. This could then be used in an Authorizer
      * implementation elsewhere in the application.
      *
-     * @param subject the initial subject
-     * @return the modified subject
+     * @param subject The initial subject.
+     * @return The modified subject.
      */
-    public Subject getSubject(Subject subject);
+    public Subject augment(final Subject subject);
+    
 }

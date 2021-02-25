@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2019.                            (c) 2019.
+ *  (c) 2021.                            (c) 2021.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,85 +62,53 @@
  *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
  *                                       <http://www.gnu.org/licenses/>.
  *
- *  $Revision: 1$
- *
  ************************************************************************
  */
 
 package ca.nrc.cadc.auth;
 
-import ca.nrc.cadc.util.StringUtil;
-
-import java.io.Serializable;
-import java.security.Principal;
-
 /**
- * Represents a bearer token
+ * Class representing an authorization token.  For example, an opaque OAuth2 token value
+ * with name 'Bearer'.
+ * 
+ * @author majorb
+ *
  */
-public class BearerTokenPrincipal implements Principal, Serializable {
-    private static final long serialVersionUID = 7L;
-    public static final String TOKEN_TYPE_BEARER = "Bearer";
-    private static final String prefix = TOKEN_TYPE_BEARER + " ";
-
-    private final AuthorizationToken authorizationToken;
-
-    public BearerTokenPrincipal(final String authorizationHeader) {
-        if (!isBearerToken(authorizationHeader)) {
-            throw new IllegalArgumentException("Not a bearer token");
-        }
-
-        this.authorizationToken = new AuthorizationToken(TOKEN_TYPE_BEARER, authorizationHeader.substring(prefix.length()));
-    }
-
-    public static Boolean isBearerToken(final String authorizationHeader) {
-        return StringUtil.hasText(authorizationHeader) && authorizationHeader.startsWith(prefix);
-    }
-
-    @Override
-    public String toString() {
-        int max = 8;
-        String token = authorizationToken.getValue();
-        if (token.length() < 8) {
-            max = token.length();
-        }
-        return "BearerTokenPrincipal[" + getName().substring(0, max) + "]";
-    }
-
+public class AuthorizationToken {
+    
+    private String name;
+    private String value;
+    
     /**
-     * Returns the full token for this principal
-     *
-     * @return the full token as a string
+     * Contructor.
+     * @param name The name of the token.
+     * @param value The token value.
      */
-    @Override
-    public String getName() {
-        return authorizationToken.getValue();
+    public AuthorizationToken(String name, String value) {
+        if (name == null) {
+            throw new IllegalArgumentException("name required");
+        }
+        if (value == null) {
+            throw new IllegalArgumentException("value required");
+        }
+        this.name = name;
+        this.value = value;
     }
     
     /**
-     * Return the associated token object.
-     * @return The token object
+     * Name getter.
+     * @return The name.
      */
-    public AuthorizationToken getToken() {
-        return authorizationToken;
+    public String getName() {
+        return name;
+    }
+    
+    /**
+     * Value getter.
+     * @return The value.
+     */
+    public String getValue() {
+        return value;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if ((o == null) || (getClass() != o.getClass())) {
-            return false;
-        }
-
-        final BearerTokenPrincipal that = (BearerTokenPrincipal) o;
-
-        return authorizationToken.getValue().equals(that.getToken().getValue());
-    }
-
-    @Override
-    public int hashCode() {
-        return authorizationToken.getValue().hashCode();
-    }
 }

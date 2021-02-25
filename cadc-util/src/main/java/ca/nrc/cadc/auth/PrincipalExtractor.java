@@ -77,19 +77,4 @@ public interface PrincipalExtractor {
      * @return an X509CertficateChain or null if not authenticated via SSL
      */
     X509CertificateChain getCertificateChain();
-    
-    /**
-     * Create and return a DelegationToken from the request.
-     * 
-     * @return 
-     */
-    DelegationToken getDelegationToken();
-    
-    
-    /**
-     * Create and return a SSOCookieCredential from the request
-     * 
-     * @return
-     */
-    List<SSOCookieCredential> getSSOCookieCredentials();
 }

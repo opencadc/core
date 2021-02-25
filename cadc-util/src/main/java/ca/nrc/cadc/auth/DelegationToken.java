@@ -85,12 +85,11 @@ import java.security.InvalidKeyException;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Date;
-
 import java.util.HashSet;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
+
 import javax.security.auth.x500.X500Principal;
 
 import org.apache.log4j.Logger;
@@ -98,7 +97,7 @@ import org.apache.log4j.Logger;
 /**
  * Class that captures the information required to perform delegation (i.e.
  * accessing resources on user's behalf). The required fields are: - the user
- * that delegates - the expirty time - scope of delegation
+ * that delegates - the expiry time - scope of delegation
  * 
  * <p>This class can serialize and de-serialize the information into a String
  * token. Optionally, it can sign the serialized token and verify when one is
@@ -126,12 +125,6 @@ public class DelegationToken implements Serializable {
 
     public static final String FIELD_DELIM = "&";
     public static final String VALUE_DELIM = "=";
-
-    public static class ScopeValidator {
-        public void verifyScope(URI scope, String requestURI) throws InvalidDelegationTokenException {
-            throw new InvalidDelegationTokenException("default: invalid scope");
-        }
-    }
 
     /**
      * Constructor.
@@ -279,38 +272,24 @@ public class DelegationToken implements Serializable {
     }
 
     /**
-     * Parse the given text into a DelegationToken object.
-     *
-     * @param text       The token string.
-     * @param requestURI The HTTP Request URI
-     * @return DelegationToken instance. Never null.
-     * @throws InvalidDelegationTokenException If the given token cannot be parsed.
-     */
-    public static DelegationToken parse(String text, String requestURI) throws InvalidDelegationTokenException {
-        return parse(text, requestURI, null);
-    }
-
-    /**
      * Builds a DelegationToken from a text string
      *
      * @param text       Token to parse
-     * @param requestURI The HTTP Request URI
-     * @param sv         ScopeValidator instance.
      * @return corresponding DelegationToken
      * @throws InvalidDelegationTokenException If the given token cannot be parsed.
      */
-    public static DelegationToken parse(String text, String requestURI, ScopeValidator sv)
+    public static DelegationToken parse(String text)
             throws InvalidDelegationTokenException {
 
         if (text.startsWith(DelegationToken.EXPIRY_LABEL)) {
             final String[] fields = text.split(FIELD_DELIM);
-            return parse(fields, text, requestURI, sv);
+            return parse(fields, text);
         } else {
-            return parseEncoded(URI.create(text), requestURI, sv);
+            return parseEncoded(URI.create(text));
         }
     }
 
-    private static DelegationToken parse(String[] fields, String cookieText, String requestURI, ScopeValidator sv)
+    private static DelegationToken parse(String[] fields, String cookieText)
             throws InvalidDelegationTokenException {
         String userid = null;
         Set<Principal> principalSet = new HashSet<>();
@@ -379,21 +358,12 @@ public class DelegationToken implements Serializable {
             throw new InvalidDelegationTokenException("expired");
         }
 
-        // validate scope
-        if (scope != null) {
-            if (sv == null) { // not supplied
-                sv = getScopeValidator();
-            }
-            sv.verifyScope(scope, requestURI);
-        }
-
         validateSignature(signature, cookieText);
 
         return new DelegationToken(principalSet, scope, expirytime, domains);
     }
 
-    private static DelegationToken parseEncoded(final URI encodedURI, final String requestURI,
-            final ScopeValidator scopeValidator) throws InvalidDelegationTokenException {
+    private static DelegationToken parseEncoded(final URI encodedURI) throws InvalidDelegationTokenException {
 
         if (!StringUtil.hasLength(encodedURI.getScheme())) {
             throw new InvalidDelegationTokenException("Wrong format for encoded token.");
@@ -402,7 +372,7 @@ public class DelegationToken implements Serializable {
             final byte[] decodedBytes = TOKEN_ENCODER_DECODER.decode(encodedURI.getSchemeSpecificPart(), tokenEncoding);
             final String decodedString = new String(decodedBytes);
 
-            return parse(decodedString.split(FIELD_DELIM), decodedString, requestURI, scopeValidator);
+            return parse(decodedString.split(FIELD_DELIM), decodedString);
         }
     }
 
@@ -428,25 +398,25 @@ public class DelegationToken implements Serializable {
         }
     }
 
-    private static ScopeValidator getScopeValidator() {
-        try {
-            String fname = DelegationToken.class.getSimpleName() + ".properties";
-            String pname = DelegationToken.class.getName() + ".scopeValidator";
-            Properties props = new Properties();
-            props.load(DelegationToken.class.getClassLoader().getResource(fname).openStream());
-            String cname = props.getProperty(pname);
-            log.debug(fname + ": " + pname + " = " + cname);
-            Class c = Class.forName(cname);
-            ScopeValidator ret = (ScopeValidator) c.newInstance();
-            log.debug("created: " + ret.getClass().getName());
-            return ret;
-        } catch (Exception ignore) {
-            log.debug("failed to load custom ScopeValidator", ignore);
-        }
-
-        // default
-        return new ScopeValidator();
-    }
+    //private static ScopeValidator getScopeValidator() {
+    //    try {
+    //        String fname = DelegationToken.class.getSimpleName() + ".properties";
+    //        String pname = DelegationToken.class.getName() + ".scopeValidator";
+    //        Properties props = new Properties();
+    //        props.load(DelegationToken.class.getClassLoader().getResource(fname).openStream());
+    //        String cname = props.getProperty(pname);
+    //        log.debug(fname + ": " + pname + " = " + cname);
+    //        Class c = Class.forName(cname);
+    //        ScopeValidator ret = (ScopeValidator) c.newInstance();
+    //        log.debug("created: " + ret.getClass().getName());
+    //        return ret;
+    //    } catch (Exception ignore) {
+    //        log.debug("failed to load custom ScopeValidator", ignore);
+    //    }
+    //
+    //    // default
+    //    return new ScopeValidator();
+    //}
 
     // user is wrong name
     public HttpPrincipal getUser() {

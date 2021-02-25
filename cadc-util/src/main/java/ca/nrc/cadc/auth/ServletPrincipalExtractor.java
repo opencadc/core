@@ -69,19 +69,19 @@
 
 package ca.nrc.cadc.auth;
 
-import ca.nrc.cadc.net.NetUtil;
 import ca.nrc.cadc.util.ArrayUtil;
 import ca.nrc.cadc.util.StringUtil;
-import java.io.IOException;
+
 import java.security.AccessControlException;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
+
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+
 import org.apache.log4j.Logger;
 
 /**
@@ -95,9 +95,6 @@ public class ServletPrincipalExtractor implements PrincipalExtractor {
     private final HttpServletRequest request;
 
     private X509CertificateChain chain;
-    private DelegationToken token;
-    private List<SSOCookieCredential> cookieCredentialList;
-    private Set<Principal> cookiePrincipals = new HashSet<>(); // identities extracted from cookie
     private Set<Principal> principals = new HashSet<>();
 
     private ServletPrincipalExtractor() {
@@ -138,27 +135,17 @@ public class ServletPrincipalExtractor implements PrincipalExtractor {
             }
         }
 
-        // add user if they have a valid delegation token
-        String tokenValue = request.getHeader(AuthenticationUtil.AUTH_HEADER);
-        if (StringUtil.hasText(tokenValue)) {
-
-            try {
-                this.token = DelegationToken.parse(tokenValue, request.getRequestURI());
-            } catch (InvalidDelegationTokenException ex) {
-                log.debug("invalid DelegationToken: " + tokenValue, ex);
-                throw new NotAuthenticatedException("invalid delegation token. " + ex.getMessage());
-            } catch (RuntimeException ex) {
-                log.debug("invalid DelegationToken: " + tokenValue, ex);
-                throw new NotAuthenticatedException("invalid delegation token. " + ex.getMessage());
-            } finally {
-                // do nothing
-            }
+        // custom header (deprecated)
+        String tokenHeader = request.getHeader(AuthenticationUtil.AUTH_HEADER);
+        if (DelegationTokenPrincipal.isDelegationToken(tokenHeader)) {
+            DelegationTokenPrincipal delegationTokenPrincipal = new DelegationTokenPrincipal(tokenHeader);
+            principals.add(delegationTokenPrincipal);
         }
 
+        // authorization header (bearer and token)
         String authToken = request.getHeader(AuthenticationUtil.AUTHORIZATION_HEADER);
         if (BearerTokenPrincipal.isBearerToken(authToken)) {
             BearerTokenPrincipal bearerTokenPrincipal = new BearerTokenPrincipal(authToken);
-            bearerTokenPrincipal.requestURI = request.getRequestURI();
             principals.add(bearerTokenPrincipal);
         }
 
@@ -167,37 +154,18 @@ public class ServletPrincipalExtractor implements PrincipalExtractor {
         if (StringUtil.hasText(httpUser)) {
             // user from HTTP AUTH
             principals.add(new HttpPrincipal(httpUser));
-        } else if (token != null) {
-            // user from token
-            principals.add(token.getUser());
         }
 
         Cookie[] cookies = request.getCookies();
         log.debug("Request cookies: " + cookies);
-        if (cookies == null || ArrayUtil.isEmpty(cookies)) {
-            return;
-        }
 
-        for (Cookie ssoCookie : cookies) {
-            if (SSOCookieManager.DEFAULT_SSO_COOKIE_NAME.equals(ssoCookie.getName())
-                    && StringUtil.hasText(ssoCookie.getValue())) {
-                SSOCookieManager ssoCookieManager = new SSOCookieManager();
-                try {
-                    DelegationToken cookieToken = ssoCookieManager.parse(ssoCookie.getValue());
-
-                    cookiePrincipals = cookieToken.getIdentityPrincipals();
-                    principals.addAll(cookiePrincipals);
-
-                    cookieCredentialList = ssoCookieManager.getSSOCookieCredentials(ssoCookie.getValue(),
-                            NetUtil.getDomainName(request.getServerName()));
-                } catch (IOException e) {
-                    log.debug("Cannot use SSO Cookie. Reason: " + e.getMessage());
-                    throw new NotAuthenticatedException("invalid cookie. " + e.getMessage());
-                } catch (InvalidDelegationTokenException e) {
-                    log.debug("Cannot use SSO Cookie. Reason: " + e.getMessage());
-                    throw new NotAuthenticatedException("invalid cookie. " + e.getMessage());
+        if (cookies != null) {
+            for (Cookie ssoCookie : cookies) {
+                if (SSOCookieManager.DEFAULT_SSO_COOKIE_NAME.equals(ssoCookie.getName())
+                        && StringUtil.hasText(ssoCookie.getValue())) {
+                    CookiePrincipal cookiePrincipal = new CookiePrincipal(ssoCookie.getName(), ssoCookie.getValue());
+                    principals.add(cookiePrincipal);
                 }
-
             }
         }
 
@@ -216,14 +184,6 @@ public class ServletPrincipalExtractor implements PrincipalExtractor {
 
     public X509CertificateChain getCertificateChain() {
         return chain;
-    }
-
-    public DelegationToken getDelegationToken() {
-        return token;
-    }
-
-    public List<SSOCookieCredential> getSSOCookieCredentials() {
-        return cookieCredentialList;
     }
 
 }

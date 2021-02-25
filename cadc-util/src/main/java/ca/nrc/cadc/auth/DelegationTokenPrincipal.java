@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2019.                            (c) 2019.
+ *  (c) 2021.                            (c) 2021.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,85 +62,55 @@
  *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
  *                                       <http://www.gnu.org/licenses/>.
  *
- *  $Revision: 1$
- *
  ************************************************************************
  */
-
 package ca.nrc.cadc.auth;
 
 import ca.nrc.cadc.util.StringUtil;
 
-import java.io.Serializable;
 import java.security.Principal;
 
 /**
- * Represents a bearer token
+ * @author majorb
+ *
+ * DelegationToken value read from HTTP request header AuthenticationUtil.AUTH_HEADER or
+ * AuthenticationUtil.AUTHORIZATION_HEADER with type 'token'.
+ *  
  */
-public class BearerTokenPrincipal implements Principal, Serializable {
-    private static final long serialVersionUID = 7L;
-    public static final String TOKEN_TYPE_BEARER = "Bearer";
-    private static final String prefix = TOKEN_TYPE_BEARER + " ";
+public class DelegationTokenPrincipal implements Principal {
+    
+    private static final String AUTHORIZATION_HEADER_TOKEN = AuthenticationUtil.AUTHORIZATION_HEADER + " Token";
+    public static final String TOKEN_TYPE_TOKEN = "Token";
+    private static final String prefix = TOKEN_TYPE_TOKEN + " ";
 
-    private final AuthorizationToken authorizationToken;
+    private String headerKey;
+    private String headerValue;
+    
+    // TODO: use both key and value for isDelegationToken
+    
+    public DelegationTokenPrincipal(String headerKey, String headerValue) {
 
-    public BearerTokenPrincipal(final String authorizationHeader) {
-        if (!isBearerToken(authorizationHeader)) {
-            throw new IllegalArgumentException("Not a bearer token");
+        if (!isDelegationToken(headerKey, headerValue)) {
+            throw new IllegalArgumentException("invalid delegation token");
         }
-
-        this.authorizationToken = new AuthorizationToken(TOKEN_TYPE_BEARER, authorizationHeader.substring(prefix.length()));
-    }
-
-    public static Boolean isBearerToken(final String authorizationHeader) {
-        return StringUtil.hasText(authorizationHeader) && authorizationHeader.startsWith(prefix);
-    }
-
-    @Override
-    public String toString() {
-        int max = 8;
-        String token = authorizationToken.getValue();
-        if (token.length() < 8) {
-            max = token.length();
+        if (header.startsWith(AUTHORIZATION_HEADER_TOKEN)) {
+            this.header = header.substring(AuthenticationUtil.AUTHORIZATION_HEADER.length());
+        } else {
+            this.header = header;
         }
-        return "BearerTokenPrincipal[" + getName().substring(0, max) + "]";
     }
 
-    /**
-     * Returns the full token for this principal
-     *
-     * @return the full token as a string
-     */
     @Override
     public String getName() {
-        return authorizationToken.getValue();
+        return header;
     }
     
-    /**
-     * Return the associated token object.
-     * @return The token object
-     */
-    public AuthorizationToken getToken() {
-        return authorizationToken;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if ((o == null) || (getClass() != o.getClass())) {
+    public static boolean isDelegationToken(String headerKey, String headerValue) {
+        if (header == null) {
             return false;
         }
-
-        final BearerTokenPrincipal that = (BearerTokenPrincipal) o;
-
-        return authorizationToken.getValue().equals(that.getToken().getValue());
+        return (header.startsWith(AuthenticationUtil.AUTH_HEADER) ||
+             header.startsWith(AUTHORIZATION_HEADER_TOKEN));
     }
-
-    @Override
-    public int hashCode() {
-        return authorizationToken.getValue().hashCode();
-    }
+    
 }
