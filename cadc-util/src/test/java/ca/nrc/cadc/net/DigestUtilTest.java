@@ -87,27 +87,31 @@ public class DigestUtilTest {
             MessageDigest md = MessageDigest.getInstance("md5");
             byte[] md5Bytes = md.digest(input.getBytes(StandardCharsets.UTF_8));
             String md5Hex = HexUtil.toHex(md5Bytes);
+            String md5Base64 = DigestUtil.base64Encode(md5Hex);
 
             md = MessageDigest.getInstance("sha-1");
             byte[] sha1Bytes = md.digest(input.getBytes(StandardCharsets.UTF_8));
             String sha1Hex = HexUtil.toHex(sha1Bytes);
+            String sha1Base64 = DigestUtil.base64Encode(sha1Hex);
 
             md = MessageDigest.getInstance("sha-256");
             byte[] sha256Bytes = md.digest(input.getBytes(StandardCharsets.UTF_8));
             String sha256Hex = HexUtil.toHex(sha256Bytes);
+            String sha256Base64 = DigestUtil.base64Encode(sha256Hex);
 
             md = MessageDigest.getInstance("sha-384");
             byte[] sha384Bytes = md.digest(input.getBytes(StandardCharsets.UTF_8));
             String sha384Hex = HexUtil.toHex(sha384Bytes);
+            String sha384Base64 = DigestUtil.base64Encode(sha384Hex);
 
             md = MessageDigest.getInstance("sha-512");
             byte[] sha512Bytes = md.digest(input.getBytes(StandardCharsets.UTF_8));
             String sha512Hex = HexUtil.toHex(sha512Bytes);
+            String sha512Base64 = DigestUtil.base64Encode(sha512Hex);
 
             String digest;
             URI uri;
             String algorithm;
-            String checksum;
 
             /**
              * Invalid digest checksums.
@@ -174,7 +178,7 @@ public class DigestUtilTest {
                 Assert.assertTrue(expected.getMessage().contains("Unable to parse checksum"));
             }
 
-            digest = "=" + md5Hex;
+            digest = "=" + md5Base64;
             try {
                 uri = DigestUtil.getURI(digest);
                 Assert.fail("IllegalArgumentException not thrown");
@@ -183,7 +187,7 @@ public class DigestUtilTest {
                 Assert.assertTrue(expected.getMessage().contains("Unable to parse algorithm"));
             }
 
-            digest = "md6=" + md5Hex;
+            digest = "md6=" + md5Base64;
             try {
                 uri = DigestUtil.getURI(digest);
                 Assert.fail("IllegalArgumentException not thrown");
@@ -192,7 +196,8 @@ public class DigestUtilTest {
                 Assert.assertTrue(expected.getMessage().contains("Unsupported algorithm"));
             }
 
-            digest = "md5=" + md5Hex.substring(0, md5Hex.length() - 2);
+            // base64 length is multiple of 4
+            digest = "md5=" + md5Base64.substring(0, md5Base64.length() - 4);
             try {
                 uri = DigestUtil.getURI(digest);
                 Assert.fail("IllegalArgumentException not thrown");
@@ -201,7 +206,7 @@ public class DigestUtilTest {
                 Assert.assertTrue(expected.getMessage().contains("Invalid MD5 checksum"));
             }
 
-            digest = "sha-1=" + sha1Hex.substring(0, sha1Hex.length() - 2);
+            digest = "sha-1=" + sha1Base64.substring(0, sha1Base64.length() - 4);
             try {
                 uri = DigestUtil.getURI(digest);
                 Assert.fail("IllegalArgumentException not thrown");
@@ -210,7 +215,7 @@ public class DigestUtilTest {
                 Assert.assertTrue(expected.getMessage().contains("Invalid SHA-1 checksum"));
             }
 
-            digest = "sha-256="  + sha256Hex.substring(0, sha256Hex.length() - 2);;
+            digest = "sha-256="  + sha256Base64.substring(0, sha256Base64.length() - 4);;
             try {
                 uri = DigestUtil.getURI(digest);
                 Assert.fail("IllegalArgumentException not thrown");
@@ -219,7 +224,7 @@ public class DigestUtilTest {
                 Assert.assertTrue(expected.getMessage().contains("Invalid SHA-256 checksum"));
             }
 
-            digest = "sha-384=" + sha384Hex.substring(0, sha384Hex.length() - 2);;
+            digest = "sha-384=" + sha384Base64.substring(0, sha384Base64.length() - 4);;
             try {
                 uri = DigestUtil.getURI(digest);
                 Assert.fail("IllegalArgumentException not thrown");
@@ -228,7 +233,7 @@ public class DigestUtilTest {
                 Assert.assertTrue(expected.getMessage().contains("Invalid SHA-384 checksum"));
             }
 
-            digest = "sha-512="  + sha512Hex.substring(0, sha512Hex.length() - 2);;
+            digest = "sha-512="  + sha512Base64.substring(0, sha512Base64.length() - 4);;
             try {
                 uri = DigestUtil.getURI(digest);
                 Assert.fail("IllegalArgumentException not thrown");
@@ -240,22 +245,11 @@ public class DigestUtilTest {
             /*
              * Valid digest checksums.
              */
+
             // md5 16 bytes, 32 chars
             algorithm = "md5";
             try {
-                uri = DigestUtil.getURI(String.format("%s=%s", algorithm, md5Hex));
-                Assert.assertNotNull("uri is null", uri);
-                Assert.assertEquals(URI.create(String.format("%s:%s",algorithm, md5Hex)), uri);
-            }
-            catch (IllegalArgumentException expected) {
-                Assert.fail("IllegalArgumentException: " + expected.getMessage());
-            }
-
-            // base64 encode of md5
-            algorithm = "md5";
-            checksum = DigestUtil.base64Encode(md5Hex);
-            try {
-                uri = DigestUtil.getURI(String.format("%s=%s", algorithm, checksum));
+                uri = DigestUtil.getURI(String.format("%s=%s", algorithm, md5Base64));
                 Assert.assertNotNull("uri is null", uri);
                 Assert.assertEquals(URI.create(String.format("%s:%s",algorithm, md5Hex)), uri);
             }
@@ -265,9 +259,8 @@ public class DigestUtilTest {
 
             // SHA-1 20 bytes, 40 chars
             algorithm = "sha-1";
-            checksum = DigestUtil.base64Encode(sha1Hex);
             try {
-                uri = DigestUtil.getURI(String.format("%s=%s", algorithm, checksum));
+                uri = DigestUtil.getURI(String.format("%s=%s", algorithm, sha1Base64));
                 Assert.assertNotNull("uri is null", uri);
                 Assert.assertEquals(URI.create(String.format("%s:%s",algorithm, sha1Hex)), uri);
             }
@@ -277,9 +270,8 @@ public class DigestUtilTest {
 
             // SHA-256 32 bytes, 64 chars
             algorithm = "sha-256";
-            checksum = DigestUtil.base64Encode(sha256Hex);
             try {
-                uri = DigestUtil.getURI(String.format("%s=%s", algorithm, checksum));
+                uri = DigestUtil.getURI(String.format("%s=%s", algorithm, sha256Base64));
                 Assert.assertNotNull("uri is null", uri);
                 Assert.assertEquals(URI.create(String.format("%s:%s",algorithm, sha256Hex)), uri);
             }
@@ -289,9 +281,8 @@ public class DigestUtilTest {
 
             // SHA-384 48 bytes, 96 chars
             algorithm = "sha-384";
-            checksum = DigestUtil.base64Encode(sha384Hex);
             try {
-                uri = DigestUtil.getURI(String.format("%s=%s", algorithm, checksum));
+                uri = DigestUtil.getURI(String.format("%s=%s", algorithm, sha384Base64));
                 Assert.assertNotNull("uri is null", uri);
                 Assert.assertEquals(URI.create(String.format("%s:%s",algorithm, sha384Hex)), uri);
             }
@@ -301,9 +292,8 @@ public class DigestUtilTest {
 
             // SHA-512 64 bytes, 128 chars
             algorithm = "sha-512";
-            checksum = DigestUtil.base64Encode(sha512Hex);
             try {
-                uri = DigestUtil.getURI(String.format("%s=%s", algorithm, checksum));
+                uri = DigestUtil.getURI(String.format("%s=%s", algorithm, sha512Base64));
                 Assert.assertNotNull("uri is null", uri);
                 Assert.assertEquals(URI.create(String.format("%s:%s",algorithm, sha512Hex)), uri);
             }

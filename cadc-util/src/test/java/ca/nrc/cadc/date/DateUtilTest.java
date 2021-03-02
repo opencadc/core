@@ -246,9 +246,7 @@ public class DateUtilTest
         }
     }
 
-    @Ignore
     @Test
-    // Broken and could not find any useage of HTTP_DATE_FORMAT
     public void testHttp_Date()
         throws Exception
     {

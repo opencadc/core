@@ -82,7 +82,7 @@ public class DigestUtil {
     private static Logger log = Logger.getLogger(DigestUtil.class);
 
     /**
-     * Supported algorithm's in DigestUtil header.
+     * Supported algorithm's in Digest header.
      */
     public enum Algorithm {
         MD5("md5"),
@@ -108,7 +108,7 @@ public class DigestUtil {
     }
 
     /**
-     * Parse the given digest string and return a URI of the form: {algorithm}:{checksum in hex}
+     * Parse the given string and return a URI of the form: {algorithm}:{checksum}
      * @param digest value to parse
      * @return digest URI
      */
@@ -123,14 +123,14 @@ public class DigestUtil {
                                                                  + "found %s", digest));
         }
         String scheme = digest.substring(0, index).trim();
-        String checksumValue = digest.substring(index + 1).trim();
+        String base64Checksum = digest.substring(index + 1).trim();
 
         if (scheme.length() == 0) {
             throw new IllegalArgumentException(String.format("Unable to parse algorithm, expected format "
                                                                  + "<algorithm>=<checksum value> found %s",
                                                              digest));
         }
-        if (checksumValue.length() == 0) {
+        if (base64Checksum.length() == 0) {
             throw new IllegalArgumentException(String.format("Unable to parse checksum, expected format "
                                                                  + "<algorithm>=<checksum value> found %s",
                                                              digest));
@@ -143,58 +143,44 @@ public class DigestUtil {
             throw new IllegalArgumentException(String.format("Unsupported algorithm %s", scheme));
         }
 
-        // For a MD5 checksum, determine if the checksum value is hex or base64
-        boolean isHex = true;
-        if (algorithm == Algorithm.MD5) {
-            for (int i = 0; i < checksumValue.length(); i++) {
-                if (Character.digit(checksumValue.charAt(i), 16) == -1) {
-                    isHex = false;
-                    break;
-                }
-            }
-            if (!isHex) {
-                // decode MD5 base64 checksum into hex
-                checksumValue = base64Decode(checksumValue);
-            }
-            if (checksumValue.length() != 32) {
-                throw new IllegalArgumentException(String.format("Invalid MD5 checksum, expected 32 hex chars, "
-                                                                     + "found %s in %s",
-                                                                 checksumValue.length(), checksumValue));
-            }
-        } else {
-            // decode all other algorithms checksum into hex
-            checksumValue = base64Decode(checksumValue);
+        String checksum = base64Decode(base64Checksum);
+
+        // MD5 16 bytes or 32 chars
+        if (algorithm == Algorithm.MD5 && checksum.length() != 32) {
+            throw new IllegalArgumentException(String.format("Invalid MD5 checksum, expected 32 chars, "
+                                                                 + "found %s in %s",
+                                                             checksum.length(), checksum));
         }
 
         // SHA-1 20 bytes or 40 chars
-        if (algorithm == Algorithm.SHA1 && checksumValue.length() != 40) {
+        if (algorithm == Algorithm.SHA1 && checksum.length() != 40) {
             throw new IllegalArgumentException(String.format("Invalid SHA-1 checksum, expected 40 chars, "
                                                                  + "found %s in %s",
-                                                             checksumValue.length(), checksumValue));
+                                                             checksum.length(), checksum));
         }
 
         // SHA-256 32 bytes or 64 chars
-        if (algorithm == Algorithm.SHA256 && checksumValue.length() != 64) {
+        if (algorithm == Algorithm.SHA256 && checksum.length() != 64) {
             throw new IllegalArgumentException(String.format("Invalid SHA-256 checksum, expected 64 chars, "
                                                                  + "found %s in %s",
-                                                             checksumValue.length(), checksumValue));
+                                                             checksum.length(), checksum));
         }
 
         // SHA-384 48 bytes or 96 chars
-        if (algorithm == Algorithm.SHA384 && checksumValue.length() != 96) {
+        if (algorithm == Algorithm.SHA384 && checksum.length() != 96) {
             throw new IllegalArgumentException(String.format("Invalid SHA-384 checksum, expected 96 chars, "
                                                                  + "found %s in %s",
-                                                             checksumValue.length(), checksumValue));
+                                                             checksum.length(), checksum));
         }
 
         // SHA-512 64 bytes or 128 chars
-        if (algorithm == Algorithm.SHA512 && checksumValue.length() != 128) {
+        if (algorithm == Algorithm.SHA512 && checksum.length() != 128) {
             throw new IllegalArgumentException(String.format("Invalid SHA-512 checksum, expected 128 chars, "
                                                                  + "found %s in %s",
-                                                             checksumValue.length(), checksumValue));
+                                                             checksum.length(), checksum));
         }
 
-        return URI.create(algorithm.value + ":" + checksumValue);
+        return URI.create(algorithm.value + ":" + checksum);
     }
 
     /**

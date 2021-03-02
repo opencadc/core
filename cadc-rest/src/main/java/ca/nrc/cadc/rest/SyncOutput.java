@@ -69,10 +69,15 @@
 
 package ca.nrc.cadc.rest;
 
+import ca.nrc.cadc.date.DateUtil;
+import ca.nrc.cadc.net.DigestUtil;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import java.net.URI;
+import java.text.DateFormat;
+import java.util.Date;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
@@ -148,6 +153,36 @@ public class SyncOutput {
         } else {
             this.response.setHeader(key, value.toString());
         }
+    }
+
+    /**
+     * Set the Digest HTTP header.
+     * @param uri The Digest uri.
+     */
+    public void setDigest(URI uri) {
+        String digest = null;
+        if (uri != null) {
+            String algorithm = uri.getScheme();
+            String checksum = uri.getSchemeSpecificPart();
+            String base64Checksum = DigestUtil.base64Encode(checksum);
+            digest = algorithm + "=" + base64Checksum;
+        }
+        log.debug("setDigest: " + digest);
+        setHeader("Digest", digest);
+    }
+
+    /**
+     * Set the LastModified HTTP header.
+     * @param date The LastModified date.
+     */
+    public void setLastModified(Date date) {
+        String lastModified = null;
+        if (date != null) {
+            DateFormat df = DateUtil.getDateFormat(DateUtil.HTTP_DATE_FORMAT, DateUtil.GMT);
+            lastModified = df.format(date);
+        }
+        log.debug("setLastModified: " + lastModified);
+        setHeader("Last-Modified", lastModified);
     }
 
     /**

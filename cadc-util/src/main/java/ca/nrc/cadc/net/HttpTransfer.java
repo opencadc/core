@@ -88,6 +88,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
@@ -433,11 +434,11 @@ public abstract class HttpTransfer implements Runnable {
     }
 
     /**
-     * Digest from http header.
-     * @return digest or null
+     * URI of the Digest HTTP header. URI is of the form: algorithm:checksum
+     * @return uri or null
      */
-    public String getDigest() {
-        return this.digest;
+    public URI getDigest() {
+        return DigestUtil.getURI(this.digest);
     }
 
     /**
