@@ -13,11 +13,11 @@ repositories {
 
 apply from: '../opencadc.gradle'
 
-sourceCompatibility = 1.7
+sourceCompatibility = 1.8
 
 group = 'org.opencadc'
 
-version = '1.2.20'
+version = '1.2.21'
 
 dependencies {
     compile 'commons-fileupload:commons-fileupload:1.4'

@@ -69,6 +69,7 @@
 
 package ca.nrc.cadc.rest;
 
+import ca.nrc.cadc.net.DigestUtil;
 import ca.nrc.cadc.net.NetUtil;
 import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.util.CaseInsensitiveStringComparator;
@@ -203,6 +204,15 @@ public class SyncInput {
             ret = ret.substring(1);
         }
         return ret;
+    }
+
+    /**
+     * Get a URI of the Digest header. The header format is {algorithm}={base64 checksum}.
+     * Decodes the base64 checksum and returns a URI of the form {algorithm}:{checksum}.
+     * @return Digest URI, or null if Digest header not set.
+     */
+    public URI getDigest() {
+        return DigestUtil.getURI(getHeader("Digest"));
     }
 
     /**
