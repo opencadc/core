@@ -600,6 +600,17 @@ public abstract class HttpTransfer implements Runnable {
     }
 
     /**
+     * Set the Digest header for the given checksum URI.
+     *
+     * @param checksumURI
+     */
+    public void setDigest(URI checksumURI) {
+        String algorithm = checksumURI.getScheme();
+        String checksum = DigestUtil.base64Encode(checksumURI.getSchemeSpecificPart());
+        setRequestProperty(DIGEST, String.format("%s=%s", algorithm, checksum));
+    }
+
+    /**
      * Set single request headers. Do not set the same value twice by using this
      * method and the specific set methods (like setUserAgent, setContentType, etc) in this
      * class or subclasses.
