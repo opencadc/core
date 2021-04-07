@@ -31,9 +31,6 @@ jobs:
     - name: build and test cadc-rest
       run: cd cadc-rest && gradle --info clean build javadoc checkstyleMain install
       
-    - name: build and test cadc-auth-restlet
-      run: cd cadc-auth-restlet && gradle --info clean build javadoc install
-      
     - name: build and test cadc-vodml
       run: cd cadc-vodml && gradle --info clean build javadoc install
       
