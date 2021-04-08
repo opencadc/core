@@ -75,6 +75,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.TimeZone;
 
 /**
@@ -126,6 +127,10 @@ public class DateUtil {
      */
     public static final String ISO8601_DATE_FORMAT_MSLOCAL = "yyyy-MM-dd'T'HH:mm:ss.SSS";
 
+    public static final String HTTP_DATE_FORMAT = "EEE, dd MMM yyyy HH:mm:ss z";
+    
+    public static final TimeZone GMT = TimeZone.getTimeZone("GMT");
+    
     public static final TimeZone UTC = TimeZone.getTimeZone("UTC");
 
     public static final TimeZone LOCAL = TimeZone.getDefault();
@@ -169,7 +174,13 @@ public class DateUtil {
         // non-LOCAL timezone");
         // }
 
-        SimpleDateFormat ret = new SimpleDateFormat(format);
+        // Explicitly set the formatting locale in SimpleDateFormat.
+        // The HTTP_DATE_FORMAT string throws an 'Unparseable date' error in Java 11.
+        // The error was not thrown in Java 8.
+        // Setting the locale in the SimpleDateFormat constructor to CANADA
+        // or CANADA_FRENCH throws a parse error.
+        // Setting the locale to ENGLISH, US, or UK, does not.
+        SimpleDateFormat ret = new SimpleDateFormat(format, Locale.ENGLISH);
         ret.setLenient(false);
         if (tz != null) {
             ret.setTimeZone(tz);

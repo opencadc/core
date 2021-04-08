@@ -88,11 +88,11 @@ import ca.nrc.cadc.util.HexUtil;
 import ca.nrc.cadc.util.StringUtil;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
@@ -149,6 +149,7 @@ public abstract class HttpTransfer implements Runnable {
     public static final String CONTENT_LENGTH = "Content-Length";
     public static final String CONTENT_MD5 = "Content-MD5";
     public static final String CONTENT_TYPE = "Content-Type";
+    public static final String DIGEST = "Digest";
     
     public static final String SERVICE_RETRY = "Retry-After";
 
@@ -244,6 +245,7 @@ public abstract class HttpTransfer implements Runnable {
     private String contentMD5;
     private long contentLength = -1;
     private Date lastModified;
+    private String digest;
     
     // error capture
     protected int maxReadFully = 32 * 1024; // read up to 32k text responses into memory
@@ -420,9 +422,9 @@ public abstract class HttpTransfer implements Runnable {
     }
     
     /**
-     * Get the MD5 checksum sum of the response.
+     * Convenience: Get the MD5 checksum sum of the response.
      * 
-     * @return the content-md5 or null
+     * @return the MD5 checksum in hex form or null
      */
     public String getContentMD5() { 
         return contentMD5; 
@@ -436,7 +438,15 @@ public abstract class HttpTransfer implements Runnable {
     public Date getLastModified() {
         return lastModified;
     }
-    
+
+    /**
+     * URI of the Digest HTTP header. URI is of the form: algorithm:checksum
+     * @return uri or null
+     */
+    public URI getDigest() {
+        return DigestUtil.getURI(this.digest);
+    }
+
     /**
      * Latency from start of call to first bytes of response. This could be null if some methods
      * do not or cannot track latency.
@@ -477,6 +487,7 @@ public abstract class HttpTransfer implements Runnable {
         if (lastMod > 0) {
             this.lastModified = new Date(lastMod);
         }
+        this.digest = responseHeaders.get(DIGEST);
     }
     
     /**
@@ -592,6 +603,17 @@ public abstract class HttpTransfer implements Runnable {
         }
         
         return null;
+    }
+
+    /**
+     * Set the Digest header for the given checksum URI.
+     *
+     * @param checksumURI
+     */
+    public void setDigest(URI checksumURI) {
+        String algorithm = checksumURI.getScheme();
+        String checksum = DigestUtil.base64Encode(checksumURI.getSchemeSpecificPart());
+        setRequestProperty(DIGEST, String.format("%s=%s", algorithm, checksum));
     }
 
     /**
@@ -766,7 +788,7 @@ public abstract class HttpTransfer implements Runnable {
         
         captureResponseHeaders(conn);
         
-        if (responseCode < 400) {
+        if (100 <= responseCode && responseCode < 400) {
             return;
         }
         log.debug("error: " + contentType + " " + contentLength);

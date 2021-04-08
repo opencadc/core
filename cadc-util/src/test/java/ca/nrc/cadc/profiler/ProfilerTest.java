@@ -69,7 +69,6 @@
 
 package ca.nrc.cadc.profiler;
 
-import ca.nrc.cadc.log.WebServiceLogInfoTest;
 import ca.nrc.cadc.util.Log4jInit;
 import java.io.IOException;
 import java.io.LineNumberReader;
@@ -80,8 +79,8 @@ import java.util.List;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
-import org.junit.Test;
 import org.junit.Ignore;
+import org.junit.Test;
 
 /**
  *
