@@ -193,6 +193,28 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
         }
     }
 
+
+    /**
+     * Check if the caller can read the resource.
+     */
+    protected void checkReadable() {
+        if (!readable) {
+            throw new IllegalStateException(STATE_OFFLINE_MSG);
+        }
+    }
+    
+    /**
+     * Check if the caller can create or modify the resource.
+     */
+    protected void checkWritable() {
+        if (!writable) {
+            if (readable) {
+                throw new IllegalStateException(STATE_READ_ONLY_MSG);
+            }
+            throw new IllegalStateException(STATE_OFFLINE_MSG);
+        }
+    }
+
     // package for RestServlet use
     void setServletContext(ServletContext servletContext) {
         this.servletContext = servletContext;
