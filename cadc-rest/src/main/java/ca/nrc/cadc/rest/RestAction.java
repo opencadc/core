@@ -195,7 +195,9 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
 
 
     /**
-     * Check if the caller can read the resource.
+     * Check the service state to determine if a read should go ahead.
+     * 
+     * @throws IllegalStateException if service is in Offline state
      */
     protected void checkReadable() {
         if (!readable) {
@@ -204,7 +206,9 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
     }
     
     /**
-     * Check if the caller can create or modify the resource.
+     * Check the service state to determine if a write should go ahead.
+     * 
+     * @throws IllegalStateException if service is in ReadOnly or in Offline state
      */
     protected void checkWritable() {
         if (!writable) {
