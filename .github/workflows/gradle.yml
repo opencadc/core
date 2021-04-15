@@ -20,27 +20,27 @@ jobs:
         java-version: 1.8
 
     - name: build and test cadc-quality
-      run: cd cadc-quality && gradle --info clean build javadoc checkstyleMain install
+      run: cd cadc-quality && ../gradlew --info clean build javadoc checkstyleMain install
       
     - name: build and test cadc-log
-      run: cd cadc-log && gradle --info clean build javadoc checkstyleMain install
+      run: cd cadc-log && ../gradlew --info clean build javadoc checkstyleMain install
       
     - name: build and test cadc-log
-      run: cd cadc-log && gradle --info clean build javadoc checkstyleMain install
+      run: cd cadc-log && ../gradlew --info clean build javadoc checkstyleMain install
       
     - name: build and test cadc-rest
-      run: cd cadc-rest && gradle --info clean build javadoc checkstyleMain install
+      run: cd cadc-rest && ../gradlew --info clean build javadoc checkstyleMain install
       
     - name: build and test cadc-vodml
-      run: cd cadc-vodml && gradle --info clean build javadoc install
+      run: cd cadc-vodml && ../gradlew --info clean build javadoc install
       
     - name: build and test cadc-test-servlet
-      run: cd cadc-test-servlet && gradle --info clean build javadoc
+      run: cd cadc-test-servlet && ../gradlew --info clean build javadoc
       
     - name: build and test cadc-http-client
-      run: cd cadc-http-client && gradle --info clean build
+      run: cd cadc-http-client && ../gradlew --info clean build
 
     - name: build and test cadc-keygen
-      run: cd cadc-keygen && gradle --info clean build 
+      run: cd cadc-keygen && ../gradlew --info clean build 
       
     
