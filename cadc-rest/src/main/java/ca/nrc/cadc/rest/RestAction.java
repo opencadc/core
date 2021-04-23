@@ -197,25 +197,25 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
     /**
      * Check the service state to determine if a read should go ahead.
      * 
-     * @throws IllegalStateException if service is in Offline state
+     * @throws TransientException if service is in Offline state
      */
-    protected void checkReadable() {
+    protected void checkReadable() throws TransientException {
         if (!readable) {
-            throw new IllegalStateException(STATE_OFFLINE_MSG);
+            throw new TransientException(STATE_OFFLINE_MSG, 180);
         }
     }
     
     /**
      * Check the service state to determine if a write should go ahead.
      * 
-     * @throws IllegalStateException if service is in ReadOnly or in Offline state
+     * @throws TransientException if service is in ReadOnly or in Offline state
      */
-    protected void checkWritable() {
+    protected void checkWritable() throws TransientException {
         if (!writable) {
             if (readable) {
-                throw new IllegalStateException(STATE_READ_ONLY_MSG);
+                throw new TransientException(STATE_READ_ONLY_MSG, 180);
             }
-            throw new IllegalStateException(STATE_OFFLINE_MSG);
+            throw new TransientException(STATE_OFFLINE_MSG, 180);
         }
     }
 
@@ -306,9 +306,11 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
             logInfo.setSuccess(true);
         } catch (NotAuthenticatedException ex) {
             logInfo.setSuccess(true);
+            logInfo.setMessage(ex.getMessage());
             handleException(ex, 401, ex.getMessage(), false, false);
         } catch (AccessControlException ex) {
             logInfo.setSuccess(true);
+            logInfo.setMessage(ex.getMessage());
             handleException(ex, 403, ex.getMessage(), false, false);
         } catch (CertificateException ex) {
             handleException(ex, 403, "permission denied -- reason: invalid proxy certficate", false, true);
@@ -333,7 +335,12 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
         } catch (TransientException ex) {
             logInfo.setSuccess(true);
             syncOutput.setHeader(HttpTransfer.SERVICE_RETRY, ex.getRetryDelay());
-            handleException(ex, 503, "temporarily unavailable: " + syncInput.getPath(), true, false);
+            if (!readable || !writable) {
+                // exception due to service state: keep logs tidy
+                handleException(ex, 503, "temporarily unavailable: " + syncInput.getPath(), false, false);
+            } else {
+                handleException(ex, 503, "temporarily unavailable: " + syncInput.getPath(), true, false);
+            }
         } catch (IOException ex) {
             if (ioExceptionOnInput) {
                 throw new IOException("failed to read input", ex);
