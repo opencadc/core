@@ -76,39 +76,42 @@ package ca.nrc.cadc.auth;
  */
 public class AuthorizationToken {
     
-    private String name;
-    private String value;
+    private String type;
+    private String credentials;
+    
+    // Token scope goes here where introduced
+    // private URI scope
     
     /**
      * Contructor.
-     * @param name The name of the token.
-     * @param value The token value.
+     * @param type The type of the token. (eg, Bearer)
+     * @param credentials The token credentials.
      */
-    public AuthorizationToken(String name, String value) {
-        if (name == null) {
-            throw new IllegalArgumentException("name required");
+    public AuthorizationToken(String type, String credentials) {
+        if (type == null) {
+            throw new IllegalArgumentException("type required");
         }
-        if (value == null) {
-            throw new IllegalArgumentException("value required");
+        if (credentials == null) {
+            throw new IllegalArgumentException("credentials required");
         }
-        this.name = name;
-        this.value = value;
+        this.type = type;
+        this.credentials = credentials;
     }
     
     /**
-     * Name getter.
-     * @return The name.
+     * Type getter.
+     * @return The type.
      */
-    public String getName() {
-        return name;
+    public String getType() {
+        return type;
     }
     
     /**
-     * Value getter.
-     * @return The value.
+     * Credentials getter.
+     * @return The credentials.
      */
-    public String getValue() {
-        return value;
+    public String getCredentials() {
+        return credentials;
     }
 
 }

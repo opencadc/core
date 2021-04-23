@@ -136,17 +136,24 @@ public class ServletPrincipalExtractor implements PrincipalExtractor {
         }
 
         // custom header (deprecated)
-        String tokenHeader = request.getHeader(AuthenticationUtil.AUTH_HEADER);
-        if (DelegationTokenPrincipal.isDelegationToken(tokenHeader)) {
-            DelegationTokenPrincipal delegationTokenPrincipal = new DelegationTokenPrincipal(tokenHeader);
-            principals.add(delegationTokenPrincipal);
+        String cadcTokenHeader = request.getHeader(AuthenticationUtil.AUTH_HEADER);
+        if (cadcTokenHeader != null) {
+            AuthorizationTokenPrincipal principal = new AuthorizationTokenPrincipal(AuthenticationUtil.AUTH_HEADER, cadcTokenHeader);
+            principals.add(principal);
         }
 
         // authorization header (bearer and token)
         String authToken = request.getHeader(AuthenticationUtil.AUTHORIZATION_HEADER);
         if (BearerTokenPrincipal.isBearerToken(authToken)) {
+            // deprecated in favour of a common token handling mechanism
             BearerTokenPrincipal bearerTokenPrincipal = new BearerTokenPrincipal(authToken);
             principals.add(bearerTokenPrincipal);
+        }
+        
+        if (authToken != null) {
+            // (bearer tokens will also become AuthorizationTokenPrincipals)
+            AuthorizationTokenPrincipal principal = new AuthorizationTokenPrincipal(authToken);
+            principals.add(principal);
         }
 
         // add HttpPrincipal

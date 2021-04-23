@@ -66,51 +66,47 @@
  */
 package ca.nrc.cadc.auth;
 
-import ca.nrc.cadc.util.StringUtil;
-
 import java.security.Principal;
 
 /**
  * @author majorb
  *
- * DelegationToken value read from HTTP request header AuthenticationUtil.AUTH_HEADER or
- * AuthenticationUtil.AUTHORIZATION_HEADER with type 'token'.
- *  
  */
-public class DelegationTokenPrincipal implements Principal {
-    
-    private static final String AUTHORIZATION_HEADER_TOKEN = AuthenticationUtil.AUTHORIZATION_HEADER + " Token";
-    public static final String TOKEN_TYPE_TOKEN = "Token";
-    private static final String prefix = TOKEN_TYPE_TOKEN + " ";
+public class AuthorizationTokenPrincipal implements Principal {
 
-    private String headerKey;
-    private String headerValue;
-    
-    // TODO: use both key and value for isDelegationToken
-    
-    public DelegationTokenPrincipal(String headerKey, String headerValue) {
+    private final String header;
+    private final String token;
 
-        if (!isDelegationToken(headerKey, headerValue)) {
-            throw new IllegalArgumentException("invalid delegation token");
-        }
-        if (header.startsWith(AUTHORIZATION_HEADER_TOKEN)) {
-            this.header = header.substring(AuthenticationUtil.AUTHORIZATION_HEADER.length());
-        } else {
-            this.header = header;
-        }
+    /**
+     * AuthorizationTokenPrincipal constructor.
+     * 
+     * @param authorizationHeaderValue The value of the Authorization header
+     * (including any names, such as 'Bearer')
+     */
+    public AuthorizationTokenPrincipal(String authorizationHeaderValue) {
+        this.header = AuthenticationUtil.AUTHORIZATION_HEADER;
+        this.token = authorizationHeaderValue;
+    }
+    
+    /**
+     * Constructor to support non-standard headers for tokens (deprecated).
+     * 
+     * @param headerKey The header used
+     * @param headerValue The value
+     * @deprecated Tokens should go in 'Authorization' header
+     */
+    public AuthorizationTokenPrincipal(String headerKey, String headerValue) {
+        this.header = headerKey;
+        this.token = headerValue;
     }
 
     @Override
     public String getName() {
-        return header;
+        return token;
     }
     
-    public static boolean isDelegationToken(String headerKey, String headerValue) {
-        if (header == null) {
-            return false;
-        }
-        return (header.startsWith(AuthenticationUtil.AUTH_HEADER) ||
-             header.startsWith(AUTHORIZATION_HEADER_TOKEN));
+    public String getHeader() {
+        return header;
     }
     
 }

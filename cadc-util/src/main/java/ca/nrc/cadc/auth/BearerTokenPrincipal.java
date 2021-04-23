@@ -75,21 +75,25 @@ import java.io.Serializable;
 import java.security.Principal;
 
 /**
- * Represents a bearer token
+ * Represents a bearer token.
+ * 
+ * @deprecated Being replaced with more general token support in AuthorizationToken
+ * and AuthorizationTokenPrincipal
  */
+@Deprecated 
 public class BearerTokenPrincipal implements Principal, Serializable {
     private static final long serialVersionUID = 7L;
-    public static final String TOKEN_TYPE_BEARER = "Bearer";
-    private static final String prefix = TOKEN_TYPE_BEARER + " ";
 
-    private final AuthorizationToken authorizationToken;
+    private static final String prefix = AuthenticationUtil.TOKEN_TYPE_BEARER + " ";
+    
+    private final String token;
 
     public BearerTokenPrincipal(final String authorizationHeader) {
         if (!isBearerToken(authorizationHeader)) {
             throw new IllegalArgumentException("Not a bearer token");
         }
 
-        this.authorizationToken = new AuthorizationToken(TOKEN_TYPE_BEARER, authorizationHeader.substring(prefix.length()));
+        this.token = authorizationHeader.substring(prefix.length());
     }
 
     public static Boolean isBearerToken(final String authorizationHeader) {
@@ -99,7 +103,6 @@ public class BearerTokenPrincipal implements Principal, Serializable {
     @Override
     public String toString() {
         int max = 8;
-        String token = authorizationToken.getValue();
         if (token.length() < 8) {
             max = token.length();
         }
@@ -113,16 +116,9 @@ public class BearerTokenPrincipal implements Principal, Serializable {
      */
     @Override
     public String getName() {
-        return authorizationToken.getValue();
+        return token;
     }
     
-    /**
-     * Return the associated token object.
-     * @return The token object
-     */
-    public AuthorizationToken getToken() {
-        return authorizationToken;
-    }
 
     @Override
     public boolean equals(Object o) {
@@ -136,11 +132,11 @@ public class BearerTokenPrincipal implements Principal, Serializable {
 
         final BearerTokenPrincipal that = (BearerTokenPrincipal) o;
 
-        return authorizationToken.getValue().equals(that.getToken().getValue());
+        return token.equals(that.token);
     }
 
     @Override
     public int hashCode() {
-        return authorizationToken.getValue().hashCode();
+        return token.hashCode();
     }
 }

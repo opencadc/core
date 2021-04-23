@@ -124,7 +124,7 @@ public class HttpDelete extends HttpTransfer {
         conn.setDoOutput(false);
         
         setRequestHeaders(conn);
-        setRequestSSOCookie(conn);
+        setRequestAuthHeaders(conn);
         if (conn instanceof HttpsURLConnection) {
             final HttpsURLConnection sslConn = (HttpsURLConnection) conn;
             initHTTPS(sslConn);
