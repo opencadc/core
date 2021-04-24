@@ -337,7 +337,7 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
             syncOutput.setHeader(HttpTransfer.SERVICE_RETRY, ex.getRetryDelay());
             if (!readable || !writable) {
                 // exception due to service state: keep logs tidy
-                handleException(ex, 503, "temporarily unavailable: " + syncInput.getPath(), false, false);
+                handleException(ex, 503, ex.getMessage(), false, false);
             } else {
                 handleException(ex, 503, "temporarily unavailable: " + syncInput.getPath(), true, false);
             }
