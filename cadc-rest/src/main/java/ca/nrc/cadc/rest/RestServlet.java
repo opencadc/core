@@ -419,7 +419,6 @@ public class RestServlet extends HttpServlet {
     /**
      * If the user has authenticated, set the X-VO-Authenticated. Use the HttpPrincipal if
      * available, otherwise whatever is present.
-     * 
      * Otherwise set the WWW-Authenticate header so clients know how to obtain
      * authentication tokens.
      */
@@ -431,10 +430,8 @@ public class RestServlet extends HttpServlet {
             // find the token URL
             LocalAuthority localAuthority = new LocalAuthority();
             URI loginServiceURI = localAuthority.getServiceURI(Standards.SECURITY_METHOD_PASSWORD.toString());
-            URI authorizeServiceURI = localAuthority.getServiceURI(Standards.SECURITY_METHOD_OAUTH.toString());
             RegistryClient regClient = new RegistryClient();
             URL loginURL = regClient.getServiceURL(loginServiceURI, Standards.SECURITY_METHOD_PASSWORD, AuthMethod.ANON);
-            URL authorizeURL = regClient.getServiceURL(authorizeServiceURI, Standards.SECURITY_METHOD_OAUTH, AuthMethod.ANON);
             
             // set a header for info on how to obtain tokens with username/password over tls
             StringBuilder sb = new StringBuilder();
@@ -443,6 +440,8 @@ public class RestServlet extends HttpServlet {
             out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
             
             // set a header for info on how to obtain tokens with OAuth2 authorize
+            URI authorizeServiceURI = localAuthority.getServiceURI(Standards.SECURITY_METHOD_OAUTH.toString());
+            URL authorizeURL = regClient.getServiceURL(authorizeServiceURI, Standards.SECURITY_METHOD_OAUTH, AuthMethod.ANON);
             sb = new StringBuilder();
             sb.append("vo-token standardID=\"").append(Standards.SECURITY_METHOD_OAUTH.toString()).append("\", ");
             sb.append("accessURL=\"").append(authorizeURL).append("\"");
