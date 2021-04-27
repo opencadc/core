@@ -64,6 +64,7 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.auth;
 
 import java.security.Principal;
@@ -81,7 +82,7 @@ public class AuthorizationTokenPrincipal implements Principal {
      * AuthorizationTokenPrincipal constructor.
      * 
      * @param authorizationHeaderValue The value of the Authorization header
-     * (including any names, such as 'Bearer')
+     *     (including any names, such as 'Bearer')
      */
     public AuthorizationTokenPrincipal(String authorizationHeaderValue) {
         this.header = AuthenticationUtil.AUTHORIZATION_HEADER;

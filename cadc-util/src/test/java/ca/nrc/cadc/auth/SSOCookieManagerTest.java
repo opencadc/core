@@ -210,7 +210,7 @@ public class SSOCookieManagerTest
 
         try {
             String cookieValue = createCookieString();
-            cookieList = new SSOCookieManager().getSSOCookieCredentials(cookieValue, "www.canfar.phys.uvic.ca");
+            cookieList = new SSOCookieManager().getSSOCookieCredentials(cookieValue);
 
             // cookieList length should be same as list of expected domains
             assertEquals(cookieList.size(), domainList.size());

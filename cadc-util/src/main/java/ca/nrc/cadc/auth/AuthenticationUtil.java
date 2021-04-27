@@ -349,58 +349,6 @@ public class AuthenticationUtil {
         }
         return subject;
     }
-    
-    /**
-     * Method to validate CADC-style cookie and token principals, used by the
-     * CADC AuthenticatorImpl
-     * 
-     * @param subject
-     * @return
-     * @throws AccessControlException
-     */
-    public static Subject validateTokens(Subject subject) throws NotAuthenticatedException {
-        
-        // cookies
-        Set<CookiePrincipal> cookiePrincipals = subject.getPrincipals(CookiePrincipal.class);
-        log.debug("validateTokens: found " + cookiePrincipals.size() + " cookie principals");
-        if (!cookiePrincipals.isEmpty()) {
-            SSOCookieManager ssoCookieManager = new SSOCookieManager();
-            for (CookiePrincipal p : cookiePrincipals) {
-                DelegationToken cookieToken = ssoCookieManager.parse(p.getValue());
-                subject.getPrincipals().addAll(cookieToken.getIdentityPrincipals());
-                List<SSOCookieCredential> cookieCredentialList =
-                    ssoCookieManager.getSSOCookieCredentials(p.getValue());
-                subject.getPublicCredentials().addAll(cookieCredentialList);
-            }
-        }
-        
-        // tokens
-        Set<AuthorizationTokenPrincipal> tokenPrincipals = subject.getPrincipals(AuthorizationTokenPrincipal.class);
-        log.debug("validateTokens: found " + tokenPrincipals.size() + " token principals");
-        for (AuthorizationTokenPrincipal p : tokenPrincipals) {
-            String token = p.getName();
-            // parse the token into type and credentials.  If only credentials available, assume
-            // the deprecated delegation token
-            String type = null;
-            String credentials = null;
-            int spaceIndex = token.indexOf(" ");
-            if (spaceIndex == -1) {
-                type = TOKEN_TYPE_CADC;
-                credentials = token;
-            } else {
-                type = token.substring(0, spaceIndex);
-                credentials = token.substring(spaceIndex + 1);
-            }
-            DelegationToken validatedToken = DelegationToken.parse(credentials);
-            subject.getPrincipals().add(validatedToken.getUser());
-            // When scope is introduced, add the scope from the delegation token to
-            // the authorization token.
-            AuthorizationToken authToken = new AuthorizationToken(type, credentials);
-            subject.getPublicCredentials().add(authToken);
-        }
-        
-        return subject;
-    }
 
     /**
      * Convenience method to augment the extracted Subject.
@@ -498,6 +446,60 @@ public class AuthenticationUtil {
         Subject subject = new Subject(false, principals, publicCred, privateCred);
         setAuthMethod(subject, AuthMethod.PASSWORD);
         return subject; // this method for client apps only: no augment
+    }
+    
+    /**
+     * Method to validate CADC-style cookie and token principals, used by the
+     * CADC AuthenticatorImpl
+     * 
+     * @param subject
+     * @return
+     * @throws AccessControlException
+     */
+    public static Subject validateTokens(Subject subject) throws NotAuthenticatedException {
+        
+        // cookies
+        Set<CookiePrincipal> cookiePrincipals = subject.getPrincipals(CookiePrincipal.class);
+        log.debug("validateTokens: found " + cookiePrincipals.size() + " cookie principals");
+        if (!cookiePrincipals.isEmpty()) {
+            SSOCookieManager ssoCookieManager = new SSOCookieManager();
+            for (CookiePrincipal p : cookiePrincipals) {
+                DelegationToken cookieToken = ssoCookieManager.parse(p.getValue());
+                subject.getPrincipals().addAll(cookieToken.getIdentityPrincipals());
+                List<SSOCookieCredential> cookieCredentialList =
+                    ssoCookieManager.getSSOCookieCredentials(p.getValue());
+                log.debug("Adding " + cookieCredentialList.size() + " cookie credentials to subject");
+                subject.getPublicCredentials().addAll(cookieCredentialList);
+            }
+        }
+        
+        // tokens
+        Set<AuthorizationTokenPrincipal> tokenPrincipals = subject.getPrincipals(AuthorizationTokenPrincipal.class);
+        log.debug("validateTokens: found " + tokenPrincipals.size() + " token principals");
+        for (AuthorizationTokenPrincipal p : tokenPrincipals) {
+            String token = p.getName();
+            // parse the token into type and credentials.  If only credentials available, assume
+            // the deprecated delegation token
+            String type = null;
+            String credentials = null;
+            int spaceIndex = token.indexOf(" ");
+            if (spaceIndex == -1) {
+                type = TOKEN_TYPE_CADC;
+                credentials = token;
+            } else {
+                type = token.substring(0, spaceIndex);
+                credentials = token.substring(spaceIndex + 1);
+            }
+            DelegationToken validatedToken = DelegationToken.parse(credentials);
+            subject.getPrincipals().add(validatedToken.getUser());
+            // When scope is introduced, add the scope from the delegation token to
+            // the authorization token.
+            AuthorizationToken authToken = new AuthorizationToken(type, credentials);
+            log.debug("Adding 1 token credential to subject");
+            subject.getPublicCredentials().add(authToken);
+        }
+        
+        return subject;
     }
 
     // Encode a Subject in the format:

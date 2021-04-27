@@ -39,7 +39,6 @@ import java.security.Principal;
 
 /**
  * Represents the key and value of a Cookie as a principal.
- * 
  * Interface Principal.java expects getName() to return
  * the value (id) of the principal.  The key variable in 
  * this class is for representing the 'name' of a cookie.
@@ -91,6 +90,20 @@ public class CookiePrincipal implements Principal, Serializable {
      */
     public String getValue() {
         return value;
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || !(o instanceof CookiePrincipal)) {
+            return false;
+        }
+        CookiePrincipal c = (CookiePrincipal) o;
+        return c.getKey().equals(key) && c.getValue().equals(value);
+    }
+    
+    @Override
+    public String toString() {
+        return "CookiePrincipal[" + key + "=" + value + "]";
     }
 
 }

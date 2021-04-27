@@ -78,7 +78,7 @@ import java.security.Principal;
  * Represents a bearer token.
  * 
  * @deprecated Being replaced with more general token support in AuthorizationToken
- * and AuthorizationTokenPrincipal
+ *     and AuthorizationTokenPrincipal
  */
 @Deprecated 
 public class BearerTokenPrincipal implements Principal, Serializable {

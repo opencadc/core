@@ -80,11 +80,18 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import ca.nrc.cadc.util.FileUtil;
+import ca.nrc.cadc.util.Log4jInit;
+import ca.nrc.cadc.util.RsaSignatureGenerator;
+
+import java.io.File;
+import java.net.InetAddress;
+import java.net.PasswordAuthentication;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.PrivilegedAction;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
@@ -100,14 +107,9 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import ca.nrc.cadc.util.Log4jInit;
-import java.net.InetAddress;
-import java.net.PasswordAuthentication;
-import org.junit.Assert;
 
 
 /**
@@ -587,7 +589,7 @@ public class AuthenticationUtilTest
     }
 
     @Test
-    public void testGetSubjectFromPrincipalExtractorWithCookieAndX500()
+    public void testGetSubjectFromPrincipalExtractorWithX500()
             throws Exception
     {
         final PrincipalExtractor mockPrincipalExtractor =
@@ -595,11 +597,6 @@ public class AuthenticationUtilTest
         final Set<Principal> principalSet = new HashSet<Principal>();
         final X509CertificateChain mockCertChain =
                 createMock(X509CertificateChain.class);
-
-        // this needs to be a list of mocks.
-        List<SSOCookieCredential> mockCookieCredentials = new ArrayList<>();
-        final SSOCookieCredential cookie =createMock(SSOCookieCredential.class);
-        mockCookieCredentials.add(cookie);
 
         // To overcome the empty principals.
         principalSet.add(new HttpPrincipal("USER1"));
@@ -610,13 +607,7 @@ public class AuthenticationUtilTest
         expect(mockPrincipalExtractor.getCertificateChain()).andReturn(
                 mockCertChain).once();
 
-        expect(mockPrincipalExtractor.getDelegationToken()).andReturn(
-                null).once();
-
-        expect(mockPrincipalExtractor.getSSOCookieCredentials()).andReturn(
-                mockCookieCredentials).once();
-
-        replay(mockPrincipalExtractor, mockCertChain, cookie);
+        replay(mockPrincipalExtractor, mockCertChain);
 
         final Subject s = AuthenticationUtil.getSubject(mockPrincipalExtractor);
 
@@ -625,47 +616,7 @@ public class AuthenticationUtilTest
         assertEquals("Wrong auth method.", AuthMethod.CERT,
                      authMethods.toArray(new AuthMethod[authMethods.size()])[0]);
 
-        verify(mockPrincipalExtractor, mockCertChain, cookie);
-    }
-
-    @Test
-    public void testGetSubjectFromPrincipalExtractorWithCookie()
-            throws Exception
-    {
-        final PrincipalExtractor mockPrincipalExtractor =
-                createMock(PrincipalExtractor.class);
-        final Set<Principal> principalSet = new HashSet<Principal>();
-        // this needs to be a list of mocks.
-        List<SSOCookieCredential> mockCookieCredentials = new ArrayList<>();
-        final SSOCookieCredential cookie = createMock(SSOCookieCredential.class);
-        mockCookieCredentials.add(cookie);
-
-        // To overcome the empty principals.
-        principalSet.add(new HttpPrincipal("USER1"));
-
-        expect(mockPrincipalExtractor.getPrincipals()).andReturn(
-                principalSet).once();
-
-        expect(mockPrincipalExtractor.getCertificateChain()).andReturn(
-                null).once();
-
-        expect(mockPrincipalExtractor.getDelegationToken()).andReturn(
-                null).once();
-
-        expect(mockPrincipalExtractor.getSSOCookieCredentials()).andReturn(
-                mockCookieCredentials).anyTimes();
-
-        replay(mockPrincipalExtractor, cookie);
-
-        final Subject s = AuthenticationUtil.getSubject(mockPrincipalExtractor);
-
-        final Set<AuthMethod> authMethods =
-                s.getPublicCredentials(AuthMethod.class);
-        assertEquals("Wrong auth method.", AuthMethod.COOKIE,
-                     authMethods.toArray(
-                             new AuthMethod[authMethods.size()])[0]);
-
-        verify(mockPrincipalExtractor, cookie);
+        verify(mockPrincipalExtractor, mockCertChain);
     }
 
     @Test
@@ -679,12 +630,6 @@ public class AuthenticationUtilTest
                 principalSet).once();
 
         expect(mockPrincipalExtractor.getCertificateChain()).andReturn(
-                null).once();
-
-        expect(mockPrincipalExtractor.getDelegationToken()).andReturn(
-                null).once();
-
-        expect(mockPrincipalExtractor.getSSOCookieCredentials()).andReturn(
                 null).once();
 
         replay(mockPrincipalExtractor);
@@ -765,6 +710,87 @@ public class AuthenticationUtilTest
             log.debug("testGetSubjectFromHttpServletRequest_X500Principal - DONE");
         }
     }
+    
+    @Test
+    public void testValidateTokens() {
+        
+        File pubFile = null;
+        File privFile = null;
+
+        try {
+            
+            // init keys
+            File config = FileUtil.getFileFromResource("DelegationToken.properties", DelegationTokenTest.class);
+            File keysDir = config.getParentFile();
+            RsaSignatureGenerator.genKeyPair(keysDir);
+            privFile = new File(keysDir, RsaSignatureGenerator.PRIV_KEY_FILE_NAME);
+            pubFile = new File(keysDir, RsaSignatureGenerator.PUB_KEY_FILE_NAME);
+            
+            Date expiry = new Date(new Date().getTime() + (48 * 3600 * 1000));
+            List<String> domains = Arrays.asList(new String[] {"cadc.org"});
+            
+            // test no credentials
+            Subject subject = new Subject();
+            subject = AuthenticationUtil.validateTokens(subject);
+            Assert.assertEquals("no credentials", 0, subject.getPublicCredentials().size());
+            
+            // test cookies
+            subject = new Subject();
+            DelegationToken token = new DelegationToken(new HttpPrincipal("user"), null, expiry, domains);
+            String value = DelegationToken.format(token);
+            CookiePrincipal cookiePrincipal = new CookiePrincipal("key", value);
+            subject.getPrincipals().add(cookiePrincipal);
+            subject = AuthenticationUtil.validateTokens(subject);
+            Assert.assertEquals("cookie credential", 1, subject.getPublicCredentials(SSOCookieCredential.class).size());
+            
+            // test cadc deprecated tokens
+            subject = new Subject();
+            token = new DelegationToken(new HttpPrincipal("user"), null, expiry, domains);
+            value = DelegationToken.format(token);
+            AuthorizationTokenPrincipal authPrincipal = new AuthorizationTokenPrincipal(value);
+            subject.getPrincipals().add(authPrincipal);
+            subject = AuthenticationUtil.validateTokens(subject);
+            Assert.assertEquals("token credential", 1, subject.getPublicCredentials(AuthorizationToken.class).size());
+            AuthorizationToken authToken = subject.getPublicCredentials(AuthorizationToken.class).iterator().next();
+            Assert.assertEquals("cadc token type", AuthenticationUtil.TOKEN_TYPE_CADC, authToken.getType());
+            Assert.assertEquals("cadc token value", value, authToken.getCredentials());
+            
+            // bearer tokens
+            subject = new Subject();
+            token = new DelegationToken(new HttpPrincipal("user"), null, expiry, domains);
+            value = DelegationToken.format(token);
+            authPrincipal = new AuthorizationTokenPrincipal("Bearer " + value);
+            subject.getPrincipals().add(authPrincipal);
+            subject = AuthenticationUtil.validateTokens(subject);
+            Assert.assertEquals("token credential", 1, subject.getPublicCredentials(AuthorizationToken.class).size());
+            authToken = subject.getPublicCredentials(AuthorizationToken.class).iterator().next();
+            Assert.assertEquals("bearer token type", AuthenticationUtil.TOKEN_TYPE_BEARER, authToken.getType());
+            Assert.assertEquals("bearer token value", value, authToken.getCredentials());
+            
+            // some other token type
+            subject = new Subject();
+            token = new DelegationToken(new HttpPrincipal("user"), null, expiry, domains);
+            value = DelegationToken.format(token);
+            authPrincipal = new AuthorizationTokenPrincipal("Foo " + value);
+            subject.getPrincipals().add(authPrincipal);
+            subject = AuthenticationUtil.validateTokens(subject);
+            Assert.assertEquals("token credential", 1, subject.getPublicCredentials(AuthorizationToken.class).size());
+            authToken = subject.getPublicCredentials(AuthorizationToken.class).iterator().next();
+            Assert.assertEquals("foo token type", "Foo", authToken.getType());
+            Assert.assertEquals("foo token value", value, authToken.getCredentials());
+            
+        } catch (Throwable t) {
+            log.error("unexpected", t);
+            Assert.fail("unexpected: " + t.getMessage());
+        } finally {
+            try {
+                pubFile.delete();
+                privFile.delete();
+            } catch (Throwable t) {
+                log.error("failed to cleanup keys", t);
+            }
+        }
+    }
 
     @Test
     public void getCurrentSubject() throws Exception
@@ -832,7 +858,7 @@ public class AuthenticationUtilTest
             assertNotNull(p);
             assertTrue(p instanceof CookiePrincipal);
             CookiePrincipal cp = (CookiePrincipal) p;
-            assertEquals("AAABBB", new String(cp.getSessionId()));
+            assertEquals("AAABBB", new String(cp.getValue()));
 
             verify(mockRequest);
         }

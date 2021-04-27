@@ -69,12 +69,20 @@
 
 package ca.nrc.cadc.auth;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import ca.nrc.cadc.util.Base64;
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
 import ca.nrc.cadc.util.RsaSignatureGenerator;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileWriter;
 import java.net.URI;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -89,17 +97,11 @@ import java.util.UUID;
 
 import javax.security.auth.x500.X500Principal;
 
-import java.io.File;
-import java.io.FileWriter;
-
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-
-import static org.junit.Assert.*;
-
-import org.junit.Test;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 
 
 public class DelegationTokenTest {
@@ -193,7 +195,7 @@ public class DelegationTokenTest {
         String token = "base64:" + String.valueOf(Base64.encode(tokenValue.toString().getBytes()));
 
         log.debug("valid token: " + token);
-        DelegationToken actToken = DelegationToken.parse(token, null);
+        DelegationToken actToken = DelegationToken.parse(token);
 
         assertEquals("User id not the same", httpPrincipal, actToken.getUser());
         assertEquals("Expiry time not the same", expiry.getTime().getTime(),
@@ -231,7 +233,7 @@ public class DelegationTokenTest {
 
         String token = DelegationToken.format(expToken);
         log.debug("valid token: " + token);
-        DelegationToken actToken = DelegationToken.parse(token, null);
+        DelegationToken actToken = DelegationToken.parse(token);
 
         assertEquals("User id not the same", expToken.getUser(),
                      actToken.getUser());
@@ -255,7 +257,7 @@ public class DelegationTokenTest {
 
         token = DelegationToken.format(expToken);
         log.debug("valid token: " + token);
-        actToken = DelegationToken.parse(token, null);
+        actToken = DelegationToken.parse(token);
 
         assertEquals("User id not the same", expToken.getUser(),
                      actToken.getUser());
@@ -281,7 +283,7 @@ public class DelegationTokenTest {
 
         token = DelegationToken.format(expToken);
         log.debug("valid token: " + token);
-        actToken = DelegationToken.parse(token, null);
+        actToken = DelegationToken.parse(token);
 
         assertEquals("User id not the same", expToken.getUser(),
                      actToken.getUser());
@@ -294,22 +296,12 @@ public class DelegationTokenTest {
         assertEquals("Numeric (CADC) principal not the same", expToken.getPrincipalByClass(NumericPrincipal.class),
                      actToken.getPrincipalByClass(NumericPrincipal.class));
 
-
-        // invalid scope
-        try {
-            DelegationToken wrongScope = new DelegationToken(userid, new URI("bar:baz"), expiry.getTime(), null);
-            DelegationToken.parse(DelegationToken.format(wrongScope), null);
-            fail("Exception expected");
-        } catch (InvalidDelegationTokenException expected) {
-            log.debug("caught expected exception: " + expected);
-        }
-
         Calendar expiredDate = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         expiredDate.add(Calendar.DATE, -1);
         // parse expired token
         try {
             expToken = new DelegationToken(userid, scope, expiredDate.getTime(), null);
-            DelegationToken.parse(DelegationToken.format(expToken), null);
+            DelegationToken.parse(DelegationToken.format(expToken));
             fail("Exception expected");
         } catch (InvalidDelegationTokenException expected) {
             log.debug("caught expected exception: " + expected);
@@ -321,7 +313,7 @@ public class DelegationTokenTest {
 
             token = DelegationToken.format(expToken);
             CharSequence subSequence = token.subSequence(10, token.length());
-            DelegationToken.parse(subSequence.toString(), null);
+            DelegationToken.parse(subSequence.toString());
             fail("Exception expected");
         } catch (InvalidDelegationTokenException expected) {
             log.debug("caught expected exception: " + expected);
@@ -335,7 +327,7 @@ public class DelegationTokenTest {
             token = token.substring(0, token.length() - 1);
             token = token + "A";
 
-            DelegationToken.parse(token, null);
+            DelegationToken.parse(token);
             fail("Exception expected");
         } catch (InvalidDelegationTokenException expected) {
             log.debug("caught expected exception: " + expected);
@@ -379,7 +371,7 @@ public class DelegationTokenTest {
                         tokenValue.contains(Character.toString(c)));
         }
 
-        final DelegationToken parsedDelegationToken = DelegationToken.parse(tokenValue, null);
+        final DelegationToken parsedDelegationToken = DelegationToken.parse(tokenValue);
         final Set<Principal> expectedPrincipals = new HashSet<>();
 
         expectedPrincipals.add(httpPrincipal);

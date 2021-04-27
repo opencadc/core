@@ -70,6 +70,8 @@
 package ca.nrc.cadc.net;
 
 import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.auth.AuthorizationToken;
+import ca.nrc.cadc.auth.AuthorizationTokenPrincipal;
 import ca.nrc.cadc.auth.BearerTokenPrincipal;
 import ca.nrc.cadc.auth.DelegationToken;
 import ca.nrc.cadc.auth.HttpPrincipal;
@@ -273,8 +275,8 @@ public class HttpTransferTest {
         final Subject subject = new Subject();
         Date expiry = new Date(new Date().getTime() + 48 * 3600 * 1000);
         
-        BearerTokenPrincipal bearerToken = new BearerTokenPrincipal("Bearer 123");
-        subject.getPrincipals().add(bearerToken);
+        AuthorizationToken authToken = new AuthorizationToken("Bearer", "123");
+        subject.getPublicCredentials().add(authToken);
         
         subject.getPublicCredentials().add(
                 new SSOCookieCredential("VALUE_1", "en.host.com", expiry));
