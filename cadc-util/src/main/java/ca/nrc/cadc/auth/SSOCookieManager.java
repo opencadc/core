@@ -230,7 +230,6 @@ public class SSOCookieManager {
      * for each of the supported domains.
      *
      * @param cookieValue
-     * @param requestURI
      * @return cookieList
      */
     public List<SSOCookieCredential> getSSOCookieCredentials(final String cookieValue)
