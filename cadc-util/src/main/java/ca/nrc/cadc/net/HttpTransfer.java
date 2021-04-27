@@ -727,7 +727,9 @@ public abstract class HttpTransfer implements Runnable {
 
         // try to get the retry delay from the response
         if (code == HttpURLConnection.HTTP_UNAVAILABLE) {
-            msg = "server busy";
+            if (!StringUtil.hasText(msg)) {
+                msg = "server busy";
+            }
             String retryAfter = responseHeaders.get(SERVICE_RETRY);
             log.debug("got " + HttpURLConnection.HTTP_UNAVAILABLE + " with " + SERVICE_RETRY + ": " + retryAfter);
             if (StringUtil.hasText(retryAfter)) {
@@ -774,7 +776,7 @@ public abstract class HttpTransfer implements Runnable {
                 }
             }
             
-            throw new TransientException(msg, dt);
+            throw new TransientException(msg.trim(), dt);
         }
     }
     
