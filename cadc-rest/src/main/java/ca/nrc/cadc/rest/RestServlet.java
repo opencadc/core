@@ -316,10 +316,6 @@ public class RestServlet extends HttpServlet {
             String message = "[BUG] failed to instantiate " + actionClass + " cause: " + ex.getMessage();
             logInfo.setMessage(message);
             handleException(out, response, ex, 500, message, true);
-        } catch (AccessControlException | NotAuthenticatedException ex) {
-            logInfo.setSuccess(true);
-            logInfo.setMessage(ex.getMessage());
-            handleException(out, response, ex, 401, ex.getMessage(), false);
         } catch (Throwable t) {
             logInfo.setSuccess(false);
             logInfo.setMessage(t.getMessage());
