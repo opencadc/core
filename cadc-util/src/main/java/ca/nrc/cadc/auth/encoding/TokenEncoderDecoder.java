@@ -80,7 +80,11 @@ public class TokenEncoderDecoder {
         throws InvalidDelegationTokenException {
         switch (tokenEncoding) {
             case BASE64: {
-                return Base64.decode(value);
+                try {
+                    return Base64.decode(value);
+                } catch (IllegalArgumentException e) {
+                    throw new InvalidDelegationTokenException("failed to decode token", e);
+                }
             }
 
             default: {

@@ -110,24 +110,11 @@ public class DelegationTokenTest {
     private static final char[] ILLEGAL_COOKIE_CHARACTERS = new char[] {',', ';', '\\', '"'};
 
     static {
-        Log4jInit.setLevel("ca.nrc.cadc.auth", Level.INFO);
-        Log4jInit.setLevel("ca.nrc.cadc.util", Level.INFO);
-    }
-
-    public static class TestScopeValidator extends DelegationToken.ScopeValidator {
-
-        @Override
-        public void verifyScope(URI scope, String requestURI)
-            throws InvalidDelegationTokenException {
-            if ("foo:bar".equals(scope.toASCIIString())) {
-                return; // OK
-            }
-            super.verifyScope(scope, requestURI); // test default behaviour indirectly
-        }
-
+        Log4jInit.setLevel("ca.nrc.cadc", Level.DEBUG);
     }
 
     File pubFile, privFile;
+    URI scope = URI.create("foo:bar");
 
     @Before
     public void initKeys() throws Exception {
@@ -146,13 +133,6 @@ public class DelegationTokenTest {
 
     @Test
     public void matchDecode() throws Exception {
-        // configure the test scope validator
-        final File config = FileUtil.getFileFromResource("DelegationToken.properties", DelegationTokenTest.class);
-        final FileWriter w = new FileWriter(config);
-        w.write(DelegationToken.class.getName() + ".scopeValidator = " + TestScopeValidator.class.getName());
-        w.write("\n");
-        w.flush();
-        w.close();
 
         // round trip test with signature
 
@@ -200,7 +180,6 @@ public class DelegationTokenTest {
         assertEquals("User id not the same", httpPrincipal, actToken.getUser());
         assertEquals("Expiry time not the same", expiry.getTime().getTime(),
                      actToken.getExpiryTime().getTime());
-        assertEquals("Scope not the same", scope, actToken.getScope());
         assertEquals("Domain list size not the same", domainList.size(), actToken.getDomains().size());
         assertArrayEquals("Wrong set of domains.", domainList.toArray(new String[0]),
                           actToken.getDomains().toArray(new String[0]));
@@ -208,14 +187,6 @@ public class DelegationTokenTest {
 
     @Test
     public void matches() throws Exception {
-        // configure the test scope validator
-        File config = FileUtil.getFileFromResource("DelegationToken.properties", DelegationTokenTest.class);
-        FileWriter w = new FileWriter(config);
-        w.write(DelegationToken.class.getName() + ".scopeValidator = " + TestScopeValidator.class.getName());
-        w.write("\n");
-        w.flush();
-        w.close();
-
         // round trip test with signature
 
         List<String> domainList = new ArrayList<>();
@@ -225,7 +196,6 @@ public class DelegationTokenTest {
         domainList.add("www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca");
 
         HttpPrincipal userid = new HttpPrincipal("someuser");
-        URI scope = new URI("foo:bar");
         int duration = 10; // h
         Calendar expiry = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         expiry.add(Calendar.HOUR, duration);
@@ -239,8 +209,6 @@ public class DelegationTokenTest {
                      actToken.getUser());
         assertEquals("Expiry time not the same", expToken.getExpiryTime(),
                      actToken.getExpiryTime());
-        assertEquals("Scope not the same", expToken.getScope(),
-                     actToken.getScope());
         assertEquals("Domain list size not the same", domainList.size(), expToken.getDomains().size());
         for (String domain : expToken.getDomains()) {
             assertTrue("Domain list content not the same", domainList.contains(domain));
@@ -249,7 +217,6 @@ public class DelegationTokenTest {
 
         // round trip test without signature and principal with proxy user
         userid = new HttpPrincipal("someuser", "someproxyuser");
-        scope = new URI("foo:bar");
         duration = 10; // h
         expiry = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         expiry.add(Calendar.HOUR, duration);
@@ -263,8 +230,6 @@ public class DelegationTokenTest {
                      actToken.getUser());
         assertEquals("Expiry time not the same", expToken.getExpiryTime(),
                      actToken.getExpiryTime());
-        assertEquals("Scope not the same", expToken.getScope(),
-                     actToken.getScope());
 
         // round trip test without signature and principal with proxy user
         Set<Principal> testPrincipals = new HashSet<>();
@@ -275,7 +240,6 @@ public class DelegationTokenTest {
         UUID testUUID = UUID.randomUUID();
         testPrincipals.add(new NumericPrincipal(testUUID));
 
-        scope = new URI("foo:bar");
         duration = 10; // h
         expiry = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         expiry.add(Calendar.HOUR, duration);
@@ -289,8 +253,6 @@ public class DelegationTokenTest {
                      actToken.getUser());
         assertEquals("Expiry time not the same", expToken.getExpiryTime(),
                      actToken.getExpiryTime());
-        assertEquals("Scope not the same", expToken.getScope(),
-                     actToken.getScope());
         assertEquals("x509 principal not the same", expToken.getPrincipalByClass(X500Principal.class),
                      actToken.getPrincipalByClass(X500Principal.class));
         assertEquals("Numeric (CADC) principal not the same", expToken.getPrincipalByClass(NumericPrincipal.class),
@@ -300,7 +262,7 @@ public class DelegationTokenTest {
         expiredDate.add(Calendar.DATE, -1);
         // parse expired token
         try {
-            expToken = new DelegationToken(userid, scope, expiredDate.getTime(), null);
+            expToken = new DelegationToken(userid, null, expiredDate.getTime(), null);
             DelegationToken.parse(DelegationToken.format(expToken));
             fail("Exception expected");
         } catch (InvalidDelegationTokenException expected) {
@@ -336,13 +298,6 @@ public class DelegationTokenTest {
 
     @Test
     public void validCookieValue() throws Exception {
-        // configure the test scope validator
-        File config = FileUtil.getFileFromResource("DelegationToken.properties", DelegationTokenTest.class);
-        FileWriter w = new FileWriter(config);
-        w.write(DelegationToken.class.getName() + ".scopeValidator = " + TestScopeValidator.class.getName());
-        w.write("\n");
-        w.flush();
-        w.close();
 
         final Principal httpPrincipal = new HttpPrincipal("some;user", "someproxyuser");
         final Principal x509 = new X500Principal("CN=JBP,OU=nrc-cnrc.gc.ca,O=grid,C=CA");
@@ -356,7 +311,6 @@ public class DelegationTokenTest {
         principals.add(distinguishedName);
         principals.add(x509);
 
-        final URI scope = new URI("foo:bar");
         final int duration = 10; // h
         final Calendar expiry = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         expiry.add(Calendar.HOUR, duration);

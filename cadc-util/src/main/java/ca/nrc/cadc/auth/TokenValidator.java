@@ -67,7 +67,7 @@
 
 package ca.nrc.cadc.auth;
 
-import ca.nrc.cadc.auth.NotAuthenticatedException.OAuth2Error;
+import ca.nrc.cadc.auth.NotAuthenticatedException.OAuthError;
 
 import java.security.AccessControlException;
 import java.util.List;
@@ -132,9 +132,9 @@ public class TokenValidator {
             } else {
                 challengeType = token.substring(0, spaceIndex).trim();
                 credentials = token.substring(spaceIndex + 1).trim();
-                if (!AuthenticationUtil.CHALLENGE_TYPE_BEARER.equals(challengeType) &&
-                    !AuthenticationUtil.CHALLENGE_TYPE_IVOA.equals(challengeType)) {
-                    throw new NotAuthenticatedException(challengeType, OAuth2Error.INVALID_REQUEST,
+                if (!AuthenticationUtil.CHALLENGE_TYPE_BEARER.equals(challengeType)
+                    && !AuthenticationUtil.CHALLENGE_TYPE_IVOA.equals(challengeType)) {
+                    throw new NotAuthenticatedException(challengeType, OAuthError.INVALID_REQUEST,
                         "unsupported challenge type: " + challengeType);
                 }
             }
@@ -148,7 +148,7 @@ public class TokenValidator {
                 log.debug("Adding token credential to subject");
                 subject.getPublicCredentials().add(authToken);
             } catch (InvalidDelegationTokenException ex) {
-                throw new NotAuthenticatedException(challengeType, OAuth2Error.INVALID_TOKEN, ex.getMessage(), ex);
+                throw new NotAuthenticatedException(challengeType, OAuthError.INVALID_TOKEN, ex.getMessage(), ex);
             }
         }
         

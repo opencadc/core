@@ -47,6 +47,7 @@ import ca.nrc.cadc.util.RsaSignatureGenerator;
 
 import java.io.File;
 import java.util.Calendar;
+import java.util.Collections;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -105,7 +106,7 @@ public class ServletPrincipalExtractorTest
             expect(request.getAttribute(
                     ServletPrincipalExtractor.CERT_REQUEST_ATTRIBUTE)).andReturn(null);
             expect(request.getHeader(AuthenticationUtil.AUTH_HEADER)).andReturn(null);
-            expect(request.getHeader("Authorization")).andReturn(null);
+            expect(request.getHeaders("Authorization")).andReturn(Collections.emptyEnumeration());
             expect(request.getCookies()).andReturn(cookies);
             expect(request.getRemoteUser()).andReturn(null).times(2);
             expect(request.getServerName()).andReturn("cookiedomain").once();

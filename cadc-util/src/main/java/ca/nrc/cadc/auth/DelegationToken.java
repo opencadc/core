@@ -125,12 +125,6 @@ public class DelegationToken implements Serializable {
 
     public static final String FIELD_DELIM = "&";
     public static final String VALUE_DELIM = "=";
-    
-    public static class ScopeValidator {
-        public void verifyScope(URI scope, String requestURI) throws InvalidDelegationTokenException {
-            throw new InvalidDelegationTokenException("default: invalid scope");
-        }
-    }
 
     /**
      * Constructor.

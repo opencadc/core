@@ -79,17 +79,17 @@ package ca.nrc.cadc.auth;
 public class NotAuthenticatedException extends SecurityException {
     
     private String challenge;
-    private OAuth2Error oAuthError;
+    private OAuthError oauthError;
     
-    public enum OAuth2Error {
-        INVALID_REQUEST ("invalid_request"), 
-        INVALID_TOKEN ("invalid_token"), 
-        INSUFFICIENT_SCOPE ("insufficient_scope"), 
+    public enum OAuthError {
+        INVALID_REQUEST("invalid_request"), 
+        INVALID_TOKEN("invalid_token"), 
+        INSUFFICIENT_SCOPE("insufficient_scope"), 
         ; 
         
         private final String value;
         
-        OAuth2Error(String value) {
+        OAuthError(String value) {
             this.value = value;
         }
             
@@ -106,36 +106,36 @@ public class NotAuthenticatedException extends SecurityException {
         super(message, cause);
     }
     
-    public NotAuthenticatedException(String challenge, OAuth2Error oAuthError, String errorDescription) {
+    public NotAuthenticatedException(String challenge, OAuthError oauthError, String errorDescription) {
         super(errorDescription);
         if (challenge == null) {
             throw new IllegalArgumentException("challenge cannot be null");
         }
-        if (oAuthError == null) {
+        if (oauthError == null) {
             throw new IllegalArgumentException("oAuthError cannot be null");
         }
         this.challenge = challenge;
-        this.oAuthError = oAuthError;
+        this.oauthError = oauthError;
     }
     
-    public NotAuthenticatedException(String challenge, OAuth2Error oAuthError, String errorDescription, Throwable cause) {
+    public NotAuthenticatedException(String challenge, OAuthError oauthError, String errorDescription, Throwable cause) {
         super(errorDescription, cause);
         if (challenge == null) {
             throw new IllegalArgumentException("challenge cannot be null");
         }
-        if (oAuthError == null) {
+        if (oauthError == null) {
             throw new IllegalArgumentException("oAuthError cannot be null");
         }
         this.challenge = challenge;
-        this.oAuthError = oAuthError;
+        this.oauthError = oauthError;
     }
     
     public String getChallenge() {
         return challenge;
     }
     
-    public OAuth2Error getOAuthError() {
-        return oAuthError;
+    public OAuthError getOAuthError() {
+        return oauthError;
     }
 
 }

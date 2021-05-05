@@ -93,7 +93,7 @@ public class SSOCookieManager {
 
     // For token and cookie value generation.
     public static final int SSO_COOKIE_LIFETIME_HOURS = 2 * 24; // in hours
-
+    
     public static final URI SCOPE_URI = URI.create("sso:cadc+canfar");
 
     public static final String DOMAINS_PROP_FILE = "ac-domains.properties";
@@ -139,24 +139,10 @@ public class SSOCookieManager {
      * @throws IOException         Any errors with writing and generation.
      * @throws InvalidKeyException Signing key is invalid
      */
-    public final String generate(final HttpPrincipal principal, URI scope) throws InvalidKeyException, IOException {
-        Set<Principal> principalSet = new HashSet<>();
-        principalSet.add(principal);
-        return generate(principalSet, scope);
-    }
-
-    /**
-     * Backward-compatible generate function.
-     * 
-     * @param principal
-     * @return
-     * @throws InvalidKeyException
-     * @throws IOException
-     */
     public final String generate(final HttpPrincipal principal) throws InvalidKeyException, IOException {
         Set<Principal> principalSet = new HashSet<>();
         principalSet.add(principal);
-        return generate(principalSet, null);
+        return generate(principalSet);
     }
 
     /**
@@ -164,17 +150,13 @@ public class SSOCookieManager {
      * Sets a default scope and expiry if either not supplied
      * 
      * @param principalSet
-     * @param scope
      * @param expiryDate
      * @return
      * @throws InvalidKeyException
      * @throws IOException
      */
-    public final String generate(final Set<Principal> principalSet, URI scope, Date expiryDate)
+    public final String generate(final Set<Principal> principalSet, Date expiryDate)
             throws InvalidKeyException, IOException {
-        if (scope == null) {
-            scope = SCOPE_URI;
-        }
         if (expiryDate == null) {
             expiryDate = getExpirationDate();
         }
@@ -184,7 +166,7 @@ public class SSOCookieManager {
         if (domainValues != null && (domainValues.size() > 0)) {
             domainList = Arrays.asList(domainValues.get(0).split(" "));
         }
-        DelegationToken token = new DelegationToken(principalSet, scope, expiryDate, domainList);
+        DelegationToken token = new DelegationToken(principalSet, SCOPE_URI, expiryDate, domainList);
         return DelegationToken.format(token);
     }
 
@@ -196,8 +178,8 @@ public class SSOCookieManager {
      * @throws IOException         Any errors with writing and generation.
      * @throws InvalidKeyException Signing key is invalid
      */
-    public final String generate(final Set<Principal> principalSet, URI scope) throws InvalidKeyException, IOException {
-        return generate(principalSet, scope, getExpirationDate());
+    public final String generate(final Set<Principal> principalSet) throws InvalidKeyException, IOException {
+        return generate(principalSet, getExpirationDate());
     }
 
     /**

@@ -134,7 +134,7 @@ public class SSOCookieManagerTest
     {
         final HttpPrincipal userPrincipal = new HttpPrincipal("CADCtest");
         SSOCookieManager cm = new SSOCookieManager();
-        DelegationToken cookieToken = cm.parse(cm.generate(userPrincipal, null));
+        DelegationToken cookieToken = cm.parse(cm.generate(userPrincipal));
         HttpPrincipal actualPrincipal = cookieToken.getUser();
 
         //Check principal
@@ -158,13 +158,11 @@ public class SSOCookieManagerTest
         UUID testUUID = UUID.randomUUID();
         testPrincipals.add(new NumericPrincipal(testUUID));
 
-        URI scope = new URI("sso:cadc+canfar");
-        String cookieValue = cm.generate(testPrincipals, scope);
+        String cookieValue = cm.generate(testPrincipals);
 
         DelegationToken actToken = cm.parse(cookieValue);
 
         assertEquals("User id not the same", hp, actToken.getUser());
-        assertEquals("Scope not the same", scope, actToken.getScope());
         assertEquals("x509 principal not the same", xp, actToken.getPrincipalByClass(X500Principal.class));
 
         assertEquals("domain list not equal", domainList, actToken.getDomains());
