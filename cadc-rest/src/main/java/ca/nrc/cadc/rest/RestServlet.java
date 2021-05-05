@@ -307,9 +307,14 @@ public class RestServlet extends HttpServlet {
             action.setSyncOutput(out);
             action.setLogInfo(logInfo);
             
-            setVOAuthenticateHeaders(subject, out);
+            setAuthenticateHeaders(subject, out);
 
             doit(subject, action);
+        } catch (NotAuthenticatedException ex) {
+            logInfo.setSuccess(true);
+            logInfo.setMessage(ex.getMessage());
+            setFailedAuthenticateHeader(out, ex);
+            handleException(out, response, ex, 401, ex.getMessage(), false);
         } catch (InstantiationException | IllegalAccessException ex) {
             // problem creating the action
             logInfo.setSuccess(false);
@@ -413,12 +418,12 @@ public class RestServlet extends HttpServlet {
     }
     
     /**
-     * If the user has authenticated, set the X-VO-Authenticated. Use the HttpPrincipal if
+     * If the user has authenticated successfully, set the X-VO-Authenticated. Use the HttpPrincipal if
      * available, otherwise whatever is present.
      * Otherwise set the WWW-Authenticate header so clients know how to obtain
      * authentication tokens.
      */
-    private void setVOAuthenticateHeaders(Subject subject, SyncOutput out) throws IOException, ResourceNotFoundException {
+    private void setAuthenticateHeaders(Subject subject, SyncOutput out) throws IOException, ResourceNotFoundException {
         if (AuthenticationUtil.getAuthMethodFromCredentials(subject).equals(AuthMethod.ANON)) {
             // Not authenticated...
             
@@ -431,7 +436,7 @@ public class RestServlet extends HttpServlet {
             
             // set a header for info on how to obtain tokens with username/password over tls
             StringBuilder sb = new StringBuilder();
-            sb.append("vo-token standardID=\"").append(Standards.SECURITY_METHOD_PASSWORD.toString()).append("\", ");
+            sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA + " standardID=\"").append(Standards.SECURITY_METHOD_PASSWORD.toString()).append("\", ");
             sb.append("accessURL=\"").append(loginURL).append("\"");
             out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
             
@@ -439,9 +444,20 @@ public class RestServlet extends HttpServlet {
             URI authorizeServiceURI = localAuthority.getServiceURI(Standards.SECURITY_METHOD_OAUTH.toString());
             URL authorizeURL = regClient.getServiceURL(authorizeServiceURI, Standards.SECURITY_METHOD_OAUTH, AuthMethod.ANON);
             sb = new StringBuilder();
-            sb.append("vo-token standardID=\"").append(Standards.SECURITY_METHOD_OAUTH.toString()).append("\", ");
+            sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA + " standardID=\"").append(Standards.SECURITY_METHOD_OAUTH.toString()).append("\", ");
             sb.append("accessURL=\"").append(authorizeURL).append("\"");
             out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
+            
+            // set a header for client certificate support
+            sb = new StringBuilder();
+            sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA + " standardID=\"").append(Standards.SECURITY_METHOD_CERT.toASCIIString()).append("\"");
+            out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
+            
+            // set a header for oauth2 bearer tokens
+            sb = new StringBuilder();
+            sb.append(AuthenticationUtil.CHALLENGE_TYPE_BEARER);
+            out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
+            
         } else {
             // Authenticated...
             
@@ -458,6 +474,22 @@ public class RestServlet extends HttpServlet {
                 out.addHeader(AuthenticationUtil.VO_AUTHENTICATED_HEADER, principal.getName());
                 return;
             }
+        }
+    }
+    
+    /**
+     * If a challenge was presented, respond with the error type and error description in the
+     * WWW-Authenticate header as per the OAuth2 specification.
+     */
+    private void setFailedAuthenticateHeader(SyncOutput out, NotAuthenticatedException ex) {
+        if (ex.getChallenge() != null && ex.getOAuthError() != null) {
+            StringBuilder header = new StringBuilder();
+            header.append(ex.getChallenge());
+            header.append(" error=\"").append(ex.getOAuthError().getValue()).append("\"");
+            if (ex.getMessage() != null) {
+                header.append(", error_description=\"").append(ex.getMessage()).append("\"");
+            }
+            out.setHeader(AuthenticationUtil.AUTHENTICATE_HEADER, header.toString());
         }
     }
     

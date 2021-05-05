@@ -78,12 +78,64 @@ package ca.nrc.cadc.auth;
  */
 public class NotAuthenticatedException extends SecurityException {
     
+    private String challenge;
+    private OAuth2Error oAuthError;
+    
+    public enum OAuth2Error {
+        INVALID_REQUEST ("invalid_request"), 
+        INVALID_TOKEN ("invalid_token"), 
+        INSUFFICIENT_SCOPE ("insufficient_scope"), 
+        ; 
+        
+        private final String value;
+        
+        OAuth2Error(String value) {
+            this.value = value;
+        }
+            
+        public String getValue() {
+            return value;
+        }
+    }
+    
     public NotAuthenticatedException(String message) {
         super(message);
     }
 
     public NotAuthenticatedException(String message, Throwable cause) {
         super(message, cause);
+    }
+    
+    public NotAuthenticatedException(String challenge, OAuth2Error oAuthError, String errorDescription) {
+        super(errorDescription);
+        if (challenge == null) {
+            throw new IllegalArgumentException("challenge cannot be null");
+        }
+        if (oAuthError == null) {
+            throw new IllegalArgumentException("oAuthError cannot be null");
+        }
+        this.challenge = challenge;
+        this.oAuthError = oAuthError;
+    }
+    
+    public NotAuthenticatedException(String challenge, OAuth2Error oAuthError, String errorDescription, Throwable cause) {
+        super(errorDescription, cause);
+        if (challenge == null) {
+            throw new IllegalArgumentException("challenge cannot be null");
+        }
+        if (oAuthError == null) {
+            throw new IllegalArgumentException("oAuthError cannot be null");
+        }
+        this.challenge = challenge;
+        this.oAuthError = oAuthError;
+    }
+    
+    public String getChallenge() {
+        return challenge;
+    }
+    
+    public OAuth2Error getOAuthError() {
+        return oAuthError;
     }
 
 }
