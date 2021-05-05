@@ -81,14 +81,15 @@ import java.security.Principal;
  *     and AuthorizationTokenPrincipal
  */
 @Deprecated 
-public class BearerTokenPrincipal implements Principal, Serializable {
+public class BearerTokenPrincipal extends AuthorizationTokenPrincipal implements Principal, Serializable {
     private static final long serialVersionUID = 7L;
 
-    private static final String prefix = AuthenticationUtil.TOKEN_TYPE_BEARER + " ";
+    private static final String prefix = AuthenticationUtil.CHALLENGE_TYPE_BEARER + " ";
     
     private final String token;
 
     public BearerTokenPrincipal(final String authorizationHeader) {
+        super(authorizationHeader);
         if (!isBearerToken(authorizationHeader)) {
             throw new IllegalArgumentException("Not a bearer token");
         }

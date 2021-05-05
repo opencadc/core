@@ -76,6 +76,7 @@ import java.security.AccessControlException;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -138,22 +139,22 @@ public class ServletPrincipalExtractor implements PrincipalExtractor {
         // custom header (deprecated)
         String cadcTokenHeader = request.getHeader(AuthenticationUtil.AUTH_HEADER);
         if (cadcTokenHeader != null) {
-            AuthorizationTokenPrincipal principal = new AuthorizationTokenPrincipal(AuthenticationUtil.AUTH_HEADER, cadcTokenHeader);
+            AuthorizationTokenPrincipal principal = new AuthorizationTokenPrincipal(cadcTokenHeader);
             principals.add(principal);
         }
 
-        // authorization header (bearer and token)
-        String authToken = request.getHeader(AuthenticationUtil.AUTHORIZATION_HEADER);
-        if (BearerTokenPrincipal.isBearerToken(authToken)) {
-            // deprecated in favour of a common token handling mechanism
-            BearerTokenPrincipal bearerTokenPrincipal = new BearerTokenPrincipal(authToken);
-            principals.add(bearerTokenPrincipal);
-        }
-        
-        if (authToken != null) {
-            // (bearer tokens will also become AuthorizationTokenPrincipals)
-            AuthorizationTokenPrincipal principal = new AuthorizationTokenPrincipal(authToken);
-            principals.add(principal);
+        // authorization header
+        Enumeration<String> authTokens = request.getHeaders(AuthenticationUtil.AUTHORIZATION_HEADER);
+        while (authTokens.hasMoreElements()) {
+            String authToken = authTokens.nextElement();
+            if (BearerTokenPrincipal.isBearerToken(authToken)) {
+                // deprecated in favour of the common token handling mechanism below
+                BearerTokenPrincipal bearerTokenPrincipal = new BearerTokenPrincipal(authToken);
+                principals.add(bearerTokenPrincipal);
+            } else {
+                AuthorizationTokenPrincipal principal = new AuthorizationTokenPrincipal(authToken);
+                principals.add(principal);
+            }
         }
 
         // add HttpPrincipal

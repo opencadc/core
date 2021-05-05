@@ -70,44 +70,31 @@ package ca.nrc.cadc.auth;
 import java.security.Principal;
 
 /**
+ * This represents the incoming, un-validated token extracted from the
+ * Authorization HTTP Header.  The validate() method of an AuthenticatorImpl
+ * must validate this token and turn it into an AuthorizationToken object
+ * in the public credentials of the subject.
+ * 
  * @author majorb
  *
  */
 public class AuthorizationTokenPrincipal implements Principal {
 
-    private final String header;
     private final String token;
 
     /**
      * AuthorizationTokenPrincipal constructor.
      * 
      * @param authorizationHeaderValue The value of the Authorization header
-     *     (including any names, such as 'Bearer')
+     *     (including any challenge types, such as 'Bearer')
      */
     public AuthorizationTokenPrincipal(String authorizationHeaderValue) {
-        this.header = AuthenticationUtil.AUTHORIZATION_HEADER;
         this.token = authorizationHeaderValue;
-    }
-    
-    /**
-     * Constructor to support non-standard headers for tokens (deprecated).
-     * 
-     * @param headerKey The header used
-     * @param headerValue The value
-     * @deprecated Tokens should go in 'Authorization' header
-     */
-    public AuthorizationTokenPrincipal(String headerKey, String headerValue) {
-        this.header = headerKey;
-        this.token = headerValue;
     }
 
     @Override
     public String getName() {
         return token;
-    }
-    
-    public String getHeader() {
-        return header;
     }
     
 }
