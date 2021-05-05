@@ -96,8 +96,8 @@ public class ServletPrincipalExtractorTest
 
             Calendar cal = Calendar.getInstance();
             cal.add(Calendar.HOUR, 2);
-            DelegationToken dt = new DelegationToken(new HttpPrincipal("CADCtest"), null, cal.getTime(), null);
-            String cookieValue = DelegationToken.format(dt);
+            SignedToken dt = new SignedToken(new HttpPrincipal("CADCtest"), null, cal.getTime(), null);
+            String cookieValue = SignedToken.format(dt);
             CookiePrincipal principal = new CookiePrincipal(SSOCookieManager.DEFAULT_SSO_COOKIE_NAME, cookieValue);
             HttpServletRequest request = createMock(HttpServletRequest.class);
             Cookie cookie = createMock(Cookie.class);

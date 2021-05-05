@@ -73,7 +73,7 @@ import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.AuthorizationToken;
 import ca.nrc.cadc.auth.AuthorizationTokenPrincipal;
 import ca.nrc.cadc.auth.BearerTokenPrincipal;
-import ca.nrc.cadc.auth.DelegationToken;
+import ca.nrc.cadc.auth.SignedToken;
 import ca.nrc.cadc.auth.HttpPrincipal;
 import ca.nrc.cadc.auth.SSOCookieCredential;
 import ca.nrc.cadc.util.Log4jInit;

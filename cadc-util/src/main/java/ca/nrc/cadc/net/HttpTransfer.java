@@ -72,7 +72,7 @@ package ca.nrc.cadc.net;
 import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.AuthorizationToken;
 import ca.nrc.cadc.auth.BearerTokenPrincipal;
-import ca.nrc.cadc.auth.DelegationToken;
+import ca.nrc.cadc.auth.SignedToken;
 import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.auth.SSLUtil;
 import ca.nrc.cadc.auth.SSOCookieCredential;

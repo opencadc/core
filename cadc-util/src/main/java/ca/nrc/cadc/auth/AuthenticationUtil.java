@@ -265,7 +265,7 @@ public class AuthenticationUtil {
             return AuthMethod.COOKIE;
         }
         
-        Set delToken = subject.getPublicCredentials(DelegationToken.class);
+        Set delToken = subject.getPublicCredentials(SignedToken.class);
         if (!delToken.isEmpty()) {
             return AuthMethod.TOKEN;
         }

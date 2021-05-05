@@ -104,7 +104,7 @@ public class TokenValidator {
             SSOCookieManager ssoCookieManager = new SSOCookieManager();
             for (CookiePrincipal p : cookiePrincipals) {
                 try {
-                    DelegationToken cookieToken = ssoCookieManager.parse(p.getValue());
+                    SignedToken cookieToken = ssoCookieManager.parse(p.getValue());
                     subject.getPrincipals().addAll(cookieToken.getIdentityPrincipals());
                     List<SSOCookieCredential> cookieCredentialList =
                         ssoCookieManager.getSSOCookieCredentials(p.getValue());
@@ -140,7 +140,7 @@ public class TokenValidator {
             }
             
             try {
-                DelegationToken validatedToken = DelegationToken.parse(credentials);
+                SignedToken validatedToken = SignedToken.parse(credentials);
                 subject.getPrincipals().add(validatedToken.getUser());
                 // When scope is introduced, add the scope from the delegation token to
                 // the authorization token.

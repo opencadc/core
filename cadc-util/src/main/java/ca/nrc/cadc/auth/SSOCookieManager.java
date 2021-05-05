@@ -116,12 +116,12 @@ public class SSOCookieManager {
      *         validated.
      * @throws InvalidDelegationTokenException
      */
-    public final DelegationToken parse(final String value) throws InvalidDelegationTokenException {
+    public final SignedToken parse(final String value) throws InvalidDelegationTokenException {
         if (value == null) {
             throw new IllegalArgumentException("value required");
         }
         try {
-            return DelegationToken.parse(value);
+            return SignedToken.parse(value);
         } catch (Exception e) {
             throw new InvalidDelegationTokenException("Bad token." + value);
         }
@@ -166,8 +166,8 @@ public class SSOCookieManager {
         if (domainValues != null && (domainValues.size() > 0)) {
             domainList = Arrays.asList(domainValues.get(0).split(" "));
         }
-        DelegationToken token = new DelegationToken(principalSet, SCOPE_URI, expiryDate, domainList);
-        return DelegationToken.format(token);
+        SignedToken token = new SignedToken(principalSet, SCOPE_URI, expiryDate, domainList);
+        return SignedToken.format(token);
     }
 
     /**
@@ -218,7 +218,7 @@ public class SSOCookieManager {
             throws InvalidDelegationTokenException {
 
         List<SSOCookieCredential> cookieList = new ArrayList<>();
-        DelegationToken cookieToken = DelegationToken.parse(cookieValue);
+        SignedToken cookieToken = SignedToken.parse(cookieValue);
 
         for (String domain : cookieToken.getDomains()) {
             SSOCookieCredential nextCookie = new SSOCookieCredential(cookieValue, domain, cookieToken.getExpiryTime());

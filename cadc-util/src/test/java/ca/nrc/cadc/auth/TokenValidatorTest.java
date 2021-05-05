@@ -103,7 +103,7 @@ public class TokenValidatorTest {
         try {
             
             // init keys
-            File config = FileUtil.getFileFromResource("DelegationToken.properties", DelegationTokenTest.class);
+            File config = FileUtil.getFileFromResource("DelegationToken.properties", SignedTokenTest.class);
             File keysDir = config.getParentFile();
             RsaSignatureGenerator.genKeyPair(keysDir);
             privFile = new File(keysDir, RsaSignatureGenerator.PRIV_KEY_FILE_NAME);
@@ -119,8 +119,8 @@ public class TokenValidatorTest {
             
             // test cookies
             subject = new Subject();
-            DelegationToken token = new DelegationToken(new HttpPrincipal("user"), null, expiry, domains);
-            String value = DelegationToken.format(token);
+            SignedToken token = new SignedToken(new HttpPrincipal("user"), null, expiry, domains);
+            String value = SignedToken.format(token);
             CookiePrincipal cookiePrincipal = new CookiePrincipal("key", value);
             subject.getPrincipals().add(cookiePrincipal);
             subject = TokenValidator.validateTokens(subject);
@@ -128,8 +128,8 @@ public class TokenValidatorTest {
             
             // test cadc deprecated tokens
             subject = new Subject();
-            token = new DelegationToken(new HttpPrincipal("user"), null, expiry, domains);
-            value = DelegationToken.format(token);
+            token = new SignedToken(new HttpPrincipal("user"), null, expiry, domains);
+            value = SignedToken.format(token);
             AuthorizationTokenPrincipal authPrincipal = new AuthorizationTokenPrincipal(value);
             subject.getPrincipals().add(authPrincipal);
             subject = TokenValidator.validateTokens(subject);
@@ -140,8 +140,8 @@ public class TokenValidatorTest {
             
             // bearer tokens
             subject = new Subject();
-            token = new DelegationToken(new HttpPrincipal("user"), null, expiry, domains);
-            value = DelegationToken.format(token);
+            token = new SignedToken(new HttpPrincipal("user"), null, expiry, domains);
+            value = SignedToken.format(token);
             authPrincipal = new AuthorizationTokenPrincipal("Bearer " + value);
             subject.getPrincipals().add(authPrincipal);
             subject = TokenValidator.validateTokens(subject);
@@ -152,8 +152,8 @@ public class TokenValidatorTest {
             
             // ivoa tokens
             subject = new Subject();
-            token = new DelegationToken(new HttpPrincipal("user"), null, expiry, domains);
-            value = DelegationToken.format(token);
+            token = new SignedToken(new HttpPrincipal("user"), null, expiry, domains);
+            value = SignedToken.format(token);
             authPrincipal = new AuthorizationTokenPrincipal("ivoa " + value);
             subject.getPrincipals().add(authPrincipal);
             subject = TokenValidator.validateTokens(subject);
@@ -188,8 +188,8 @@ public class TokenValidatorTest {
             
             // unsupported challenge type
             subject = new Subject();
-            token = new DelegationToken(new HttpPrincipal("user"), null, expiry, domains);
-            value = DelegationToken.format(token);
+            token = new SignedToken(new HttpPrincipal("user"), null, expiry, domains);
+            value = SignedToken.format(token);
             authPrincipal = new AuthorizationTokenPrincipal("Foo " + value);
             subject.getPrincipals().add(authPrincipal);
             try {

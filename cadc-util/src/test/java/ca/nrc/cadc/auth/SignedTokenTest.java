@@ -104,8 +104,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 
-public class DelegationTokenTest {
-    private static final Logger log = Logger.getLogger(DelegationTokenTest.class);
+public class SignedTokenTest {
+    private static final Logger log = Logger.getLogger(SignedTokenTest.class);
 
     private static final char[] ILLEGAL_COOKIE_CHARACTERS = new char[] {',', ';', '\\', '"'};
 
@@ -118,7 +118,7 @@ public class DelegationTokenTest {
 
     @Before
     public void initKeys() throws Exception {
-        File config = FileUtil.getFileFromResource("DelegationToken.properties", DelegationTokenTest.class);
+        File config = FileUtil.getFileFromResource("DelegationToken.properties", SignedTokenTest.class);
         File keysDir = config.getParentFile();
         RsaSignatureGenerator.genKeyPair(keysDir);
         privFile = new File(keysDir, RsaSignatureGenerator.PRIV_KEY_FILE_NAME);
@@ -150,32 +150,32 @@ public class DelegationTokenTest {
 
         StringBuilder tokenValue = new StringBuilder();
 
-        tokenValue.append(DelegationToken.EXPIRY_LABEL);
+        tokenValue.append(SignedToken.EXPIRY_LABEL);
         tokenValue.append("=");
         tokenValue.append(expiry.getTime().getTime());
-        tokenValue.append(DelegationToken.FIELD_DELIM);
+        tokenValue.append(SignedToken.FIELD_DELIM);
         tokenValue.append(IdentityType.USERID.getValue());
         tokenValue.append("=");
         tokenValue.append(httpPrincipal.getName());
-        tokenValue.append(DelegationToken.FIELD_DELIM);
+        tokenValue.append(SignedToken.FIELD_DELIM);
         tokenValue.append("scope=");
         tokenValue.append(scope.toString());
 
         for (final String domain : domainList) {
-            tokenValue.append(DelegationToken.FIELD_DELIM).append("domain=").append(domain);
+            tokenValue.append(SignedToken.FIELD_DELIM).append("domain=").append(domain);
         }
 
         final RsaSignatureGenerator su = new RsaSignatureGenerator();
         final byte[] sig = su.sign(new ByteArrayInputStream(tokenValue.toString().getBytes()));
-        tokenValue.append(DelegationToken.FIELD_DELIM);
-        tokenValue.append(DelegationToken.SIGNATURE_LABEL);
+        tokenValue.append(SignedToken.FIELD_DELIM);
+        tokenValue.append(SignedToken.SIGNATURE_LABEL);
         tokenValue.append("=");
         tokenValue.append(new String(Base64.encode(sig)));
 
         String token = "base64:" + String.valueOf(Base64.encode(tokenValue.toString().getBytes()));
 
         log.debug("valid token: " + token);
-        DelegationToken actToken = DelegationToken.parse(token);
+        SignedToken actToken = SignedToken.parse(token);
 
         assertEquals("User id not the same", httpPrincipal, actToken.getUser());
         assertEquals("Expiry time not the same", expiry.getTime().getTime(),
@@ -199,11 +199,11 @@ public class DelegationTokenTest {
         int duration = 10; // h
         Calendar expiry = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         expiry.add(Calendar.HOUR, duration);
-        DelegationToken expToken = new DelegationToken(userid, scope, expiry.getTime(), domainList);
+        SignedToken expToken = new SignedToken(userid, scope, expiry.getTime(), domainList);
 
-        String token = DelegationToken.format(expToken);
+        String token = SignedToken.format(expToken);
         log.debug("valid token: " + token);
-        DelegationToken actToken = DelegationToken.parse(token);
+        SignedToken actToken = SignedToken.parse(token);
 
         assertEquals("User id not the same", expToken.getUser(),
                      actToken.getUser());
@@ -220,11 +220,11 @@ public class DelegationTokenTest {
         duration = 10; // h
         expiry = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         expiry.add(Calendar.HOUR, duration);
-        expToken = new DelegationToken(userid, scope, expiry.getTime(), null);
+        expToken = new SignedToken(userid, scope, expiry.getTime(), null);
 
-        token = DelegationToken.format(expToken);
+        token = SignedToken.format(expToken);
         log.debug("valid token: " + token);
-        actToken = DelegationToken.parse(token);
+        actToken = SignedToken.parse(token);
 
         assertEquals("User id not the same", expToken.getUser(),
                      actToken.getUser());
@@ -243,11 +243,11 @@ public class DelegationTokenTest {
         duration = 10; // h
         expiry = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         expiry.add(Calendar.HOUR, duration);
-        expToken = new DelegationToken(testPrincipals, scope, expiry.getTime(), null);
+        expToken = new SignedToken(testPrincipals, scope, expiry.getTime(), null);
 
-        token = DelegationToken.format(expToken);
+        token = SignedToken.format(expToken);
         log.debug("valid token: " + token);
-        actToken = DelegationToken.parse(token);
+        actToken = SignedToken.parse(token);
 
         assertEquals("User id not the same", expToken.getUser(),
                      actToken.getUser());
@@ -262,8 +262,8 @@ public class DelegationTokenTest {
         expiredDate.add(Calendar.DATE, -1);
         // parse expired token
         try {
-            expToken = new DelegationToken(userid, null, expiredDate.getTime(), null);
-            DelegationToken.parse(DelegationToken.format(expToken));
+            expToken = new SignedToken(userid, null, expiredDate.getTime(), null);
+            SignedToken.parse(SignedToken.format(expToken));
             fail("Exception expected");
         } catch (InvalidDelegationTokenException expected) {
             log.debug("caught expected exception: " + expected);
@@ -271,11 +271,11 @@ public class DelegationTokenTest {
 
         //invalidate signature field
         try {
-            expToken = new DelegationToken(userid, scope, expiry.getTime(), null);
+            expToken = new SignedToken(userid, scope, expiry.getTime(), null);
 
-            token = DelegationToken.format(expToken);
+            token = SignedToken.format(expToken);
             CharSequence subSequence = token.subSequence(10, token.length());
-            DelegationToken.parse(subSequence.toString());
+            SignedToken.parse(subSequence.toString());
             fail("Exception expected");
         } catch (InvalidDelegationTokenException expected) {
             log.debug("caught expected exception: " + expected);
@@ -283,13 +283,13 @@ public class DelegationTokenTest {
 
         // tamper with one character in the signature
         try {
-            expToken = new DelegationToken(userid, scope, expiry.getTime(), null);
+            expToken = new SignedToken(userid, scope, expiry.getTime(), null);
 
-            token = DelegationToken.format(expToken);
+            token = SignedToken.format(expToken);
             token = token.substring(0, token.length() - 1);
             token = token + "A";
 
-            DelegationToken.parse(token);
+            SignedToken.parse(token);
             fail("Exception expected");
         } catch (InvalidDelegationTokenException expected) {
             log.debug("caught expected exception: " + expected);
@@ -314,9 +314,9 @@ public class DelegationTokenTest {
         final int duration = 10; // h
         final Calendar expiry = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         expiry.add(Calendar.HOUR, duration);
-        final DelegationToken delegationToken = new DelegationToken(principals, scope, expiry.getTime(), null);
+        final SignedToken delegationToken = new SignedToken(principals, scope, expiry.getTime(), null);
 
-        final String tokenValue = DelegationToken.format(delegationToken);
+        final String tokenValue = SignedToken.format(delegationToken);
 
         for (final char c : ILLEGAL_COOKIE_CHARACTERS) {
             assertFalse(String.format("Token %s invalid characters (%s).",
@@ -325,7 +325,7 @@ public class DelegationTokenTest {
                         tokenValue.contains(Character.toString(c)));
         }
 
-        final DelegationToken parsedDelegationToken = DelegationToken.parse(tokenValue);
+        final SignedToken parsedDelegationToken = SignedToken.parse(tokenValue);
         final Set<Principal> expectedPrincipals = new HashSet<>();
 
         expectedPrincipals.add(httpPrincipal);
