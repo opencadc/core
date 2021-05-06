@@ -84,7 +84,7 @@ public interface Authenticator {
      * Some principals, such as X500Principal, do not require validation
      * as that is done with TLS.
      * AuthorizationTokenPrincipals must be parsed and validated.  If
-     * validation is successful, an associated AuthoricationToken must
+     * validation is successful, an associated AuthorizationToken must
      * be put into the subject's public credentials.  At the end of the
      * validate/augment calls, the principal must remain in the subject
      * or be replaced by an HttpPrincipal with userid if available.

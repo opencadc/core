@@ -67,7 +67,7 @@
 
 package ca.nrc.cadc.auth;
 
-import ca.nrc.cadc.auth.NotAuthenticatedException.OAuthError;
+import ca.nrc.cadc.auth.NotAuthenticatedException.AuthError;
 
 import java.security.AccessControlException;
 import java.util.List;
@@ -134,7 +134,7 @@ public class TokenValidator {
                 credentials = token.substring(spaceIndex + 1).trim();
                 if (!AuthenticationUtil.CHALLENGE_TYPE_BEARER.equals(challengeType)
                     && !AuthenticationUtil.CHALLENGE_TYPE_IVOA.equals(challengeType)) {
-                    throw new NotAuthenticatedException(challengeType, OAuthError.INVALID_REQUEST,
+                    throw new NotAuthenticatedException(challengeType, AuthError.INVALID_REQUEST,
                         "unsupported challenge type: " + challengeType);
                 }
             }
@@ -145,10 +145,11 @@ public class TokenValidator {
                 // When scope is introduced, add the scope from the delegation token to
                 // the authorization token.
                 AuthorizationToken authToken = new AuthorizationToken(challengeType, credentials);
-                log.debug("Adding token credential to subject");
+                log.debug("Adding token credential to subject, removing token principal");
                 subject.getPublicCredentials().add(authToken);
+                tokenPrincipals.remove(p);
             } catch (InvalidDelegationTokenException ex) {
-                throw new NotAuthenticatedException(challengeType, OAuthError.INVALID_TOKEN, ex.getMessage(), ex);
+                throw new NotAuthenticatedException(challengeType, AuthError.INVALID_TOKEN, ex.getMessage(), ex);
             }
         }
         

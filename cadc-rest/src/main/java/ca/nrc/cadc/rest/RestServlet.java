@@ -482,10 +482,10 @@ public class RestServlet extends HttpServlet {
      * WWW-Authenticate header as per the OAuth2 specification.
      */
     private void setFailedAuthenticateHeader(SyncOutput out, NotAuthenticatedException ex) {
-        if (ex.getChallenge() != null && ex.getOAuthError() != null) {
+        if (ex.getChallenge() != null && ex.getAuthError() != null) {
             StringBuilder header = new StringBuilder();
             header.append(ex.getChallenge());
-            header.append(" error=\"").append(ex.getOAuthError().getValue()).append("\"");
+            header.append(" error=\"").append(ex.getAuthError().getValue()).append("\"");
             if (ex.getMessage() != null) {
                 header.append(", error_description=\"").append(ex.getMessage()).append("\"");
             }

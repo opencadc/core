@@ -97,4 +97,15 @@ public class AuthorizationTokenPrincipal implements Principal {
         return token;
     }
     
+    @Override
+    public boolean equals(Object o) {
+        if (o == null) {
+            return false;
+        }
+        if (!(o instanceof AuthorizationTokenPrincipal)) {
+            return false;
+        }
+        return ((AuthorizationTokenPrincipal) o).token.equals(this.token);
+    }
+    
 }

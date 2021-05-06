@@ -171,7 +171,7 @@ public class TokenValidatorTest {
                 Assert.fail("Should have received NotAuthenticatedException");
             } catch (NotAuthenticatedException e) {
                 Assert.assertEquals(AuthenticationUtil.CHALLENGE_TYPE_BEARER, e.getChallenge());
-                Assert.assertEquals("invalid_token", e.getOAuthError().getValue());
+                Assert.assertEquals("invalid_token", e.getAuthError().getValue());
             }
             
             // invalid ivoa token
@@ -183,7 +183,7 @@ public class TokenValidatorTest {
                 Assert.fail("Should have received NotAuthenticatedException");
             } catch (NotAuthenticatedException e) {
                 Assert.assertEquals(AuthenticationUtil.CHALLENGE_TYPE_IVOA, e.getChallenge());
-                Assert.assertEquals("invalid_token", e.getOAuthError().getValue());
+                Assert.assertEquals("invalid_token", e.getAuthError().getValue());
             }
             
             // unsupported challenge type
@@ -197,7 +197,7 @@ public class TokenValidatorTest {
                 Assert.fail("Should have received NotAuthenticatedException");
             } catch (NotAuthenticatedException e) {
                 Assert.assertEquals("Foo", e.getChallenge());
-                Assert.assertEquals("invalid_request", e.getOAuthError().getValue());
+                Assert.assertEquals("invalid_request", e.getAuthError().getValue());
             }
             
         } catch (Throwable t) {
