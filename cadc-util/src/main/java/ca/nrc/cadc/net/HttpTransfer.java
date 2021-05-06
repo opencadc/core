@@ -1103,12 +1103,16 @@ public abstract class HttpTransfer implements Runnable {
             // tokens
             Set<AuthorizationToken> tokens = subj.getPublicCredentials(AuthorizationToken.class);
             if (tokens != null && !tokens.isEmpty()) {
-                // When token scope is introduced the scope from the token could
-                // be examined to see if applies to the target URL
                 for (AuthorizationToken next : tokens) {
-                    conn.setRequestProperty(
-                        AuthenticationUtil.AUTHORIZATION_HEADER,
-                        next.getType() + " " + next.getCredentials());
+                    // tokens currently scope by domain
+                    for (String domain : next.getDomains()) {
+                        if (conn.getURL().getHost().endsWith(domain)) {
+                            conn.setRequestProperty(
+                                AuthenticationUtil.AUTHORIZATION_HEADER,
+                                next.getType() + " " + next.getCredentials());
+                            break;
+                        }
+                    }
                 }
             }
             

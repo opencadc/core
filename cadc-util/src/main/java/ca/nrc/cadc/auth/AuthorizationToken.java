@@ -67,6 +67,8 @@
 
 package ca.nrc.cadc.auth;
 
+import java.util.List;
+
 /**
  * Class representing an authorization token.  For example, an opaque OAuth2 token value
  * with name 'Bearer'.
@@ -79,6 +81,11 @@ public class AuthorizationToken {
     private String type;
     private String credentials;
     
+    // Tokens are currently scoped by the domains in which
+    // cadc and canfar services run.  This will likely be
+    // replaced with higher level scoping mechanism.
+    private List<String> domains;
+    
     // Token scope goes here where introduced
     // private URI scope
     
@@ -87,15 +94,19 @@ public class AuthorizationToken {
      * @param type The type of the token. (eg, Bearer)
      * @param credentials The token credentials.
      */
-    public AuthorizationToken(String type, String credentials) {
+    public AuthorizationToken(String type, String credentials, List<String> domains) {
         if (type == null) {
             throw new IllegalArgumentException("type required");
         }
         if (credentials == null) {
             throw new IllegalArgumentException("credentials required");
         }
+        if (domains == null) {
+            throw new IllegalArgumentException("domains required");
+        }
         this.type = type;
         this.credentials = credentials;
+        this.domains = domains;
     }
     
     /**
@@ -112,6 +123,14 @@ public class AuthorizationToken {
      */
     public String getCredentials() {
         return credentials;
+    }
+    
+    /**
+     * Domains getter.
+     * @return The domains.
+     */
+    public List<String> getDomains() {
+        return domains;
     }
 
 }

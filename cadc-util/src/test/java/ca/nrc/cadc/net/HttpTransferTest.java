@@ -85,6 +85,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Date;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -275,7 +276,7 @@ public class HttpTransferTest {
         final Subject subject = new Subject();
         Date expiry = new Date(new Date().getTime() + 48 * 3600 * 1000);
         
-        AuthorizationToken authToken = new AuthorizationToken("Bearer", "123");
+        AuthorizationToken authToken = new AuthorizationToken("Bearer", "123", Arrays.asList("en.host.com", "fr.host.com"));
         subject.getPublicCredentials().add(authToken);
         
         subject.getPublicCredentials().add(
@@ -286,9 +287,10 @@ public class HttpTransferTest {
         final HttpURLConnection mockConnection
                 = EasyMock.createMock(HttpURLConnection.class);
 
-        EasyMock.expect(mockConnection.getURL()).andReturn(testURL).atLeastOnce();
+        EasyMock.expect(mockConnection.getURL()).andReturn(testURL).anyTimes();
 
         mockConnection.setRequestProperty(AuthenticationUtil.AUTHORIZATION_HEADER, "Bearer 123");
+        EasyMock.expectLastCall().once();
         mockConnection.setRequestProperty("Cookie", "CADC_SSO=\"VALUE_2\"");
         EasyMock.expectLastCall().once();
 

@@ -144,7 +144,7 @@ public class TokenValidator {
                 subject.getPrincipals().add(validatedToken.getUser());
                 // When scope is introduced, add the scope from the delegation token to
                 // the authorization token.
-                AuthorizationToken authToken = new AuthorizationToken(challengeType, credentials);
+                AuthorizationToken authToken = new AuthorizationToken(challengeType, credentials, validatedToken.getDomains());
                 log.debug("Adding token credential to subject, removing token principal");
                 subject.getPublicCredentials().add(authToken);
                 tokenPrincipals.remove(p);

@@ -29,4 +29,5 @@ dependencies {
     compile 'org.opencadc:cadc-registry:[1.5,)'
 
     testCompile 'junit:junit:4.13'
+    testCompile 'org.easymock:easymock:3.6'
 }
