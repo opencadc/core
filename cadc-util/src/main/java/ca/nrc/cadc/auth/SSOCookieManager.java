@@ -144,6 +144,17 @@ public class SSOCookieManager {
         principalSet.add(principal);
         return generate(principalSet);
     }
+    
+    /**
+     * Generate a new cookie value for the given HttpPrincipal. Format of the value
+     * is: HttpPrincipal-ExpirationDateUTC-Base64SignatureToken where: HttpPrincipal
+     * - principal of the user ExpirationDateUTC - long representing the expiration
+     * Java date in UTC Base64SignatureToken - The signature token of the 2 fields
+     * above in Base64 format.
+     */
+    public final String generate(Set<Principal> principalSet, URI scope) throws InvalidKeyException, IOException {
+        return generate(principalSet, null, scope);
+    }
 
     /**
      * Generate a new cookie value for the set of Principals, scope and expiryDate.
@@ -155,10 +166,13 @@ public class SSOCookieManager {
      * @throws InvalidKeyException
      * @throws IOException
      */
-    public final String generate(final Set<Principal> principalSet, Date expiryDate)
+    public final String generate(final Set<Principal> principalSet, Date expiryDate, URI scope)
             throws InvalidKeyException, IOException {
         if (expiryDate == null) {
             expiryDate = getExpirationDate();
+        }
+        if (scope == null) {
+            scope = SCOPE_URI;
         }
         List<String> domainList = null;
         PropertiesReader propReader = new PropertiesReader(DOMAINS_PROP_FILE);
@@ -166,7 +180,7 @@ public class SSOCookieManager {
         if (domainValues != null && (domainValues.size() > 0)) {
             domainList = Arrays.asList(domainValues.get(0).split(" "));
         }
-        SignedToken token = new SignedToken(principalSet, SCOPE_URI, expiryDate, domainList);
+        SignedToken token = new SignedToken(principalSet, scope, expiryDate, domainList);
         return SignedToken.format(token);
     }
 
@@ -179,7 +193,7 @@ public class SSOCookieManager {
      * @throws InvalidKeyException Signing key is invalid
      */
     public final String generate(final Set<Principal> principalSet) throws InvalidKeyException, IOException {
-        return generate(principalSet, getExpirationDate());
+        return generate(principalSet, getExpirationDate(), null);
     }
 
     /**
