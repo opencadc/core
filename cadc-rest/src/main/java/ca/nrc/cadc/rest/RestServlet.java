@@ -434,8 +434,8 @@ public class RestServlet extends HttpServlet {
             
             // set a header for info on how to obtain tokens with username/password over tls
             StringBuilder sb = new StringBuilder();
-            sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA + " standardID=\"").append(Standards.SECURITY_METHOD_PASSWORD.toString()).append("\", ");
-            sb.append("accessURL=\"").append(loginURL).append("\"");
+            sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA + " standard_id=\"").append(Standards.SECURITY_METHOD_PASSWORD.toString()).append("\", ");
+            sb.append("access_url=\"").append(loginURL).append("\"");
             appendAuthenticateErrorInfo(AuthenticationUtil.CHALLENGE_TYPE_IVOA, sb, ex, false);
             out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
             
@@ -443,14 +443,14 @@ public class RestServlet extends HttpServlet {
             URI authorizeServiceURI = getLocalServiceURI(Standards.SECURITY_METHOD_OAUTH);
             URL authorizeURL = regClient.getServiceURL(authorizeServiceURI, Standards.SECURITY_METHOD_OAUTH, AuthMethod.ANON);
             sb = new StringBuilder();
-            sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA + " standardID=\"").append(Standards.SECURITY_METHOD_OAUTH.toString()).append("\", ");
-            sb.append("accessURL=\"").append(authorizeURL).append("\"");
+            sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA + " standard_id=\"").append(Standards.SECURITY_METHOD_OAUTH.toString()).append("\", ");
+            sb.append("access_url=\"").append(authorizeURL).append("\"");
             appendAuthenticateErrorInfo(AuthenticationUtil.CHALLENGE_TYPE_IVOA, sb, ex, false);
             out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
             
             // set a header for client certificate support
             sb = new StringBuilder();
-            sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA + " standardID=\"").append(Standards.SECURITY_METHOD_CERT.toASCIIString()).append("\"");
+            sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA + " standard_id=\"").append(Standards.SECURITY_METHOD_CERT.toASCIIString()).append("\"");
             out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
             
             // set a header for oauth2 bearer tokens
