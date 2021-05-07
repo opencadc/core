@@ -217,7 +217,7 @@ public class RestServletTest {
         EasyMock.expect(mockOut.isOpen()).andReturn(Boolean.FALSE);
         RestServlet restServlet = new TestRestServlet();
         EasyMock.replay(mockOut);
-        restServlet.setAuthenticateHeaders(s, mockOut, ex);
+        restServlet.setAuthenticateHeaders(s, mockOut, ex, null);
         EasyMock.verify(mockOut);
         EasyMock.reset(mockOut);
     }

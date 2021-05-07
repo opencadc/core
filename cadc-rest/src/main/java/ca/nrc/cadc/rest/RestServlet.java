@@ -306,7 +306,7 @@ public class RestServlet extends HttpServlet {
             action.setSyncOutput(out);
             action.setLogInfo(logInfo);
             
-            setAuthenticateHeaders(subject, out, null);
+            setAuthenticateHeaders(subject, out, null, response);
             authHeadersSet = true;
 
             doit(subject, action);
@@ -314,7 +314,7 @@ public class RestServlet extends HttpServlet {
             logInfo.setSuccess(true);
             logInfo.setMessage(ex.getMessage());
             if (!authHeadersSet) {
-                setAuthenticateHeaders(null, out, ex);
+                setAuthenticateHeaders(null, out, ex, response);
             }
             handleException(out, response, ex, 401, ex.getMessage(), false);
         } catch (InstantiationException | IllegalAccessException ex) {
@@ -426,8 +426,12 @@ public class RestServlet extends HttpServlet {
      * If authentication failed and a challenge was presented, add the error type and error
      * description in the WWW-Authenticate header associated with the challenge.
      */
-    void setAuthenticateHeaders(Subject subject, SyncOutput out, NotAuthenticatedException ex) {
+    void setAuthenticateHeaders(Subject subject, SyncOutput out, NotAuthenticatedException ex, HttpServletResponse response) {
 
+        if (out == null) {
+            out = new SyncOutput(response);
+        }
+        
         if (out.isOpen()) {
             log.debug("SyncOutput already open, can't set auth headers");
             return;
