@@ -270,6 +270,7 @@ public class RestServlet extends HttpServlet {
         WebServiceLogInfo logInfo = new ServletLogInfo(request);
         long start = System.currentTimeMillis();
         SyncOutput out = null;
+        boolean authHeadersSet = false;
         
         // failures here indicate:
         // * attempt and failure to authenticate 
@@ -306,12 +307,15 @@ public class RestServlet extends HttpServlet {
             action.setLogInfo(logInfo);
             
             setAuthenticateHeaders(subject, out, null);
+            authHeadersSet = true;
 
             doit(subject, action);
         } catch (NotAuthenticatedException ex) {
             logInfo.setSuccess(true);
             logInfo.setMessage(ex.getMessage());
-            setAuthenticateHeaders(null, out, ex);
+            if (!authHeadersSet) {
+                setAuthenticateHeaders(null, out, ex);
+            }
             handleException(out, response, ex, 401, ex.getMessage(), false);
         } catch (InstantiationException | IllegalAccessException ex) {
             // problem creating the action
