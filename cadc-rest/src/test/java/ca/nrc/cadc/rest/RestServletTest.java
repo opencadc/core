@@ -214,6 +214,7 @@ public class RestServletTest {
     }
     
     private void runTest(Subject s, SyncOutput mockOut, NotAuthenticatedException ex) {
+        EasyMock.expect(mockOut.isOpen()).andReturn(Boolean.FALSE);
         RestServlet restServlet = new TestRestServlet();
         EasyMock.replay(mockOut);
         restServlet.setAuthenticateHeaders(s, mockOut, ex);

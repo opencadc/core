@@ -427,6 +427,12 @@ public class RestServlet extends HttpServlet {
      * description in the WWW-Authenticate header associated with the challenge.
      */
     void setAuthenticateHeaders(Subject subject, SyncOutput out, NotAuthenticatedException ex) {
+
+        if (out.isOpen()) {
+            log.debug("SyncOutput already open, can't set auth headers");
+            return;
+        }
+        
         if (subject == null || AuthenticationUtil.getAuthMethodFromCredentials(subject).equals(AuthMethod.ANON)) {
             // Not authenticated...
             
