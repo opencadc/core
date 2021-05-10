@@ -139,7 +139,7 @@ public class ServletPrincipalExtractor implements PrincipalExtractor {
         // custom header (deprecated)
         String cadcTokenHeader = request.getHeader(AuthenticationUtil.AUTH_HEADER);
         if (cadcTokenHeader != null) {
-            AuthorizationTokenPrincipal principal = new AuthorizationTokenPrincipal(cadcTokenHeader);
+            AuthorizationTokenPrincipal principal = new AuthorizationTokenPrincipal(AuthenticationUtil.AUTH_HEADER, cadcTokenHeader);
             principals.add(principal);
         }
 
@@ -152,7 +152,7 @@ public class ServletPrincipalExtractor implements PrincipalExtractor {
                 BearerTokenPrincipal bearerTokenPrincipal = new BearerTokenPrincipal(authToken);
                 principals.add(bearerTokenPrincipal);
             } else {
-                AuthorizationTokenPrincipal principal = new AuthorizationTokenPrincipal(authToken);
+                AuthorizationTokenPrincipal principal = new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, authToken);
                 principals.add(principal);
             }
         }

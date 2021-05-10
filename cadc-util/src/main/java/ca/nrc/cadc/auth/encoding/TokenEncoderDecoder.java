@@ -69,7 +69,7 @@
 
 package ca.nrc.cadc.auth.encoding;
 
-import ca.nrc.cadc.auth.InvalidDelegationTokenException;
+import ca.nrc.cadc.auth.InvalidSignedTokenException;
 import ca.nrc.cadc.util.Base64;
 
 import java.io.UnsupportedEncodingException;
@@ -77,18 +77,18 @@ import java.io.UnsupportedEncodingException;
 
 public class TokenEncoderDecoder {
     public byte[] decode(final String value, final TokenEncoding tokenEncoding)
-        throws InvalidDelegationTokenException {
+        throws InvalidSignedTokenException {
         switch (tokenEncoding) {
             case BASE64: {
                 try {
                     return Base64.decode(value);
                 } catch (IllegalArgumentException e) {
-                    throw new InvalidDelegationTokenException("failed to decode token", e);
+                    throw new InvalidSignedTokenException("failed to decode token", e);
                 }
             }
 
             default: {
-                throw new InvalidDelegationTokenException(String.format("Unsupported encoding '%s'", tokenEncoding));
+                throw new InvalidSignedTokenException(String.format("Unsupported encoding '%s'", tokenEncoding));
             }
         }
     }

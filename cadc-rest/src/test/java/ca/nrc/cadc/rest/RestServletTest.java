@@ -126,7 +126,7 @@ public class RestServletTest {
             
             // "<other principal name if userid missing>"
             s = new Subject();
-            s.getPrincipals().add(new AuthorizationTokenPrincipal("some-value"));
+            s.getPrincipals().add(new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, "some-value"));
             s.getPublicCredentials().add(new AuthorizationToken("type", "creds", new ArrayList<String>()));
             out.addHeader("x-vo-authenticated", "some-value");
             EasyMock.expectLastCall().once();
@@ -134,7 +134,7 @@ public class RestServletTest {
             
             // "<http userid if multiple>"
             s = new Subject();
-            s.getPrincipals().add(new AuthorizationTokenPrincipal("some-value"));
+            s.getPrincipals().add(new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, "some-value"));
             s.getPrincipals().add(new HttpPrincipal("userid"));
             s.getPublicCredentials().add(new AuthorizationToken("type", "creds", new ArrayList<String>()));
             out.addHeader("x-vo-authenticated", "userid");

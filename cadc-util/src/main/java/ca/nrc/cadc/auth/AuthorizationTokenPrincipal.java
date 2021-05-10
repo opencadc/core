@@ -80,21 +80,44 @@ import java.security.Principal;
  */
 public class AuthorizationTokenPrincipal implements Principal {
 
-    private final String token;
+    private final String headerKey;
+    private final String headerValue;
 
     /**
      * AuthorizationTokenPrincipal constructor.
      * 
-     * @param authorizationHeaderValue The value of the Authorization header
+     * @param headerKey The header used
+     * @param headerValue The value of the header
      *     (including any challenge types, such as 'Bearer')
      */
-    public AuthorizationTokenPrincipal(String authorizationHeaderValue) {
-        this.token = authorizationHeaderValue;
+    public AuthorizationTokenPrincipal(String headerKey, String headerValue) {
+        this.headerKey = headerKey;
+        this.headerValue = headerValue;
+    }
+    
+    /**
+     * Header key getter.
+     * @return headerKey
+     */
+    public String getHeaderKey() {
+        return headerKey;
+    }
+    
+    /**
+     * Header value getter.
+     * @return headerValue
+     */
+    public String getHeaderValue() {
+        return headerValue;
     }
 
+    /**
+     * Principal name is the header value;
+     * @return headerValue;
+     */
     @Override
     public String getName() {
-        return token;
+        return headerValue;
     }
     
     @Override
@@ -105,7 +128,8 @@ public class AuthorizationTokenPrincipal implements Principal {
         if (!(o instanceof AuthorizationTokenPrincipal)) {
             return false;
         }
-        return ((AuthorizationTokenPrincipal) o).token.equals(this.token);
+        AuthorizationTokenPrincipal p = ((AuthorizationTokenPrincipal) o);
+        return p.headerKey.equals(this.headerKey) && p.headerValue.equals(this.headerValue);
     }
     
 }

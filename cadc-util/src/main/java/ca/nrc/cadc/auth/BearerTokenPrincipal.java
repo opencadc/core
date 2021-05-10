@@ -89,7 +89,7 @@ public class BearerTokenPrincipal extends AuthorizationTokenPrincipal implements
     private final String token;
 
     public BearerTokenPrincipal(final String authorizationHeader) {
-        super(authorizationHeader);
+        super(AuthenticationUtil.CHALLENGE_TYPE_BEARER, authorizationHeader);
         if (!isBearerToken(authorizationHeader)) {
             throw new IllegalArgumentException("Not a bearer token");
         }

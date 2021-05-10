@@ -271,10 +271,10 @@ public class SignedToken implements Serializable {
      *
      * @param text       Token to parse
      * @return corresponding DelegationToken
-     * @throws InvalidDelegationTokenException If the given token cannot be parsed.
+     * @throws InvalidSignedTokenException If the given token cannot be parsed.
      */
     public static SignedToken parse(String text)
-            throws InvalidDelegationTokenException {
+            throws InvalidSignedTokenException {
         log.debug("parsing token: " + text);
         if (text.startsWith(SignedToken.EXPIRY_LABEL)) {
             final String[] fields = text.split(FIELD_DELIM);
@@ -285,7 +285,7 @@ public class SignedToken implements Serializable {
     }
 
     private static SignedToken parse(String[] fields, String cookieText)
-            throws InvalidDelegationTokenException {
+            throws InvalidSignedTokenException {
         String userid = null;
         Set<Principal> principalSet = new HashSet<>();
         String proxyUser = null;
@@ -334,23 +334,23 @@ public class SignedToken implements Serializable {
             }
 
         } catch (NumberFormatException ex) {
-            throw new InvalidDelegationTokenException("invalid numeric field", ex);
+            throw new InvalidSignedTokenException("invalid numeric field", ex);
         } catch (URISyntaxException ex) {
-            throw new InvalidDelegationTokenException("invalid scope URI", ex);
+            throw new InvalidSignedTokenException("invalid scope URI", ex);
         }
 
         if (signature == null) {
-            throw new InvalidDelegationTokenException("missing signature");
+            throw new InvalidSignedTokenException("missing signature");
         }
 
         // validate expiry
         if (expirytime == null) {
-            throw new InvalidDelegationTokenException("missing expirytime");
+            throw new InvalidSignedTokenException("missing expirytime");
         }
         Date now = new Date();
 
         if (now.getTime() > expirytime.getTime()) {
-            throw new InvalidDelegationTokenException("expired");
+            throw new InvalidSignedTokenException("expired");
         }
 
         validateSignature(signature, cookieText);
@@ -358,10 +358,10 @@ public class SignedToken implements Serializable {
         return new SignedToken(principalSet, scope, expirytime, domains);
     }
 
-    private static SignedToken parseEncoded(final URI encodedURI) throws InvalidDelegationTokenException {
+    private static SignedToken parseEncoded(final URI encodedURI) throws InvalidSignedTokenException {
 
         if (!StringUtil.hasLength(encodedURI.getScheme())) {
-            throw new InvalidDelegationTokenException("Wrong format for encoded token.");
+            throw new InvalidSignedTokenException("Wrong format for encoded token.");
         } else {
             final TokenEncoding tokenEncoding = TokenEncoding.valueOf(encodedURI.getScheme().toUpperCase());
             final byte[] decodedBytes = TOKEN_ENCODER_DECODER.decode(encodedURI.getSchemeSpecificPart(), tokenEncoding);
@@ -372,7 +372,7 @@ public class SignedToken implements Serializable {
     }
 
     private static void validateSignature(final String signatureString, final String text)
-            throws InvalidDelegationTokenException {
+            throws InvalidSignedTokenException {
         // validate signature
         try {
             final byte[] signature = Base64.decode(signatureString);
@@ -384,12 +384,12 @@ public class SignedToken implements Serializable {
 
             if (!valid) {
                 log.error("invalid signature: " + new String(signature));
-                throw new InvalidDelegationTokenException("cannot verify signature");
+                throw new InvalidSignedTokenException("cannot verify signature");
             }
 
         } catch (Exception ex) {
             log.debug("failed to verify DelegationToken signature", ex);
-            throw new InvalidDelegationTokenException("cannot verify signature", ex);
+            throw new InvalidSignedTokenException("cannot verify signature", ex);
         }
     }
 

@@ -265,7 +265,7 @@ public class SignedTokenTest {
             expToken = new SignedToken(userid, null, expiredDate.getTime(), null);
             SignedToken.parse(SignedToken.format(expToken));
             fail("Exception expected");
-        } catch (InvalidDelegationTokenException expected) {
+        } catch (InvalidSignedTokenException expected) {
             log.debug("caught expected exception: " + expected);
         }
 
@@ -277,7 +277,7 @@ public class SignedTokenTest {
             CharSequence subSequence = token.subSequence(10, token.length());
             SignedToken.parse(subSequence.toString());
             fail("Exception expected");
-        } catch (InvalidDelegationTokenException expected) {
+        } catch (InvalidSignedTokenException expected) {
             log.debug("caught expected exception: " + expected);
         }
 
@@ -291,7 +291,7 @@ public class SignedTokenTest {
 
             SignedToken.parse(token);
             fail("Exception expected");
-        } catch (InvalidDelegationTokenException expected) {
+        } catch (InvalidSignedTokenException expected) {
             log.debug("caught expected exception: " + expected);
         }
     }

@@ -114,16 +114,16 @@ public class SSOCookieManager {
      * @param value Cookie value.
      * @return The HttpPrincipal decoded if the cookie value can be parsed and
      *         validated.
-     * @throws InvalidDelegationTokenException
+     * @throws InvalidSignedTokenException
      */
-    public final SignedToken parse(final String value) throws InvalidDelegationTokenException {
+    public final SignedToken parse(final String value) throws InvalidSignedTokenException {
         if (value == null) {
             throw new IllegalArgumentException("value required");
         }
         try {
             return SignedToken.parse(value);
         } catch (Exception e) {
-            throw new InvalidDelegationTokenException("Bad token." + value);
+            throw new InvalidSignedTokenException("Bad token." + value);
         }
     }
 
@@ -229,7 +229,7 @@ public class SSOCookieManager {
      * @return cookieList
      */
     public List<SSOCookieCredential> getSSOCookieCredentials(final String cookieValue)
-            throws InvalidDelegationTokenException {
+            throws InvalidSignedTokenException {
 
         List<SSOCookieCredential> cookieList = new ArrayList<>();
         SignedToken cookieToken = SignedToken.parse(cookieValue);

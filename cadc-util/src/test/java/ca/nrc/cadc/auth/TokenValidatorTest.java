@@ -130,7 +130,7 @@ public class TokenValidatorTest {
             subject = new Subject();
             token = new SignedToken(new HttpPrincipal("user"), null, expiry, domains);
             value = SignedToken.format(token);
-            AuthorizationTokenPrincipal authPrincipal = new AuthorizationTokenPrincipal(value);
+            AuthorizationTokenPrincipal authPrincipal = new AuthorizationTokenPrincipal(AuthenticationUtil.TOKEN_TYPE_CADC, value);
             subject.getPrincipals().add(authPrincipal);
             subject = TokenValidator.validateTokens(subject);
             Assert.assertEquals("token credential", 1, subject.getPublicCredentials(AuthorizationToken.class).size());
@@ -142,7 +142,7 @@ public class TokenValidatorTest {
             subject = new Subject();
             token = new SignedToken(new HttpPrincipal("user"), null, expiry, domains);
             value = SignedToken.format(token);
-            authPrincipal = new AuthorizationTokenPrincipal("Bearer " + value);
+            authPrincipal = new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, "Bearer " + value);
             subject.getPrincipals().add(authPrincipal);
             subject = TokenValidator.validateTokens(subject);
             Assert.assertEquals("token credential", 1, subject.getPublicCredentials(AuthorizationToken.class).size());
@@ -154,7 +154,7 @@ public class TokenValidatorTest {
             subject = new Subject();
             token = new SignedToken(new HttpPrincipal("user"), null, expiry, domains);
             value = SignedToken.format(token);
-            authPrincipal = new AuthorizationTokenPrincipal("ivoa " + value);
+            authPrincipal = new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, "ivoa " + value);
             subject.getPrincipals().add(authPrincipal);
             subject = TokenValidator.validateTokens(subject);
             Assert.assertEquals("token credential", 1, subject.getPublicCredentials(AuthorizationToken.class).size());
@@ -164,7 +164,7 @@ public class TokenValidatorTest {
             
             // invalid bearer token
             subject = new Subject();
-            authPrincipal = new AuthorizationTokenPrincipal("Bearer tampered");
+            authPrincipal = new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, "Bearer tampered");
             subject.getPrincipals().add(authPrincipal);
             try {
                 subject = TokenValidator.validateTokens(subject);
@@ -176,7 +176,7 @@ public class TokenValidatorTest {
             
             // invalid ivoa token
             subject = new Subject();
-            authPrincipal = new AuthorizationTokenPrincipal("ivoa tampered");
+            authPrincipal = new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, "ivoa tampered");
             subject.getPrincipals().add(authPrincipal);
             try {
                 subject = TokenValidator.validateTokens(subject);
@@ -190,7 +190,7 @@ public class TokenValidatorTest {
             subject = new Subject();
             token = new SignedToken(new HttpPrincipal("user"), null, expiry, domains);
             value = SignedToken.format(token);
-            authPrincipal = new AuthorizationTokenPrincipal("Foo " + value);
+            authPrincipal = new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, "Foo " + value);
             subject.getPrincipals().add(authPrincipal);
             try {
                 subject = TokenValidator.validateTokens(subject);

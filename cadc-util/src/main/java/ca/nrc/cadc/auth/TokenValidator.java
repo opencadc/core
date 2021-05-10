@@ -110,7 +110,7 @@ public class TokenValidator {
                         ssoCookieManager.getSSOCookieCredentials(p.getValue());
                     log.debug("Adding " + cookieCredentialList.size() + " cookie credentials to subject");
                     subject.getPublicCredentials().addAll(cookieCredentialList);
-                } catch (InvalidDelegationTokenException ex) {
+                } catch (InvalidSignedTokenException ex) {
                     throw new NotAuthenticatedException("invalid cookie: " + ex.getMessage(), ex);
                 }
             }
@@ -120,24 +120,28 @@ public class TokenValidator {
         Set<AuthorizationTokenPrincipal> tokenPrincipals = subject.getPrincipals(AuthorizationTokenPrincipal.class);
         log.debug("validateTokens: found " + tokenPrincipals.size() + " token principals");
         for (AuthorizationTokenPrincipal p : tokenPrincipals) {
-            String token = p.getName();
-            // parse the token into challenge type and credentials.  If only credentials available (no type), assume
-            // the deprecated delegation token
-            String challengeType = null;
             String credentials = null;
-            int spaceIndex = token.indexOf(" ");
-            if (spaceIndex == -1) {
+            String challengeType = null;
+            if (AuthenticationUtil.TOKEN_TYPE_CADC.equals(p.getHeaderKey())) {
                 challengeType = AuthenticationUtil.TOKEN_TYPE_CADC;
-                credentials = token;
-            } else {
-                challengeType = token.substring(0, spaceIndex).trim();
-                credentials = token.substring(spaceIndex + 1).trim();
+                credentials = p.getHeaderValue().trim();
+            } else if (AuthenticationUtil.AUTHORIZATION_HEADER.equals(p.getHeaderKey())) {
+                // parse the token into challenge type and credentials.
+                int spaceIndex = p.getHeaderValue().indexOf(" ");
+                if (spaceIndex == -1) {
+                    throw new NotAuthenticatedException(challengeType, AuthError.INVALID_REQUEST,
+                        "missing authorization challenge");
+                }
+                challengeType = p.getHeaderValue().substring(0, spaceIndex).trim();
+                credentials = p.getHeaderValue().substring(spaceIndex + 1).trim();
                 if (!AuthenticationUtil.CHALLENGE_TYPE_BEARER.equals(challengeType)
                     && !AuthenticationUtil.CHALLENGE_TYPE_IVOA.equals(challengeType)) {
                     throw new NotAuthenticatedException(challengeType, AuthError.INVALID_REQUEST,
                         "unsupported challenge type: " + challengeType);
                 }
             }
+            log.debug("challenge type: " + challengeType);
+            log.debug("credentials: " + credentials);
             
             try {
                 SignedToken validatedToken = SignedToken.parse(credentials);
@@ -148,7 +152,7 @@ public class TokenValidator {
                 log.debug("Adding token credential to subject, removing token principal");
                 subject.getPublicCredentials().add(authToken);
                 tokenPrincipals.remove(p);
-            } catch (InvalidDelegationTokenException ex) {
+            } catch (Exception ex) {
                 throw new NotAuthenticatedException(challengeType, AuthError.INVALID_TOKEN, ex.getMessage(), ex);
             }
         }
