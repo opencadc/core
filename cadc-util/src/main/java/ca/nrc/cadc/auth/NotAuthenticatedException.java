@@ -111,9 +111,6 @@ public class NotAuthenticatedException extends SecurityException {
     
     public NotAuthenticatedException(String challenge, AuthError authError, String errorDescription) {
         super(errorDescription);
-        if (challenge == null) {
-            throw new IllegalArgumentException("challenge cannot be null");
-        }
         if (authError == null) {
             throw new IllegalArgumentException("authError cannot be null");
         }
@@ -123,9 +120,6 @@ public class NotAuthenticatedException extends SecurityException {
     
     public NotAuthenticatedException(String challenge, AuthError authError, String errorDescription, Throwable cause) {
         super(errorDescription, cause);
-        if (challenge == null) {
-            throw new IllegalArgumentException("challenge cannot be null");
-        }
         if (authError == null) {
             throw new IllegalArgumentException("authError cannot be null");
         }

@@ -120,6 +120,8 @@ public class TokenValidator {
         Set<AuthorizationTokenPrincipal> tokenPrincipals = subject.getPrincipals(AuthorizationTokenPrincipal.class);
         log.debug("validateTokens: found " + tokenPrincipals.size() + " token principals");
         for (AuthorizationTokenPrincipal p : tokenPrincipals) {
+            log.debug("header key: " + p.getHeaderKey());
+            log.debug("header value: " + p.getHeaderValue());
             String credentials = null;
             String challengeType = null;
             if (AuthenticationUtil.TOKEN_TYPE_CADC.equals(p.getHeaderKey())) {
@@ -134,8 +136,8 @@ public class TokenValidator {
                 }
                 challengeType = p.getHeaderValue().substring(0, spaceIndex).trim();
                 credentials = p.getHeaderValue().substring(spaceIndex + 1).trim();
-                if (!AuthenticationUtil.CHALLENGE_TYPE_BEARER.equals(challengeType)
-                    && !AuthenticationUtil.CHALLENGE_TYPE_IVOA.equals(challengeType)) {
+                if (!AuthenticationUtil.CHALLENGE_TYPE_BEARER.equalsIgnoreCase(challengeType)
+                    && !AuthenticationUtil.CHALLENGE_TYPE_IVOA.equalsIgnoreCase(challengeType)) {
                     throw new NotAuthenticatedException(challengeType, AuthError.INVALID_REQUEST,
                         "unsupported challenge type: " + challengeType);
                 }
