@@ -257,6 +257,8 @@ public abstract class WebServiceLogInfo {
         AuthMethod aMethod = AuthenticationUtil.getAuthMethod(subject);
         if (aMethod != null) {
             this.authMethod = aMethod.getValue();
+        } else {
+            this.authMethod = AuthMethod.ANON.getValue();
         }
     }
 
