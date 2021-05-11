@@ -234,10 +234,12 @@ public abstract class HttpTransfer implements Runnable {
     protected Long responseLatency;
     
     private boolean customSSLSocketFactory = false;
-    private final List<HttpRequestProperty> requestProperties = new ArrayList<HttpRequestProperty>();
+    private final List<HttpRequestProperty> requestProperties = new ArrayList<>();
     //private OutputStream requestStream;
     
-    private final Map<String,String> responseHeaders = new TreeMap<String,String>(new CaseInsensitiveStringComparator());
+    private final Map<String,String> responseHeaders = new TreeMap<>(new CaseInsensitiveStringComparator());
+    private final Map<String,List<String>> responseHeadersMulti = new TreeMap<>(new CaseInsensitiveStringComparator());
+    
     protected InputStream responseStream;
     private String contentType;
     private String contentEncoding;
@@ -457,23 +459,42 @@ public abstract class HttpTransfer implements Runnable {
     }
     
     /**
-     * Get an HTTP header value from the response. Subclasses may provide more convenient type-safe
-     * methods to get specific standard header values.
+     * Convenience: get a single-valued HTTP header value from the response. Subclasses may provide 
+     * more convenient type-safe methods to get specific standard header values.
      * 
-     * @param key
-     * @return header value, possibly null
+     * @param key header name (not case sensitive)
+     * @return    header value, null if header not set or multi-valued
      */
     public String getResponseHeader(String key) {
         return responseHeaders.get(key);
     }
     
+    /**
+     * Get a single- or multi-valued response header from the response.
+     * 
+     * @param key header name (not case sensitive)
+     * @return    list of values for the specified header; never null
+     */
+    public List<String> getResponseHeaderValues(String key) {
+        List<String> ret = responseHeadersMulti.get(key);
+        if (ret == null) {
+            ret = new ArrayList<>(0);
+        }
+        return ret;
+    }
+    
     private void captureResponseHeaders(HttpURLConnection con) {
         responseHeaders.clear();
-        for (String key : con.getHeaderFields().keySet()) {
-            if (key != null) {
-                String value = con.getHeaderField(key);
-                if (value != null) {
-                    responseHeaders.put(key, value);
+        responseHeadersMulti.clear();
+        
+        Map<String,List<String>> hdrs = con.getHeaderFields();
+        
+        // copy single-valued headers
+        for (Map.Entry<String,List<String>> me : hdrs.entrySet()) {
+            if (me.getKey() != null) {
+                responseHeadersMulti.put(me.getKey(), me.getValue());
+                if (me.getValue().size() == 1) {
+                    responseHeaders.put(me.getKey(), me.getValue().get(0));
                 }
             }
         }
@@ -827,7 +848,7 @@ public abstract class HttpTransfer implements Runnable {
                 throw new ExpectationFailedException(responseBody);
 
             case HttpURLConnection.HTTP_INTERNAL_ERROR:
-                throw new RuntimeException(responseBody);
+                throw new RemoteServiceException(responseBody);
                 
             case HttpURLConnection.HTTP_UNAVAILABLE:
                 throw new TransientException(responseBody);
@@ -1105,8 +1126,10 @@ public abstract class HttpTransfer implements Runnable {
             if (tokens != null && !tokens.isEmpty()) {
                 for (AuthorizationToken next : tokens) {
                     // tokens currently scope by domain
+                    log.debug("Evaluating token: " + next);
                     for (String domain : next.getDomains()) {
                         if (conn.getURL().getHost().endsWith(domain)) {
+                            log.debug("Setting " + AuthenticationUtil.AUTHORIZATION_HEADER + " header for: " + next);
                             conn.setRequestProperty(
                                 AuthenticationUtil.AUTHORIZATION_HEADER,
                                 next.getType() + " " + next.getCredentials());

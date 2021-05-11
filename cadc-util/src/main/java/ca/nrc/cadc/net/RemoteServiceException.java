@@ -62,83 +62,24 @@
  *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
  *                                       <http://www.gnu.org/licenses/>.
  *
+ *  : 5 $
+ *
  ************************************************************************
  */
 
-package ca.nrc.cadc.auth;
-
-import java.util.List;
+package ca.nrc.cadc.net;
 
 /**
- * Class representing an authorization token.  For example, an opaque OAuth2 token value
- * with name 'Bearer'.
- * 
- * @author majorb
- *
+ * Exception to represent a HTTP 500 error from a remote service.
  */
-public class AuthorizationToken {
-    
-    private String type;
-    private String credentials;
-    
-    // Tokens are currently scoped by the domains in which
-    // cadc and canfar services run.  This will likely be
-    // replaced with higher level scoping mechanism.
-    private List<String> domains;
-    
-    // Token scope goes here where introduced
-    // private URI scope
-    
-    /**
-     * Contructor.
-     * @param type The type of the token. (eg, Bearer)
-     * @param credentials The token credentials.
-     */
-    public AuthorizationToken(String type, String credentials, List<String> domains) {
-        if (type == null) {
-            throw new IllegalArgumentException("type required");
-        }
-        if (credentials == null) {
-            throw new IllegalArgumentException("credentials required");
-        }
-        if (domains == null) {
-            throw new IllegalArgumentException("domains required");
-        }
-        this.type = type;
-        this.credentials = credentials;
-        this.domains = domains;
+public class RemoteServiceException extends RuntimeException {
+
+    public RemoteServiceException(String message) {
+        super(message);
     }
-    
-    /**
-     * Type getter.
-     * @return The type.
-     */
-    public String getType() {
-        return type;
-    }
-    
-    /**
-     * Credentials getter.
-     * @return The credentials.
-     */
-    public String getCredentials() {
-        return credentials;
-    }
-    
-    /**
-     * Domains getter.
-     * @return The domains.
-     */
-    public List<String> getDomains() {
-        return domains;
-    }
-    
-    /**
-     * String output.
-     */
-    @Override
-    public String toString() {
-        return "AuthorizationToken[type=[" + type + "],domains=" + domains + "]";
+
+    public RemoteServiceException(String message, Throwable cause) {
+        super(message, cause);
     }
 
 }
