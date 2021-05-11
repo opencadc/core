@@ -822,7 +822,7 @@ public abstract class HttpTransfer implements Runnable {
                 throw new ExpectationFailedException(responseBody);
 
             case HttpURLConnection.HTTP_INTERNAL_ERROR:
-                throw new RuntimeException(responseBody);
+                throw new RemoteServiceException(responseBody);
                 
             case HttpURLConnection.HTTP_UNAVAILABLE:
                 throw new TransientException(responseBody);
