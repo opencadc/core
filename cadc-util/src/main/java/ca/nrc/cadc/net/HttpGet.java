@@ -239,7 +239,7 @@ public class HttpGet extends HttpTransfer {
             conn.setRequestMethod("GET");
         }
 
-        setRequestSSOCookie(conn);
+        setRequestAuthHeaders(conn);
         if (conn instanceof HttpsURLConnection) {
             HttpsURLConnection sslConn = (HttpsURLConnection) conn;
             initHTTPS(sslConn);

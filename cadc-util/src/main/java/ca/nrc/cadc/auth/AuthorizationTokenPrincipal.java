@@ -1,10 +1,9 @@
-
 /*
  ************************************************************************
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2018.                            (c) 2018.
+ *  (c) 2021.                            (c) 2021.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -63,45 +62,74 @@
  *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
  *                                       <http://www.gnu.org/licenses/>.
  *
- *
  ************************************************************************
  */
 
-package ca.nrc.cadc.auth.encoding;
+package ca.nrc.cadc.auth;
 
-import ca.nrc.cadc.auth.InvalidSignedTokenException;
-import ca.nrc.cadc.util.Base64;
+import java.security.Principal;
 
-import java.io.UnsupportedEncodingException;
+/**
+ * This represents the incoming, un-validated token extracted from the
+ * Authorization HTTP Header.  The validate() method of an AuthenticatorImpl
+ * must validate this token and turn it into an AuthorizationToken object
+ * in the public credentials of the subject.
+ * 
+ * @author majorb
+ *
+ */
+public class AuthorizationTokenPrincipal implements Principal {
 
+    private final String headerKey;
+    private final String headerValue;
 
-public class TokenEncoderDecoder {
-    public byte[] decode(final String value, final TokenEncoding tokenEncoding)
-        throws InvalidSignedTokenException {
-        switch (tokenEncoding) {
-            case BASE64: {
-                try {
-                    return Base64.decode(value);
-                } catch (IllegalArgumentException e) {
-                    throw new InvalidSignedTokenException("failed to decode token", e);
-                }
-            }
-
-            default: {
-                throw new InvalidSignedTokenException(String.format("Unsupported encoding '%s'", tokenEncoding));
-            }
-        }
+    /**
+     * AuthorizationTokenPrincipal constructor.
+     * 
+     * @param headerKey The header used
+     * @param headerValue The value of the header
+     *     (including any challenge types, such as 'Bearer')
+     */
+    public AuthorizationTokenPrincipal(String headerKey, String headerValue) {
+        this.headerKey = headerKey;
+        this.headerValue = headerValue;
+    }
+    
+    /**
+     * Header key getter.
+     * @return headerKey
+     */
+    public String getHeaderKey() {
+        return headerKey;
+    }
+    
+    /**
+     * Header value getter.
+     * @return headerValue
+     */
+    public String getHeaderValue() {
+        return headerValue;
     }
 
-    public char[] encode(final byte[] bytes, final TokenEncoding tokenEncoding) throws UnsupportedEncodingException {
-        switch (tokenEncoding) {
-            case BASE64: {
-                return Base64.encode(bytes);
-            }
-
-            default: {
-                throw new UnsupportedEncodingException(String.format("Unsupported encoding '%s'", tokenEncoding));
-            }
-        }
+    /**
+     * Principal name is the header value;
+     * @return headerValue;
+     */
+    @Override
+    public String getName() {
+        return headerValue;
     }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (o == null) {
+            return false;
+        }
+        if (!(o instanceof AuthorizationTokenPrincipal)) {
+            return false;
+        }
+        AuthorizationTokenPrincipal p = ((AuthorizationTokenPrincipal) o);
+        return p.headerKey.equals(this.headerKey) && p.headerValue.equals(this.headerValue);
+    }
+    
 }

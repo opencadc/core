@@ -69,14 +69,23 @@
 
 package ca.nrc.cadc.net;
 
+import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.auth.AuthorizationToken;
+import ca.nrc.cadc.auth.AuthorizationTokenPrincipal;
+import ca.nrc.cadc.auth.BearerTokenPrincipal;
+import ca.nrc.cadc.auth.SignedToken;
+import ca.nrc.cadc.auth.HttpPrincipal;
 import ca.nrc.cadc.auth.SSOCookieCredential;
 import ca.nrc.cadc.util.Log4jInit;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.util.Arrays;
 import java.util.Date;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -86,6 +95,7 @@ import org.junit.Test;
 
 import javax.security.auth.Subject;
 import java.net.URL;
+import java.security.InvalidKeyException;
 import java.security.PrivilegedAction;
 import java.util.TreeMap;
 
@@ -251,7 +261,7 @@ public class HttpTransferTest {
     }
 
     @Test
-    public void setRequestSSOCookie() throws Exception {
+    public void setRequestAuthHeaders() throws Exception {
         final URL testURL = new URL("http://www.fr.host.com/my/path/to/file.txt");
         final HttpTransfer testSubject = new HttpTransfer(testURL, false) {
             @Override
@@ -264,19 +274,23 @@ public class HttpTransferTest {
         };
 
         final Subject subject = new Subject();
-        // Make expiry date 48 hours in future
-        Date cookieExpiry = new Date();
-        cookieExpiry = new Date(cookieExpiry.getTime() + (48 * 3600 * 1000));
+        Date expiry = new Date(new Date().getTime() + 48 * 3600 * 1000);
+        
+        AuthorizationToken authToken = new AuthorizationToken("Bearer", "123", Arrays.asList("en.host.com", "fr.host.com"));
+        subject.getPublicCredentials().add(authToken);
+        
         subject.getPublicCredentials().add(
-                new SSOCookieCredential("VALUE_1", "en.host.com", cookieExpiry));
+                new SSOCookieCredential("VALUE_1", "en.host.com", expiry));
         subject.getPublicCredentials().add(
-                new SSOCookieCredential("VALUE_2", "fr.host.com", cookieExpiry));
+                new SSOCookieCredential("VALUE_2", "fr.host.com", expiry));
 
         final HttpURLConnection mockConnection
                 = EasyMock.createMock(HttpURLConnection.class);
 
-        EasyMock.expect(mockConnection.getURL()).andReturn(testURL).atLeastOnce();
+        EasyMock.expect(mockConnection.getURL()).andReturn(testURL).anyTimes();
 
+        mockConnection.setRequestProperty(AuthenticationUtil.AUTHORIZATION_HEADER, "Bearer 123");
+        EasyMock.expectLastCall().once();
         mockConnection.setRequestProperty("Cookie", "CADC_SSO=\"VALUE_2\"");
         EasyMock.expectLastCall().once();
 
@@ -285,7 +299,7 @@ public class HttpTransferTest {
         Subject.doAs(subject, new PrivilegedAction<Object>() {
             @Override
             public Object run() {
-                testSubject.setRequestSSOCookie(mockConnection);
+                testSubject.setRequestAuthHeaders(mockConnection);
                 return null;
             }
         });

@@ -22,8 +22,8 @@ jobs:
     - name: build and test cadc-quality
       run: cd cadc-quality && ../gradlew --info clean build javadoc checkstyleMain install
       
-    - name: build and test cadc-log
-      run: cd cadc-log && ../gradlew --info clean build javadoc checkstyleMain install
+    - name: build and test cadc-util
+      run: cd cadc-util && ../gradlew --info clean build javadoc checkstyleMain install
       
     - name: build and test cadc-log
       run: cd cadc-log && ../gradlew --info clean build javadoc checkstyleMain install

@@ -250,7 +250,7 @@ public class HttpUpload extends HttpTransfer {
             conn.setDoOutput(true);
         
             setRequestHeaders(conn);
-            setRequestSSOCookie(conn);
+            setRequestAuthHeaders(conn);
             if (conn instanceof HttpsURLConnection) {
                 HttpsURLConnection sslConn = (HttpsURLConnection) conn;
                 initHTTPS(sslConn);

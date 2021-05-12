@@ -69,6 +69,8 @@
 
 package ca.nrc.cadc.net;
 
+import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.auth.AuthorizationToken;
 import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.auth.SSLUtil;
 import ca.nrc.cadc.auth.SSOCookieCredential;
@@ -82,6 +84,7 @@ import ca.nrc.cadc.util.CaseInsensitiveStringComparator;
 import ca.nrc.cadc.util.FileMetadata;
 import ca.nrc.cadc.util.HexUtil;
 import ca.nrc.cadc.util.StringUtil;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -105,9 +108,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
 import javax.security.auth.Subject;
+
 import org.apache.log4j.Logger;
 
 /**
@@ -1111,12 +1116,31 @@ public abstract class HttpTransfer implements Runnable {
         }
     }
 
-    protected void setRequestSSOCookie(HttpURLConnection conn) {
+    protected void setRequestAuthHeaders(HttpURLConnection conn) {
         AccessControlContext acc = AccessController.getContext();
         Subject subj = Subject.getSubject(acc);
         if (subj != null) {
-            Set<SSOCookieCredential> cookieCreds = subj
-                    .getPublicCredentials(SSOCookieCredential.class);
+            
+            // tokens
+            Set<AuthorizationToken> tokens = subj.getPublicCredentials(AuthorizationToken.class);
+            if (tokens != null && !tokens.isEmpty()) {
+                for (AuthorizationToken next : tokens) {
+                    // tokens currently scope by domain
+                    log.debug("Evaluating token: " + next);
+                    for (String domain : next.getDomains()) {
+                        if (conn.getURL().getHost().endsWith(domain)) {
+                            log.debug("Setting " + AuthenticationUtil.AUTHORIZATION_HEADER + " header for: " + next);
+                            conn.setRequestProperty(
+                                AuthenticationUtil.AUTHORIZATION_HEADER,
+                                next.getType() + " " + next.getCredentials());
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            // cookies
+            Set<SSOCookieCredential> cookieCreds = subj.getPublicCredentials(SSOCookieCredential.class);
             if ((cookieCreds != null) && (cookieCreds.size() > 0)) {
                 // grab the first cookie that matches the domain
                 boolean found = false;

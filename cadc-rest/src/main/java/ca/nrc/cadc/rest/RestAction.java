@@ -304,10 +304,6 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
             doAction();
 
             logInfo.setSuccess(true);
-        } catch (NotAuthenticatedException ex) {
-            logInfo.setSuccess(true);
-            logInfo.setMessage(ex.getMessage());
-            handleException(ex, 401, ex.getMessage(), false, false);
         } catch (AccessControlException ex) {
             logInfo.setSuccess(true);
             logInfo.setMessage(ex.getMessage());

@@ -78,12 +78,61 @@ package ca.nrc.cadc.auth;
  */
 public class NotAuthenticatedException extends SecurityException {
     
+    private String challenge;
+    private AuthError authError;
+    
+    /**
+     * These error types come from the OAuth2 specification.
+     */
+    public enum AuthError {
+        INVALID_REQUEST("invalid_request"), 
+        INVALID_TOKEN("invalid_token"), 
+        INSUFFICIENT_SCOPE("insufficient_scope"), 
+        ; 
+        
+        private final String value;
+        
+        AuthError(String value) {
+            this.value = value;
+        }
+            
+        public String getValue() {
+            return value;
+        }
+    }
+    
     public NotAuthenticatedException(String message) {
         super(message);
     }
 
     public NotAuthenticatedException(String message, Throwable cause) {
         super(message, cause);
+    }
+    
+    public NotAuthenticatedException(String challenge, AuthError authError, String errorDescription) {
+        super(errorDescription);
+        if (authError == null) {
+            throw new IllegalArgumentException("authError cannot be null");
+        }
+        this.challenge = challenge;
+        this.authError = authError;
+    }
+    
+    public NotAuthenticatedException(String challenge, AuthError authError, String errorDescription, Throwable cause) {
+        super(errorDescription, cause);
+        if (authError == null) {
+            throw new IllegalArgumentException("authError cannot be null");
+        }
+        this.challenge = challenge;
+        this.authError = authError;
+    }
+    
+    public String getChallenge() {
+        return challenge;
+    }
+    
+    public AuthError getAuthError() {
+        return authError;
     }
 
 }

@@ -85,27 +85,21 @@ import java.security.InvalidKeyException;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Date;
-
 import java.util.HashSet;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
+
 import javax.security.auth.x500.X500Principal;
 
 import org.apache.log4j.Logger;
 
 /**
- * Class that captures the information required to perform delegation (i.e.
- * accessing resources on user's behalf). The required fields are: - the user
- * that delegates - the expirty time - scope of delegation
- * 
- * <p>This class can serialize and de-serialize the information into a String
- * token. Optionally, it can sign the serialized token and verify when one is
- * received.
+ * Class that uses public/private key signing to create and parse tokens containing
+ * information relevant to the user and context of the token.
  */
-public class DelegationToken implements Serializable {
-    private static final Logger log = Logger.getLogger(DelegationToken.class);
+public class SignedToken implements Serializable {
+    private static final Logger log = Logger.getLogger(SignedToken.class);
 
     private static final long serialVersionUID = 20180321000000L;
 
@@ -127,12 +121,6 @@ public class DelegationToken implements Serializable {
     public static final String FIELD_DELIM = "&";
     public static final String VALUE_DELIM = "=";
 
-    public static class ScopeValidator {
-        public void verifyScope(URI scope, String requestURI) throws InvalidDelegationTokenException {
-            throw new InvalidDelegationTokenException("default: invalid scope");
-        }
-    }
-
     /**
      * Constructor.
      *
@@ -141,7 +129,7 @@ public class DelegationToken implements Serializable {
      *                   - optional
      * @param expiryTime - the expiry date of this token (UTC)
      */
-    public DelegationToken(HttpPrincipal user, URI scope, Date expiryTime, List<String> domains) {
+    public SignedToken(HttpPrincipal user, URI scope, Date expiryTime, List<String> domains) {
         // Validation of parameter means using this() to call
         // other constructor isn't possible.
         if (user == null) {
@@ -168,7 +156,7 @@ public class DelegationToken implements Serializable {
      * @param expiryTime - the expiry date of this token (UTC)
      * @param domains    - list of domains that this token could be used for
      */
-    public DelegationToken(Set<Principal> principals, URI scope, Date expiryTime, List<String> domains) {
+    public SignedToken(Set<Principal> principals, URI scope, Date expiryTime, List<String> domains) {
         if (principals == null || principals.size() == 0) {
             throw new IllegalArgumentException("Identity principals required (ie http, x500, cadc internal)");
         }
@@ -192,7 +180,7 @@ public class DelegationToken implements Serializable {
      * @throws IOException         Any IO Errors.
      * @throws InvalidKeyException If the signature cannot be completed.
      */
-    public static String format(DelegationToken token) throws InvalidKeyException, IOException {
+    public static String format(SignedToken token) throws InvalidKeyException, IOException {
         return format(token, TokenEncoding.BASE64);
     }
 
@@ -205,7 +193,7 @@ public class DelegationToken implements Serializable {
      * @throws IOException         Any IO Errors.
      * @throws InvalidKeyException If the signature cannot be completed.
      */
-    public static String format(final DelegationToken token, final TokenEncoding tokenEncoding)
+    public static String format(final SignedToken token, final TokenEncoding tokenEncoding)
             throws InvalidKeyException, IOException {
         StringBuilder sb = getContent(token);
 
@@ -228,7 +216,7 @@ public class DelegationToken implements Serializable {
     }
 
     // the formatted content without the signature
-    private static StringBuilder getContent(DelegationToken token) {
+    private static StringBuilder getContent(SignedToken token) {
         StringBuilder sb = new StringBuilder();
 
         sb.append(EXPIRY_LABEL).append(VALUE_DELIM);
@@ -279,39 +267,25 @@ public class DelegationToken implements Serializable {
     }
 
     /**
-     * Parse the given text into a DelegationToken object.
-     *
-     * @param text       The token string.
-     * @param requestURI The HTTP Request URI
-     * @return DelegationToken instance. Never null.
-     * @throws InvalidDelegationTokenException If the given token cannot be parsed.
-     */
-    public static DelegationToken parse(String text, String requestURI) throws InvalidDelegationTokenException {
-        return parse(text, requestURI, null);
-    }
-
-    /**
      * Builds a DelegationToken from a text string
      *
      * @param text       Token to parse
-     * @param requestURI The HTTP Request URI
-     * @param sv         ScopeValidator instance.
      * @return corresponding DelegationToken
-     * @throws InvalidDelegationTokenException If the given token cannot be parsed.
+     * @throws InvalidSignedTokenException If the given token cannot be parsed.
      */
-    public static DelegationToken parse(String text, String requestURI, ScopeValidator sv)
-            throws InvalidDelegationTokenException {
-
-        if (text.startsWith(DelegationToken.EXPIRY_LABEL)) {
+    public static SignedToken parse(String text)
+            throws InvalidSignedTokenException {
+        log.debug("parsing token: " + text);
+        if (text.startsWith(SignedToken.EXPIRY_LABEL)) {
             final String[] fields = text.split(FIELD_DELIM);
-            return parse(fields, text, requestURI, sv);
+            return parse(fields, text);
         } else {
-            return parseEncoded(URI.create(text), requestURI, sv);
+            return parseEncoded(URI.create(text));
         }
     }
 
-    private static DelegationToken parse(String[] fields, String cookieText, String requestURI, ScopeValidator sv)
-            throws InvalidDelegationTokenException {
+    private static SignedToken parse(String[] fields, String cookieText)
+            throws InvalidSignedTokenException {
         String userid = null;
         Set<Principal> principalSet = new HashSet<>();
         String proxyUser = null;
@@ -360,92 +334,63 @@ public class DelegationToken implements Serializable {
             }
 
         } catch (NumberFormatException ex) {
-            throw new InvalidDelegationTokenException("invalid numeric field", ex);
+            throw new InvalidSignedTokenException("invalid numeric field", ex);
         } catch (URISyntaxException ex) {
-            throw new InvalidDelegationTokenException("invalid scope URI", ex);
+            throw new InvalidSignedTokenException("invalid scope URI", ex);
         }
 
         if (signature == null) {
-            throw new InvalidDelegationTokenException("missing signature");
+            throw new InvalidSignedTokenException("missing signature");
         }
 
         // validate expiry
         if (expirytime == null) {
-            throw new InvalidDelegationTokenException("missing expirytime");
+            throw new InvalidSignedTokenException("missing expirytime");
         }
         Date now = new Date();
 
         if (now.getTime() > expirytime.getTime()) {
-            throw new InvalidDelegationTokenException("expired");
-        }
-
-        // validate scope
-        if (scope != null) {
-            if (sv == null) { // not supplied
-                sv = getScopeValidator();
-            }
-            sv.verifyScope(scope, requestURI);
+            throw new InvalidSignedTokenException("expired");
         }
 
         validateSignature(signature, cookieText);
 
-        return new DelegationToken(principalSet, scope, expirytime, domains);
+        return new SignedToken(principalSet, scope, expirytime, domains);
     }
 
-    private static DelegationToken parseEncoded(final URI encodedURI, final String requestURI,
-            final ScopeValidator scopeValidator) throws InvalidDelegationTokenException {
+    private static SignedToken parseEncoded(final URI encodedURI) throws InvalidSignedTokenException {
 
         if (!StringUtil.hasLength(encodedURI.getScheme())) {
-            throw new InvalidDelegationTokenException("Wrong format for encoded token.");
+            throw new InvalidSignedTokenException("Wrong format for encoded token.");
         } else {
             final TokenEncoding tokenEncoding = TokenEncoding.valueOf(encodedURI.getScheme().toUpperCase());
             final byte[] decodedBytes = TOKEN_ENCODER_DECODER.decode(encodedURI.getSchemeSpecificPart(), tokenEncoding);
             final String decodedString = new String(decodedBytes);
 
-            return parse(decodedString.split(FIELD_DELIM), decodedString, requestURI, scopeValidator);
+            return parse(decodedString.split(FIELD_DELIM), decodedString);
         }
     }
 
     private static void validateSignature(final String signatureString, final String text)
-            throws InvalidDelegationTokenException {
+            throws InvalidSignedTokenException {
         // validate signature
         try {
             final byte[] signature = Base64.decode(signatureString);
             RsaSignatureVerifier su = new RsaSignatureVerifier();
-            String signatureSplitter = FIELD_DELIM + DelegationToken.SIGNATURE_LABEL + "=";
+            String signatureSplitter = FIELD_DELIM + SignedToken.SIGNATURE_LABEL + "=";
             String[] cookieNSignature = text.split(signatureSplitter);
             log.debug("string to be verified" + cookieNSignature[0]);
             boolean valid = su.verify(new ByteArrayInputStream(cookieNSignature[0].getBytes()), signature);
 
             if (!valid) {
                 log.error("invalid signature: " + new String(signature));
-                throw new InvalidDelegationTokenException("cannot verify signature");
+                throw new InvalidSignedTokenException("cannot verify signature");
             }
 
         } catch (Exception ex) {
             log.debug("failed to verify DelegationToken signature", ex);
-            throw new InvalidDelegationTokenException("cannot verify signature", ex);
+            throw new InvalidSignedTokenException("cannot verify signature", ex);
         }
-    }
-
-    private static ScopeValidator getScopeValidator() {
-        try {
-            String fname = DelegationToken.class.getSimpleName() + ".properties";
-            String pname = DelegationToken.class.getName() + ".scopeValidator";
-            Properties props = new Properties();
-            props.load(DelegationToken.class.getClassLoader().getResource(fname).openStream());
-            String cname = props.getProperty(pname);
-            log.debug(fname + ": " + pname + " = " + cname);
-            Class c = Class.forName(cname);
-            ScopeValidator ret = (ScopeValidator) c.newInstance();
-            log.debug("created: " + ret.getClass().getName());
-            return ret;
-        } catch (Exception ignore) {
-            log.debug("failed to load custom ScopeValidator", ignore);
-        }
-
-        // default
-        return new ScopeValidator();
     }
 
     // user is wrong name

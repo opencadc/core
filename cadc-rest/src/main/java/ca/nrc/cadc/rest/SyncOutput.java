@@ -136,7 +136,7 @@ public class SyncOutput {
     }
 
     /**
-     * Set HTTP header.
+     * Set (or replace) an HTTP header.
      *
      * @param key HTTP header name
      * @param value HTTP header value
@@ -153,6 +153,26 @@ public class SyncOutput {
         } else {
             this.response.setHeader(key, value.toString());
         }
+    }
+    
+    /**
+     * Add an HTTP header.
+     *
+     * @param key HTTP header name
+     * @param value HTTP header value
+     */
+    public void addHeader(String key, Object value) {
+        if (outputStream != null) {
+            IllegalStateException e = new IllegalStateException();
+            log.warn("OutputStream already open, not setting header: " + key + " to: " + value, e);
+            return;
+        }
+
+        if (value == null) {
+            throw new IllegalStateException("Cannot add a null value to a header");
+        }
+
+        response.addHeader(key, value.toString());
     }
 
     /**

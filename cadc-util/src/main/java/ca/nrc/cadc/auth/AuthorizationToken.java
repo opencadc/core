@@ -1,10 +1,9 @@
-
 /*
  ************************************************************************
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2018.                            (c) 2018.
+ *  (c) 2021.                            (c) 2021.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -63,45 +62,83 @@
  *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
  *                                       <http://www.gnu.org/licenses/>.
  *
- *
  ************************************************************************
  */
 
-package ca.nrc.cadc.auth.encoding;
+package ca.nrc.cadc.auth;
 
-import ca.nrc.cadc.auth.InvalidSignedTokenException;
-import ca.nrc.cadc.util.Base64;
+import java.util.List;
 
-import java.io.UnsupportedEncodingException;
-
-
-public class TokenEncoderDecoder {
-    public byte[] decode(final String value, final TokenEncoding tokenEncoding)
-        throws InvalidSignedTokenException {
-        switch (tokenEncoding) {
-            case BASE64: {
-                try {
-                    return Base64.decode(value);
-                } catch (IllegalArgumentException e) {
-                    throw new InvalidSignedTokenException("failed to decode token", e);
-                }
-            }
-
-            default: {
-                throw new InvalidSignedTokenException(String.format("Unsupported encoding '%s'", tokenEncoding));
-            }
+/**
+ * Class representing an authorization token.  For example, an opaque OAuth2 token value
+ * with name 'Bearer'.
+ * 
+ * @author majorb
+ *
+ */
+public class AuthorizationToken {
+    
+    private String type;
+    private String credentials;
+    
+    // Tokens are currently scoped by the domains in which
+    // cadc and canfar services run.  This will likely be
+    // replaced with higher level scoping mechanism.
+    private List<String> domains;
+    
+    // Token scope goes here where introduced
+    // private URI scope
+    
+    /**
+     * Contructor.
+     * @param type The type of the token. (eg, Bearer)
+     * @param credentials The token credentials.
+     */
+    public AuthorizationToken(String type, String credentials, List<String> domains) {
+        if (type == null) {
+            throw new IllegalArgumentException("type required");
         }
+        if (credentials == null) {
+            throw new IllegalArgumentException("credentials required");
+        }
+        if (domains == null) {
+            throw new IllegalArgumentException("domains required");
+        }
+        this.type = type;
+        this.credentials = credentials;
+        this.domains = domains;
+    }
+    
+    /**
+     * Type getter.
+     * @return The type.
+     */
+    public String getType() {
+        return type;
+    }
+    
+    /**
+     * Credentials getter.
+     * @return The credentials.
+     */
+    public String getCredentials() {
+        return credentials;
+    }
+    
+    /**
+     * Domains getter.
+     * @return The domains.
+     */
+    public List<String> getDomains() {
+        return domains;
+    }
+    
+    /**
+     * String output.
+     */
+    @Override
+    public String toString() {
+        return "AuthorizationToken[type=[" + type + "],domains=" + domains + "]";
     }
 
-    public char[] encode(final byte[] bytes, final TokenEncoding tokenEncoding) throws UnsupportedEncodingException {
-        switch (tokenEncoding) {
-            case BASE64: {
-                return Base64.encode(bytes);
-            }
-
-            default: {
-                throw new UnsupportedEncodingException(String.format("Unsupported encoding '%s'", tokenEncoding));
-            }
-        }
-    }
 }

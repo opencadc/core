@@ -134,7 +134,7 @@ public class SSOCookieManagerTest
     {
         final HttpPrincipal userPrincipal = new HttpPrincipal("CADCtest");
         SSOCookieManager cm = new SSOCookieManager();
-        DelegationToken cookieToken = cm.parse(cm.generate(userPrincipal, null));
+        SignedToken cookieToken = cm.parse(cm.generate(userPrincipal));
         HttpPrincipal actualPrincipal = cookieToken.getUser();
 
         //Check principal
@@ -158,13 +158,11 @@ public class SSOCookieManagerTest
         UUID testUUID = UUID.randomUUID();
         testPrincipals.add(new NumericPrincipal(testUUID));
 
-        URI scope = new URI("sso:cadc+canfar");
-        String cookieValue = cm.generate(testPrincipals, scope);
+        String cookieValue = cm.generate(testPrincipals);
 
-        DelegationToken actToken = cm.parse(cookieValue);
+        SignedToken actToken = cm.parse(cookieValue);
 
         assertEquals("User id not the same", hp, actToken.getUser());
-        assertEquals("Scope not the same", scope, actToken.getScope());
         assertEquals("x509 principal not the same", xp, actToken.getPrincipalByClass(X500Principal.class));
 
         assertEquals("domain list not equal", domainList, actToken.getDomains());
@@ -181,20 +179,20 @@ public class SSOCookieManagerTest
 
         Date baseTime = new Date();
         Date cookieExpiry = new Date(baseTime.getTime() + (48 * 3600 * 1000));
-        String testCookieStringDate = DelegationToken.EXPIRY_LABEL + "=" + cookieExpiry.getTime();
+        String testCookieStringDate = SignedToken.EXPIRY_LABEL + "=" + cookieExpiry.getTime();
 
-        String testCookieStringBody ="&" + DelegationToken.USER_LABEL + "=someuser&" +
-            DelegationToken.DOMAIN_LABEL + "=" + domainList.get(0) + "&" +
-            DelegationToken.DOMAIN_LABEL + "=" + domainList.get(1) + "&" +
-            DelegationToken.DOMAIN_LABEL + "=" + domainList.get(2) + "&" +
-            DelegationToken.DOMAIN_LABEL + "=" + domainList.get(3);
+        String testCookieStringBody ="&" + SignedToken.USER_LABEL + "=someuser&" +
+            SignedToken.DOMAIN_LABEL + "=" + domainList.get(0) + "&" +
+            SignedToken.DOMAIN_LABEL + "=" + domainList.get(1) + "&" +
+            SignedToken.DOMAIN_LABEL + "=" + domainList.get(2) + "&" +
+            SignedToken.DOMAIN_LABEL + "=" + domainList.get(3);
 
         StringBuilder sb = new StringBuilder(testCookieStringDate + testCookieStringBody);
 
         //sign and add the signature field
         String toSign = sb.toString();
         sb.append("&");
-        sb.append(DelegationToken.SIGNATURE_LABEL);
+        sb.append(SignedToken.SIGNATURE_LABEL);
         sb.append("=");
         RsaSignatureGenerator su = new RsaSignatureGenerator();
         byte[] sig =
@@ -210,7 +208,7 @@ public class SSOCookieManagerTest
 
         try {
             String cookieValue = createCookieString();
-            cookieList = new SSOCookieManager().getSSOCookieCredentials(cookieValue, "www.canfar.phys.uvic.ca");
+            cookieList = new SSOCookieManager().getSSOCookieCredentials(cookieValue);
 
             // cookieList length should be same as list of expected domains
             assertEquals(cookieList.size(), domainList.size());

@@ -244,7 +244,7 @@ public class HttpPost extends HttpTransfer {
             this.thread = Thread.currentThread();
             HttpURLConnection conn = (HttpURLConnection) this.remoteURL.openConnection();
             conn.setRequestMethod("POST");
-            setRequestSSOCookie(conn);
+            setRequestAuthHeaders(conn);
             if (conn instanceof HttpsURLConnection) {
                 HttpsURLConnection sslConn = (HttpsURLConnection) conn;
                 initHTTPS(sslConn);

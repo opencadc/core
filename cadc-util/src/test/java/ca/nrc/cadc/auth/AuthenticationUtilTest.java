@@ -80,13 +80,21 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import ca.nrc.cadc.util.FileUtil;
+import ca.nrc.cadc.util.Log4jInit;
+import ca.nrc.cadc.util.RsaSignatureGenerator;
+
+import java.io.File;
+import java.net.InetAddress;
+import java.net.PasswordAuthentication;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.PrivilegedAction;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -100,14 +108,9 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import ca.nrc.cadc.util.Log4jInit;
-import java.net.InetAddress;
-import java.net.PasswordAuthentication;
-import org.junit.Assert;
 
 
 /**
@@ -470,7 +473,7 @@ public class AuthenticationUtilTest
             expect(mockRequest.getRemoteUser()).andReturn(null).atLeastOnce();
             expect(mockRequest.getCookies()).andReturn(null).atLeastOnce();
             expect(mockRequest.getHeader(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
-            expect(mockRequest.getHeader("Authorization")).andReturn(null);
+            expect(mockRequest.getHeaders("Authorization")).andReturn(Collections.emptyEnumeration());
             expect(mockRequest.getAttribute(
                     "javax.servlet.request.X509Certificate")).andReturn(null).atLeastOnce();
             
@@ -511,7 +514,7 @@ public class AuthenticationUtilTest
             expect(mockRequest.getRemoteUser()).andReturn(null).atLeastOnce();
             expect(mockRequest.getCookies()).andReturn(null).atLeastOnce();
             expect(mockRequest.getHeader(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
-            expect(mockRequest.getHeader("Authorization")).andReturn(null);
+            expect(mockRequest.getHeaders("Authorization")).andReturn(Collections.emptyEnumeration());
             expect(mockRequest.getAttribute(
                     "javax.servlet.request.X509Certificate")).andReturn(null).atLeastOnce();
             
@@ -551,7 +554,7 @@ public class AuthenticationUtilTest
             expect(mockRequest.getRemoteUser()).andReturn("foo").atLeastOnce();
             expect(mockRequest.getCookies()).andReturn(null).atLeastOnce();
             expect(mockRequest.getHeader(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
-            expect(mockRequest.getHeader("Authorization")).andReturn(null);
+            expect(mockRequest.getHeaders("Authorization")).andReturn(Collections.emptyEnumeration());
             expect(mockRequest.getAttribute(
                     "javax.servlet.request.X509Certificate")).andReturn(null).atLeastOnce();
 
@@ -587,7 +590,7 @@ public class AuthenticationUtilTest
     }
 
     @Test
-    public void testGetSubjectFromPrincipalExtractorWithCookieAndX500()
+    public void testGetSubjectFromPrincipalExtractorWithX500()
             throws Exception
     {
         final PrincipalExtractor mockPrincipalExtractor =
@@ -595,11 +598,6 @@ public class AuthenticationUtilTest
         final Set<Principal> principalSet = new HashSet<Principal>();
         final X509CertificateChain mockCertChain =
                 createMock(X509CertificateChain.class);
-
-        // this needs to be a list of mocks.
-        List<SSOCookieCredential> mockCookieCredentials = new ArrayList<>();
-        final SSOCookieCredential cookie =createMock(SSOCookieCredential.class);
-        mockCookieCredentials.add(cookie);
 
         // To overcome the empty principals.
         principalSet.add(new HttpPrincipal("USER1"));
@@ -610,13 +608,7 @@ public class AuthenticationUtilTest
         expect(mockPrincipalExtractor.getCertificateChain()).andReturn(
                 mockCertChain).once();
 
-        expect(mockPrincipalExtractor.getDelegationToken()).andReturn(
-                null).once();
-
-        expect(mockPrincipalExtractor.getSSOCookieCredentials()).andReturn(
-                mockCookieCredentials).once();
-
-        replay(mockPrincipalExtractor, mockCertChain, cookie);
+        replay(mockPrincipalExtractor, mockCertChain);
 
         final Subject s = AuthenticationUtil.getSubject(mockPrincipalExtractor);
 
@@ -625,47 +617,7 @@ public class AuthenticationUtilTest
         assertEquals("Wrong auth method.", AuthMethod.CERT,
                      authMethods.toArray(new AuthMethod[authMethods.size()])[0]);
 
-        verify(mockPrincipalExtractor, mockCertChain, cookie);
-    }
-
-    @Test
-    public void testGetSubjectFromPrincipalExtractorWithCookie()
-            throws Exception
-    {
-        final PrincipalExtractor mockPrincipalExtractor =
-                createMock(PrincipalExtractor.class);
-        final Set<Principal> principalSet = new HashSet<Principal>();
-        // this needs to be a list of mocks.
-        List<SSOCookieCredential> mockCookieCredentials = new ArrayList<>();
-        final SSOCookieCredential cookie = createMock(SSOCookieCredential.class);
-        mockCookieCredentials.add(cookie);
-
-        // To overcome the empty principals.
-        principalSet.add(new HttpPrincipal("USER1"));
-
-        expect(mockPrincipalExtractor.getPrincipals()).andReturn(
-                principalSet).once();
-
-        expect(mockPrincipalExtractor.getCertificateChain()).andReturn(
-                null).once();
-
-        expect(mockPrincipalExtractor.getDelegationToken()).andReturn(
-                null).once();
-
-        expect(mockPrincipalExtractor.getSSOCookieCredentials()).andReturn(
-                mockCookieCredentials).anyTimes();
-
-        replay(mockPrincipalExtractor, cookie);
-
-        final Subject s = AuthenticationUtil.getSubject(mockPrincipalExtractor);
-
-        final Set<AuthMethod> authMethods =
-                s.getPublicCredentials(AuthMethod.class);
-        assertEquals("Wrong auth method.", AuthMethod.COOKIE,
-                     authMethods.toArray(
-                             new AuthMethod[authMethods.size()])[0]);
-
-        verify(mockPrincipalExtractor, cookie);
+        verify(mockPrincipalExtractor, mockCertChain);
     }
 
     @Test
@@ -679,12 +631,6 @@ public class AuthenticationUtilTest
                 principalSet).once();
 
         expect(mockPrincipalExtractor.getCertificateChain()).andReturn(
-                null).once();
-
-        expect(mockPrincipalExtractor.getDelegationToken()).andReturn(
-                null).once();
-
-        expect(mockPrincipalExtractor.getSSOCookieCredentials()).andReturn(
                 null).once();
 
         replay(mockPrincipalExtractor);
@@ -832,7 +778,7 @@ public class AuthenticationUtilTest
             assertNotNull(p);
             assertTrue(p instanceof CookiePrincipal);
             CookiePrincipal cp = (CookiePrincipal) p;
-            assertEquals("AAABBB", new String(cp.getSessionId()));
+            assertEquals("AAABBB", new String(cp.getValue()));
 
             verify(mockRequest);
         }
