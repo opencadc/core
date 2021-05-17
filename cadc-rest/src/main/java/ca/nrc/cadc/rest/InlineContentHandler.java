@@ -70,7 +70,7 @@
 package ca.nrc.cadc.rest;
 
 import ca.nrc.cadc.net.ResourceNotFoundException;
-
+import ca.nrc.cadc.net.TransientException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -97,7 +97,7 @@ public interface InlineContentHandler {
      * @throws ResourceNotFoundException if the specified destination for the input content is not found
      */
     Content accept(String name, String contentType, InputStream inputStream)
-            throws InlineContentException, IOException, ResourceNotFoundException;
+            throws InlineContentException, IOException, ResourceNotFoundException, TransientException;
 
     class Content {
 
