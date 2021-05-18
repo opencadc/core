@@ -72,6 +72,7 @@ package ca.nrc.cadc.rest;
 import ca.nrc.cadc.net.DigestUtil;
 import ca.nrc.cadc.net.NetUtil;
 import ca.nrc.cadc.net.ResourceNotFoundException;
+import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.util.CaseInsensitiveStringComparator;
 
 import java.io.FilterInputStream;
@@ -208,7 +209,7 @@ public class SyncInput {
 
     /**
      * Get a URI of the Digest header. The header format is {algorithm}={base64 checksum}.
-     * Decodes the base64 checksum and returns a URI of the form {algorithm}:{checksum}.
+     * Decodes the base64 checksum and returns a URI of the form {algorithm}:{hex checksum}.
      * @return Digest URI, or null if Digest header not set.
      */
     public URI getDigest() {
@@ -279,7 +280,8 @@ public class SyncInput {
         return content.get(name);
     }
 
-    public void init() throws IOException, ResourceNotFoundException {
+    // called by RestAction
+    void init() throws IOException, ResourceNotFoundException, TransientException {
         if (request.getMethod().equals("GET")
                 || request.getMethod().equals("HEAD")
                 || request.getMethod().equals("DELETE")) {
@@ -327,7 +329,7 @@ public class SyncInput {
     }
 
     private void processMultiPart(FileItemIterator itemIterator)
-        throws FileUploadException, IOException, ResourceNotFoundException {
+        throws FileUploadException, IOException, ResourceNotFoundException, TransientException {
         while (itemIterator.hasNext()) {
             FileItemStream item = itemIterator.next();
             String name = item.getFieldName();
@@ -343,7 +345,7 @@ public class SyncInput {
     }
 
     private void processStream(String name, String contentType, InputStream inputStream)
-        throws IOException, ResourceNotFoundException {
+        throws IOException, ResourceNotFoundException, TransientException {
         if (inlineContentHandler == null) {
             log.warn("request includes inline content and InlineContentHandler is null");
             // TODO: Need to figure if we need to process the stream to completion
