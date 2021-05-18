@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2020.                            (c) 2020.
+*  (c) 2021.                            (c) 2021.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -69,7 +69,6 @@
 
 package ca.nrc.cadc.rest;
 
-import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.io.ByteLimitExceededException;
 import ca.nrc.cadc.log.WebServiceLogInfo;
 import ca.nrc.cadc.net.ExpectationFailedException;
@@ -78,7 +77,6 @@ import ca.nrc.cadc.net.PreconditionFailedException;
 import ca.nrc.cadc.net.ResourceAlreadyExistsException;
 import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.net.TransientException;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
@@ -87,9 +85,7 @@ import java.security.AccessControlException;
 import java.security.PrivilegedExceptionAction;
 import java.security.cert.CertificateException;
 import java.util.Map;
-
 import javax.servlet.ServletContext;
-
 import org.apache.log4j.Logger;
 
 /**
@@ -228,7 +224,7 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
     /**
      * Get URL to a resource in the application context.
      * 
-     * @param resource
+     * @param resource named resource inside application
      * @return URL to the resource
      * @throws MalformedURLException if resource name cannot be part of URL
      */

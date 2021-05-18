@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2020.                            (c) 2020.
+*  (c) 2021.                            (c) 2021.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -95,6 +95,7 @@ public interface InlineContentHandler {
      * @throws InlineContentException for errors storing the data.
      * @throws IOException for errors reading the InputStream.
      * @throws ResourceNotFoundException if the specified destination for the input content is not found
+     * @throws TransientException temporary failure condition/may work is retried
      */
     Content accept(String name, String contentType, InputStream inputStream)
             throws InlineContentException, IOException, ResourceNotFoundException, TransientException;
