@@ -257,7 +257,7 @@ public class WebServiceLogInfoTest {
         logInfo.setMessage("the message");
         String end = logInfo.end();
         log.info("testMaximalContentServlet: " + end);
-        expected = "\"phase\":\"end\",\"bytes\":10,\"ip\":\"192.168.0.0\",\"message\":\"the message\",\"method\":\"GET\",\"path\":\"/service_name/servlet_name/path/info?" + queryDecoded + "\",\"proxyUser\":\"the proxy\",\"runID\":\"" + runID + "\",\"success\":false,\"duration\":1234,\"user\":\"the user\"";
+        expected = "\"phase\":\"end\",\"bytes\":10,\"ip\":\"192.168.0.0\",\"message\":\"the message\",\"method\":\"GET\",\"authMethod\":\"anon\",\"path\":\"/service_name/servlet_name/path/info?" + queryDecoded + "\",\"proxyUser\":\"the proxy\",\"runID\":\"" + runID + "\",\"success\":false,\"duration\":1234,\"user\":\"the user\"";
         Assert.assertTrue("Wrong end", end.contains(expected));
         Assert.assertTrue("Wrong end", end.contains("\"service\":{\"name\":\"service_name\"}"));
 

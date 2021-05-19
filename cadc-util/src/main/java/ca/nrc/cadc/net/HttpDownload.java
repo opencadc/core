@@ -631,7 +631,7 @@ public class HttpDownload extends HttpTransfer {
                 conn.setRequestMethod("GET");
             }
 
-            setRequestSSOCookie(conn);
+            setRequestAuthHeaders(conn);
             if (conn instanceof HttpsURLConnection) {
                 HttpsURLConnection sslConn = (HttpsURLConnection) conn;
                 initHTTPS(sslConn);
@@ -687,7 +687,7 @@ public class HttpDownload extends HttpTransfer {
                 HttpURLConnection rconn = (HttpURLConnection) url.openConnection();
                 log.debug("HttpURLConnection type: " + conn.getClass().getName() + " for GET " + url);
                 rconn.setRequestMethod("GET");
-                setRequestSSOCookie(rconn);
+                setRequestAuthHeaders(rconn);
                 if (rconn instanceof HttpsURLConnection) {
                     HttpsURLConnection sslConn = (HttpsURLConnection) rconn;
                     initHTTPS(sslConn);

@@ -2,7 +2,7 @@
  ************************************************************************
  ****  C A N A D I A N   A S T R O N O M Y   D A T A   C E N T R E  *****
  *
- * (c) 2016.                            (c) 2016.
+ * (c) 2021.                            (c) 2021.
  * National Research Council            Conseil national de recherches
  * Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
  * All rights reserved                  Tous droits reserves
@@ -34,12 +34,27 @@
 
 package ca.nrc.cadc.auth;
 
-public class InvalidDelegationTokenException extends NotAuthenticatedException {
-    public InvalidDelegationTokenException(final String msg) {
+/**
+ * Thrown when a signed token fails to validate.
+ * 
+ * @author majorb
+ */
+public class InvalidSignedTokenException extends NotAuthenticatedException {
+    
+    /**
+     * Constructor.
+     * @param msg Error message.
+     */
+    public InvalidSignedTokenException(final String msg) {
         super(msg);
     }
 
-    public InvalidDelegationTokenException(final String msg, Throwable cause) {
+    /**
+     * Constructor.
+     * @param msg Error message.
+     * @param cause Error cause.
+     */
+    public InvalidSignedTokenException(final String msg, Throwable cause) {
         super(msg, cause);
     }
 }

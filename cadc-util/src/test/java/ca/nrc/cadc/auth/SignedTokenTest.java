@@ -69,12 +69,20 @@
 
 package ca.nrc.cadc.auth;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import ca.nrc.cadc.util.Base64;
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
 import ca.nrc.cadc.util.RsaSignatureGenerator;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileWriter;
 import java.net.URI;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -89,47 +97,28 @@ import java.util.UUID;
 
 import javax.security.auth.x500.X500Principal;
 
-import java.io.File;
-import java.io.FileWriter;
-
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-
-import static org.junit.Assert.*;
-
-import org.junit.Test;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 
 
-public class DelegationTokenTest {
-    private static final Logger log = Logger.getLogger(DelegationTokenTest.class);
+public class SignedTokenTest {
+    private static final Logger log = Logger.getLogger(SignedTokenTest.class);
 
     private static final char[] ILLEGAL_COOKIE_CHARACTERS = new char[] {',', ';', '\\', '"'};
 
     static {
-        Log4jInit.setLevel("ca.nrc.cadc.auth", Level.INFO);
-        Log4jInit.setLevel("ca.nrc.cadc.util", Level.INFO);
-    }
-
-    public static class TestScopeValidator extends DelegationToken.ScopeValidator {
-
-        @Override
-        public void verifyScope(URI scope, String requestURI)
-            throws InvalidDelegationTokenException {
-            if ("foo:bar".equals(scope.toASCIIString())) {
-                return; // OK
-            }
-            super.verifyScope(scope, requestURI); // test default behaviour indirectly
-        }
-
+        Log4jInit.setLevel("ca.nrc.cadc", Level.DEBUG);
     }
 
     File pubFile, privFile;
+    URI scope = URI.create("foo:bar");
 
     @Before
     public void initKeys() throws Exception {
-        File config = FileUtil.getFileFromResource("DelegationToken.properties", DelegationTokenTest.class);
+        File config = FileUtil.getFileFromResource("DelegationToken.properties", SignedTokenTest.class);
         File keysDir = config.getParentFile();
         RsaSignatureGenerator.genKeyPair(keysDir);
         privFile = new File(keysDir, RsaSignatureGenerator.PRIV_KEY_FILE_NAME);
@@ -144,13 +133,6 @@ public class DelegationTokenTest {
 
     @Test
     public void matchDecode() throws Exception {
-        // configure the test scope validator
-        final File config = FileUtil.getFileFromResource("DelegationToken.properties", DelegationTokenTest.class);
-        final FileWriter w = new FileWriter(config);
-        w.write(DelegationToken.class.getName() + ".scopeValidator = " + TestScopeValidator.class.getName());
-        w.write("\n");
-        w.flush();
-        w.close();
 
         // round trip test with signature
 
@@ -168,37 +150,36 @@ public class DelegationTokenTest {
 
         StringBuilder tokenValue = new StringBuilder();
 
-        tokenValue.append(DelegationToken.EXPIRY_LABEL);
+        tokenValue.append(SignedToken.EXPIRY_LABEL);
         tokenValue.append("=");
         tokenValue.append(expiry.getTime().getTime());
-        tokenValue.append(DelegationToken.FIELD_DELIM);
+        tokenValue.append(SignedToken.FIELD_DELIM);
         tokenValue.append(IdentityType.USERID.getValue());
         tokenValue.append("=");
         tokenValue.append(httpPrincipal.getName());
-        tokenValue.append(DelegationToken.FIELD_DELIM);
+        tokenValue.append(SignedToken.FIELD_DELIM);
         tokenValue.append("scope=");
         tokenValue.append(scope.toString());
 
         for (final String domain : domainList) {
-            tokenValue.append(DelegationToken.FIELD_DELIM).append("domain=").append(domain);
+            tokenValue.append(SignedToken.FIELD_DELIM).append("domain=").append(domain);
         }
 
         final RsaSignatureGenerator su = new RsaSignatureGenerator();
         final byte[] sig = su.sign(new ByteArrayInputStream(tokenValue.toString().getBytes()));
-        tokenValue.append(DelegationToken.FIELD_DELIM);
-        tokenValue.append(DelegationToken.SIGNATURE_LABEL);
+        tokenValue.append(SignedToken.FIELD_DELIM);
+        tokenValue.append(SignedToken.SIGNATURE_LABEL);
         tokenValue.append("=");
         tokenValue.append(new String(Base64.encode(sig)));
 
         String token = "base64:" + String.valueOf(Base64.encode(tokenValue.toString().getBytes()));
 
         log.debug("valid token: " + token);
-        DelegationToken actToken = DelegationToken.parse(token, null);
+        SignedToken actToken = SignedToken.parse(token);
 
         assertEquals("User id not the same", httpPrincipal, actToken.getUser());
         assertEquals("Expiry time not the same", expiry.getTime().getTime(),
                      actToken.getExpiryTime().getTime());
-        assertEquals("Scope not the same", scope, actToken.getScope());
         assertEquals("Domain list size not the same", domainList.size(), actToken.getDomains().size());
         assertArrayEquals("Wrong set of domains.", domainList.toArray(new String[0]),
                           actToken.getDomains().toArray(new String[0]));
@@ -206,14 +187,6 @@ public class DelegationTokenTest {
 
     @Test
     public void matches() throws Exception {
-        // configure the test scope validator
-        File config = FileUtil.getFileFromResource("DelegationToken.properties", DelegationTokenTest.class);
-        FileWriter w = new FileWriter(config);
-        w.write(DelegationToken.class.getName() + ".scopeValidator = " + TestScopeValidator.class.getName());
-        w.write("\n");
-        w.flush();
-        w.close();
-
         // round trip test with signature
 
         List<String> domainList = new ArrayList<>();
@@ -223,22 +196,19 @@ public class DelegationTokenTest {
         domainList.add("www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca");
 
         HttpPrincipal userid = new HttpPrincipal("someuser");
-        URI scope = new URI("foo:bar");
         int duration = 10; // h
         Calendar expiry = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         expiry.add(Calendar.HOUR, duration);
-        DelegationToken expToken = new DelegationToken(userid, scope, expiry.getTime(), domainList);
+        SignedToken expToken = new SignedToken(userid, scope, expiry.getTime(), domainList);
 
-        String token = DelegationToken.format(expToken);
+        String token = SignedToken.format(expToken);
         log.debug("valid token: " + token);
-        DelegationToken actToken = DelegationToken.parse(token, null);
+        SignedToken actToken = SignedToken.parse(token);
 
         assertEquals("User id not the same", expToken.getUser(),
                      actToken.getUser());
         assertEquals("Expiry time not the same", expToken.getExpiryTime(),
                      actToken.getExpiryTime());
-        assertEquals("Scope not the same", expToken.getScope(),
-                     actToken.getScope());
         assertEquals("Domain list size not the same", domainList.size(), expToken.getDomains().size());
         for (String domain : expToken.getDomains()) {
             assertTrue("Domain list content not the same", domainList.contains(domain));
@@ -247,22 +217,19 @@ public class DelegationTokenTest {
 
         // round trip test without signature and principal with proxy user
         userid = new HttpPrincipal("someuser", "someproxyuser");
-        scope = new URI("foo:bar");
         duration = 10; // h
         expiry = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         expiry.add(Calendar.HOUR, duration);
-        expToken = new DelegationToken(userid, scope, expiry.getTime(), null);
+        expToken = new SignedToken(userid, scope, expiry.getTime(), null);
 
-        token = DelegationToken.format(expToken);
+        token = SignedToken.format(expToken);
         log.debug("valid token: " + token);
-        actToken = DelegationToken.parse(token, null);
+        actToken = SignedToken.parse(token);
 
         assertEquals("User id not the same", expToken.getUser(),
                      actToken.getUser());
         assertEquals("Expiry time not the same", expToken.getExpiryTime(),
                      actToken.getExpiryTime());
-        assertEquals("Scope not the same", expToken.getScope(),
-                     actToken.getScope());
 
         // round trip test without signature and principal with proxy user
         Set<Principal> testPrincipals = new HashSet<>();
@@ -273,84 +240,64 @@ public class DelegationTokenTest {
         UUID testUUID = UUID.randomUUID();
         testPrincipals.add(new NumericPrincipal(testUUID));
 
-        scope = new URI("foo:bar");
         duration = 10; // h
         expiry = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         expiry.add(Calendar.HOUR, duration);
-        expToken = new DelegationToken(testPrincipals, scope, expiry.getTime(), null);
+        expToken = new SignedToken(testPrincipals, scope, expiry.getTime(), null);
 
-        token = DelegationToken.format(expToken);
+        token = SignedToken.format(expToken);
         log.debug("valid token: " + token);
-        actToken = DelegationToken.parse(token, null);
+        actToken = SignedToken.parse(token);
 
         assertEquals("User id not the same", expToken.getUser(),
                      actToken.getUser());
         assertEquals("Expiry time not the same", expToken.getExpiryTime(),
                      actToken.getExpiryTime());
-        assertEquals("Scope not the same", expToken.getScope(),
-                     actToken.getScope());
         assertEquals("x509 principal not the same", expToken.getPrincipalByClass(X500Principal.class),
                      actToken.getPrincipalByClass(X500Principal.class));
         assertEquals("Numeric (CADC) principal not the same", expToken.getPrincipalByClass(NumericPrincipal.class),
                      actToken.getPrincipalByClass(NumericPrincipal.class));
 
-
-        // invalid scope
-        try {
-            DelegationToken wrongScope = new DelegationToken(userid, new URI("bar:baz"), expiry.getTime(), null);
-            DelegationToken.parse(DelegationToken.format(wrongScope), null);
-            fail("Exception expected");
-        } catch (InvalidDelegationTokenException expected) {
-            log.debug("caught expected exception: " + expected);
-        }
-
         Calendar expiredDate = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         expiredDate.add(Calendar.DATE, -1);
         // parse expired token
         try {
-            expToken = new DelegationToken(userid, scope, expiredDate.getTime(), null);
-            DelegationToken.parse(DelegationToken.format(expToken), null);
+            expToken = new SignedToken(userid, null, expiredDate.getTime(), null);
+            SignedToken.parse(SignedToken.format(expToken));
             fail("Exception expected");
-        } catch (InvalidDelegationTokenException expected) {
+        } catch (InvalidSignedTokenException expected) {
             log.debug("caught expected exception: " + expected);
         }
 
         //invalidate signature field
         try {
-            expToken = new DelegationToken(userid, scope, expiry.getTime(), null);
+            expToken = new SignedToken(userid, scope, expiry.getTime(), null);
 
-            token = DelegationToken.format(expToken);
+            token = SignedToken.format(expToken);
             CharSequence subSequence = token.subSequence(10, token.length());
-            DelegationToken.parse(subSequence.toString(), null);
+            SignedToken.parse(subSequence.toString());
             fail("Exception expected");
-        } catch (InvalidDelegationTokenException expected) {
+        } catch (InvalidSignedTokenException expected) {
             log.debug("caught expected exception: " + expected);
         }
 
         // tamper with one character in the signature
         try {
-            expToken = new DelegationToken(userid, scope, expiry.getTime(), null);
+            expToken = new SignedToken(userid, scope, expiry.getTime(), null);
 
-            token = DelegationToken.format(expToken);
+            token = SignedToken.format(expToken);
             token = token.substring(0, token.length() - 1);
             token = token + "A";
 
-            DelegationToken.parse(token, null);
+            SignedToken.parse(token);
             fail("Exception expected");
-        } catch (InvalidDelegationTokenException expected) {
+        } catch (InvalidSignedTokenException expected) {
             log.debug("caught expected exception: " + expected);
         }
     }
 
     @Test
     public void validCookieValue() throws Exception {
-        // configure the test scope validator
-        File config = FileUtil.getFileFromResource("DelegationToken.properties", DelegationTokenTest.class);
-        FileWriter w = new FileWriter(config);
-        w.write(DelegationToken.class.getName() + ".scopeValidator = " + TestScopeValidator.class.getName());
-        w.write("\n");
-        w.flush();
-        w.close();
 
         final Principal httpPrincipal = new HttpPrincipal("some;user", "someproxyuser");
         final Principal x509 = new X500Principal("CN=JBP,OU=nrc-cnrc.gc.ca,O=grid,C=CA");
@@ -364,13 +311,12 @@ public class DelegationTokenTest {
         principals.add(distinguishedName);
         principals.add(x509);
 
-        final URI scope = new URI("foo:bar");
         final int duration = 10; // h
         final Calendar expiry = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         expiry.add(Calendar.HOUR, duration);
-        final DelegationToken delegationToken = new DelegationToken(principals, scope, expiry.getTime(), null);
+        final SignedToken delegationToken = new SignedToken(principals, scope, expiry.getTime(), null);
 
-        final String tokenValue = DelegationToken.format(delegationToken);
+        final String tokenValue = SignedToken.format(delegationToken);
 
         for (final char c : ILLEGAL_COOKIE_CHARACTERS) {
             assertFalse(String.format("Token %s invalid characters (%s).",
@@ -379,7 +325,7 @@ public class DelegationTokenTest {
                         tokenValue.contains(Character.toString(c)));
         }
 
-        final DelegationToken parsedDelegationToken = DelegationToken.parse(tokenValue, null);
+        final SignedToken parsedDelegationToken = SignedToken.parse(tokenValue);
         final Set<Principal> expectedPrincipals = new HashSet<>();
 
         expectedPrincipals.add(httpPrincipal);

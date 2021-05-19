@@ -75,15 +75,21 @@ import java.io.Serializable;
 import java.security.Principal;
 
 /**
- * Represents a bearer token
+ * Represents a bearer token.
+ * 
+ * @deprecated Being replaced with more general token support in AuthorizationToken
+ *     and AuthorizationTokenPrincipal
  */
-public class BearerTokenPrincipal implements Principal, Serializable {
+@Deprecated 
+public class BearerTokenPrincipal extends AuthorizationTokenPrincipal implements Principal, Serializable {
     private static final long serialVersionUID = 7L;
-    private static final String prefix = "Bearer ";
 
+    private static final String prefix = AuthenticationUtil.CHALLENGE_TYPE_BEARER + " ";
+    
     private final String token;
 
     public BearerTokenPrincipal(final String authorizationHeader) {
+        super(AuthenticationUtil.AUTHORIZATION_HEADER, authorizationHeader);
         if (!isBearerToken(authorizationHeader)) {
             throw new IllegalArgumentException("Not a bearer token");
         }
@@ -97,7 +103,11 @@ public class BearerTokenPrincipal implements Principal, Serializable {
 
     @Override
     public String toString() {
-        return "BearerTokenPrincipal[" + getName().substring(0, 8) + "]";
+        int max = 8;
+        if (token.length() < 8) {
+            max = token.length();
+        }
+        return "BearerTokenPrincipal[" + getName().substring(0, max) + "]";
     }
 
     /**
@@ -109,6 +119,7 @@ public class BearerTokenPrincipal implements Principal, Serializable {
     public String getName() {
         return token;
     }
+    
 
     @Override
     public boolean equals(Object o) {

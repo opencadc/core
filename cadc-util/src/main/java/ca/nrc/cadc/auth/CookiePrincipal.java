@@ -34,64 +34,76 @@
 
 package ca.nrc.cadc.auth;
 
-import ca.nrc.cadc.util.StringUtil;
-
 import java.io.Serializable;
 import java.security.Principal;
 
 /**
- * Represents the value of a Cookie as part of the Single Sign-On Cookie based
- * authentication.
+ * Represents the key and value of a Cookie as a principal.
+ * Interface Principal.java expects getName() to return
+ * the value (id) of the principal.  The key variable in 
+ * this class is for representing the 'name' of a cookie.
  */
 public class CookiePrincipal implements Principal, Serializable {
     private static final long serialVersionUID = 20130313151134L;
 
-    private final String sessionID;
+    private String key;
+    private String value;
 
-    public CookiePrincipal(final String sessionID) {
-        if (!StringUtil.hasText(sessionID)) {
-            throw new IllegalArgumentException("Null or emplty sessionID");
+    /**
+     * Constructor
+     * @param key The 'name' of the cookie
+     * @param value The cookie value
+     */
+    public CookiePrincipal(String key, String value) {
+        if (key == null) {
+            throw new IllegalArgumentException("key required");
         }
-
-        this.sessionID = sessionID;
-    }
-
-    @Override
-    public String toString() {
-        return getName();
+        if (value == null) {
+            throw new IllegalArgumentException("value required");
+        }
+        this.key = key;
+        this.value = value;
     }
 
     /**
-     * Returns the name of this principal.
+     * Returns the name (value) of this principal.
      *
      * @return the name of this principal.
      */
     @Override
     public String getName() {
-        return sessionID;
+
+        return key;
+    }
+    
+    /**
+     * The cookie 'name'
+     * @return The cookie 'name'
+     */
+    public String getKey() {
+        return key;
     }
 
-    public String getSessionId() {
-        return sessionID;
+    /**
+     * The cookie value
+     * @return The cookie value
+     */
+    public String getValue() {
+        return value;
     }
-
+    
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if ((o == null) || (getClass() != o.getClass())) {
+        if (o == null || !(o instanceof CookiePrincipal)) {
             return false;
         }
-
-        final CookiePrincipal that = (CookiePrincipal) o;
-
-        return sessionID.equals(that.sessionID);
+        CookiePrincipal c = (CookiePrincipal) o;
+        return c.getKey().equals(key) && c.getValue().equals(value);
     }
-
+    
     @Override
-    public int hashCode() {
-        return sessionID.hashCode();
+    public String toString() {
+        return "CookiePrincipal[" + key + "=" + value + "]";
     }
+
 }

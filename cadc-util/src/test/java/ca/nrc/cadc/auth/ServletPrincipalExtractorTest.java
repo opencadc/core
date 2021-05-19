@@ -34,23 +34,26 @@
 package ca.nrc.cadc.auth;
 
 
-import ca.nrc.cadc.util.PropertiesReader;
-import ca.nrc.cadc.util.RSASignatureGeneratorValidatorTest;
-import ca.nrc.cadc.util.RsaSignatureGenerator;
-import java.io.File;
 import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.util.ArrayList;
-import java.util.Calendar;
+import ca.nrc.cadc.util.Log4jInit;
+import ca.nrc.cadc.util.PropertiesReader;
+import ca.nrc.cadc.util.RSASignatureGeneratorValidatorTest;
+import ca.nrc.cadc.util.RsaSignatureGenerator;
 
-import java.util.List;
+import java.io.File;
+import java.util.Calendar;
+import java.util.Collections;
+
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Assert;
@@ -60,6 +63,13 @@ import org.junit.Test;
 
 public class ServletPrincipalExtractorTest
 {    
+    
+    private static Logger log = Logger.getLogger(ServletPrincipalExtractorTest.class);
+    
+    static {
+        Log4jInit.setLevel("ca.nrc.cadc.auth", Level.INFO);
+    }
+    
     File pubFile, privFile;
     
     @Before
@@ -84,11 +94,11 @@ public class ServletPrincipalExtractorTest
         try {
             System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, "build/resources/test/");
 
-            HttpPrincipal principal = new HttpPrincipal("CADCtest");
             Calendar cal = Calendar.getInstance();
             cal.add(Calendar.HOUR, 2);
-            DelegationToken dt = new DelegationToken(principal, null, cal.getTime(), null);
-            String cookieValue = DelegationToken.format(dt);
+            SignedToken dt = new SignedToken(new HttpPrincipal("CADCtest"), null, cal.getTime(), null);
+            String cookieValue = SignedToken.format(dt);
+            CookiePrincipal principal = new CookiePrincipal(SSOCookieManager.DEFAULT_SSO_COOKIE_NAME, cookieValue);
             HttpServletRequest request = createMock(HttpServletRequest.class);
             Cookie cookie = createMock(Cookie.class);
             Cookie[] cookies = {cookie};
@@ -96,14 +106,14 @@ public class ServletPrincipalExtractorTest
             expect(request.getAttribute(
                     ServletPrincipalExtractor.CERT_REQUEST_ATTRIBUTE)).andReturn(null);
             expect(request.getHeader(AuthenticationUtil.AUTH_HEADER)).andReturn(null);
-            expect(request.getHeader("Authorization")).andReturn(null);
+            expect(request.getHeaders("Authorization")).andReturn(Collections.emptyEnumeration());
             expect(request.getCookies()).andReturn(cookies);
             expect(request.getRemoteUser()).andReturn(null).times(2);
             expect(request.getServerName()).andReturn("cookiedomain").once();
             expect(cookie.getName()).
-                andReturn(SSOCookieManager.DEFAULT_SSO_COOKIE_NAME);
+                andReturn(SSOCookieManager.DEFAULT_SSO_COOKIE_NAME).anyTimes();
             expect(cookie.getValue()).andReturn(cookieValue).atLeastOnce();
-            expect(cookie.getDomain()).andReturn("cookiedomain").atLeastOnce();
+            //expect(cookie.getDomain()).andReturn("cookiedomain").atLeastOnce();
             expect(request.getHeader(ServletPrincipalExtractor.CERT_HEADER_FIELD)).andReturn(null);
             replay(request);
             replay(cookie);
@@ -113,39 +123,8 @@ public class ServletPrincipalExtractorTest
             // re-worked in the scope of making a getSSOCookieList function...
     //        assertEquals(cookieValue, ex.getSSOCookieCredential().getSsoCookieValue());
     //        assertEquals("cookiedomain", ex.getSSOCookieCredential().getDomain());
-            assertTrue(ex.getPrincipals().iterator().next() instanceof HttpPrincipal );
+            assertTrue(ex.getPrincipals().iterator().next() instanceof CookiePrincipal);
             assertEquals(principal, ex.getPrincipals().iterator().next());
-
-            // test expired cookie
-            EasyMock.reset(request);
-            EasyMock.reset(cookie);
-            cal = Calendar.getInstance();
-
-            dt = new DelegationToken(principal, null, cal.getTime(), null);
-            cookieValue = DelegationToken.format(dt);
-
-            request = createMock(HttpServletRequest.class);
-            Cookie[] cookies2 = {cookie};
-
-            expect(request.getAttribute(
-                    ServletPrincipalExtractor.CERT_REQUEST_ATTRIBUTE)).andReturn(null);
-            expect(request.getHeader(AuthenticationUtil.AUTH_HEADER)).andReturn(null);
-            expect(request.getHeader("Authorization")).andReturn(null);
-            expect(request.getCookies()).andReturn(cookies2);
-            expect(request.getRemoteUser()).andReturn(null).atLeastOnce();
-            expect(cookie.getName()).
-                andReturn(SSOCookieManager.DEFAULT_SSO_COOKIE_NAME);
-            expect(cookie.getValue()).andReturn(cookieValue).atLeastOnce();
-            expect(cookie.getDomain()).andReturn("cookiedomain").atLeastOnce();
-            expect(request.getHeader(ServletPrincipalExtractor.CERT_HEADER_FIELD)).andReturn(null);
-            replay(request);
-            replay(cookie);
-            try {
-                ex = new ServletPrincipalExtractor(request);
-                Assert.fail("Should have received NotAuthenticatedException");
-            } catch (NotAuthenticatedException e) {
-                // expected
-            }
 
         }
         finally

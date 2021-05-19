@@ -69,6 +69,8 @@
 
 package ca.nrc.cadc.log;
 
+import ca.nrc.cadc.auth.AuthMethod;
+import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.HttpPrincipal;
 import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.util.StringUtil;
@@ -96,8 +98,6 @@ public abstract class WebServiceLogInfo {
 
     private static final Logger log = Logger.getLogger(WebServiceLogInfo.class);
 
-    private static final String ANONYMOUS_USER = "anonUser";
-
     private boolean userSuccess = true;
 
     protected String serviceName;
@@ -106,6 +106,7 @@ public abstract class WebServiceLogInfo {
     protected String jobID;
     protected String message;
     protected String method;
+    protected String authMethod;
     protected String path;
     protected String proxyUser;
     protected String runID;
@@ -253,6 +254,12 @@ public abstract class WebServiceLogInfo {
      */
     public void setSubject(Subject subject) {
         this.user = getUser(subject);
+        AuthMethod amethod = AuthenticationUtil.getAuthMethod(subject);
+        if (amethod != null) {
+            this.authMethod = amethod.getValue();
+        } else {
+            this.authMethod = AuthMethod.ANON.getValue();
+        }
     }
 
     /**
@@ -315,7 +322,7 @@ public abstract class WebServiceLogInfo {
             // ignore - can't throw exceptions here
         }
 
-        return ANONYMOUS_USER;
+        return null;
     }
 
     public void setPath(String path) {

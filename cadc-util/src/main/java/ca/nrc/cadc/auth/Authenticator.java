@@ -72,22 +72,42 @@ package ca.nrc.cadc.auth;
 import javax.security.auth.Subject;
 
 /**
- * Subject modification interface.
+ * Subject validation and modification interface.
+ * validate(subject) is called before augment(subject).
  *
  * @author pdowler
  */
 public interface Authenticator {
+    
+    /**
+     * Parse and validate any principals in the subject.
+     * Some principals, such as X500Principal, do not require validation
+     * as that is done with TLS.
+     * AuthorizationTokenPrincipals must be parsed and validated.  If
+     * validation is successful, an associated AuthorizationToken must
+     * be put into the subject's public credentials.  At the end of the
+     * validate/augment calls, the principal must remain in the subject
+     * or be replaced by an HttpPrincipal with userid if available.
+     * Failed validation must result in a NotAuthenticatedException.
+     * 
+     * @param subject The subject, with principals, to validate.
+     * @return The validated subject with public credentials added.
+     * @throws NotAuthenticatedException If validation fails.
+     */
+    public Subject validate(final Subject subject) throws NotAuthenticatedException;
+    
     /**
      * Modify a Subject and return it. Implementations can modify the specified
      * Subject by adding identities (Principals) or credentials. The argument
      * subject will typically have an HttpPrinncipal if the request went through
      * HTTP authentication, or an X500principal if the user authenticated via SSL
-     * with client certficate. The typical usage is to add additional principals
+     * with client certificate. The typical usage is to add additional principals
      * with internal identity information. This could then be used in an Authorizer
      * implementation elsewhere in the application.
      *
-     * @param subject the initial subject
-     * @return the modified subject
+     * @param subject The initial subject.
+     * @return The modified subject.
      */
-    public Subject getSubject(Subject subject);
+    public Subject augment(final Subject subject);
+    
 }

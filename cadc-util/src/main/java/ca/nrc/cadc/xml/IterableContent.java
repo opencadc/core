@@ -252,7 +252,7 @@ public class IterableContent<E extends Content, T> extends Element {
         private ContentConverter<A, B> contentConverter;
         private MaxIterations maxIterations;
         private Iterator<B> iterator;
-        private B next;
+        private A next;
         private long rowCount = 0;
         private boolean maxIterationsReached = false;
         private boolean maxIterationsReachedCalled = false;
@@ -272,7 +272,15 @@ public class IterableContent<E extends Content, T> extends Element {
             next = null;
 
             if (this.iterator.hasNext()) {
-                next = this.iterator.next();
+                B nextB = this.iterator.next();
+                try {
+                    // convert the object
+                    next = contentConverter.convert(nextB);
+                } catch (Exception ex) {
+                    // assume the converter did something useful and stop iterating
+                    log.debug(contentConverter.getClass().getName() + " failed to convert", ex);
+                    return;
+                }
             }
             
             if (maxIterations != null) {
@@ -307,13 +315,11 @@ public class IterableContent<E extends Content, T> extends Element {
                 throw new NoSuchElementException();
             }
 
-            // convert the object
-            A nextContent = contentConverter.convert(next);
+            A ret = next;
 
-            // advance the iterator
             advance();
             
-            return nextContent;
+            return ret;
         }
 
         @Override

@@ -71,10 +71,10 @@ package ca.nrc.cadc.rest;
 
 import ca.nrc.cadc.auth.AuthMethod;
 import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.auth.HttpPrincipal;
 import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.log.ServletLogInfo;
 import ca.nrc.cadc.log.WebServiceLogInfo;
-import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.reg.Standards;
 import ca.nrc.cadc.reg.client.LocalAuthority;
 import ca.nrc.cadc.reg.client.RegistryClient;
@@ -85,11 +85,12 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URL;
-import java.security.AccessControlException;
+import java.security.Principal;
 import java.security.PrivilegedActionException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import javax.security.auth.Subject;
@@ -269,6 +270,7 @@ public class RestServlet extends HttpServlet {
         WebServiceLogInfo logInfo = new ServletLogInfo(request);
         long start = System.currentTimeMillis();
         SyncOutput out = null;
+        boolean authHeadersSet = false;
         
         // failures here indicate:
         // * attempt and failure to authenticate 
@@ -300,22 +302,27 @@ public class RestServlet extends HttpServlet {
             log.info(logInfo.start());
             
             out = new SyncOutput(response);
-            setAuthenticateHeader(out);
             action.setSyncInput(in);
             action.setSyncOutput(out);
             action.setLogInfo(logInfo);
+            
+            setAuthenticateHeaders(subject, out, null, response);
+            authHeadersSet = true;
 
             doit(subject, action);
+        } catch (NotAuthenticatedException ex) {
+            logInfo.setSuccess(true);
+            logInfo.setMessage(ex.getMessage());
+            if (!authHeadersSet) {
+                setAuthenticateHeaders(null, out, ex, response);
+            }
+            handleException(out, response, ex, 401, ex.getMessage(), false);
         } catch (InstantiationException | IllegalAccessException ex) {
             // problem creating the action
             logInfo.setSuccess(false);
             String message = "[BUG] failed to instantiate " + actionClass + " cause: " + ex.getMessage();
             logInfo.setMessage(message);
             handleException(out, response, ex, 500, message, true);
-        } catch (AccessControlException | NotAuthenticatedException ex) {
-            logInfo.setSuccess(true);
-            logInfo.setMessage(ex.getMessage());
-            handleException(out, response, ex, 401, ex.getMessage(), false);
         } catch (Throwable t) {
             logInfo.setSuccess(false);
             logInfo.setMessage(t.getMessage());
@@ -413,24 +420,107 @@ public class RestServlet extends HttpServlet {
     }
     
     /**
-     * Set the WWW-Authenticate header so clients know how to obtain authentication tokens.
+     * If the user has authenticated successfully, set the X-VO-Authenticated. Use the HttpPrincipal if
+     * available, otherwise whatever is present.
+     * Otherwise set the WWW-Authenticate headers so clients know how to obtain authentication tokens.
+     * If authentication failed and a challenge was presented, add the error type and error
+     * description in the WWW-Authenticate header associated with the challenge.
      */
-    private void setAuthenticateHeader(SyncOutput out) throws IOException, ResourceNotFoundException {
-        // find the token URL
-        LocalAuthority localAuthority = new LocalAuthority();
-        URI tokenServiceURI = localAuthority.getServiceURI(Standards.SECURITY_METHOD_TOKEN.toString());
-        RegistryClient regClient = new RegistryClient();
-        URL tokenURL = regClient.getServiceURL(tokenServiceURI, Standards.SECURITY_METHOD_TOKEN, AuthMethod.ANON);
+    void setAuthenticateHeaders(Subject subject, SyncOutput out, NotAuthenticatedException ex, HttpServletResponse response) {
+
+        if (out == null) {
+            out = new SyncOutput(response);
+        }
         
-        // set a header for tokens
-        StringBuilder sb = new StringBuilder();
-        sb.append("vo-sso securitymethod=").append(Standards.SECURITY_METHOD_TOKEN.toString()).append("\n");
-        sb.append("accessURL=").append(tokenURL);
-        out.addHeader("WWW-Authenticate", sb.toString());
+        if (out.isOpen()) {
+            log.debug("SyncOutput already open, can't set auth headers");
+            return;
+        }
         
-        // set a second header for client certificates
-        sb = new StringBuilder();
-        sb.append("vo-sso securitymethod=").append(Standards.SECURITY_METHOD_CERT);
-        out.addHeader("WWW-Authenticate", sb.toString());
+        if (subject == null || AuthenticationUtil.getAuthMethodFromCredentials(subject).equals(AuthMethod.ANON)) {
+            // Not authenticated...
+            
+            log.debug("Setting " + AuthenticationUtil.AUTHENTICATE_HEADER + " header");
+            // find the token URL
+            URI loginServiceURI = getLocalServiceURI(Standards.SECURITY_METHOD_PASSWORD);
+            RegistryClient regClient = getRegistryClient();
+            URL loginURL = regClient.getServiceURL(loginServiceURI, Standards.SECURITY_METHOD_PASSWORD, AuthMethod.ANON);
+            
+            // set a header for info on how to obtain tokens with username/password over tls
+            StringBuilder sb = new StringBuilder();
+            sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA + " standard_id=\"").append(Standards.SECURITY_METHOD_PASSWORD.toString()).append("\", ");
+            sb.append("access_url=\"").append(loginURL).append("\"");
+            appendAuthenticateErrorInfo(AuthenticationUtil.CHALLENGE_TYPE_IVOA, sb, ex, false);
+            out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
+            
+            // set a header for info on how to obtain tokens with OAuth2 authorize
+            URI authorizeServiceURI = getLocalServiceURI(Standards.SECURITY_METHOD_OAUTH);
+            URL authorizeURL = regClient.getServiceURL(authorizeServiceURI, Standards.SECURITY_METHOD_OAUTH, AuthMethod.ANON);
+            sb = new StringBuilder();
+            sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA + " standard_id=\"").append(Standards.SECURITY_METHOD_OAUTH.toString()).append("\", ");
+            sb.append("access_url=\"").append(authorizeURL).append("\"");
+            appendAuthenticateErrorInfo(AuthenticationUtil.CHALLENGE_TYPE_IVOA, sb, ex, false);
+            out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
+            
+            // set a header for client certificate support
+            sb = new StringBuilder();
+            sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA + " standard_id=\"").append(Standards.SECURITY_METHOD_CERT.toASCIIString()).append("\"");
+            out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
+            
+            // set a header for oauth2 bearer tokens
+            sb = new StringBuilder();
+            sb.append(AuthenticationUtil.CHALLENGE_TYPE_BEARER);
+            appendAuthenticateErrorInfo(AuthenticationUtil.CHALLENGE_TYPE_BEARER, sb, ex, true);
+            out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
+            
+        } else {
+            // Authenticated...
+            
+            log.debug("Setting " + AuthenticationUtil.VO_AUTHENTICATED_HEADER + " header");
+            Set<HttpPrincipal> useridPrincipals = subject.getPrincipals(HttpPrincipal.class);
+            if (!useridPrincipals.isEmpty()) {
+                HttpPrincipal userid = useridPrincipals.iterator().next();
+                out.addHeader(AuthenticationUtil.VO_AUTHENTICATED_HEADER, userid.getName());
+                return;
+            }
+            Set<Principal> allPrincipals = subject.getPrincipals();
+            if (!allPrincipals.isEmpty()) {
+                Principal principal = allPrincipals.iterator().next();
+                out.addHeader(AuthenticationUtil.VO_AUTHENTICATED_HEADER, principal.getName());
+                return;
+            }
+        }
     }
+    
+    /**
+     * If applicable, append error and error_description (OAuth2 style) information to the
+     * end of a WWW-Authenticate header.
+     */
+    private void appendAuthenticateErrorInfo(String challenge, StringBuilder sb, NotAuthenticatedException ex, boolean firstAttribute) {
+        if (ex != null && ex.getChallenge() != null && ex.getAuthError() != null && ex.getChallenge().equalsIgnoreCase(challenge)) {
+            if (!firstAttribute) {
+                sb.append(",");
+            }
+            sb.append(" error=\"").append(ex.getAuthError().getValue()).append("\"");
+            if (ex.getMessage() != null) {
+                sb.append(", error_description=\"").append(ex.getMessage()).append("\"");
+            }
+        }
+    }
+    
+    /**
+     * Separated so can be overwritten by tests.
+     */
+    RegistryClient getRegistryClient() {
+        return new RegistryClient();
+    }
+    
+    /**
+     * Separated so can be overwritten by tests.
+     */
+    URI getLocalServiceURI(URI stdID) {
+        LocalAuthority localAuthority = new LocalAuthority();
+        return localAuthority.getServiceURI(stdID.toString());
+    }
+    
 }

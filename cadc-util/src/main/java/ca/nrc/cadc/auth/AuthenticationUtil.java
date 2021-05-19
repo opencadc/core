@@ -71,9 +71,12 @@ package ca.nrc.cadc.auth;
 
 import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.net.NetUtil;
+import ca.nrc.cadc.util.StringUtil;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.security.AccessControlContext;
+import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.Principal;
 import java.security.PrivateKey;
@@ -108,10 +111,22 @@ import org.apache.log4j.Logger;
  */
 public class AuthenticationUtil {
 
+    @Deprecated // Should be using standard Authorization header
     public static final String AUTH_HEADER = "X-CADC-DelegationToken";
 
     // HTTP/1.1 Authorization header as defined by RFC 7235
     public static final String AUTHORIZATION_HEADER = "Authorization";
+    
+    // HTTP/1.1 WWW-Authenticate header
+    public static final String AUTHENTICATE_HEADER = "WWW-Authenticate";
+    
+    // IVOA header to indicate successful authentication.  Value is a principal name.
+    public static final String VO_AUTHENTICATED_HEADER = "x-vo-authenticated";
+    
+    public static final String CHALLENGE_TYPE_BEARER = "Bearer";
+    public static final String CHALLENGE_TYPE_IVOA = "ivoa";
+    @Deprecated
+    public static final String TOKEN_TYPE_CADC = AUTH_HEADER;
 
     // Mandatory support list of RDN descriptors according to RFC 4512.
     private static final String[] ORDERED_RDN_KEYS = new String[] { "DC", "CN", "OU", "O", "STREET", "L", "ST", "C", "UID" };
@@ -177,7 +192,15 @@ public class AuthenticationUtil {
     public static Subject augmentSubject(Subject s) {
         final Authenticator auth = getAuthenticator();
         if (auth != null) {
-            return auth.getSubject(s);
+            return auth.augment(s);
+        }
+        return s;
+    }
+    
+    public static Subject validateSubject(Subject s) throws NotAuthenticatedException {
+        final Authenticator auth = getAuthenticator();
+        if (auth != null) {
+            return auth.validate(s);
         }
         return s;
     }
@@ -241,6 +264,16 @@ public class AuthenticationUtil {
         if (!sso.isEmpty()) {
             return AuthMethod.COOKIE;
         }
+        
+        Set delToken = subject.getPublicCredentials(SignedToken.class);
+        if (!delToken.isEmpty()) {
+            return AuthMethod.TOKEN;
+        }
+        
+        Set token = subject.getPublicCredentials(AuthorizationToken.class);
+        if (!token.isEmpty()) {
+            return AuthMethod.TOKEN;
+        }
 
         return AuthMethod.ANON;
     }
@@ -282,8 +315,6 @@ public class AuthenticationUtil {
 
         final Set<Principal> principals = principalExtractor.getPrincipals();
         final X509CertificateChain chain = principalExtractor.getCertificateChain();
-        final DelegationToken token = principalExtractor.getDelegationToken();
-        final List<SSOCookieCredential> cookieList = principalExtractor.getSSOCookieCredentials();
 
         AuthMethod am = null;
 
@@ -295,22 +326,25 @@ public class AuthenticationUtil {
         } else if (chain != null) {
             publicCred.add(chain);
             am = AuthMethod.CERT;
-        } else if (token != null) {
-            publicCred.add(token);
-            am = AuthMethod.TOKEN;
-        } else if (cookieList != null && cookieList.size() != 0) {
-            publicCred.addAll(cookieList);
-            am = AuthMethod.COOKIE;
         } else {
             for (final Object o : principals) {
                 if (o instanceof HttpPrincipal) {
                     am = AuthMethod.PASSWORD;
                     break;
                 }
+                if (o instanceof AuthorizationTokenPrincipal || o instanceof BearerTokenPrincipal) {
+                    am = AuthMethod.TOKEN;
+                    break;
+                }
+                if (o instanceof CookiePrincipal) {
+                    am = AuthMethod.COOKIE;
+                    break;
+                }
             }
         }
 
-        final Subject subject = new Subject(false, principals, publicCred, privateCred);
+        Subject subject = new Subject(false, principals, publicCred, privateCred);
+        subject = validateSubject(subject);
         setAuthMethod(subject, am);
         if (augmentSubject) {
             return augmentSubject(subject);

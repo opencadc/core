@@ -1,10 +1,9 @@
-
 /*
  ************************************************************************
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2018.                            (c) 2018.
+ *  (c) 2021.                            (c) 2021.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -63,45 +62,24 @@
  *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
  *                                       <http://www.gnu.org/licenses/>.
  *
+ *  : 5 $
  *
  ************************************************************************
  */
 
-package ca.nrc.cadc.auth.encoding;
+package ca.nrc.cadc.net;
 
-import ca.nrc.cadc.auth.InvalidSignedTokenException;
-import ca.nrc.cadc.util.Base64;
+/**
+ * Exception to represent a HTTP 500 error from a remote service.
+ */
+public class RemoteServiceException extends RuntimeException {
 
-import java.io.UnsupportedEncodingException;
-
-
-public class TokenEncoderDecoder {
-    public byte[] decode(final String value, final TokenEncoding tokenEncoding)
-        throws InvalidSignedTokenException {
-        switch (tokenEncoding) {
-            case BASE64: {
-                try {
-                    return Base64.decode(value);
-                } catch (IllegalArgumentException e) {
-                    throw new InvalidSignedTokenException("failed to decode token", e);
-                }
-            }
-
-            default: {
-                throw new InvalidSignedTokenException(String.format("Unsupported encoding '%s'", tokenEncoding));
-            }
-        }
+    public RemoteServiceException(String message) {
+        super(message);
     }
 
-    public char[] encode(final byte[] bytes, final TokenEncoding tokenEncoding) throws UnsupportedEncodingException {
-        switch (tokenEncoding) {
-            case BASE64: {
-                return Base64.encode(bytes);
-            }
-
-            default: {
-                throw new UnsupportedEncodingException(String.format("Unsupported encoding '%s'", tokenEncoding));
-            }
-        }
+    public RemoteServiceException(String message, Throwable cause) {
+        super(message, cause);
     }
+
 }

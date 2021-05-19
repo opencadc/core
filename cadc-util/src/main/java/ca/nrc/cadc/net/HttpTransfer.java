@@ -69,6 +69,8 @@
 
 package ca.nrc.cadc.net;
 
+import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.auth.AuthorizationToken;
 import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.auth.SSLUtil;
 import ca.nrc.cadc.auth.SSOCookieCredential;
@@ -82,12 +84,14 @@ import ca.nrc.cadc.util.CaseInsensitiveStringComparator;
 import ca.nrc.cadc.util.FileMetadata;
 import ca.nrc.cadc.util.HexUtil;
 import ca.nrc.cadc.util.StringUtil;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
@@ -104,9 +108,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
 import javax.security.auth.Subject;
+
 import org.apache.log4j.Logger;
 
 /**
@@ -142,6 +148,7 @@ public abstract class HttpTransfer implements Runnable {
     public static final String CONTENT_LENGTH = "Content-Length";
     public static final String CONTENT_MD5 = "Content-MD5";
     public static final String CONTENT_TYPE = "Content-Type";
+    public static final String DIGEST = "Digest";
     
     public static final String SERVICE_RETRY = "Retry-After";
 
@@ -227,16 +234,19 @@ public abstract class HttpTransfer implements Runnable {
     protected Long responseLatency;
     
     private boolean customSSLSocketFactory = false;
-    private final List<HttpRequestProperty> requestProperties = new ArrayList<HttpRequestProperty>();
+    private final List<HttpRequestProperty> requestProperties = new ArrayList<>();
     //private OutputStream requestStream;
     
-    private final Map<String,String> responseHeaders = new TreeMap<String,String>(new CaseInsensitiveStringComparator());
+    private final Map<String,String> responseHeaders = new TreeMap<>(new CaseInsensitiveStringComparator());
+    private final Map<String,List<String>> responseHeadersMulti = new TreeMap<>(new CaseInsensitiveStringComparator());
+    
     protected InputStream responseStream;
     private String contentType;
     private String contentEncoding;
     private String contentMD5;
     private long contentLength = -1;
     private Date lastModified;
+    private String digest;
     
     // error capture
     protected int maxReadFully = 32 * 1024; // read up to 32k text responses into memory
@@ -429,7 +439,15 @@ public abstract class HttpTransfer implements Runnable {
     public Date getLastModified() {
         return lastModified;
     }
-    
+
+    /**
+     * URI of the Digest HTTP header. URI is of the form: algorithm:checksum
+     * @return uri or null
+     */
+    public URI getDigest() {
+        return DigestUtil.getURI(this.digest);
+    }
+
     /**
      * Latency from start of call to first bytes of response. This could be null if some methods
      * do not or cannot track latency.
@@ -441,23 +459,42 @@ public abstract class HttpTransfer implements Runnable {
     }
     
     /**
-     * Get an HTTP header value from the response. Subclasses may provide more convenient type-safe
-     * methods to get specific standard header values.
+     * Convenience: get a single-valued HTTP header value from the response. Subclasses may provide 
+     * more convenient type-safe methods to get specific standard header values.
      * 
-     * @param key
-     * @return header value, possibly null
+     * @param key header name (not case sensitive)
+     * @return    header value, null if header not set or multi-valued
      */
     public String getResponseHeader(String key) {
         return responseHeaders.get(key);
     }
     
+    /**
+     * Get a single- or multi-valued response header from the response.
+     * 
+     * @param key header name (not case sensitive)
+     * @return    list of values for the specified header; never null
+     */
+    public List<String> getResponseHeaderValues(String key) {
+        List<String> ret = responseHeadersMulti.get(key);
+        if (ret == null) {
+            ret = new ArrayList<>(0);
+        }
+        return ret;
+    }
+    
     private void captureResponseHeaders(HttpURLConnection con) {
         responseHeaders.clear();
-        for (String key : con.getHeaderFields().keySet()) {
-            if (key != null) {
-                String value = con.getHeaderField(key);
-                if (value != null) {
-                    responseHeaders.put(key, value);
+        responseHeadersMulti.clear();
+        
+        Map<String,List<String>> hdrs = con.getHeaderFields();
+        
+        // copy single-valued headers
+        for (Map.Entry<String,List<String>> me : hdrs.entrySet()) {
+            if (me.getKey() != null) {
+                responseHeadersMulti.put(me.getKey(), me.getValue());
+                if (me.getValue().size() == 1) {
+                    responseHeaders.put(me.getKey(), me.getValue().get(0));
                 }
             }
         }
@@ -470,6 +507,7 @@ public abstract class HttpTransfer implements Runnable {
         if (lastMod > 0) {
             this.lastModified = new Date(lastMod);
         }
+        this.digest = responseHeaders.get(DIGEST);
     }
     
     /**
@@ -588,6 +626,17 @@ public abstract class HttpTransfer implements Runnable {
     }
 
     /**
+     * Set the Digest header for the given checksum URI.
+     *
+     * @param checksumURI
+     */
+    public void setDigest(URI checksumURI) {
+        String algorithm = checksumURI.getScheme();
+        String checksum = DigestUtil.base64Encode(checksumURI.getSchemeSpecificPart());
+        setRequestProperty(DIGEST, String.format("%s=%s", algorithm, checksum));
+    }
+
+    /**
      * Set single request headers. Do not set the same value twice by using this
      * method and the specific set methods (like setUserAgent, setContentType, etc) in this
      * class or subclasses.
@@ -698,7 +747,9 @@ public abstract class HttpTransfer implements Runnable {
 
         // try to get the retry delay from the response
         if (code == HttpURLConnection.HTTP_UNAVAILABLE) {
-            msg = "server busy";
+            if (!StringUtil.hasText(msg)) {
+                msg = "server busy";
+            }
             String retryAfter = responseHeaders.get(SERVICE_RETRY);
             log.debug("got " + HttpURLConnection.HTTP_UNAVAILABLE + " with " + SERVICE_RETRY + ": " + retryAfter);
             if (StringUtil.hasText(retryAfter)) {
@@ -745,7 +796,7 @@ public abstract class HttpTransfer implements Runnable {
                 }
             }
             
-            throw new TransientException(msg, dt);
+            throw new TransientException(msg.trim(), dt);
         }
     }
     
@@ -797,7 +848,7 @@ public abstract class HttpTransfer implements Runnable {
                 throw new ExpectationFailedException(responseBody);
 
             case HttpURLConnection.HTTP_INTERNAL_ERROR:
-                throw new RuntimeException(responseBody);
+                throw new RemoteServiceException(responseBody);
                 
             case HttpURLConnection.HTTP_UNAVAILABLE:
                 throw new TransientException(responseBody);
@@ -1065,12 +1116,31 @@ public abstract class HttpTransfer implements Runnable {
         }
     }
 
-    protected void setRequestSSOCookie(HttpURLConnection conn) {
+    protected void setRequestAuthHeaders(HttpURLConnection conn) {
         AccessControlContext acc = AccessController.getContext();
         Subject subj = Subject.getSubject(acc);
         if (subj != null) {
-            Set<SSOCookieCredential> cookieCreds = subj
-                    .getPublicCredentials(SSOCookieCredential.class);
+            
+            // tokens
+            Set<AuthorizationToken> tokens = subj.getPublicCredentials(AuthorizationToken.class);
+            if (tokens != null && !tokens.isEmpty()) {
+                for (AuthorizationToken next : tokens) {
+                    // tokens currently scope by domain
+                    log.debug("Evaluating token: " + next);
+                    for (String domain : next.getDomains()) {
+                        if (conn.getURL().getHost().endsWith(domain)) {
+                            log.debug("Setting " + AuthenticationUtil.AUTHORIZATION_HEADER + " header for: " + next);
+                            conn.setRequestProperty(
+                                AuthenticationUtil.AUTHORIZATION_HEADER,
+                                next.getType() + " " + next.getCredentials());
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            // cookies
+            Set<SSOCookieCredential> cookieCreds = subj.getPublicCredentials(SSOCookieCredential.class);
             if ((cookieCreds != null) && (cookieCreds.size() > 0)) {
                 // grab the first cookie that matches the domain
                 boolean found = false;

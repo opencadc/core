@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2020.                            (c) 2020.
+*  (c) 2021.                            (c) 2021.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -69,7 +69,6 @@
 
 package ca.nrc.cadc.rest;
 
-import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.io.ByteLimitExceededException;
 import ca.nrc.cadc.log.WebServiceLogInfo;
 import ca.nrc.cadc.net.ExpectationFailedException;
@@ -78,7 +77,6 @@ import ca.nrc.cadc.net.PreconditionFailedException;
 import ca.nrc.cadc.net.ResourceAlreadyExistsException;
 import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.net.TransientException;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
@@ -87,9 +85,7 @@ import java.security.AccessControlException;
 import java.security.PrivilegedExceptionAction;
 import java.security.cert.CertificateException;
 import java.util.Map;
-
 import javax.servlet.ServletContext;
-
 import org.apache.log4j.Logger;
 
 /**
@@ -193,6 +189,32 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
         }
     }
 
+
+    /**
+     * Check the service state to determine if a read should go ahead.
+     * 
+     * @throws TransientException if service is in Offline state
+     */
+    protected void checkReadable() throws TransientException {
+        if (!readable) {
+            throw new TransientException(STATE_OFFLINE_MSG, 180);
+        }
+    }
+    
+    /**
+     * Check the service state to determine if a write should go ahead.
+     * 
+     * @throws TransientException if service is in ReadOnly or in Offline state
+     */
+    protected void checkWritable() throws TransientException {
+        if (!writable) {
+            if (readable) {
+                throw new TransientException(STATE_READ_ONLY_MSG, 180);
+            }
+            throw new TransientException(STATE_OFFLINE_MSG, 180);
+        }
+    }
+
     // package for RestServlet use
     void setServletContext(ServletContext servletContext) {
         this.servletContext = servletContext;
@@ -202,7 +224,7 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
     /**
      * Get URL to a resource in the application context.
      * 
-     * @param resource
+     * @param resource named resource inside application
      * @return URL to the resource
      * @throws MalformedURLException if resource name cannot be part of URL
      */
@@ -278,11 +300,9 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
             doAction();
 
             logInfo.setSuccess(true);
-        } catch (NotAuthenticatedException ex) {
-            logInfo.setSuccess(true);
-            handleException(ex, 401, ex.getMessage(), false, false);
         } catch (AccessControlException ex) {
             logInfo.setSuccess(true);
+            logInfo.setMessage(ex.getMessage());
             handleException(ex, 403, ex.getMessage(), false, false);
         } catch (CertificateException ex) {
             handleException(ex, 403, "permission denied -- reason: invalid proxy certficate", false, true);
@@ -307,7 +327,12 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
         } catch (TransientException ex) {
             logInfo.setSuccess(true);
             syncOutput.setHeader(HttpTransfer.SERVICE_RETRY, ex.getRetryDelay());
-            handleException(ex, 503, "temporarily unavailable: " + syncInput.getPath(), true, false);
+            if (!readable || !writable) {
+                // exception due to service state: keep logs tidy
+                handleException(ex, 503, ex.getMessage(), false, false);
+            } else {
+                handleException(ex, 503, "temporarily unavailable: " + syncInput.getPath(), true, false);
+            }
         } catch (IOException ex) {
             if (ioExceptionOnInput) {
                 throw new IOException("failed to read input", ex);
