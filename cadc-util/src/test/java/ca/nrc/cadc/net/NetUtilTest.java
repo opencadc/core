@@ -224,10 +224,5 @@ public class NetUtilTest {
         Assert.assertEquals("Domain Name should be cadc.ca", "cadc.ca",
                             domainName3);
 
-        final String domainName4 =
-            NetUtil.getDomainName(new URL("http://gimli.cadc.dao.nrc.ca"));
-        Assert.assertEquals("Domain Name should be cadc.dao.nrc.ca",
-                            "cadc.dao.nrc.ca", domainName4);
-
     }
 }
