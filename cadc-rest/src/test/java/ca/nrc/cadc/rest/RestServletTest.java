@@ -104,7 +104,7 @@ public class RestServletTest {
     private static Logger log = Logger.getLogger(RestServletTest.class);
 
     static {
-        Log4jInit.setLevel("ca.nrc.cadc.rest", Level.INFO);
+        Log4jInit.setLevel("ca.nrc.cadc.rest", Level.DEBUG);
     }
 
     @Test
@@ -121,6 +121,7 @@ public class RestServletTest {
             Subject s = new Subject();
             s.getPrincipals().add(new HttpPrincipal("userid"));
             s.getPublicCredentials().add(new AuthorizationToken("type", "creds", new ArrayList<String>()));
+            s.getPublicCredentials().add(AuthMethod.PASSWORD);
             out.addHeader("x-vo-authenticated", "userid");
             runTest(s, out, null);
             
@@ -128,6 +129,7 @@ public class RestServletTest {
             s = new Subject();
             s.getPrincipals().add(new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, "some-value"));
             s.getPublicCredentials().add(new AuthorizationToken("type", "creds", new ArrayList<String>()));
+            s.getPublicCredentials().add(AuthMethod.TOKEN);
             out.addHeader("x-vo-authenticated", "some-value");
             EasyMock.expectLastCall().once();
             runTest(s, out, null);
@@ -137,6 +139,7 @@ public class RestServletTest {
             s.getPrincipals().add(new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, "some-value"));
             s.getPrincipals().add(new HttpPrincipal("userid"));
             s.getPublicCredentials().add(new AuthorizationToken("type", "creds", new ArrayList<String>()));
+            s.getPublicCredentials().add(AuthMethod.TOKEN);
             out.addHeader("x-vo-authenticated", "userid");
             EasyMock.expectLastCall().once();
             runTest(s, out, null);

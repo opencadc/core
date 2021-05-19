@@ -437,7 +437,8 @@ public class RestServlet extends HttpServlet {
             return;
         }
         
-        if (subject == null || AuthenticationUtil.getAuthMethodFromCredentials(subject).equals(AuthMethod.ANON)) {
+        AuthMethod am = AuthenticationUtil.getAuthMethod(subject);
+        if (am == null || AuthMethod.ANON.equals(am)) {
             // Not authenticated...
             
             log.debug("Setting " + AuthenticationUtil.AUTHENTICATE_HEADER + " header");
