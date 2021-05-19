@@ -152,8 +152,11 @@ public class ServletPrincipalExtractor implements PrincipalExtractor {
                 BearerTokenPrincipal bearerTokenPrincipal = new BearerTokenPrincipal(authToken);
                 principals.add(bearerTokenPrincipal);
             } else {
-                AuthorizationTokenPrincipal principal = new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, authToken);
-                principals.add(principal);
+                // don't add basic auth--done by the servlet container
+                if (!authToken.toLowerCase().startsWith(AuthenticationUtil.CHALLENGE_TYPE_BASIC.toLowerCase() + " ")) {
+                    AuthorizationTokenPrincipal principal = new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, authToken);
+                    principals.add(principal);
+                }
             }
         }
 
