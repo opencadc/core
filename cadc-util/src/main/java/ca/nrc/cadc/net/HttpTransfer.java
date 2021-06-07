@@ -843,7 +843,7 @@ public abstract class HttpTransfer implements Runnable {
         } catch (SocketTimeoutException ex) {
             int timeoutRetryDelay = DEFAULT_RETRY_DELAY;
             if (connectionTimeout > 0 || readTimeout > 0) {
-                // user specified timeouts are indicative of now responsive the client expects the
+                // user specified timeouts are indicative of how responsive the client expects the
                 // server to be...
                 timeoutRetryDelay = Math.max(connectionTimeout, readTimeout) / 1000; // ms to sec
             }
