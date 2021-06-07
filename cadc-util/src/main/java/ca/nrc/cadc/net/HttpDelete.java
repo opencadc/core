@@ -118,6 +118,7 @@ public class HttpDelete extends HttpTransfer {
         
         log.debug("connect: " + remoteURL);
         HttpURLConnection conn = (HttpURLConnection) remoteURL.openConnection();
+        super.setRequestOptions(conn);
         conn.setRequestMethod("DELETE");
         conn.setUseCaches(false);
         conn.setDoInput(true);

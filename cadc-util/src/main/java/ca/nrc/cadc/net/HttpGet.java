@@ -232,6 +232,8 @@ public class HttpGet extends HttpTransfer {
 
         // open connection
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        super.setRequestOptions(conn);
+        
         log.debug("HttpURLConnection type: " + conn.getClass().getName() + " for GET " + url);
         if (headOnly) {
             conn.setRequestMethod("HEAD");

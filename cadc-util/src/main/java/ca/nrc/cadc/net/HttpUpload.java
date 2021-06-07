@@ -244,6 +244,7 @@ public class HttpUpload extends HttpTransfer {
             fireEvent(TransferEvent.CONNECTING);
 
             HttpURLConnection conn = (HttpURLConnection) this.remoteURL.openConnection();
+            super.setRequestOptions(conn);
             conn.setRequestMethod("PUT");
             conn.setUseCaches(false);
             conn.setDoInput(true);

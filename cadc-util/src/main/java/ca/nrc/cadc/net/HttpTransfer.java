@@ -91,6 +91,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.ByteBuffer;
@@ -157,6 +158,9 @@ public abstract class HttpTransfer implements Runnable {
     // content-length, and tomcat6 fails, plus apache+tomcat seem to have some
     // limits at 8k anyway
 
+    protected int connectionTimeout = 0;
+    protected int readTimeout = 0;
+    
     public static enum RetryReason {
         /**
          * Never retry.
@@ -626,6 +630,24 @@ public abstract class HttpTransfer implements Runnable {
     }
 
     /**
+     * Set connection timeout (0 means infinite). Default: 0.
+     * 
+     * @param connectionTimeout 
+     */
+    public void setConnectionTimeout(int connectionTimeout) {
+        this.connectionTimeout = connectionTimeout;
+    }
+
+    /**
+     * Set read timeout (0 means infinite). Default: 0.
+     * 
+     * @param readTimeout 
+     */
+    public void setReadTimeout(int readTimeout) {
+        this.readTimeout = readTimeout;
+    }
+    
+    /**
      * Set the Digest header for the given checksum URI.
      *
      * @param checksumURI
@@ -730,6 +752,15 @@ public abstract class HttpTransfer implements Runnable {
     }
 
     /**
+     * Set core request options. Currently: timeouts.
+     * @param conn 
+     */
+    protected final void setRequestOptions(HttpURLConnection conn) {
+        conn.setConnectTimeout(connectionTimeout);
+        conn.setReadTimeout(readTimeout);
+    }
+    
+    /**
      *  Determine if the failure was transient according to the config options.
      * @param code status code
      * @param msg message
@@ -805,10 +836,21 @@ public abstract class HttpTransfer implements Runnable {
             ByteLimitExceededException, ExpectationFailedException, IllegalArgumentException,
             PreconditionFailedException, ResourceAlreadyExistsException, ResourceNotFoundException, 
             TransientException, IOException, InterruptedException {
-        this.responseCode = conn.getResponseCode();
-        log.debug("checkErrors: " + responseCode + " for " + url);
+        try {
+            this.responseCode = conn.getResponseCode();
+            log.debug("checkErrors: " + responseCode + " for " + url);
+            captureResponseHeaders(conn);
+        } catch (SocketTimeoutException ex) {
+            int timeoutRetryDelay = DEFAULT_RETRY_DELAY;
+            if (connectionTimeout > 0 || readTimeout > 0) {
+                // user specified timeouts are indicative of now responsive the client expects the
+                // server to be...
+                timeoutRetryDelay = Math.max(connectionTimeout, readTimeout) / 1000; // ms to sec
+            }
+            throw new TransientException("connection/read timeout: " + url, ex, timeoutRetryDelay);
+        }
         
-        captureResponseHeaders(conn);
+        
         
         if (100 <= responseCode && responseCode < 400) {
             return;

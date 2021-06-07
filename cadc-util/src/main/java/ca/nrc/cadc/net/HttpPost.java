@@ -243,6 +243,7 @@ public class HttpPost extends HttpTransfer {
         try {
             this.thread = Thread.currentThread();
             HttpURLConnection conn = (HttpURLConnection) this.remoteURL.openConnection();
+            super.setRequestOptions(conn);
             conn.setRequestMethod("POST");
             setRequestAuthHeaders(conn);
             if (conn instanceof HttpsURLConnection) {
