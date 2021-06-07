@@ -624,6 +624,7 @@ public class HttpDownload extends HttpTransfer {
         try {
             // open connection
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            super.setRequestOptions(conn);
             log.debug("HttpURLConnection type: " + conn.getClass().getName() + " for GET " + url);
             if (headOnly) {
                 conn.setRequestMethod("HEAD");
@@ -685,7 +686,8 @@ public class HttpDownload extends HttpTransfer {
             if (pkey != null) {
                 // open 2nd connection with a range request
                 HttpURLConnection rconn = (HttpURLConnection) url.openConnection();
-                log.debug("HttpURLConnection type: " + conn.getClass().getName() + " for GET " + url);
+                super.setRequestOptions(rconn);
+                log.debug("HttpURLConnection type: " + rconn.getClass().getName() + " for GET " + url);
                 rconn.setRequestMethod("GET");
                 setRequestAuthHeaders(rconn);
                 if (rconn instanceof HttpsURLConnection) {
