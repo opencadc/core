@@ -280,8 +280,17 @@ public class SyncInput {
         return content.get(name);
     }
 
+    /**
+     * Process all input. For HEAD, GET, and DELETE: process parameters. 
+     * For POST and PUT: process parameters, bare content stream, and multipart.
+     * 
+     * @throws IOException fail to read
+     * @throws ResourceNotFoundException thrown by InlineContentHandler 
+     * @throws TransientException thrown by InlineContentHandler 
+     */
     // called by RestAction
-    void init() throws IOException, ResourceNotFoundException, TransientException {
+    // called by code that uses SyncInput directly to handle multipart input: therefore public
+    public void init() throws IOException, ResourceNotFoundException, TransientException {
         if (request.getMethod().equals("GET")
                 || request.getMethod().equals("HEAD")
                 || request.getMethod().equals("DELETE")) {
