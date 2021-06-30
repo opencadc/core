@@ -82,12 +82,10 @@ public class AuthorizationToken {
     private String type;
     private String credentials;
     
-    // Tokens are currently scoped by the domains in which
-    // cadc and canfar services run.  This will likely be
-    // replaced with higher level scoping mechanism.
+    // Domain-level scope.
     private List<String> domains;
     
-    // Token scope goes here where introduced
+    // Application-level scope.
     private URI scope;
     
     /**
