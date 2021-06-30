@@ -71,6 +71,7 @@ import ca.nrc.cadc.util.Log4jInit;
 import ca.nrc.cadc.util.RsaSignatureGenerator;
 
 import java.io.File;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -140,7 +141,7 @@ public class TokenValidatorTest {
             
             // bearer tokens
             subject = new Subject();
-            token = new SignedToken(new HttpPrincipal("user"), null, expiry, domains);
+            token = new SignedToken(new HttpPrincipal("user"), URI.create("the:scope"), expiry, domains);
             value = SignedToken.format(token);
             authPrincipal = new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, "Bearer " + value);
             subject.getPrincipals().add(authPrincipal);
@@ -149,10 +150,11 @@ public class TokenValidatorTest {
             authToken = subject.getPublicCredentials(AuthorizationToken.class).iterator().next();
             Assert.assertEquals("bearer token type", AuthenticationUtil.CHALLENGE_TYPE_BEARER, authToken.getType());
             Assert.assertEquals("bearer token value", value, authToken.getCredentials());
+            Assert.assertEquals("bearer token scope", "the:scope", authToken.getScope().toString());
             
             // ivoa tokens
             subject = new Subject();
-            token = new SignedToken(new HttpPrincipal("user"), null, expiry, domains);
+            token = new SignedToken(new HttpPrincipal("user"), URI.create("the:scope"), expiry, domains);
             value = SignedToken.format(token);
             authPrincipal = new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, "ivoa " + value);
             subject.getPrincipals().add(authPrincipal);
@@ -161,6 +163,7 @@ public class TokenValidatorTest {
             authToken = subject.getPublicCredentials(AuthorizationToken.class).iterator().next();
             Assert.assertEquals("ivoa token type", AuthenticationUtil.CHALLENGE_TYPE_IVOA, authToken.getType());
             Assert.assertEquals("ivoa token value", value, authToken.getCredentials());
+            Assert.assertEquals("ivoa token scope", "the:scope", authToken.getScope().toString());
             
             // invalid bearer token
             subject = new Subject();

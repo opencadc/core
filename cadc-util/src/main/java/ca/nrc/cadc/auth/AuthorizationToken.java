@@ -67,6 +67,7 @@
 
 package ca.nrc.cadc.auth;
 
+import java.net.URI;
 import java.util.List;
 
 /**
@@ -81,13 +82,11 @@ public class AuthorizationToken {
     private String type;
     private String credentials;
     
-    // Tokens are currently scoped by the domains in which
-    // cadc and canfar services run.  This will likely be
-    // replaced with higher level scoping mechanism.
+    // Domain-level scope.
     private List<String> domains;
     
-    // Token scope goes here where introduced
-    // private URI scope
+    // Application-level scope.
+    private URI scope;
     
     /**
      * Contructor.
@@ -95,6 +94,15 @@ public class AuthorizationToken {
      * @param credentials The token credentials.
      */
     public AuthorizationToken(String type, String credentials, List<String> domains) {
+        this(type, credentials, domains, null);
+    }
+    
+    /**
+     * Contructor.
+     * @param type The type of the token. (eg, Bearer)
+     * @param credentials The token credentials.
+     */
+    public AuthorizationToken(String type, String credentials, List<String> domains, URI scope) {
         if (type == null) {
             throw new IllegalArgumentException("type required");
         }
@@ -107,6 +115,7 @@ public class AuthorizationToken {
         this.type = type;
         this.credentials = credentials;
         this.domains = domains;
+        this.scope = scope;
     }
     
     /**
@@ -134,11 +143,19 @@ public class AuthorizationToken {
     }
     
     /**
+     * Scope getter.
+     * @return The scope.
+     */
+    public URI getScope() {
+        return scope;
+    }
+    
+    /**
      * String output.
      */
     @Override
     public String toString() {
-        return "AuthorizationToken[type=[" + type + "],domains=" + domains + "]";
+        return "AuthorizationToken[type=[" + type + "],domains=" + domains + ", scope=[" + scope + "]]";
     }
 
 }
