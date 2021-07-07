@@ -72,9 +72,10 @@ package ca.nrc.cadc.date;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -135,6 +136,29 @@ public class DateUtil {
 
     public static final TimeZone LOCAL = TimeZone.getDefault();
 
+    private static final double FROM_JULIAN_DATE = 2400000.5D;
+
+    private static final String[] FITS_TIME_UNITS = new String[] {
+        "s",
+        "min",
+        "h",
+        "d",
+        "a",
+        "yr",
+        "cy"
+    };
+
+    private static final double[] FITS_TIME_MULTIPLIERS = new double[] {
+        1.0D,
+        60.0D,
+        60.0D * 60.0D,
+        60.0D * 60.0D * 24.0D,
+        365.25D * 60.0D * 60.0D * 24.0D,
+        365.25D * 60.0D * 60.0D * 24.0D,
+        100.0D * 365.25D * 60.0D * 60.0D * 24.0D
+    };
+
+
     /**
      * Create a new DateFormat object with the specified format and timezone. If the
      * format is null it defaults to ISO format (without required TZ). If the time
@@ -145,9 +169,9 @@ public class DateUtil {
      * WARNING: The underlying SimpleDateFormat instance is NOT thread safe.
      * </p>
      * 
-     * @param format
-     * @param tz
-     * @return
+     * @param format    String format
+     * @param tz        TimeZone instance (optional)
+     * @return          DateFormat instance
      */
     public static DateFormat getDateFormat(String format, TimeZone tz) {
         if (format == null) {
@@ -253,7 +277,7 @@ public class DateUtil {
      *
      * @param date the original date
      * @return a Date
-     * @throws UnsupportedOperationException
+     * @throws UnsupportedOperationException    If the given object cannot be converted into a date.
      */
     public static Date toDate(Object date) {
         if (date == null) {
@@ -283,16 +307,40 @@ public class DateUtil {
     }
 
     /**
+     * Obtain the Date from the given DMF seconds.
+     *
+     * @param dmfSeconds The DMF Seconds value.
+     * @return Date object from the dmf Seconds.
+     * @deprecated No longer used.
+     */
+    @Deprecated
+    public static Date toDate(final long dmfSeconds) {
+        return new Date((dmfSeconds * 1000L) + getDMFEpoch().getTime());
+    }
+
+    /**
      * Convert a Modified Julian Date to a date in the UTC timezone.
      *
      * @param mjd the MJD value
      * @return a Date in the UTC timezone
+     * @deprecated Use DateUtil.fromModifiedJulianDate(double)
      */
+    @Deprecated
     public static Date toDate(double mjd) {
-        final int[] ymd = slaDjcl(mjd);
+        return DateUtil.fromModifiedJulianDate(mjd);
+    }
+
+    /**
+     * Convert a Modified Julian Date to a date in the UTC timezone.
+     *
+     * @param modifiedJulianDate    The MJD value.
+     * @return  Date instance.  Never null.
+     */
+    public static Date fromModifiedJulianDate(final double modifiedJulianDate) {
+        final int[] ymd = slaDjcl(modifiedJulianDate);
 
         // fraction of a day
-        double frac = mjd - ((double) (long) mjd);
+        double frac = modifiedJulianDate - ((double) (long) modifiedJulianDate);
         int hh = (int) (frac * 24);
         // fraction of an hour
         frac = frac * 24.0 - hh;
@@ -303,7 +351,6 @@ public class DateUtil {
         // fraction of a second
         frac = frac * 60.0 - ss;
         int ms = (int) (frac * 1000);
-        // frac = frac*1000.0 - ms;
 
         Calendar cal = Calendar.getInstance(UTC);
         cal.set(Calendar.YEAR, ymd[0]);
@@ -319,19 +366,18 @@ public class DateUtil {
     }
 
     /**
-     * Obtain the Date from the given DMF seconds.
-     *
-     * @param dmfSeconds The DMF Seconds value.
-     * @return Date object from the dmf Seconds.
+     * Convert Julian to MJD.
+     * @param julianDate    The Julian date.
+     * @return  MJD double
      */
-    public static Date toDate(final long dmfSeconds) {
-        return new Date((dmfSeconds * 1000L) + getDMFEpoch().getTime());
+    public static double toModifiedJulianDate(final double julianDate) {
+        return julianDate - FROM_JULIAN_DATE;
     }
 
     /**
      * Convert a date in the UTC timezone to Modified Julian Date. Note that the
      * double datatype for MJD does not have enough digits for successful round-trip
-     * conversuion of all possible Date values (i.e. it has less that microsecond
+     * conversion of all possible Date values (i.e. it has less that microsecond
      * precision).
      *
      * @param date a date in the UTC timezone
@@ -344,8 +390,8 @@ public class DateUtil {
     /**
      * Convert a date in the specified timezone to Modified Julian Date.
      *
-     * @param date
-     * @param timezone
+     * @param date      The Date object to convert.
+     * @param timezone  The expected TimeZone.
      * @return number of days
      */
     public static double toModifiedJulianDate(Date date, TimeZone timezone) {
@@ -367,8 +413,23 @@ public class DateUtil {
         return days + seconds / 86400.0;
     }
 
+    /**
+     * Convert to seconds from the given Time Unit as specified in the FITS paper for Time Coordinate representation.
+     * @param value     The value to convert.
+     * @param unit      The unit that the value is in.
+     * @return          Double seconds.
+     */
+    public static double toSeconds(final double value, final String unit) {
+        final List<String> unitList = Arrays.asList(FITS_TIME_UNITS);
+        if (unitList.contains(unit)) {
+            return value * FITS_TIME_MULTIPLIERS[unitList.indexOf(unit)];
+        } else {
+            throw new IllegalArgumentException("Unsupported or unknown unit " + unit);
+        }
+    }
+
     /* Month lengths in days */
-    private static int[] mtab = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+    private static final int[] mtab = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
     // private static double slaCldj( int iy, int im, int id, double *djm, int *j )
     private static double slaCldj(int iy, int im, int id) {
@@ -490,7 +551,9 @@ public class DateUtil {
      * Obtain the Date object representing the DMF Epoch of January 1st, 1980.
      *
      * @return Date object.
+     * @deprecated No longer used.
      */
+    @Deprecated
     public static Date getDMFEpoch() {
         final Calendar cal = Calendar.getInstance(UTC);
         cal.set(1980, Calendar.JANUARY, 1, 0, 0, 0);
