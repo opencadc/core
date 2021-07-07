@@ -307,16 +307,40 @@ public class DateUtil {
     }
 
     /**
+     * Obtain the Date from the given DMF seconds.
+     *
+     * @param dmfSeconds The DMF Seconds value.
+     * @return Date object from the dmf Seconds.
+     * @deprecated No longer used.
+     */
+    @Deprecated
+    public static Date toDate(final long dmfSeconds) {
+        return new Date((dmfSeconds * 1000L) + getDMFEpoch().getTime());
+    }
+
+    /**
      * Convert a Modified Julian Date to a date in the UTC timezone.
      *
      * @param mjd the MJD value
      * @return a Date in the UTC timezone
+     * @deprecated Use DateUtil.fromModifiedJulianDate(double)
      */
+    @Deprecated
     public static Date toDate(double mjd) {
-        final int[] ymd = slaDjcl(mjd);
+        return DateUtil.fromModifiedJulianDate(mjd);
+    }
+
+    /**
+     * Convert a Modified Julian Date to a date in the UTC timezone.
+     *
+     * @param modifiedJulianDate    The MJD value.
+     * @return  Date instance.  Never null.
+     */
+    public static Date fromModifiedJulianDate(final double modifiedJulianDate) {
+        final int[] ymd = slaDjcl(modifiedJulianDate);
 
         // fraction of a day
-        double frac = mjd - ((double) (long) mjd);
+        double frac = modifiedJulianDate - ((double) (long) modifiedJulianDate);
         int hh = (int) (frac * 24);
         // fraction of an hour
         frac = frac * 24.0 - hh;
@@ -327,7 +351,6 @@ public class DateUtil {
         // fraction of a second
         frac = frac * 60.0 - ss;
         int ms = (int) (frac * 1000);
-        // frac = frac*1000.0 - ms;
 
         Calendar cal = Calendar.getInstance(UTC);
         cal.set(Calendar.YEAR, ymd[0]);
@@ -340,78 +363,6 @@ public class DateUtil {
         cal.set(Calendar.MILLISECOND, ms);
 
         return cal.getTime();
-    }
-
-    /**
-     * Obtain the Date from the given DMF seconds.
-     *
-     * @param dmfSeconds The DMF Seconds value.
-     * @return Date object from the dmf Seconds.
-     */
-    public static Date toDate(final long dmfSeconds) {
-        return new Date((dmfSeconds * 1000L) + getDMFEpoch().getTime());
-    }
-
-    /**
-     * Convert from the given MJD value to a Java Date object.
-     *
-     * @param modifiedJulianDate    The MJD value.
-     * @return  Date instance.  Never null.
-     */
-    public static Date fromModifiedJulianDate(final double modifiedJulianDate) {
-        // Julian day
-        final double julianDate = Math.floor(modifiedJulianDate) + FROM_JULIAN_DATE;
-
-        // Integer Julian day
-        int julianDateInt = (int) Math.floor(julianDate);
-
-        // Fractional part of day
-        final double jdf = julianDate - julianDateInt + 0.5D;
-
-        // Really the next calendar day?
-        if (jdf >= 1.0) {
-            julianDateInt++;
-        }
-
-        double fraction = modifiedJulianDate - Math.floor(modifiedJulianDate);
-        final double hours = Math.floor(fraction * 24.0D);
-
-        fraction = fraction * 24.0D - hours;
-
-        final double minutes = Math.floor(fraction * 60.0D);
-        fraction = fraction * 60.0 - minutes;
-
-        final double seconds = Math.floor(fraction * 60.0D);
-        fraction = fraction * 60.0 - seconds;
-
-        final double milliseconds = fraction * 1000.0D;
-        double l = julianDateInt + 68569.0D;
-        final double n = Math.floor((4 * l) / 146097);
-
-        l = Math.floor(l) - Math.floor((146097 * n + 3) / 4);
-
-        double year = Math.floor((4000 * (l + 1)) / 1461001);
-
-        l = l - Math.floor((1461 * year) / 4) + 31;
-        double month = Math.floor((80 * l) / 2447);
-        final double day = l - Math.floor((2447 * month) / 80);
-
-        l = Math.floor(month / 11);
-
-        month = Math.floor(month + 2 - 12 * l);
-        year = Math.floor(100 * (n - 49) + year + l);
-
-        // Verification step.  Month needs to be zero-based.
-        final Calendar calendar = Calendar.getInstance(DateUtil.UTC);
-        calendar.set(Calendar.YEAR, (int) year);
-        calendar.set(Calendar.MONTH, (int) (month - 1.0D));
-        calendar.set(Calendar.DATE, (int) day);
-        calendar.set(Calendar.HOUR_OF_DAY, (int) hours);
-        calendar.set(Calendar.MINUTE, (int) minutes);
-        calendar.set(Calendar.SECOND, (int) seconds);
-        calendar.set(Calendar.MILLISECOND, (int) milliseconds);
-
-        return calendar.getTime();
     }
 
     /**
@@ -600,7 +551,9 @@ public class DateUtil {
      * Obtain the Date object representing the DMF Epoch of January 1st, 1980.
      *
      * @return Date object.
+     * @deprecated No longer used.
      */
+    @Deprecated
     public static Date getDMFEpoch() {
         final Calendar cal = Calendar.getInstance(UTC);
         cal.set(1980, Calendar.JANUARY, 1, 0, 0, 0);
