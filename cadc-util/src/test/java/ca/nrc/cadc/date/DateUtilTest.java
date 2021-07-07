@@ -71,6 +71,7 @@ package ca.nrc.cadc.date;
 
 import ca.nrc.cadc.util.Log4jInit;
 import java.text.DateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 import org.apache.log4j.Level;
@@ -243,6 +244,73 @@ public class DateUtilTest
         {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+
+    @Test
+    public void testToModifiedJulianDateFromJulianDate()
+        throws Exception
+    {
+        try
+        {
+            Assert.assertEquals("Wrong MJD.", 58082.05234954D,
+                                DateUtil.toModifiedJulianDate(2458082.55234954D),
+                                0.00000001D);
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+            throw unexpected;
+        }
+    }
+
+    @Test
+    public void testFromModifiedJulianDateToISO8601Date()
+        throws Exception
+    {
+        try
+        {
+            final Calendar expectedCalendar = Calendar.getInstance(DateUtil.UTC);
+            expectedCalendar.set(Calendar.YEAR, 2017);
+            expectedCalendar.set(Calendar.MONTH, Calendar.NOVEMBER);
+            expectedCalendar.set(Calendar.DAY_OF_MONTH, 25);
+            expectedCalendar.set(Calendar.HOUR_OF_DAY, 1);
+            expectedCalendar.set(Calendar.MINUTE, 15);
+            expectedCalendar.set(Calendar.SECOND, 23);
+            expectedCalendar.set(Calendar.MILLISECOND, 0);
+
+            Assert.assertEquals("Wrong ISO 8601 Date.", expectedCalendar.getTime().getTime(),
+                                DateUtil.fromModifiedJulianDate(58082.05234954D).getTime());
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+            throw unexpected;
+        }
+    }
+
+    @Test
+    public void testToSeconds()
+        throws Exception
+    {
+        try
+        {
+            Assert.assertEquals("Wrong seconds count.", 86400.0D,
+                                DateUtil.toSeconds(1, "d"), 0.0D);
+
+            Assert.assertEquals("Wrong seconds count.", 9000.0D,
+                                DateUtil.toSeconds(2.5, "h"), 0.0D);
+
+            Assert.assertEquals("Wrong seconds count.", 4.883854176E8D,
+                                DateUtil.toSeconds(15.476, "yr"), 0.0D);
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+            throw unexpected;
         }
     }
 

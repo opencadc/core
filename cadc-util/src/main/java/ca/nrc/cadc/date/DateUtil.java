@@ -72,9 +72,10 @@ package ca.nrc.cadc.date;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -135,6 +136,29 @@ public class DateUtil {
 
     public static final TimeZone LOCAL = TimeZone.getDefault();
 
+    private static final double FROM_JULIAN_DATE = 2400000.5D;
+
+    private static final String[] FITS_TIME_UNITS = new String[] {
+            "s",
+            "min",
+            "h",
+            "d",
+            "a",
+            "yr",
+            "cy"
+    };
+
+    private static final double[] FITS_TIME_MULTIPLIERS = new double[] {
+            1.0D,
+            60.0D,
+            60.0D * 60.0D,
+            60.0D * 60.0D * 24.0D,
+            365.25D * 60.0D * 60.0D * 24.0D,
+            365.25D * 60.0D * 60.0D * 24.0D,
+            100.0D * 365.25D * 60.0D * 60.0D * 24.0D
+    };
+
+
     /**
      * Create a new DateFormat object with the specified format and timezone. If the
      * format is null it defaults to ISO format (without required TZ). If the time
@@ -145,9 +169,9 @@ public class DateUtil {
      * WARNING: The underlying SimpleDateFormat instance is NOT thread safe.
      * </p>
      * 
-     * @param format
-     * @param tz
-     * @return
+     * @param format    String format
+     * @param tz        TimeZone instance (optional)
+     * @return          DateFormat instance
      */
     public static DateFormat getDateFormat(String format, TimeZone tz) {
         if (format == null) {
@@ -253,7 +277,7 @@ public class DateUtil {
      *
      * @param date the original date
      * @return a Date
-     * @throws UnsupportedOperationException
+     * @throws UnsupportedOperationException    If the given object cannot be converted into a date.
      */
     public static Date toDate(Object date) {
         if (date == null) {
@@ -329,9 +353,80 @@ public class DateUtil {
     }
 
     /**
+     * Convert from the given MJD value to a Java Date object.
+     *
+     * @param modifiedJulianDate    The MJD value.
+     * @return  Date instance.  Never null.
+     */
+    public static Date fromModifiedJulianDate(final double modifiedJulianDate) {
+        // Julian day
+        final double julianDate = Math.floor(modifiedJulianDate) + FROM_JULIAN_DATE;
+
+        // Integer Julian day
+        int julianDateInt = (int) Math.floor(julianDate);
+
+        // Fractional part of day
+        final double jdf = julianDate - julianDateInt + 0.5D;
+
+        // Really the next calendar day?
+        if (jdf >= 1.0) {
+            julianDateInt++;
+        }
+
+        double fraction = modifiedJulianDate - Math.floor(modifiedJulianDate);
+        final double hours = Math.floor(fraction * 24.0D);
+
+        fraction = fraction * 24.0D - hours;
+
+        final double minutes = Math.floor(fraction * 60.0D);
+        fraction = fraction * 60.0 - minutes;
+
+        final double seconds = Math.floor(fraction * 60.0D);
+        fraction = fraction * 60.0 - seconds;
+
+        final double milliseconds = fraction * 1000.0D;
+        double l = julianDateInt + 68569.0D;
+        final double n = Math.floor((4 * l) / 146097);
+
+        l = Math.floor(l) - Math.floor((146097 * n + 3) / 4);
+
+        double year = Math.floor((4000 * (l + 1)) / 1461001);
+
+        l = l - Math.floor((1461 * year) / 4) + 31;
+        double month = Math.floor((80 * l) / 2447);
+        final double day = l - Math.floor((2447 * month) / 80);
+
+        l = Math.floor(month / 11);
+
+        month = Math.floor(month + 2 - 12 * l);
+        year = Math.floor(100 * (n - 49) + year + l);
+
+        // Verification step.  Month needs to be zero-based.
+        final Calendar calendar = Calendar.getInstance(DateUtil.UTC);
+        calendar.set(Calendar.YEAR, (int) year);
+        calendar.set(Calendar.MONTH, (int) (month - 1.0D));
+        calendar.set(Calendar.DATE, (int) day);
+        calendar.set(Calendar.HOUR_OF_DAY, (int) hours);
+        calendar.set(Calendar.MINUTE, (int) minutes);
+        calendar.set(Calendar.SECOND, (int) seconds);
+        calendar.set(Calendar.MILLISECOND, (int) milliseconds);
+
+        return calendar.getTime();
+    }
+
+    /**
+     * Convert Julian to MJD.
+     * @param julianDate    The Julian date.
+     * @return  MJD double
+     */
+    public static double toModifiedJulianDate(final double julianDate) {
+        return julianDate - FROM_JULIAN_DATE;
+    }
+
+    /**
      * Convert a date in the UTC timezone to Modified Julian Date. Note that the
      * double datatype for MJD does not have enough digits for successful round-trip
-     * conversuion of all possible Date values (i.e. it has less that microsecond
+     * conversion of all possible Date values (i.e. it has less that microsecond
      * precision).
      *
      * @param date a date in the UTC timezone
@@ -344,8 +439,8 @@ public class DateUtil {
     /**
      * Convert a date in the specified timezone to Modified Julian Date.
      *
-     * @param date
-     * @param timezone
+     * @param date      The Date object to convert.
+     * @param timezone  The expected TimeZone.
      * @return number of days
      */
     public static double toModifiedJulianDate(Date date, TimeZone timezone) {
@@ -367,8 +462,23 @@ public class DateUtil {
         return days + seconds / 86400.0;
     }
 
+    /**
+     * Convert to seconds from the given Time Unit as specified in the FITS paper for Time Coordinate representation.
+     * @param value     The value to convert.
+     * @param unit      The unit that the value is in.
+     * @return          Double seconds.
+     */
+    public static double toSeconds(final double value, final String unit) {
+        final List<String> unitList = Arrays.asList(FITS_TIME_UNITS);
+        if (unitList.contains(unit)) {
+            return value * FITS_TIME_MULTIPLIERS[unitList.indexOf(unit)];
+        } else {
+            throw new IllegalArgumentException("Unsupported or unknown unit " + unit);
+        }
+    }
+
     /* Month lengths in days */
-    private static int[] mtab = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+    private static final int[] mtab = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
     // private static double slaCldj( int iy, int im, int id, double *djm, int *j )
     private static double slaCldj(int iy, int im, int id) {
