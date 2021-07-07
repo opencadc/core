@@ -139,23 +139,23 @@ public class DateUtil {
     private static final double FROM_JULIAN_DATE = 2400000.5D;
 
     private static final String[] FITS_TIME_UNITS = new String[] {
-            "s",
-            "min",
-            "h",
-            "d",
-            "a",
-            "yr",
-            "cy"
+        "s",
+        "min",
+        "h",
+        "d",
+        "a",
+        "yr",
+        "cy"
     };
 
     private static final double[] FITS_TIME_MULTIPLIERS = new double[] {
-            1.0D,
-            60.0D,
-            60.0D * 60.0D,
-            60.0D * 60.0D * 24.0D,
-            365.25D * 60.0D * 60.0D * 24.0D,
-            365.25D * 60.0D * 60.0D * 24.0D,
-            100.0D * 365.25D * 60.0D * 60.0D * 24.0D
+        1.0D,
+        60.0D,
+        60.0D * 60.0D,
+        60.0D * 60.0D * 24.0D,
+        365.25D * 60.0D * 60.0D * 24.0D,
+        365.25D * 60.0D * 60.0D * 24.0D,
+        100.0D * 365.25D * 60.0D * 60.0D * 24.0D
     };
 
 
