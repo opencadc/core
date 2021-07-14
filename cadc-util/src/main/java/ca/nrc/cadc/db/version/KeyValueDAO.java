@@ -81,6 +81,7 @@ import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.ResultSetExtractor;
+import org.springframework.jdbc.core.RowMapper;
 
 /**
  *
@@ -127,8 +128,14 @@ public class KeyValueDAO {
         } catch (BadSqlGrammarException ex) {
             try {
                 // try simples query possible to see if table exists
-                log.debug("check exists: " + tableName);
-                jdbc.queryForInt("SELECT count(*) FROM " + tableName);
+                String sql = "SELECT count(*) from " + tableName;
+                log.debug("check exists: " + sql);
+                jdbc.queryForObject(sql, new RowMapper<Integer>() { 
+                    @Override
+                    public Integer mapRow(ResultSet rs, int i) throws SQLException {
+                        return rs.getInt(1);
+                    }
+                });
 
                 // some other kind of error
                 throw ex;
