@@ -90,6 +90,7 @@ import java.security.PrivilegedActionException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -452,37 +453,46 @@ public class RestServlet extends HttpServlet {
             // Not authenticated...
             
             log.debug("Setting " + AuthenticationUtil.AUTHENTICATE_HEADER + " header");
-            // find the token URL
-            URI loginServiceURI = getLocalServiceURI(Standards.SECURITY_METHOD_PASSWORD);
             RegistryClient regClient = getRegistryClient();
-            URL loginURL = regClient.getServiceURL(loginServiceURI, Standards.SECURITY_METHOD_PASSWORD, AuthMethod.ANON);
             
             // set a header for info on how to obtain tokens with username/password over tls
-            StringBuilder sb = new StringBuilder();
-            sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA + " standard_id=\"").append(Standards.SECURITY_METHOD_PASSWORD.toString()).append("\", ");
-            sb.append("access_url=\"").append(loginURL).append("\"");
-            appendAuthenticateErrorInfo(AuthenticationUtil.CHALLENGE_TYPE_IVOA, sb, ex, false);
-            out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
+            try {
+                URI loginServiceURI = getLocalServiceURI(Standards.SECURITY_METHOD_PASSWORD);
+                URL loginURL = regClient.getServiceURL(loginServiceURI, Standards.SECURITY_METHOD_PASSWORD, AuthMethod.ANON);
+                StringBuilder sb = new StringBuilder();
+                sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA + " standard_id=\"").append(Standards.SECURITY_METHOD_PASSWORD.toString()).append("\", ");
+                sb.append("access_url=\"").append(loginURL).append("\"");
+                appendAuthenticateErrorInfo(AuthenticationUtil.CHALLENGE_TYPE_IVOA, sb, ex, false);
+                out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
+            } catch (NoSuchElementException notSupported) {
+                log.debug("LocalAuthority -- not found: " + Standards.SECURITY_METHOD_PASSWORD, notSupported);
+            }
             
             // set a header for info on how to obtain tokens with OAuth2 authorize
-            URI authorizeServiceURI = getLocalServiceURI(Standards.SECURITY_METHOD_OAUTH);
-            URL authorizeURL = regClient.getServiceURL(authorizeServiceURI, Standards.SECURITY_METHOD_OAUTH, AuthMethod.ANON);
-            sb = new StringBuilder();
-            sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA + " standard_id=\"").append(Standards.SECURITY_METHOD_OAUTH.toString()).append("\", ");
-            sb.append("access_url=\"").append(authorizeURL).append("\"");
-            appendAuthenticateErrorInfo(AuthenticationUtil.CHALLENGE_TYPE_IVOA, sb, ex, false);
-            out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
+            try {
+                URI authorizeServiceURI = getLocalServiceURI(Standards.SECURITY_METHOD_OAUTH);
+                URL authorizeURL = regClient.getServiceURL(authorizeServiceURI, Standards.SECURITY_METHOD_OAUTH, AuthMethod.ANON);
+                StringBuilder sb = new StringBuilder();
+                sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA + " standard_id=\"").append(Standards.SECURITY_METHOD_OAUTH.toString()).append("\", ");
+                sb.append("access_url=\"").append(authorizeURL).append("\"");
+                appendAuthenticateErrorInfo(AuthenticationUtil.CHALLENGE_TYPE_IVOA, sb, ex, false);
+                out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
+                
+                // also set a header for oauth2 bearer tokens
+                sb = new StringBuilder();
+                sb.append(AuthenticationUtil.CHALLENGE_TYPE_BEARER);
+                appendAuthenticateErrorInfo(AuthenticationUtil.CHALLENGE_TYPE_BEARER, sb, ex, true);
+                out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
+            } catch (NoSuchElementException notSupported) {
+                log.debug("LocalAuthority -- not found: " + Standards.SECURITY_METHOD_OAUTH, notSupported);
+            }
             
-            // set a header for client certificate support
-            sb = new StringBuilder();
+            // TODO: mechanism to enable this rather than always set it
+            StringBuilder sb = new StringBuilder();
             sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA + " standard_id=\"").append(Standards.SECURITY_METHOD_CERT.toASCIIString()).append("\"");
             out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
             
-            // set a header for oauth2 bearer tokens
-            sb = new StringBuilder();
-            sb.append(AuthenticationUtil.CHALLENGE_TYPE_BEARER);
-            appendAuthenticateErrorInfo(AuthenticationUtil.CHALLENGE_TYPE_BEARER, sb, ex, true);
-            out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
+            
             
         } else {
             // Authenticated...

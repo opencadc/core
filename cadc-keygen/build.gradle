@@ -9,7 +9,7 @@ repositories {
     mavenLocal()
 }
 
-sourceCompatibility = 1.7
+sourceCompatibility = 1.8
 
 group = 'org.opencadc'
 
@@ -19,7 +19,7 @@ mainClassName = 'ca.nrc.cadc.keygen.Main'
 
 dependencies {
     compile 'log4j:log4j:1.2.17'
-    compile 'org.opencadc:cadc-util:[1.0.8,1.3)'
+    compile 'org.opencadc:cadc-util:[1.4,2.0)'
     
     testCompile 'junit:junit:4.13'
 }
