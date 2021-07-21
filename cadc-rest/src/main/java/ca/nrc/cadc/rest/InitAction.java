@@ -139,4 +139,10 @@ public abstract class InitAction {
      * Initialisation implemented by subclass. This method gets called once during startup/deployment.
      */
     public abstract void doInit();
+
+    /**
+     * Called during shutdown by the RestServlet destroy() method.
+     */
+    public void doShutdown() {}
+
 }
