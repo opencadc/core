@@ -165,7 +165,6 @@ public class RestServlet extends HttpServlet {
             if (initActionClass != null) {
                 initAction = initActionClass.getDeclaredConstructor().newInstance();
                 initAction.setServletContext(getServletContext());
-                initAction.setServletContext(getServletContext());
                 initAction.setAppName(appName);
                 initAction.setComponentID(componentID);
                 initAction.setInitParams(initParams);
