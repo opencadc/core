@@ -178,10 +178,12 @@ public class RestServlet extends HttpServlet {
 
     @Override
     public void destroy() {
-        try {
-            initAction.doShutdown();
-        } catch (Throwable t) {
-            log.error("Exception during shutdown: " + t.getMessage());
+        if (initAction != null) {
+            try {
+                initAction.doShutdown();
+            } catch (Throwable t) {
+                log.error("Exception during shutdown: " + t.getMessage());
+            }
         }
     }
 
