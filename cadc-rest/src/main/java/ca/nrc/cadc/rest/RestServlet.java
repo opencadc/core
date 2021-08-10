@@ -131,6 +131,7 @@ public class RestServlet extends HttpServlet {
     private Class<RestAction> deleteAction;
     private Class<RestAction> headAction;
     private final Map<String,String> initParams = new TreeMap<String,String>();
+    private InitAction initAction;
     
     protected String appName;
     protected String componentID;
@@ -160,19 +161,29 @@ public class RestServlet extends HttpServlet {
         }
         
         try {
-            Class<InitAction> initAction = loadAction(config, "init");
-            if (initAction != null) {
-                InitAction action = initAction.newInstance();
-                action.setServletContext(getServletContext());
-                action.setServletContext(getServletContext());
-                action.setAppName(appName);
-                action.setComponentID(componentID);
-                action.setInitParams(initParams);
-                action.doInit();
+            Class<InitAction> initActionClass = loadAction(config, "init");
+            if (initActionClass != null) {
+                initAction = initActionClass.getDeclaredConstructor().newInstance();
+                initAction.setServletContext(getServletContext());
+                initAction.setAppName(appName);
+                initAction.setComponentID(componentID);
+                initAction.setInitParams(initParams);
+                initAction.doInit();
             }
         } catch (Exception ex) {
             log.error("init failed", ex);
             throw new ServletException("init failed", ex);
+        }
+    }
+
+    @Override
+    public void destroy() {
+        if (initAction != null) {
+            try {
+                initAction.doShutdown();
+            } catch (Throwable t) {
+                log.error("Exception during shutdown: " + t.getMessage());
+            }
         }
     }
 
