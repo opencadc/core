@@ -311,12 +311,12 @@ public class RestServlet extends HttpServlet {
                 sb.append("/").append(in.getPath());
             }
             logInfo.setPath(sb.toString());
-            log.info(logInfo.start());
             
             out = new SyncOutput(response);
             action.setSyncInput(in);
             action.setSyncOutput(out);
             action.setLogInfo(logInfo);
+            log.info(logInfo.start());
             
             setAuthenticateHeaders(subject, out, null, response);
             authHeadersSet = true;
