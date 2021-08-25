@@ -129,10 +129,9 @@ public class RsaSignatureVerifier {
 
     
     /**
-     * Default constructor. This will look for a private key file named RsaSignaturePub.key
+     * Default constructor. This will look for a key file named RsaSignaturePub.key
      * and use it to verify.
      */
-    @Deprecated
     public RsaSignatureVerifier() {
         this(PUB_KEY_FILE_NAME);
     }
@@ -152,7 +151,7 @@ public class RsaSignatureVerifier {
     
     // ctors for use by RsaSignatureGenerator subclass
     @Deprecated
-    public RsaSignatureVerifier(String keyFilename, boolean isPrivateKeyFile) {
+    protected RsaSignatureVerifier(String keyFilename, boolean isPrivateKeyFile) {
         File keyFile = findFile(keyFilename);
         if (!isPrivateKeyFile) {
             init(keyFile);

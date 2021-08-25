@@ -103,6 +103,7 @@ public class SSOCookieManagerTest
         Log4jInit.setLevel("ca.nrc.cadc.auth", Level.INFO);
     }
     
+    File keysDir = new File("build/resources/test");
     File pubFile, privFile;
 
     List<String> domainList = new ArrayList<>();
@@ -110,15 +111,17 @@ public class SSOCookieManagerTest
     @Before
     public void initKeys() throws Exception
     {
-        String keysDir = RSASignatureGeneratorValidatorTest.getCompleteKeysDirectoryName();
-        RsaSignatureGenerator.genKeyPair(keysDir);
-        privFile = new File(keysDir, RsaSignatureGenerator.PRIV_KEY_FILE_NAME);
         pubFile = new File(keysDir, RsaSignatureGenerator.PUB_KEY_FILE_NAME);
+        privFile = new File(keysDir, RsaSignatureGenerator.PRIV_KEY_FILE_NAME);
+        int len = 1024;
+        RsaSignatureGenerator.genKeyPair(pubFile, privFile, len);
 
-        domainList.add("canfar.phys.uvic.ca");
-        domainList.add("cadc.hia.nrc.gc.ca");
-        domainList.add("ccda.iha.cnrc.gc.ca");
+        // dev domains at CADC
+        domainList.add("cadc.dao.nrc.ca");
+        domainList.add("canfar.dao.nrc.ca");
+        // prod domains at CADC
         domainList.add("cadc-ccda.hia-iha.nrc-cnrc.gc.ca");
+        domainList.add("canfar.net");
 
     }
     
@@ -145,7 +148,7 @@ public class SSOCookieManagerTest
     public void roundTrip() throws Exception
     {
         SSOCookieManager cm = new SSOCookieManager();
-        System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, "./build/resources/test");
+        System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, keysDir.getAbsolutePath());
 
         // round trip test
         Set<Principal> testPrincipals = new HashSet<>();
@@ -171,7 +174,7 @@ public class SSOCookieManagerTest
     public String createCookieString() throws InvalidKeyException, IOException {
 
         // Set properties file location.
-        System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, "./build/resources/test");
+        System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, keysDir.getAbsolutePath());
         // get the properties
         PropertiesReader propReader = new PropertiesReader(SSOCookieManager.DOMAINS_PROP_FILE);
         List<String> propertyValues = propReader.getPropertyValues("domains");
@@ -194,7 +197,7 @@ public class SSOCookieManagerTest
         sb.append("&");
         sb.append(SignedToken.SIGNATURE_LABEL);
         sb.append("=");
-        RsaSignatureGenerator su = new RsaSignatureGenerator();
+        RsaSignatureGenerator su = new RsaSignatureGenerator(privFile);
         byte[] sig =
             su.sign(new ByteArrayInputStream(toSign.getBytes()));
         sb.append(new String(Base64.encode(sig)));

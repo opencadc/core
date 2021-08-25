@@ -53,180 +53,153 @@ import org.apache.log4j.Logger;
 
 import org.junit.Test;
 
-public class RSASignatureGeneratorValidatorTest
-{
+public class RSASignatureGeneratorValidatorTest {
+
     private static final Logger log = Logger.getLogger(RSASignatureGeneratorValidatorTest.class);
-    
-    static
-    {
+
+    static {
         Log4jInit.setLevel("ca.nrc.cadc.util", Level.INFO);
+    }
+
+    File keysDir = new File("build/tmp");
+
+    @Test
+    public void testSignVerify() throws Exception {
+        final String testString = "cadcauthtest1-" + new Date();
+        
+        
+        int[] keyLengths = { 512, 1024, 2048, 4096 };
+        for (int len : keyLengths) {
+            log.info("testSignVerify: " + len);
+            File pub = new File(keysDir, "public-" + len + ".key");
+            File priv = new File(keysDir, "private-" + len + ".key");
+            RsaSignatureGenerator.genKeyPair(pub, priv, len);
+
+            // successful test
+            RsaSignatureGenerator sg = new RsaSignatureGenerator(priv);
+            RsaSignatureVerifier sv = new RsaSignatureVerifier(pub);
+            assertTrue("Signature does not work!!!!",
+                    sv.verify(new ByteArrayInputStream(testString.getBytes()),
+                            sg.sign(new ByteArrayInputStream(testString.getBytes()))));
+        }
+    }
+
+    @Test
+    public void testKeyFileNotFound() throws Exception {
+        final String testString = "cadcauthtest1-" + new Date();
+
+        File pub = new File(keysDir, "public.key");
+        File priv = new File(keysDir, "private.key");
+        int len = 1024;
+        RsaSignatureGenerator.genKeyPair(pub, priv, len);
+
+        pub.delete();
+        try {
+            RsaSignatureVerifier sv = new RsaSignatureVerifier(pub);
+            fail("Expected exception not thrown");
+        } catch (MissingResourceException ex) {
+            log.info("caught expected: " + ex);
+        }
+
+        //generator still works
+        RsaSignatureGenerator sg = new RsaSignatureGenerator(priv);
+        assertTrue("Signature does not work!!!!",
+                sg.verify(new ByteArrayInputStream(testString.getBytes()),
+                        sg.sign(new ByteArrayInputStream(testString.getBytes()))));
+
+        priv.delete();
+        try {
+            sg = new RsaSignatureGenerator(priv);
+            fail("Expected exception not thrown");
+        } catch (MissingResourceException ex) {
+            log.info("caught expected: " + ex);
+        }
+
+    }
+
+    @Test
+    public void testNoKeysInFile() throws Exception {
+        final String testString = "cadcauthtest1-" + new Date();
+
+        File pub = new File(keysDir, "public.key");
+        File priv = new File(keysDir, "private.key");
+        int len = 1024;
+        RsaSignatureGenerator.genKeyPair(pub, priv, len);
+
+        // no keys in the file
+        PrintWriter out = new PrintWriter(priv);
+        out.println("--");
+        out.close();
+        try {
+            RsaSignatureGenerator sg = new RsaSignatureGenerator(priv);
+            fail("Expected exception not thrown");
+        } catch (IllegalStateException ex) {
+            log.info("caught expected: " + ex);
+        }
+
+        out = new PrintWriter(pub);
+        out.println("--");
+        out.close();
+        try {
+            RsaSignatureVerifier sv = new RsaSignatureVerifier(pub);
+            fail("Expected exception not thrown");
+        } catch (IllegalStateException ex) {
+            log.info("caught expected: " + ex);
+        }
     }
     
     @Test
-    public void matches() throws Exception
-    {
-        String keysDirectory = getCompleteKeysDirectoryName();
-        RsaSignatureGenerator.genKeyPair(keysDirectory);
-        
-        // successful test
-        RsaSignatureGenerator sg = new RsaSignatureGenerator();
-        RsaSignatureVerifier sv = new RsaSignatureVerifier();
-        String testString = "cadcauthtest1-" + new Date();
-        assertTrue("Signature does not work!!!!", 
-                sv.verify(new ByteArrayInputStream(testString.getBytes()), 
-                sg.sign(new ByteArrayInputStream(testString.getBytes()))));
-        
-        
-        // file not found
-        File privFile = new File(keysDirectory, 
-                RsaSignatureGenerator.PRIV_KEY_FILE_NAME);
-        String privKeyFileName = privFile.getAbsolutePath();
-        
-        File pubFile = new File(keysDirectory, 
-                RsaSignatureGenerator.PUB_KEY_FILE_NAME);
-        String pubKeyFileName = pubFile.getAbsolutePath();
-        
-        
-        pubFile.delete();
-        try
-        {
-            sv = new RsaSignatureVerifier();
-            fail("Expected exception not thrown");
-        }
-        catch(MissingResourceException ignore){}
-        
-        //generator still works
-        sg = new RsaSignatureGenerator();
-        assertTrue("Signature does not work!!!!", 
-                sg.verify(new ByteArrayInputStream(testString.getBytes()), 
-                sg.sign(new ByteArrayInputStream(testString.getBytes()))));
-        
-        
-        privFile.delete();
-        try
-        {
-            sg = new RsaSignatureGenerator();
-            fail("Expected exception not thrown");
-        }
-        catch(MissingResourceException ignore){}        
+    public void testWrongKeyTypes() throws Exception {
+        final String testString = "cadcauthtest1-" + new Date();
 
+        File pub = new File(keysDir, "public.key");
+        File priv = new File(keysDir, "private.key");
+        int len = 1024;
+        RsaSignatureGenerator.genKeyPair(pub, priv, len);
         
-        // no keys in the file
-        PrintWriter out = new PrintWriter(privFile);
-        out.println("--");
-        out.close();
-        try
-        {
-            sg = new RsaSignatureGenerator();
+        try {
+            RsaSignatureVerifier sv = new RsaSignatureVerifier(priv);
             fail("Expected exception not thrown");
-        }
-        catch(IllegalStateException ignore)
-        {
-        }
-        
-        out = new PrintWriter(pubFile);
-        out.println("--");
-        out.close();
-        try
-        {
-            sv = new RsaSignatureVerifier();
-            fail("Expected exception not thrown");
-        }
-        catch(IllegalStateException ignore){}
-        
-        // file with wrong type of key
-        RsaSignatureGenerator.genKeyPair(keysDirectory);
-        File keyFile = new File(privKeyFileName);
-        keyFile.renameTo(new File(pubKeyFileName));
-        try
-        {
-            sv = new RsaSignatureVerifier();
-            fail("Expected exception not thrown");
-        }
-        catch(IllegalStateException ignore){}
-        
-        RsaSignatureGenerator.genKeyPair(keysDirectory);
-        keyFile = new File(pubKeyFileName);
-        keyFile.renameTo(new File(privKeyFileName));
-        try
-        {
-            sg = new RsaSignatureGenerator();
-            fail("Expected exception not thrown");
-        }
-        catch(IllegalStateException ignore){}
-        
-        // run against a file with two public keys
-        // generate a new public key
-        RsaSignatureGenerator.genKeyPair(keysDirectory);
-        
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance(
-                RsaSignatureGenerator.KEY_ALGORITHM);
-        kpg.initialize(1024);
-        KeyPair keyPair = kpg.genKeyPair();
-        char[] base64PubKey = Base64.encode(keyPair.getPublic().getEncoded());
-        char[] base64PrivKey = Base64.encode(keyPair.getPrivate().getEncoded());
-        PrintWriter outpub = new PrintWriter(new BufferedWriter(new FileWriter(pubFile, true)));
-        outpub.println(RsaSignatureVerifier.PUB_KEY_START);
-        outpub.println(base64PubKey);
-        outpub.println(RsaSignatureVerifier.PUB_KEY_END);
-        outpub.close();
-        sv = new RsaSignatureVerifier();
-        sg = new RsaSignatureGenerator();
-        assertEquals("Missing public key", 2, sv.getPublicKeys().size());
-        
-        assertTrue("Signature does not work!!!!", 
-                sv.verify(new ByteArrayInputStream(testString.getBytes()), 
-                sg.sign(new ByteArrayInputStream(testString.getBytes()))));
-        
-        // same as above but try to add 2 private keys
-        PrintWriter outpriv = new PrintWriter(new BufferedWriter(new FileWriter(privFile, true)));
-        outpriv.println(RsaSignatureGenerator.PRIV_KEY_START);
-        outpriv.println(base64PrivKey);
-        outpriv.println(RsaSignatureGenerator.PRIV_KEY_END);
-        outpriv.close();
-        try
-        {
-            sg = new RsaSignatureGenerator();
-            fail("Exception expected");
-        }
-        catch(IllegalStateException ignore)
-        {
-            
+        } catch (IllegalStateException ex) {
+            log.info("caught expected: " + ex);
         }
 
-        pubFile.delete();
-        privFile.delete();
+        try {
+            RsaSignatureGenerator sg = new RsaSignatureGenerator(pub);
+            fail("Expected exception not thrown");
+        } catch (IllegalStateException ex) {
+            log.info("caught expected: " + ex);
+        }
     }
-
-
-
-    /**
-     * Return the complete name of the directory where key files are to be 
-     * created so that the RsaSignature classes can find it.
-     * @return
-     */
-    public static String getCompleteKeysDirectoryName() throws Exception
-    {
-        URL classLocation = RsaSignatureGenerator.class.getResource(
-            RsaSignatureGenerator.class.getSimpleName() + ".class");
-        if (!"file".equalsIgnoreCase(classLocation.getProtocol()))
-        {
-            throw new IllegalStateException("SignatureUtil class is not stored in a file.");
-        }
-
-        File classPath = new File(URLDecoder.decode(classLocation.getPath(),
-                                                    "UTF-8")).getParentFile();
-        String packageName = RsaSignatureGenerator.class.getPackage().getName();
-        String packageRelPath = packageName.replace('.', File.separatorChar);
-
-        String dir = classPath.getAbsolutePath().
-                substring(0, classPath.getAbsolutePath().indexOf(packageRelPath));
+    
+    //@Test
+    public void testMultiplePubkeys() throws Exception {
+        final String testString = "cadcauthtest1-" + new Date();
+        int len = 1024;
         
-        if (dir == null)
-        {
-            throw new RuntimeException("Cannot find the class directory");
-        }
-        return dir;
-    }
+        File pub1 = new File(keysDir, "public1.key");
+        File priv1 = new File(keysDir, "private1.key");
+        RsaSignatureGenerator.genKeyPair(pub1, priv1, len);
+        
+        
+        File pub2 = new File(keysDir, "public2.key");
+        File priv2 = new File(keysDir, "private2.key");
+        RsaSignatureGenerator.genKeyPair(pub2, priv2, len);
+        
+        
+        // concatenate pub keys and create a multi-key verifier
+        File multi = new File(keysDir, "multipub.key");
+        // TODO: concat pub1 + pub2 -> multi
+        RsaSignatureVerifier mk = new RsaSignatureVerifier(multi);
+        RsaSignatureGenerator gen1 = new RsaSignatureGenerator(priv1);
+        RsaSignatureGenerator gen2 = new RsaSignatureGenerator(priv2);
+        
+        assertTrue("Signature 1 does not work!!!!",
+                mk.verify(new ByteArrayInputStream(testString.getBytes()),
+                        gen1.sign(new ByteArrayInputStream(testString.getBytes()))));
 
+        assertTrue("Signature 2 does not work!!!!",
+                mk.verify(new ByteArrayInputStream(testString.getBytes()),
+                        gen2.sign(new ByteArrayInputStream(testString.getBytes()))));
+    }
 }
