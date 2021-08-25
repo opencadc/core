@@ -70,15 +70,16 @@ public class ServletPrincipalExtractorTest
         Log4jInit.setLevel("ca.nrc.cadc.auth", Level.INFO);
     }
     
+    File keysDir = new File("build/resources/test");
     File pubFile, privFile;
     
     @Before
     public void initKeys() throws Exception
     {
-        String keysDir = RSASignatureGeneratorValidatorTest.getCompleteKeysDirectoryName();
-        RsaSignatureGenerator.genKeyPair(keysDir);
-        privFile = new File(keysDir, RsaSignatureGenerator.PRIV_KEY_FILE_NAME);
         pubFile = new File(keysDir, RsaSignatureGenerator.PUB_KEY_FILE_NAME);
+        privFile = new File(keysDir, RsaSignatureGenerator.PRIV_KEY_FILE_NAME);
+        int len = 1024;
+        RsaSignatureGenerator.genKeyPair(pubFile, privFile, len);
     }
     
     @After
@@ -92,7 +93,7 @@ public class ServletPrincipalExtractorTest
     public void testCookie() throws Exception
     {
         try {
-            System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, "build/resources/test/");
+            System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, keysDir.getAbsolutePath());
 
             Calendar cal = Calendar.getInstance();
             cal.add(Calendar.HOUR, 2);
