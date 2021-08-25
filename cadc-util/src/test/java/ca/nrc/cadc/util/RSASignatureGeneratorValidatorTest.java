@@ -33,13 +33,16 @@
  */
 package ca.nrc.cadc.util;
 
+import com.google.common.io.Files;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.net.URL;
@@ -172,7 +175,7 @@ public class RSASignatureGeneratorValidatorTest {
         }
     }
     
-    //@Test
+    @Test
     public void testMultiplePubkeys() throws Exception {
         final String testString = "cadcauthtest1-" + new Date();
         int len = 1024;
@@ -189,7 +192,13 @@ public class RSASignatureGeneratorValidatorTest {
         
         // concatenate pub keys and create a multi-key verifier
         File multi = new File(keysDir, "multipub.key");
-        // TODO: concat pub1 + pub2 -> multi
+        byte[] b1 = FileUtil.readFile(pub1);
+        byte[] b2 = FileUtil.readFile(pub2);
+        FileOutputStream ostream = new FileOutputStream(multi);
+        ostream.write(b1);
+        ostream.write(b2);
+        ostream.close();
+
         RsaSignatureVerifier mk = new RsaSignatureVerifier(multi);
         RsaSignatureGenerator gen1 = new RsaSignatureGenerator(priv1);
         RsaSignatureGenerator gen2 = new RsaSignatureGenerator(priv2);
