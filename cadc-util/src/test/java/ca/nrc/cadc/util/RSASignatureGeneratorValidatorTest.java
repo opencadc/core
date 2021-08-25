@@ -31,29 +31,19 @@
  ****  C A N A D I A N   A S T R O N O M Y   D A T A   C E N T R E  *****
  ************************************************************************
  */
+
 package ca.nrc.cadc.util;
 
-import com.google.common.io.Files;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.PrintWriter;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.util.Date;
 import java.util.MissingResourceException;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.junit.Test;
 
 public class RSASignatureGeneratorValidatorTest {
