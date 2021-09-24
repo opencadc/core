@@ -347,7 +347,7 @@ public abstract class HttpTransfer implements Runnable {
             } catch (TransientException ex) {
                 try {
                     long dt = 1000L * ex.getRetryDelay(); // to milliseconds
-                    if (numRetries == maxRetries) {
+                    if (numRetries >= maxRetries) {
                         log.debug("retry limit reached");
                         throw ex;
                     }
