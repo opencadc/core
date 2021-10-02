@@ -161,7 +161,8 @@ public class HttpGet extends HttpTransfer {
             ByteLimitExceededException, ExpectationFailedException,
             IllegalArgumentException, PreconditionFailedException,
             ResourceAlreadyExistsException, ResourceNotFoundException,
-            TransientException, IOException, InterruptedException {
+            TransientException, IOException, InterruptedException,
+            RangeNotSatisfiableException {
 
         doActionWithRetryLoop();
     }
@@ -189,7 +190,8 @@ public class HttpGet extends HttpTransfer {
             ByteLimitExceededException, ExpectationFailedException,
             IllegalArgumentException, PreconditionFailedException,
             ResourceAlreadyExistsException, ResourceNotFoundException,
-            TransientException, IOException, InterruptedException {
+            TransientException, IOException, InterruptedException,
+            RangeNotSatisfiableException {
         log.debug(this.toString());
         if (!go) {
             return; // cancelled while queued, event notification handled in terminate()
@@ -228,7 +230,7 @@ public class HttpGet extends HttpTransfer {
             throws AccessControlException, NotAuthenticatedException,
             ByteLimitExceededException, ExpectationFailedException, IllegalArgumentException,
             PreconditionFailedException, ResourceAlreadyExistsException, ResourceNotFoundException,
-            TransientException, IOException, InterruptedException {
+            TransientException, IOException, InterruptedException, RangeNotSatisfiableException {
 
         // open connection
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();

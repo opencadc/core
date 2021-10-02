@@ -220,7 +220,8 @@ public class HttpUpload extends HttpTransfer {
             ByteLimitExceededException, ExpectationFailedException, 
             IllegalArgumentException, PreconditionFailedException, 
             ResourceAlreadyExistsException, ResourceNotFoundException, 
-            TransientException, IOException, InterruptedException {
+            TransientException, IOException, InterruptedException,
+            RangeNotSatisfiableException {
         
         doActionWithRetryLoop();
     }
@@ -308,7 +309,8 @@ public class HttpUpload extends HttpTransfer {
             ByteLimitExceededException, ExpectationFailedException, 
             IllegalArgumentException, PreconditionFailedException, 
             ResourceAlreadyExistsException, ResourceNotFoundException, 
-            TransientException, IOException, InterruptedException {
+            TransientException, IOException, InterruptedException,
+            RangeNotSatisfiableException {
         OutputStream ostream = null;
 
         FileInputStream fin = null;
