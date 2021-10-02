@@ -309,7 +309,7 @@ public abstract class HttpTransfer implements Runnable {
      * @throws ca.nrc.cadc.net.ResourceNotFoundException
      * @throws ca.nrc.cadc.net.TransientException
      * @throws java.lang.InterruptedException
-     * @htrows ca.nrc.cadc.net.RangeNotSatisfiableException
+     * @throws ca.nrc.cadc.net.RangeNotSatisfiableException
      */
     public abstract void prepare() 
         throws AccessControlException, NotAuthenticatedException,
