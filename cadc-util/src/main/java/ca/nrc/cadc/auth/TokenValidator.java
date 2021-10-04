@@ -110,6 +110,7 @@ public class TokenValidator {
                         ssoCookieManager.getSSOCookieCredentials(p.getValue());
                     log.debug("Adding " + cookieCredentialList.size() + " cookie credentials to subject");
                     subject.getPublicCredentials().addAll(cookieCredentialList);
+                    subject.getPrincipals().remove(p);
                 } catch (InvalidSignedTokenException ex) {
                     throw new NotAuthenticatedException("invalid cookie: " + ex.getMessage(), ex);
                 }
@@ -154,12 +155,12 @@ public class TokenValidator {
                 
                 log.debug("Adding token credential to subject, removing token principal");
                 subject.getPublicCredentials().add(authToken);
-                tokenPrincipals.remove(p);
+                subject.getPrincipals().remove(p);
             } catch (Exception ex) {
                 throw new NotAuthenticatedException(challengeType, AuthError.INVALID_TOKEN, ex.getMessage(), ex);
             }
         }
-        
+
         return subject;
     }
 
