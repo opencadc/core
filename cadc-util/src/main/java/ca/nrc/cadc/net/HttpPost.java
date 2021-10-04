@@ -225,7 +225,8 @@ public class HttpPost extends HttpTransfer {
             ByteLimitExceededException, ExpectationFailedException, 
             IllegalArgumentException, PreconditionFailedException, 
             ResourceAlreadyExistsException, ResourceNotFoundException, 
-            TransientException, IOException, InterruptedException {
+            TransientException, IOException, InterruptedException,
+            RangeNotSatisfiableException {
         
         doActionWithRetryLoop();
     }
@@ -236,7 +237,8 @@ public class HttpPost extends HttpTransfer {
             ByteLimitExceededException, ExpectationFailedException, 
             IllegalArgumentException, PreconditionFailedException, 
             ResourceAlreadyExistsException, ResourceNotFoundException, 
-            TransientException, IOException, InterruptedException {
+            TransientException, IOException, InterruptedException,
+            RangeNotSatisfiableException {
         
         log.debug(this.toString());
 
@@ -282,7 +284,8 @@ public class HttpPost extends HttpTransfer {
             ByteLimitExceededException, ExpectationFailedException, 
             IllegalArgumentException, PreconditionFailedException, 
             ResourceAlreadyExistsException, ResourceNotFoundException, 
-            TransientException, IOException, InterruptedException {
+            TransientException, IOException, InterruptedException,
+            RangeNotSatisfiableException {
         
         if (inputFileContent != null) {
             doPost(conn, inputFileContent);

@@ -127,6 +127,7 @@ public abstract class HttpTransfer implements Runnable {
      * Not documented in HttpURLConnection. A client specified Expect(ation)
      * was not satisfied.
      */
+    static final int HTTP_RANGE_NOT_SATISFIABLE = 416;
     static final int HTTP_EXPECT_FAIL = 417;
     
     /**
@@ -308,13 +309,15 @@ public abstract class HttpTransfer implements Runnable {
      * @throws ca.nrc.cadc.net.ResourceNotFoundException
      * @throws ca.nrc.cadc.net.TransientException
      * @throws java.lang.InterruptedException
+     * @throws ca.nrc.cadc.net.RangeNotSatisfiableException
      */
     public abstract void prepare() 
         throws AccessControlException, NotAuthenticatedException,
             ByteLimitExceededException, ExpectationFailedException, 
             IllegalArgumentException, PreconditionFailedException, 
             ResourceAlreadyExistsException, ResourceNotFoundException, 
-            TransientException, IOException, InterruptedException;
+            TransientException, IOException, InterruptedException,
+            RangeNotSatisfiableException;
     
     /**
      * Call doAction in a loop that retries for TransientException (up to maxRetries
@@ -330,14 +333,16 @@ public abstract class HttpTransfer implements Runnable {
      * @throws ResourceNotFoundException
      * @throws TransientException
      * @throws IOException
-     * @throws InterruptedException 
+     * @throws InterruptedException
+     * @throws RangeNotSatisfiableException
      */
     protected void doActionWithRetryLoop()
         throws AccessControlException, NotAuthenticatedException,
             ByteLimitExceededException, ExpectationFailedException, 
             IllegalArgumentException, PreconditionFailedException, 
             ResourceAlreadyExistsException, ResourceNotFoundException, 
-            TransientException, IOException, InterruptedException {
+            TransientException, IOException, InterruptedException,
+            RangeNotSatisfiableException {
         
         boolean done = false;
         while (!done) {
@@ -368,7 +373,8 @@ public abstract class HttpTransfer implements Runnable {
             ByteLimitExceededException, ExpectationFailedException, 
             IllegalArgumentException, PreconditionFailedException, 
             ResourceAlreadyExistsException, ResourceNotFoundException, 
-            TransientException, IOException, InterruptedException {
+            TransientException, IOException, InterruptedException,
+            RangeNotSatisfiableException {
         // default: no-op
     }
     
@@ -832,10 +838,10 @@ public abstract class HttpTransfer implements Runnable {
     }
     
     protected void checkErrors(URL url, HttpURLConnection conn)
-        throws AccessControlException, NotAuthenticatedException,
+            throws AccessControlException, NotAuthenticatedException,
             ByteLimitExceededException, ExpectationFailedException, IllegalArgumentException,
-            PreconditionFailedException, ResourceAlreadyExistsException, ResourceNotFoundException, 
-            TransientException, IOException, InterruptedException {
+            PreconditionFailedException, ResourceAlreadyExistsException, ResourceNotFoundException,
+            TransientException, IOException, InterruptedException, RangeNotSatisfiableException {
         try {
             this.responseCode = conn.getResponseCode();
             log.debug("checkErrors: " + responseCode + " for " + url);
@@ -886,6 +892,8 @@ public abstract class HttpTransfer implements Runnable {
 
             case HttpURLConnection.HTTP_ENTITY_TOO_LARGE:
                 throw new ByteLimitExceededException(responseBody, -1);
+            case HTTP_RANGE_NOT_SATISFIABLE:
+                throw new RangeNotSatisfiableException(responseBody);
             case HTTP_EXPECT_FAIL:
                 throw new ExpectationFailedException(responseBody);
 

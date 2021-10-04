@@ -62,78 +62,25 @@
  *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
  *                                       <http://www.gnu.org/licenses/>.
  *
- *
  ************************************************************************
  */
 
 package ca.nrc.cadc.net;
 
-import ca.nrc.cadc.auth.NotAuthenticatedException;
-import ca.nrc.cadc.io.ByteLimitExceededException;
-import ca.nrc.cadc.net.event.TransferEvent;
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.security.AccessControlException;
-import javax.net.ssl.HttpsURLConnection;
-import org.apache.log4j.Logger;
+/**
+ * Exception to convey that the received content did not meet the
+ * length provided by the client.
+ * 
+ * @author adriand
+ */
+public class RangeNotSatisfiableException extends Exception {
 
-public class HttpDelete extends HttpTransfer {
-    private static final Logger log = Logger.getLogger(HttpUpload.class);
-
-    /**
-     * Complete constructor.
-     *
-     * @param remoteURL     The resource to delete.
-     * @param followRedirects True to follow the resource's redirect, or False
-     *                        otherwise.
-     */
-    public HttpDelete(final URL remoteURL, final boolean followRedirects) {
-        super(remoteURL, followRedirects);
+    public RangeNotSatisfiableException(String message) {
+        super(message);
     }
 
-    @Override
-    public String toString() {
-        return HttpDelete.class.getSimpleName() + "[" + remoteURL + "]";
+    public RangeNotSatisfiableException(String message, Throwable cause) {
+        super(message, cause);
     }
 
-    @Override
-    public void prepare() 
-        throws AccessControlException, NotAuthenticatedException,
-            ByteLimitExceededException, ExpectationFailedException, 
-            IllegalArgumentException, PreconditionFailedException, 
-            ResourceAlreadyExistsException, ResourceNotFoundException, 
-            TransientException, IOException, InterruptedException,
-            RangeNotSatisfiableException {
-        
-        doActionWithRetryLoop();
-    }
-    
-    @Override
-    protected void doAction()
-        throws AccessControlException, NotAuthenticatedException,
-            ByteLimitExceededException, ExpectationFailedException, 
-            IllegalArgumentException, PreconditionFailedException,
-            ResourceAlreadyExistsException, ResourceNotFoundException, 
-            TransientException, IOException, InterruptedException,
-            RangeNotSatisfiableException {
-        
-        log.debug("connect: " + remoteURL);
-        HttpURLConnection conn = (HttpURLConnection) remoteURL.openConnection();
-        super.setRequestOptions(conn);
-        conn.setRequestMethod("DELETE");
-        conn.setUseCaches(false);
-        conn.setDoInput(true);
-        conn.setDoOutput(false);
-        
-        setRequestHeaders(conn);
-        setRequestAuthHeaders(conn);
-        if (conn instanceof HttpsURLConnection) {
-            final HttpsURLConnection sslConn = (HttpsURLConnection) conn;
-            initHTTPS(sslConn);
-        }
-
-        checkErrors(remoteURL, conn);
-        //this.responseStream = conn.getInputStream(); // setDoOutput(false) above so not needed
-    }
 }
