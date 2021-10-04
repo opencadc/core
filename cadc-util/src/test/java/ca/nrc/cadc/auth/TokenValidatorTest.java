@@ -92,7 +92,7 @@ public class TokenValidatorTest {
     private static Logger log = Logger.getLogger(TokenValidatorTest.class);
     
     static {
-        Log4jInit.setLevel("ca.nrc.cadc.auth", Level.INFO);
+        Log4jInit.setLevel("ca.nrc.cadc.auth", Level.DEBUG);
     }
 
     @Test
@@ -104,7 +104,7 @@ public class TokenValidatorTest {
         try {
             
             // init keys
-            File config = FileUtil.getFileFromResource("DelegationToken.properties", SignedTokenTest.class);
+            File config = FileUtil.getFileFromResource("DelegationToken.properties", TokenValidatorTest.class);
             File keysDir = config.getParentFile();
             RsaSignatureGenerator.genKeyPair(keysDir);
             privFile = new File(keysDir, RsaSignatureGenerator.PRIV_KEY_FILE_NAME);
@@ -126,6 +126,7 @@ public class TokenValidatorTest {
             subject.getPrincipals().add(cookiePrincipal);
             subject = TokenValidator.validateTokens(subject);
             Assert.assertEquals("cookie credential", 1, subject.getPublicCredentials(SSOCookieCredential.class).size());
+            Assert.assertEquals("cookie principal", 0, subject.getPrincipals(AuthorizationTokenPrincipal.class).size());
             
             // test cadc deprecated tokens
             subject = new Subject();
@@ -151,6 +152,7 @@ public class TokenValidatorTest {
             Assert.assertEquals("bearer token type", AuthenticationUtil.CHALLENGE_TYPE_BEARER, authToken.getType());
             Assert.assertEquals("bearer token value", value, authToken.getCredentials());
             Assert.assertEquals("bearer token scope", "the:scope", authToken.getScope().toString());
+            Assert.assertEquals("token principal", 0, subject.getPrincipals(AuthorizationTokenPrincipal.class).size());
             
             // ivoa tokens
             subject = new Subject();
