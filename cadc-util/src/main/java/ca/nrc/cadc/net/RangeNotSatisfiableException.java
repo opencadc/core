@@ -73,7 +73,7 @@ package ca.nrc.cadc.net;
  * 
  * @author adriand
  */
-public class RangeNotSatisfiableException extends Exception {
+public class RangeNotSatisfiableException extends RuntimeException {
 
     public RangeNotSatisfiableException(String message) {
         super(message);
