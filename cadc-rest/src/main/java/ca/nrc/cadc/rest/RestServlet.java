@@ -449,8 +449,25 @@ public class RestServlet extends HttpServlet {
             return;
         }
         
-        AuthMethod am = AuthenticationUtil.getAuthMethod(subject);
-        if (am == null || AuthMethod.ANON.equals(am)) {
+        if (!subject.getPrincipals().isEmpty()) {
+            
+            // Authenticated...
+            
+            log.debug("Setting " + AuthenticationUtil.VO_AUTHENTICATED_HEADER + " header");
+            Set<HttpPrincipal> useridPrincipals = subject.getPrincipals(HttpPrincipal.class);
+            if (!useridPrincipals.isEmpty()) {
+                HttpPrincipal userid = useridPrincipals.iterator().next();
+                out.addHeader(AuthenticationUtil.VO_AUTHENTICATED_HEADER, userid.getName());
+                return;
+            }
+            Set<Principal> allPrincipals = subject.getPrincipals();
+            if (!allPrincipals.isEmpty()) {
+                Principal principal = allPrincipals.iterator().next();
+                out.addHeader(AuthenticationUtil.VO_AUTHENTICATED_HEADER, principal.getName());
+                return;
+            }
+            
+        } else {
             // Not authenticated...
             
             log.debug("Setting " + AuthenticationUtil.AUTHENTICATE_HEADER + " header");
@@ -493,24 +510,6 @@ public class RestServlet extends HttpServlet {
             sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA + " standard_id=\"").append(Standards.SECURITY_METHOD_CERT.toASCIIString()).append("\"");
             out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
             
-            
-            
-        } else {
-            // Authenticated...
-            
-            log.debug("Setting " + AuthenticationUtil.VO_AUTHENTICATED_HEADER + " header");
-            Set<HttpPrincipal> useridPrincipals = subject.getPrincipals(HttpPrincipal.class);
-            if (!useridPrincipals.isEmpty()) {
-                HttpPrincipal userid = useridPrincipals.iterator().next();
-                out.addHeader(AuthenticationUtil.VO_AUTHENTICATED_HEADER, userid.getName());
-                return;
-            }
-            Set<Principal> allPrincipals = subject.getPrincipals();
-            if (!allPrincipals.isEmpty()) {
-                Principal principal = allPrincipals.iterator().next();
-                out.addHeader(AuthenticationUtil.VO_AUTHENTICATED_HEADER, principal.getName());
-                return;
-            }
         }
     }
     
