@@ -148,66 +148,76 @@ public class RestServletTest {
             
             // no errors, all headers
             s = new Subject();
-            out.addHeader("WWW-Authenticate", "ivoa standard_id=\"ivo://ivoa.net/sso#tls-with-password\", access_url=\"https://example.com/ac/login\"");
+            out.addHeader("WWW-Authenticate", "ivoa_bearer standard_id=\"ivo://ivoa.net/sso#tls-with-password\", access_url=\"https://example.com/ac/login\"");
             EasyMock.expectLastCall().once();
-            out.addHeader("WWW-Authenticate", "ivoa standard_id=\"ivo://ivoa.net/sso#OAuth\", access_url=\"https://example.com/ac/authorize\"");
+            out.addHeader("WWW-Authenticate", "ivoa_bearer standard_id=\"ivo://ivoa.net/sso#OpenID\", access_url=\"https://example.com/ac/authorize\"");
             EasyMock.expectLastCall().once();
-            out.addHeader("WWW-Authenticate", "ivoa standard_id=\"ivo://ivoa.net/sso#tls-with-certificate\"");
+            out.addHeader("WWW-Authenticate", "ivoa_x509 standard_id=\"ivo://ivoa.net/sso#BasicAA\", access_url=\"https://example.com/cred/priv\"");
             EasyMock.expectLastCall().once();
             out.addHeader("WWW-Authenticate", "Bearer");
+            EasyMock.expectLastCall().once();
+            out.addHeader("WWW-Authenticate", "ivoa_x509");
             EasyMock.expectLastCall().once();
             runTest(s, out, null);
             
             // ivoa token error no description
             s = new Subject();
-            out.addHeader("WWW-Authenticate", "ivoa standard_id=\"ivo://ivoa.net/sso#tls-with-password\", access_url=\"https://example.com/ac/login\", error=\"insufficient_scope\"");
+            out.addHeader("WWW-Authenticate", "ivoa_bearer standard_id=\"ivo://ivoa.net/sso#tls-with-password\", access_url=\"https://example.com/ac/login\", error=\"insufficient_scope\"");
             EasyMock.expectLastCall().once();
-            out.addHeader("WWW-Authenticate", "ivoa standard_id=\"ivo://ivoa.net/sso#OAuth\", access_url=\"https://example.com/ac/authorize\", error=\"insufficient_scope\"");
+            out.addHeader("WWW-Authenticate", "ivoa_bearer standard_id=\"ivo://ivoa.net/sso#OpenID\", access_url=\"https://example.com/ac/authorize\", error=\"insufficient_scope\"");
             EasyMock.expectLastCall().once();
-            out.addHeader("WWW-Authenticate", "ivoa standard_id=\"ivo://ivoa.net/sso#tls-with-certificate\"");
+            out.addHeader("WWW-Authenticate", "ivoa_x509 standard_id=\"ivo://ivoa.net/sso#BasicAA\", access_url=\"https://example.com/cred/priv\"");
             EasyMock.expectLastCall().once();
             out.addHeader("WWW-Authenticate", "Bearer");
             EasyMock.expectLastCall().once();
-            NotAuthenticatedException ex = new NotAuthenticatedException("ivoa", AuthError.INSUFFICIENT_SCOPE, null);
+            out.addHeader("WWW-Authenticate", "ivoa_x509");
+            EasyMock.expectLastCall().once();
+            NotAuthenticatedException ex = new NotAuthenticatedException("ivoa_bearer", AuthError.INSUFFICIENT_SCOPE, null);
             runTest(s, out, ex);
             
             // ivoa token error with description
             s = new Subject();
-            out.addHeader("WWW-Authenticate", "ivoa standard_id=\"ivo://ivoa.net/sso#tls-with-password\", access_url=\"https://example.com/ac/login\", error=\"insufficient_scope\", error_description=\"text\"");
+            out.addHeader("WWW-Authenticate", "ivoa_bearer standard_id=\"ivo://ivoa.net/sso#tls-with-password\", access_url=\"https://example.com/ac/login\", error=\"insufficient_scope\", error_description=\"text\"");
             EasyMock.expectLastCall().once();
-            out.addHeader("WWW-Authenticate", "ivoa standard_id=\"ivo://ivoa.net/sso#OAuth\", access_url=\"https://example.com/ac/authorize\", error=\"insufficient_scope\", error_description=\"text\"");
+            out.addHeader("WWW-Authenticate", "ivoa_bearer standard_id=\"ivo://ivoa.net/sso#OpenID\", access_url=\"https://example.com/ac/authorize\", error=\"insufficient_scope\", error_description=\"text\"");
             EasyMock.expectLastCall().once();
-            out.addHeader("WWW-Authenticate", "ivoa standard_id=\"ivo://ivoa.net/sso#tls-with-certificate\"");
+            out.addHeader("WWW-Authenticate", "ivoa_x509 standard_id=\"ivo://ivoa.net/sso#BasicAA\", access_url=\"https://example.com/cred/priv\"");
             EasyMock.expectLastCall().once();
             out.addHeader("WWW-Authenticate", "Bearer");
             EasyMock.expectLastCall().once();
-            ex = new NotAuthenticatedException("ivoa", AuthError.INSUFFICIENT_SCOPE, "text");
+            out.addHeader("WWW-Authenticate", "ivoa_x509");
+            EasyMock.expectLastCall().once();
+            ex = new NotAuthenticatedException("ivoa_bearer", AuthError.INSUFFICIENT_SCOPE, "text");
             runTest(s, out, ex);
             
             // bearer token error no description
             s = new Subject();
-            out.addHeader("WWW-Authenticate", "ivoa standard_id=\"ivo://ivoa.net/sso#tls-with-password\", access_url=\"https://example.com/ac/login\"");
+            out.addHeader("WWW-Authenticate", "ivoa_bearer standard_id=\"ivo://ivoa.net/sso#tls-with-password\", access_url=\"https://example.com/ac/login\"");
             EasyMock.expectLastCall().once();
-            out.addHeader("WWW-Authenticate", "ivoa standard_id=\"ivo://ivoa.net/sso#OAuth\", access_url=\"https://example.com/ac/authorize\"");
+            out.addHeader("WWW-Authenticate", "ivoa_bearer standard_id=\"ivo://ivoa.net/sso#OpenID\", access_url=\"https://example.com/ac/authorize\"");
             EasyMock.expectLastCall().once();
-            out.addHeader("WWW-Authenticate", "ivoa standard_id=\"ivo://ivoa.net/sso#tls-with-certificate\"");
+            out.addHeader("WWW-Authenticate", "ivoa_x509 standard_id=\"ivo://ivoa.net/sso#BasicAA\", access_url=\"https://example.com/cred/priv\"");
             EasyMock.expectLastCall().once();
             out.addHeader("WWW-Authenticate", "Bearer error=\"insufficient_scope\"");
             EasyMock.expectLastCall().once();
             ex = new NotAuthenticatedException("Bearer", AuthError.INSUFFICIENT_SCOPE, null);
+            out.addHeader("WWW-Authenticate", "ivoa_x509");
+            EasyMock.expectLastCall().once();
             runTest(s, out, ex);
             
             // bearer token error with description
             s = new Subject();
-            out.addHeader("WWW-Authenticate", "ivoa standard_id=\"ivo://ivoa.net/sso#tls-with-password\", access_url=\"https://example.com/ac/login\"");
+            out.addHeader("WWW-Authenticate", "ivoa_bearer standard_id=\"ivo://ivoa.net/sso#tls-with-password\", access_url=\"https://example.com/ac/login\"");
             EasyMock.expectLastCall().once();
-            out.addHeader("WWW-Authenticate", "ivoa standard_id=\"ivo://ivoa.net/sso#OAuth\", access_url=\"https://example.com/ac/authorize\"");
+            out.addHeader("WWW-Authenticate", "ivoa_bearer standard_id=\"ivo://ivoa.net/sso#OpenID\", access_url=\"https://example.com/ac/authorize\"");
             EasyMock.expectLastCall().once();
-            out.addHeader("WWW-Authenticate", "ivoa standard_id=\"ivo://ivoa.net/sso#tls-with-certificate\"");
+            out.addHeader("WWW-Authenticate", "ivoa_x509 standard_id=\"ivo://ivoa.net/sso#BasicAA\", access_url=\"https://example.com/cred/priv\"");
             EasyMock.expectLastCall().once();
             out.addHeader("WWW-Authenticate", "Bearer error=\"insufficient_scope\", error_description=\"text\"");
             EasyMock.expectLastCall().once();
             ex = new NotAuthenticatedException("Bearer", AuthError.INSUFFICIENT_SCOPE, "text");
+            out.addHeader("WWW-Authenticate", "ivoa_x509");
+            EasyMock.expectLastCall().once();
             runTest(s, out, ex);
 
         } catch (Exception unexpected) {
@@ -242,7 +252,9 @@ public class RestServletTest {
             try {
                 if (securityMethod.equals(Standards.SECURITY_METHOD_PASSWORD)) {
                     return new URL("https://example.com/ac/login");
-                } else {
+                } else if (securityMethod.equals(Standards.CRED_PROXY_10)) {
+                    return new URL("https://example.com/cred/priv");
+                } else { 
                     return new URL("https://example.com/ac/authorize");
                 }
             } catch (MalformedURLException e) {
