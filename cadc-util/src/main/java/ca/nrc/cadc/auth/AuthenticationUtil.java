@@ -124,8 +124,9 @@ public class AuthenticationUtil {
     public static final String VO_AUTHENTICATED_HEADER = "x-vo-authenticated";
     
     public static final String CHALLENGE_TYPE_BEARER = "Bearer";
-    public static final String CHALLENGE_TYPE_IVOA = "ivoa";
     public static final String CHALLENGE_TYPE_BASIC = "Basic";
+    public static final String CHALLENGE_TYPE_IVOA_BEARER = "ivoa_bearer";
+    public static final String CHALLENGE_TYPE_IVOA_X509 = "ivoa_x509";
     @Deprecated
     public static final String TOKEN_TYPE_CADC = AUTH_HEADER;
 

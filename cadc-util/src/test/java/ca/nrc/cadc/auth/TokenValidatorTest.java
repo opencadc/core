@@ -160,12 +160,11 @@ public class TokenValidatorTest {
             value = SignedToken.format(token);
             authPrincipal = new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, "ivoa " + value);
             subject.getPrincipals().add(authPrincipal);
-            subject = TokenValidator.validateTokens(subject);
-            Assert.assertEquals("token credential", 1, subject.getPublicCredentials(AuthorizationToken.class).size());
-            authToken = subject.getPublicCredentials(AuthorizationToken.class).iterator().next();
-            Assert.assertEquals("ivoa token type", AuthenticationUtil.CHALLENGE_TYPE_IVOA, authToken.getType());
-            Assert.assertEquals("ivoa token value", value, authToken.getCredentials());
-            Assert.assertEquals("ivoa token scope", "the:scope", authToken.getScope().toString());
+            try {
+                subject = TokenValidator.validateTokens(subject);
+            } catch (NotAuthenticatedException ex) {
+                Assert.assertTrue("exception message", ex.getMessage().contains("unsupported challenge type: ivoa"));
+            }
             
             // invalid bearer token
             subject = new Subject();
@@ -176,18 +175,6 @@ public class TokenValidatorTest {
                 Assert.fail("Should have received NotAuthenticatedException");
             } catch (NotAuthenticatedException e) {
                 Assert.assertEquals(AuthenticationUtil.CHALLENGE_TYPE_BEARER, e.getChallenge());
-                Assert.assertEquals("invalid_token", e.getAuthError().getValue());
-            }
-            
-            // invalid ivoa token
-            subject = new Subject();
-            authPrincipal = new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, "ivoa tampered");
-            subject.getPrincipals().add(authPrincipal);
-            try {
-                subject = TokenValidator.validateTokens(subject);
-                Assert.fail("Should have received NotAuthenticatedException");
-            } catch (NotAuthenticatedException e) {
-                Assert.assertEquals(AuthenticationUtil.CHALLENGE_TYPE_IVOA, e.getChallenge());
                 Assert.assertEquals("invalid_token", e.getAuthError().getValue());
             }
             

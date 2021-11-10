@@ -137,8 +137,7 @@ public class TokenValidator {
                 }
                 challengeType = p.getHeaderValue().substring(0, spaceIndex).trim();
                 credentials = p.getHeaderValue().substring(spaceIndex + 1).trim();
-                if (!AuthenticationUtil.CHALLENGE_TYPE_BEARER.equalsIgnoreCase(challengeType)
-                    && !AuthenticationUtil.CHALLENGE_TYPE_IVOA.equalsIgnoreCase(challengeType)) {
+                if (!AuthenticationUtil.CHALLENGE_TYPE_BEARER.equalsIgnoreCase(challengeType)) {
                     throw new NotAuthenticatedException(challengeType, AuthError.INVALID_REQUEST,
                         "unsupported challenge type: " + challengeType);
                 }

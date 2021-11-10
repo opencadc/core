@@ -75,6 +75,10 @@ import ca.nrc.cadc.auth.HttpPrincipal;
 import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.log.ServletLogInfo;
 import ca.nrc.cadc.log.WebServiceLogInfo;
+import ca.nrc.cadc.net.ResourceNotFoundException;
+import ca.nrc.cadc.reg.Capabilities;
+import ca.nrc.cadc.reg.Capability;
+import ca.nrc.cadc.reg.Interface;
 import ca.nrc.cadc.reg.Standards;
 import ca.nrc.cadc.reg.client.LocalAuthority;
 import ca.nrc.cadc.reg.client.RegistryClient;
@@ -136,6 +140,7 @@ public class RestServlet extends HttpServlet {
     protected String appName;
     protected String componentID;
     protected boolean augmentSubject = true;
+    protected boolean setAuthHeaders = true;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
@@ -151,6 +156,10 @@ public class RestServlet extends HttpServlet {
         String augment = config.getInitParameter("augmentSubject");
         if (augment != null && augment.equalsIgnoreCase(Boolean.FALSE.toString())) {
             augmentSubject = false;
+        }
+        String authHeaders = config.getInitParameter("authHeaders");
+        if (authHeaders != null && authHeaders.equalsIgnoreCase(Boolean.FALSE.toString())) {
+            setAuthHeaders = false;
         }
         
         // application specific config
@@ -318,24 +327,33 @@ public class RestServlet extends HttpServlet {
             action.setLogInfo(logInfo);
             log.info(logInfo.start());
             
-            setAuthenticateHeaders(subject, out, null, response);
+            if (setAuthHeaders) {
+                setAuthenticateHeaders(subject, out, null, response);
+            }
             authHeadersSet = true;
 
             doit(subject, action);
         } catch (NotAuthenticatedException ex) {
+            log.debug(ex);
             logInfo.setSuccess(true);
             logInfo.setMessage(ex.getMessage());
-            if (!authHeadersSet) {
-                setAuthenticateHeaders(null, out, ex, response);
+            if (!authHeadersSet && setAuthHeaders) {
+                try {
+                    setAuthenticateHeaders(null, out, ex, response);
+                } catch (Throwable t) {
+                    log.warn("Failed to set www-authenticate headers", t);
+                }
             }
             handleException(out, response, ex, 401, ex.getMessage(), false);
         } catch (InstantiationException | IllegalAccessException ex) {
             // problem creating the action
+            log.debug(ex);
             logInfo.setSuccess(false);
             String message = "[BUG] failed to instantiate " + actionClass + " cause: " + ex.getMessage();
             logInfo.setMessage(message);
             handleException(out, response, ex, 500, message, true);
         } catch (Throwable t) {
+            log.debug(t);
             logInfo.setSuccess(false);
             logInfo.setMessage(t.getMessage());
             handleUnexpected(out, response, t);
@@ -449,34 +467,50 @@ public class RestServlet extends HttpServlet {
             return;
         }
         
-        AuthMethod am = AuthenticationUtil.getAuthMethod(subject);
-        if (am == null || AuthMethod.ANON.equals(am)) {
+        if (subject != null && !subject.getPrincipals().isEmpty()) {
+            // Authenticated...
+            
+            log.debug("Setting " + AuthenticationUtil.VO_AUTHENTICATED_HEADER + " header");
+            Set<HttpPrincipal> useridPrincipals = subject.getPrincipals(HttpPrincipal.class);
+            if (!useridPrincipals.isEmpty()) {
+                HttpPrincipal userid = useridPrincipals.iterator().next();
+                out.addHeader(AuthenticationUtil.VO_AUTHENTICATED_HEADER, userid.getName());
+                return;
+            }
+            // TODO: pick the most informative principal
+            Principal principal = subject.getPrincipals().iterator().next();
+            out.addHeader(AuthenticationUtil.VO_AUTHENTICATED_HEADER, principal.getName());
+            return;
+            
+        } else {
             // Not authenticated...
             
             log.debug("Setting " + AuthenticationUtil.AUTHENTICATE_HEADER + " header");
             RegistryClient regClient = getRegistryClient();
             
-            // set a header for info on how to obtain tokens with username/password over tls
             try {
+                // set a header for info on how to obtain bearer tokens with username/password over tls
                 URI loginServiceURI = getLocalServiceURI(Standards.SECURITY_METHOD_PASSWORD);
                 URL loginURL = regClient.getServiceURL(loginServiceURI, Standards.SECURITY_METHOD_PASSWORD, AuthMethod.ANON);
                 StringBuilder sb = new StringBuilder();
-                sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA + " standard_id=\"").append(Standards.SECURITY_METHOD_PASSWORD.toString()).append("\", ");
+                sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA_BEARER).append(" standard_id=\"")
+                    .append(Standards.SECURITY_METHOD_PASSWORD.toString()).append("\", ");
                 sb.append("access_url=\"").append(loginURL).append("\"");
-                appendAuthenticateErrorInfo(AuthenticationUtil.CHALLENGE_TYPE_IVOA, sb, ex, false);
+                appendAuthenticateErrorInfo(AuthenticationUtil.CHALLENGE_TYPE_IVOA_BEARER, sb, ex, false);
                 out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
             } catch (NoSuchElementException notSupported) {
                 log.debug("LocalAuthority -- not found: " + Standards.SECURITY_METHOD_PASSWORD, notSupported);
             }
             
-            // set a header for info on how to obtain tokens with OAuth2 authorize
             try {
-                URI authorizeServiceURI = getLocalServiceURI(Standards.SECURITY_METHOD_OAUTH);
-                URL authorizeURL = regClient.getServiceURL(authorizeServiceURI, Standards.SECURITY_METHOD_OAUTH, AuthMethod.ANON);
+                // set a header for info on how to obtain tokens with OAuth2 authorize
+                URI authorizeServiceURI = getLocalServiceURI(Standards.SECURITY_METHOD_OPENID);
+                URL authorizeURL = regClient.getServiceURL(authorizeServiceURI, Standards.SECURITY_METHOD_OPENID, AuthMethod.ANON);
                 StringBuilder sb = new StringBuilder();
-                sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA + " standard_id=\"").append(Standards.SECURITY_METHOD_OAUTH.toString()).append("\", ");
+                sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA_BEARER).append(" standard_id=\"")
+                    .append(Standards.SECURITY_METHOD_OPENID.toString()).append("\", ");
                 sb.append("access_url=\"").append(authorizeURL).append("\"");
-                appendAuthenticateErrorInfo(AuthenticationUtil.CHALLENGE_TYPE_IVOA, sb, ex, false);
+                appendAuthenticateErrorInfo(AuthenticationUtil.CHALLENGE_TYPE_IVOA_BEARER, sb, ex, false);
                 out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
                 
                 // also set a header for oauth2 bearer tokens
@@ -488,29 +522,32 @@ public class RestServlet extends HttpServlet {
                 log.debug("LocalAuthority -- not found: " + Standards.SECURITY_METHOD_OAUTH, notSupported);
             }
             
-            // TODO: mechanism to enable this rather than always set it
+            try {
+                // header for delegated x509 client proxy certificates
+                URI cdpProxyServiceURI = getLocalServiceURI(Standards.CRED_PROXY_10);
+                Capabilities caps = regClient.getCapabilities(cdpProxyServiceURI);
+                Capability c = caps.findCapability(Standards.CRED_PROXY_10);
+                for (Interface i : c.getInterfaces()) {
+                    List<URI> securityMethods = i.getSecurityMethods();
+                    for (URI s : securityMethods) {
+                        if (s.equals(Standards.SECURITY_METHOD_HTTP_BASIC) || s.equals(Standards.SECURITY_METHOD_PASSWORD)) {
+                            StringBuilder sb = new StringBuilder();
+                            sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA_X509).append(" standard_id=\"")
+                            .append(s.toASCIIString()).append("\", ");
+                            sb.append("access_url=\"").append(i.getAccessURL().getURL()).append("\"");
+                            out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
+                        }
+                    }
+                }
+            } catch (NoSuchElementException | ResourceNotFoundException | IOException notSupported) {
+                log.debug("LocalAuthority -- not found: " + Standards.CRED_PROXY_10, notSupported);
+            }
+            
+            // header for regular x509 client certificates
             StringBuilder sb = new StringBuilder();
-            sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA + " standard_id=\"").append(Standards.SECURITY_METHOD_CERT.toASCIIString()).append("\"");
+            sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA_X509);
             out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
             
-            
-            
-        } else {
-            // Authenticated...
-            
-            log.debug("Setting " + AuthenticationUtil.VO_AUTHENTICATED_HEADER + " header");
-            Set<HttpPrincipal> useridPrincipals = subject.getPrincipals(HttpPrincipal.class);
-            if (!useridPrincipals.isEmpty()) {
-                HttpPrincipal userid = useridPrincipals.iterator().next();
-                out.addHeader(AuthenticationUtil.VO_AUTHENTICATED_HEADER, userid.getName());
-                return;
-            }
-            Set<Principal> allPrincipals = subject.getPrincipals();
-            if (!allPrincipals.isEmpty()) {
-                Principal principal = allPrincipals.iterator().next();
-                out.addHeader(AuthenticationUtil.VO_AUTHENTICATED_HEADER, principal.getName());
-                return;
-            }
         }
     }
     
