@@ -334,7 +334,11 @@ public class RestServlet extends HttpServlet {
             logInfo.setSuccess(true);
             logInfo.setMessage(ex.getMessage());
             if (!authHeadersSet && setAuthHeaders) {
-                setAuthenticateHeaders(null, out, ex, response);
+                try {
+                    setAuthenticateHeaders(null, out, ex, response);
+                } catch (Throwable t) {
+                    log.warn("Failed to set www-authenticate headers", t);
+                }
             }
             handleException(out, response, ex, 401, ex.getMessage(), false);
         } catch (InstantiationException | IllegalAccessException ex) {
@@ -459,7 +463,7 @@ public class RestServlet extends HttpServlet {
             return;
         }
         
-        if (!subject.getPrincipals().isEmpty()) {
+        if (subject != null && !subject.getPrincipals().isEmpty()) {
             // Authenticated...
             
             log.debug("Setting " + AuthenticationUtil.VO_AUTHENTICATED_HEADER + " header");
