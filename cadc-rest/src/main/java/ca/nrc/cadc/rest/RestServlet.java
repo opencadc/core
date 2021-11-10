@@ -487,7 +487,8 @@ public class RestServlet extends HttpServlet {
                 URI loginServiceURI = getLocalServiceURI(Standards.SECURITY_METHOD_PASSWORD);
                 URL loginURL = regClient.getServiceURL(loginServiceURI, Standards.SECURITY_METHOD_PASSWORD, AuthMethod.ANON);
                 StringBuilder sb = new StringBuilder();
-                sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA_BEARER + " standard_id=\"").append(Standards.SECURITY_METHOD_PASSWORD.toString()).append("\", ");
+                sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA_BEARER + " standard_id=\"")
+                    .append(Standards.SECURITY_METHOD_PASSWORD.toString()).append("\", ");
                 sb.append("access_url=\"").append(loginURL).append("\"");
                 appendAuthenticateErrorInfo(AuthenticationUtil.CHALLENGE_TYPE_IVOA_BEARER, sb, ex, false);
                 out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
@@ -519,7 +520,8 @@ public class RestServlet extends HttpServlet {
                 URI cdpProxyServiceURI = getLocalServiceURI(Standards.CRED_PROXY_10);
                 URL cdpProxyURL = regClient.getServiceURL(cdpProxyServiceURI, Standards.CRED_PROXY_10, AuthMethod.PASSWORD);
                 StringBuilder sb = new StringBuilder();
-                sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA_X509 + " standard_id=\"").append(Standards.SECURITY_METHOD_HTTP_BASIC.toASCIIString()).append("\", ");
+                sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA_X509 + " standard_id=\"")
+                    .append(Standards.SECURITY_METHOD_HTTP_BASIC.toASCIIString()).append("\", ");
                 sb.append("access_url=\"").append(cdpProxyURL).append("\"");
                 out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
             } catch (NoSuchElementException notSupported) {
