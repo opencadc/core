@@ -254,8 +254,8 @@ public class IterableContent<E extends Content, T> extends Element {
         private Iterator<B> iterator;
         private A next;
         private long rowCount = 0;
-        private boolean maxIterationsReached = false;
-        private boolean maxIterationsReachedCalled = false;
+        //private boolean maxIterationsReached = false;
+        //private boolean maxIterationsReachedCalled = false;
         
         ContentConversionIterator(ContentConverter<A, B> contentConverter,
                 Iterator<B> iterator, MaxIterations maxIterations) {
@@ -282,42 +282,33 @@ public class IterableContent<E extends Content, T> extends Element {
                     return;
                 }
             }
-            
-            if (maxIterations != null) {
-                if (rowCount >= maxIterations.getMaxIterations()) {
-                    maxIterationsReached = true;
-                    next = null;
-                }
+            if (maxIterations != null && rowCount == maxIterations.getMaxIterations()) {
+                    maxIterations.maxIterationsReached(next != null);
+                    next = null; // terminate iteration
             }
-            
-            rowCount++;
         }
         
         boolean isEmpty() {
-            return (next == null);
+            return !hasNext();
         }
 
         @Override
         public boolean hasNext() {
-            if (maxIterationsReached && !maxIterationsReachedCalled) {
-                maxIterations.maxIterationsReached();
-                maxIterationsReachedCalled = true;
-            }
-            
-            return (next != null);
+            //return !maxIterationsReached && (next != null);
+            return next != null;
         }
 
         @Override
         public A next() {
-            log.debug("ContentConversionIterator.next");
-            
             if (next == null) {
                 throw new NoSuchElementException();
             }
 
             A ret = next;
-
+            rowCount++;
+            
             advance();
+            
             
             return ret;
         }

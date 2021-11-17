@@ -195,7 +195,7 @@ public class IterableContentTest
         log.debug("Testing max iterations: " + max);
         try
         {
-            List<String> testData = new ArrayList<String>(3);
+            List<String> testData = new ArrayList<String>();
             testData.add("string1");
             testData.add("string2");
             testData.add("string3");
@@ -220,7 +220,7 @@ public class IterableContentTest
             List<Content> contentList = ic.getContent();
             
             if (max == 0)
-                Assert.assertTrue("should not be empty.", contentList.isEmpty());
+                Assert.assertTrue("should be empty.", contentList.isEmpty());
             else
                 Assert.assertFalse("should not be empty.", contentList.isEmpty());
             
@@ -247,10 +247,10 @@ public class IterableContentTest
             Assert.assertTrue("should be empty.", contentList.isEmpty());
             Assert.assertTrue("maxInterationsReached not called.", maxIter.maxIterationsCalled);
         }
-        catch (Throwable t)
+        catch (Exception ex)
         {
-            log.error(t.getMessage(), t);
-            Assert.fail(t.getMessage());
+            log.error("unexpected", ex);
+            Assert.fail("unexpected: " + ex);
         }
         
     }
@@ -272,7 +272,7 @@ public class IterableContentTest
         }
 
         @Override
-        public void maxIterationsReached()
+        public void maxIterationsReached(boolean moreAvailable)
         {
             maxIterationsCalled = true;
             Assert.assertEquals("wrong num iterations", max, itCount);
