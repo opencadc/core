@@ -283,8 +283,8 @@ public class IterableContent<E extends Content, T> extends Element {
                 }
             }
             if (maxIterations != null && rowCount == maxIterations.getMaxIterations()) {
-                    maxIterations.maxIterationsReached(next != null);
-                    next = null; // terminate iteration
+                maxIterations.maxIterationsReached(next != null);
+                next = null; // terminate iteration
             }
         }
         
