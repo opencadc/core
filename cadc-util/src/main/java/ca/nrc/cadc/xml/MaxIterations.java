@@ -78,6 +78,6 @@ public interface MaxIterations {
     
     long getMaxIterations();
     
-    void maxIterationsReached();
+    void maxIterationsReached(boolean moreAvailable);
 
 }
