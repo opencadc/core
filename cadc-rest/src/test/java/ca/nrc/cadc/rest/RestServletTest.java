@@ -81,6 +81,7 @@ import ca.nrc.cadc.reg.Interface;
 import ca.nrc.cadc.reg.Standards;
 import ca.nrc.cadc.reg.client.RegistryClient;
 import ca.nrc.cadc.util.Log4jInit;
+import ca.nrc.cadc.util.PropertiesReader;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -112,6 +113,8 @@ public class RestServletTest {
         log.info("TEST: testSetAuthenticateHeaders");
 
         try {
+            
+            System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, "src/test/resources");
 
             SyncOutput out = EasyMock.createMock(SyncOutput.class);
             
@@ -233,6 +236,8 @@ public class RestServletTest {
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
+        } finally {
+            System.clearProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY);
         }
     }
     
