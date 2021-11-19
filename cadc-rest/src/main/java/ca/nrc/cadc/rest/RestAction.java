@@ -69,6 +69,8 @@
 
 package ca.nrc.cadc.rest;
 
+import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.io.ByteLimitExceededException;
 import ca.nrc.cadc.log.WebServiceLogInfo;
 import ca.nrc.cadc.net.ExpectationFailedException;
@@ -78,6 +80,8 @@ import ca.nrc.cadc.net.RangeNotSatisfiableException;
 import ca.nrc.cadc.net.ResourceAlreadyExistsException;
 import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.net.TransientException;
+import ca.nrc.cadc.reg.client.RegistryClient;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
@@ -86,7 +90,9 @@ import java.security.AccessControlException;
 import java.security.PrivilegedExceptionAction;
 import java.security.cert.CertificateException;
 import java.util.Map;
+
 import javax.servlet.ServletContext;
+
 import org.apache.log4j.Logger;
 
 /**
@@ -142,6 +148,11 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
      * the init params that configure the http method action classes.
      */
     protected Map<String, String> initParams;
+    
+    /**
+     * Indicates whether the action should set the www-authenticate headers in the
+     * response. This 
+     */
 
     /**
      * Wrapper around the HTTP request.
@@ -241,6 +252,18 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
      * @return configured InlineContentHandler
      */
     protected abstract InlineContentHandler getInlineContentHandler();
+    
+    /**
+     * By overriding this method, action classes have an opportunity to do setup work
+     * before doAction is called. Exception throwing should match the mapping laid out
+     * in doAction().
+     * Overriding this method is optional.  By default nothing is done.
+     * 
+     * @throws Exception for application initialization failure
+     * @see #doAction()
+     */
+    public void initAction() throws Exception {
+    }
 
     /**
      * Action implemented by subclass. The following exceptions, when thrown by this 
@@ -248,6 +271,7 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
      *
      * <pre>
      * java.lang.IllegalArgumentException : 400
+     * ca.nrc.cadc.auth.NotAuthenticatedException : 401
      * java.security.cert.CertificateException : 403 -- should be 401 with a suitable challenge
      * java.security.AccessControlException : 403
      * ca.nrc.cadc.net.ResourceNotFoundException : 404
@@ -292,15 +316,33 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
     public Object run()
             throws Exception {
         boolean ioExceptionOnInput = true;
+        boolean authHeadersSet = false;
         try {
             logInfo.setSuccess(false);
             if (syncInput != null) {
                 syncInput.init();
                 ioExceptionOnInput = false;
             }
+            initAction();
+            if (setAuthHeaders()) {
+                RestServlet.setAuthenticateHeaders(
+                    AuthenticationUtil.getCurrentSubject(), syncOutput, null, new RegistryClient());
+                authHeadersSet = true;
+            }
             doAction();
-
             logInfo.setSuccess(true);
+        } catch (NotAuthenticatedException ex) {
+            logInfo.setSuccess(true);
+            logInfo.setMessage(ex.getMessage());
+            if (!authHeadersSet && setAuthHeaders()) {
+                try {
+                    RestServlet.setAuthenticateHeaders(
+                        AuthenticationUtil.getCurrentSubject(), syncOutput, ex, new RegistryClient());
+                } catch (Throwable t) {
+                    log.warn("Failed to set www-authenticate headers", t);
+                }
+            }
+            handleException(ex, 401, ex.getMessage(), false, false);
         } catch (AccessControlException ex) {
             logInfo.setSuccess(true);
             logInfo.setMessage(ex.getMessage());
@@ -392,6 +434,14 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
         } else {
             log.error("unexpected situation: SyncOutput is open", ex);
         }
+    }
+    
+    private boolean setAuthHeaders() {
+        String authHeaders = initParams.get(RestServlet.AUTH_HEADERS_PARAM);
+        if (authHeaders != null && authHeaders.equalsIgnoreCase(Boolean.FALSE.toString())) {
+            return false;
+        }
+        return true;
     }
 
 }

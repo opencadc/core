@@ -71,6 +71,7 @@ package ca.nrc.cadc.rest;
 
 import ca.nrc.cadc.auth.AuthMethod;
 import ca.nrc.cadc.auth.AuthenticationUtil;
+import ca.nrc.cadc.auth.DNPrincipal;
 import ca.nrc.cadc.auth.HttpPrincipal;
 import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.log.ServletLogInfo;
@@ -99,6 +100,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import javax.security.auth.Subject;
+import javax.security.auth.x500.X500Principal;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -119,6 +121,9 @@ public class RestServlet extends HttpServlet {
     private static final Logger log = Logger.getLogger(RestServlet.class);
 
     private static final List<String> CITEMS = new ArrayList<String>();
+    
+    static final String AUGMENT_SUBJECT_PARAM = "augmentSubject";
+    static final String AUTH_HEADERS_PARAM = "authHeaders";
     
     static {
         CITEMS.add("init");
@@ -153,11 +158,11 @@ public class RestServlet extends HttpServlet {
         
         this.appName = config.getServletContext().getServletContextName();
         this.componentID = appName  + "." + config.getServletName();
-        String augment = config.getInitParameter("augmentSubject");
+        String augment = config.getInitParameter(AUGMENT_SUBJECT_PARAM);
         if (augment != null && augment.equalsIgnoreCase(Boolean.FALSE.toString())) {
             augmentSubject = false;
         }
-        String authHeaders = config.getInitParameter("authHeaders");
+        String authHeaders = config.getInitParameter(AUTH_HEADERS_PARAM);
         if (authHeaders != null && authHeaders.equalsIgnoreCase(Boolean.FALSE.toString())) {
             setAuthHeaders = false;
         }
@@ -291,7 +296,6 @@ public class RestServlet extends HttpServlet {
         WebServiceLogInfo logInfo = new ServletLogInfo(request);
         long start = System.currentTimeMillis();
         SyncOutput out = null;
-        boolean authHeadersSet = false;
         
         // failures here indicate:
         // * attempt and failure to authenticate 
@@ -326,20 +330,18 @@ public class RestServlet extends HttpServlet {
             action.setSyncOutput(out);
             action.setLogInfo(logInfo);
             log.info(logInfo.start());
-            
-            if (setAuthHeaders) {
-                setAuthenticateHeaders(subject, out, null, response);
-            }
-            authHeadersSet = true;
 
             doit(subject, action);
         } catch (NotAuthenticatedException ex) {
             log.debug(ex);
             logInfo.setSuccess(true);
             logInfo.setMessage(ex.getMessage());
-            if (!authHeadersSet && setAuthHeaders) {
+            if (setAuthHeaders) {
                 try {
-                    setAuthenticateHeaders(null, out, ex, response);
+                    if (out == null) {
+                        out = new SyncOutput(response);
+                    }
+                    setAuthenticateHeaders(null, out, ex, new RegistryClient());
                 } catch (Throwable t) {
                     log.warn("Failed to set www-authenticate headers", t);
                 }
@@ -456,12 +458,8 @@ public class RestServlet extends HttpServlet {
      * If authentication failed and a challenge was presented, add the error type and error
      * description in the WWW-Authenticate header associated with the challenge.
      */
-    void setAuthenticateHeaders(Subject subject, SyncOutput out, NotAuthenticatedException ex, HttpServletResponse response) {
+    static void setAuthenticateHeaders(Subject subject, SyncOutput out, NotAuthenticatedException ex, RegistryClient rc) {
 
-        if (out == null) {
-            out = new SyncOutput(response);
-        }
-        
         if (out.isOpen()) {
             log.debug("SyncOutput already open, can't set auth headers");
             return;
@@ -471,27 +469,33 @@ public class RestServlet extends HttpServlet {
             // Authenticated...
             
             log.debug("Setting " + AuthenticationUtil.VO_AUTHENTICATED_HEADER + " header");
-            Set<HttpPrincipal> useridPrincipals = subject.getPrincipals(HttpPrincipal.class);
-            if (!useridPrincipals.isEmpty()) {
-                HttpPrincipal userid = useridPrincipals.iterator().next();
-                out.addHeader(AuthenticationUtil.VO_AUTHENTICATED_HEADER, userid.getName());
-                return;
+            
+            Principal p = null;
+            // prefer HttpPrincipal, then X500Principal, then whatever is available
+            Set<? extends Principal> principals = subject.getPrincipals(HttpPrincipal.class);
+            if (!principals.isEmpty()) {
+                p = principals.iterator().next();
+            } else {
+                principals = subject.getPrincipals(X500Principal.class);
+                if (!principals.isEmpty()) {
+                    p = principals.iterator().next();
+                }
             }
-            // TODO: pick the most informative principal
-            Principal principal = subject.getPrincipals().iterator().next();
-            out.addHeader(AuthenticationUtil.VO_AUTHENTICATED_HEADER, principal.getName());
+            if (p == null) {
+                p = subject.getPrincipals().iterator().next();
+            }
+            out.addHeader(AuthenticationUtil.VO_AUTHENTICATED_HEADER, p.getName());
             return;
             
         } else {
             // Not authenticated...
             
             log.debug("Setting " + AuthenticationUtil.AUTHENTICATE_HEADER + " header");
-            RegistryClient regClient = getRegistryClient();
             
             try {
                 // set a header for info on how to obtain bearer tokens with username/password over tls
                 URI loginServiceURI = getLocalServiceURI(Standards.SECURITY_METHOD_PASSWORD);
-                URL loginURL = regClient.getServiceURL(loginServiceURI, Standards.SECURITY_METHOD_PASSWORD, AuthMethod.ANON);
+                URL loginURL = rc.getServiceURL(loginServiceURI, Standards.SECURITY_METHOD_PASSWORD, AuthMethod.ANON);
                 StringBuilder sb = new StringBuilder();
                 sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA_BEARER).append(" standard_id=\"")
                     .append(Standards.SECURITY_METHOD_PASSWORD.toString()).append("\", ");
@@ -505,7 +509,7 @@ public class RestServlet extends HttpServlet {
             try {
                 // set a header for info on how to obtain tokens with OAuth2 authorize
                 URI authorizeServiceURI = getLocalServiceURI(Standards.SECURITY_METHOD_OPENID);
-                URL authorizeURL = regClient.getServiceURL(authorizeServiceURI, Standards.SECURITY_METHOD_OPENID, AuthMethod.ANON);
+                URL authorizeURL = rc.getServiceURL(authorizeServiceURI, Standards.SECURITY_METHOD_OPENID, AuthMethod.ANON);
                 StringBuilder sb = new StringBuilder();
                 sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA_BEARER).append(" standard_id=\"")
                     .append(Standards.SECURITY_METHOD_OPENID.toString()).append("\", ");
@@ -525,7 +529,7 @@ public class RestServlet extends HttpServlet {
             try {
                 // header for delegated x509 client proxy certificates
                 URI cdpProxyServiceURI = getLocalServiceURI(Standards.CRED_PROXY_10);
-                Capabilities caps = regClient.getCapabilities(cdpProxyServiceURI);
+                Capabilities caps = rc.getCapabilities(cdpProxyServiceURI);
                 Capability c = caps.findCapability(Standards.CRED_PROXY_10);
                 for (Interface i : c.getInterfaces()) {
                     List<URI> securityMethods = i.getSecurityMethods();
@@ -555,7 +559,7 @@ public class RestServlet extends HttpServlet {
      * If applicable, append error and error_description (OAuth2 style) information to the
      * end of a WWW-Authenticate header.
      */
-    private void appendAuthenticateErrorInfo(String challenge, StringBuilder sb, NotAuthenticatedException ex, boolean firstAttribute) {
+    private static void appendAuthenticateErrorInfo(String challenge, StringBuilder sb, NotAuthenticatedException ex, boolean firstAttribute) {
         if (ex != null && ex.getChallenge() != null && ex.getAuthError() != null && ex.getChallenge().equalsIgnoreCase(challenge)) {
             if (!firstAttribute) {
                 sb.append(",");
@@ -568,16 +572,9 @@ public class RestServlet extends HttpServlet {
     }
     
     /**
-     * Separated so can be overwritten by tests.
+     * Get the local URI for the given standard ID.
      */
-    RegistryClient getRegistryClient() {
-        return new RegistryClient();
-    }
-    
-    /**
-     * Separated so can be overwritten by tests.
-     */
-    URI getLocalServiceURI(URI stdID) {
+    private static URI getLocalServiceURI(URI stdID) {
         LocalAuthority localAuthority = new LocalAuthority();
         return localAuthority.getServiceURI(stdID.toString());
     }
