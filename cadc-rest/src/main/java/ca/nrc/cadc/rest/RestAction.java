@@ -148,11 +148,6 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
      * the init params that configure the http method action classes.
      */
     protected Map<String, String> initParams;
-    
-    /**
-     * Indicates whether the action should set the www-authenticate headers in the
-     * response. This 
-     */
 
     /**
      * Wrapper around the HTTP request.
