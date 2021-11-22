@@ -330,12 +330,8 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
             logInfo.setSuccess(true);
             logInfo.setMessage(ex.getMessage());
             if (!authHeadersSet && setAuthHeaders()) {
-                try {
-                    RestServlet.setAuthenticateHeaders(
-                        AuthenticationUtil.getCurrentSubject(), syncOutput, ex, new RegistryClient());
-                } catch (Throwable t) {
-                    log.warn("Failed to set www-authenticate headers", t);
-                }
+                RestServlet.setAuthenticateHeaders(
+                    AuthenticationUtil.getCurrentSubject(), syncOutput, ex, new RegistryClient());
             }
             handleException(ex, 401, ex.getMessage(), false, false);
         } catch (AccessControlException ex) {
