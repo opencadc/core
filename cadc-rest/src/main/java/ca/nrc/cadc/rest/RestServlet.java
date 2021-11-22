@@ -296,16 +296,21 @@ public class RestServlet extends HttpServlet {
         long start = System.currentTimeMillis();
         SyncOutput out = null;
         
-        // failures here indicate:
+        // Failures here indicate:
         // * attempt and failure to authenticate 
         //   or missing required authentication result in a 401
         // * all other failures indicate the service is broken (bug or misconfig) 
         //   or not handling exceptions correctly (bug) result in a 500 response
-
         try {
+            
             Subject subject = null;
-            subject = AuthenticationUtil.getSubject(request, augmentSubject);
-            logInfo.setSubject(subject);
+            NotAuthenticatedException nae = null;
+            try {
+                subject = AuthenticationUtil.getSubject(request, augmentSubject);
+                logInfo.setSubject(subject);
+            } catch (NotAuthenticatedException ex) {
+                nae = ex;
+            }
 
             RestAction action = actionClass.newInstance();
             action.setServletContext(getServletContext());
@@ -329,23 +334,18 @@ public class RestServlet extends HttpServlet {
             action.setSyncOutput(out);
             action.setLogInfo(logInfo);
             log.info(logInfo.start());
-
-            doit(subject, action);
-        } catch (NotAuthenticatedException ex) {
-            log.debug(ex);
-            logInfo.setSuccess(true);
-            logInfo.setMessage(ex.getMessage());
-            if (setAuthHeaders) {
-                try {
-                    if (out == null) {
-                        out = new SyncOutput(response);
-                    }
-                    setAuthenticateHeaders(null, out, ex, new RegistryClient());
-                } catch (Throwable t) {
-                    log.warn("Failed to set www-authenticate headers", t);
+            
+            if (nae != null) {
+                log.debug(nae);
+                logInfo.setSuccess(true);
+                logInfo.setMessage(nae.getMessage());
+                if (setAuthHeaders) {
+                    setAuthenticateHeaders(null, out, nae, new RegistryClient());
                 }
+                handleException(out, response, nae, 401, nae.getMessage(), false);   
+            } else {
+                doit(subject, action);
             }
-            handleException(out, response, ex, 401, ex.getMessage(), false);
         } catch (InstantiationException | IllegalAccessException ex) {
             // problem creating the action
             log.debug(ex);
