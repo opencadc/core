@@ -359,16 +359,11 @@ public class SignedToken implements Serializable {
     }
 
     private static SignedToken parseEncoded(final URI encodedURI) throws InvalidSignedTokenException {
-
-        if (!StringUtil.hasLength(encodedURI.getScheme())) {
-            throw new InvalidSignedTokenException("Wrong format for encoded token.");
-        } else {
-            final TokenEncoding tokenEncoding = TokenEncoding.valueOf(encodedURI.getScheme().toUpperCase());
-            final byte[] decodedBytes = TOKEN_ENCODER_DECODER.decode(encodedURI.getSchemeSpecificPart(), tokenEncoding);
-            final String decodedString = new String(decodedBytes);
-
-            return parse(decodedString.split(FIELD_DELIM), decodedString);
-        }
+        // token encoding always base64.  The scheme is to be removed from tokens soon.
+        final TokenEncoding tokenEncoding = TokenEncoding.BASE64;
+        final byte[] decodedBytes = TOKEN_ENCODER_DECODER.decode(encodedURI.getSchemeSpecificPart(), tokenEncoding);
+        final String decodedString = new String(decodedBytes);
+        return parse(decodedString.split(FIELD_DELIM), decodedString);
     }
 
     private static void validateSignature(final String signatureString, final String text)
