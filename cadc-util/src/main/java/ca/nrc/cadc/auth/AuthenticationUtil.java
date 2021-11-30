@@ -123,6 +123,9 @@ public class AuthenticationUtil {
     // IVOA header to indicate successful authentication.  Value is a principal name.
     public static final String VO_AUTHENTICATED_HEADER = "x-vo-authenticated";
     
+    // IVOA header to set a Bearer token in a response
+    public static final String VO_TOKEN_BEARER = "x-vo-bearer";
+    
     public static final String CHALLENGE_TYPE_BEARER = "Bearer";
     public static final String CHALLENGE_TYPE_BASIC = "Basic";
     public static final String CHALLENGE_TYPE_IVOA_BEARER = "ivoa_bearer";
