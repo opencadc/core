@@ -172,6 +172,7 @@ public class SignedTokenTest {
         tokenValue.append("=");
         tokenValue.append(new String(Base64.encode(sig)));
 
+        // test with base64: index
         String token = "base64:" + String.valueOf(Base64.encode(tokenValue.toString().getBytes()));
 
         log.debug("valid token: " + token);
@@ -183,6 +184,20 @@ public class SignedTokenTest {
         assertEquals("Domain list size not the same", domainList.size(), actToken.getDomains().size());
         assertArrayEquals("Wrong set of domains.", domainList.toArray(new String[0]),
                           actToken.getDomains().toArray(new String[0]));
+        
+        // test without base64 index
+        token = String.valueOf(Base64.encode(tokenValue.toString().getBytes()));
+
+        log.debug("valid token: " + token);
+        actToken = SignedToken.parse(token);
+
+        assertEquals("User id not the same", httpPrincipal, actToken.getUser());
+        assertEquals("Expiry time not the same", expiry.getTime().getTime(),
+                     actToken.getExpiryTime().getTime());
+        assertEquals("Domain list size not the same", domainList.size(), actToken.getDomains().size());
+        assertArrayEquals("Wrong set of domains.", domainList.toArray(new String[0]),
+                          actToken.getDomains().toArray(new String[0]));
+        
     }
 
     @Test
