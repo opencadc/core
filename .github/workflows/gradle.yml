@@ -32,7 +32,7 @@ jobs:
       run: cd cadc-rest && ../gradlew --info clean build javadoc checkstyleMain install
       
     - name: build and test cadc-vodml
-      run: cd cadc-vodml && ../gradlew --info clean build javadoc install
+      run: cd cadc-vodml && ../gradlew --info clean build javadoc checkstyleMain install
       
     - name: build and test cadc-test-servlet
       run: cd cadc-test-servlet && ../gradlew --info clean build javadoc
