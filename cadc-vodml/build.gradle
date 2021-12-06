@@ -14,7 +14,7 @@ sourceCompatibility = 1.8
 
 group = 'org.opencadc'
 
-version = '1.0.7'
+version = '1.0.8'
 
 description = 'OpenCADC VO-DML validation library'
 def git_url = 'https://github.com/opencadc/core'
@@ -26,7 +26,7 @@ dependencies {
     compile 'org.opencadc:cadc-util:[1.4,2.0)'
 
     compile 'org.jdom:jdom2:2.0.6'
-    compile 'com.helger:ph-schematron:4.2.0'
+    compile 'com.helger:ph-schematron:5.6.5'
     compile 'net.sf.saxon:Saxon-HE:[9.8,10)'
 
     runtime 'org.slf4j:slf4j-api:1.7.30'
@@ -35,3 +35,5 @@ dependencies {
     
     testCompile 'junit:junit:4.13' 
 }
+
+apply from: '../opencadc.gradle'

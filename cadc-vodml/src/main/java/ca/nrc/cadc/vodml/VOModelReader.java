@@ -67,9 +67,11 @@
 
 package ca.nrc.cadc.vodml;
 
-import ca.nrc.cadc.xml.W3CConstants;
 import ca.nrc.cadc.xml.XmlUtil;
 import com.helger.schematron.ISchematronResource;
+import com.helger.schematron.svrl.jaxb.FailedAssert;
+import com.helger.schematron.svrl.jaxb.SchematronOutputType;
+import com.helger.schematron.svrl.jaxb.Text;
 import com.helger.schematron.xslt.SchematronResourceSCH;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -86,8 +88,6 @@ import org.apache.log4j.Logger;
 import org.jdom2.Document;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
-import org.oclc.purl.dsdl.svrl.FailedAssert;
-import org.oclc.purl.dsdl.svrl.SchematronOutputType;
 
 /**
  * Initial prototype VO-DML data model reader. This currently returns an
@@ -167,8 +167,8 @@ public class VOModelReader {
 
         int num = result.getTextCount();
         for (int i = 0; i < num; i++) {
-            String o = result.getTextAtIndex(i);
-            log.debug("[" + i + "] " + o);
+            Text t = result.getTextAtIndex(i);
+            log.debug("[" + i + "] " + t);
         }
         num = result.getActivePatternAndFiredRuleAndFailedAssertCount();
         List<String> emsgs = new ArrayList<>();
