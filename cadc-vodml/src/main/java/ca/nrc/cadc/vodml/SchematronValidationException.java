@@ -63,10 +63,9 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.vodml;
-
 
 import java.util.List;
 import org.apache.log4j.Logger;
@@ -75,20 +74,18 @@ import org.apache.log4j.Logger;
  *
  * @author pdowler
  */
-public class SchematronValidationException extends Exception
-{
+public class SchematronValidationException extends Exception {
+
     private static final Logger log = Logger.getLogger(SchematronValidationException.class);
 
     private final List<String> msgs;
-    
-    public SchematronValidationException(int numFails, List<String> msgs) 
-    { 
+
+    public SchematronValidationException(int numFails, List<String> msgs) {
         super(numFails + " failed assertions");
         this.msgs = msgs;
     }
 
-    public List<String> getFailures()
-    {
+    public List<String> getFailures() {
         return msgs;
     }
 }
