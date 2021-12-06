@@ -63,10 +63,9 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.vodml;
-
 
 import ca.nrc.cadc.util.ArgumentMap;
 import ca.nrc.cadc.util.Log4jInit;
@@ -83,78 +82,64 @@ import org.jdom2.JDOMException;
  *
  * @author pdowler
  */
-public class Main 
-{
+public class Main {
+
     private static final Logger log = Logger.getLogger(Main.class);
     private static final String PKG = Main.class.getPackage().getName();
-    
-    private Main() { }
-    
-    public static void main(String[] args)
-    {
-        try
-        {
+
+    private Main() {
+    }
+
+    public static void main(String[] args) {
+        try {
             ArgumentMap am = new ArgumentMap(args);
-            if (am.isSet("h") || am.isSet("help"))
-            {
+            if (am.isSet("h") || am.isSet("help")) {
                 usage();
                 System.exit(0);
             }
-            
-            if (am.isSet("d") || am.isSet("debug"))
-            {
+
+            if (am.isSet("d") || am.isSet("debug")) {
                 Log4jInit.setLevel(PKG, Level.DEBUG);
-            }
-            else if (am.isSet("v") || am.isSet("verbose"))
-            {
+            } else if (am.isSet("v") || am.isSet("verbose")) {
                 Log4jInit.setLevel(PKG, Level.INFO);
-            }
-            else
+            } else {
                 Log4jInit.setLevel(PKG, Level.WARN);
+            }
 
             List<String> pargs = am.getPositionalArgs();
-            if (pargs.isEmpty())
-            {
+            if (pargs.isEmpty()) {
                 usage();
                 System.exit(1);
             }
-            
+
             boolean warn = am.isSet("warn");
             VOModelReader validator = new VOModelReader(true, true, warn);
-            for (String fname : pargs)
-            {
-                try
-                {
+            for (String fname : pargs) {
+                try {
                     log.info("validating: " + fname + " ...");
                     File f = new File(fname);
                     Reader fr = new FileReader(f);
                     Document doc = validator.read(fr);
                     log.info("validating: " + fname + " ... [OK]");
-                }
-                catch(JDOMException ex)
-                {
+                } catch (JDOMException ex) {
                     log.error("failed basic XML validation", ex);
                     System.exit(-1);
-                }
-                catch(SchematronValidationException ex)
-                {
+                } catch (SchematronValidationException ex) {
                     log.error("failed Schematron validation: " + ex.getMessage());
-                    for (String msg : ex.getFailures())
+                    for (String msg : ex.getFailures()) {
                         log.error(msg);
+                    }
                     System.exit(-1);
                 }
             }
-        }
-        catch(Throwable t)
-        {
+        } catch (Throwable t) {
             log.error("uncaught exception", t);
             System.exit(-1);
         }
         System.exit(0);
     }
-    
-    private static void usage()
-    {
+
+    private static void usage() {
         System.out.println("usage: cadc-vodml [-v|--verbose|-d|--debug|-h|--help] <VO-DML/XML filename> ...");
     }
 }

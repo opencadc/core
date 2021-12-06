@@ -99,7 +99,7 @@ public class VOModelWriter {
         OutputStreamWriter osw = new OutputStreamWriter(out);
         write(doc, osw);
     }
-    
+
     public void write(Document doc, Writer out) throws IOException {
         XMLOutputter outputter = new XMLOutputter();
         if (prettyPrint) {
