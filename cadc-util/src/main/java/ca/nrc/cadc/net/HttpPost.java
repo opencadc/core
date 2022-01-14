@@ -113,7 +113,7 @@ public class HttpPost extends HttpTransfer {
     private static final String LINE_FEED = "\r\n";
     
     // request information
-    private Map<String,Object> paramMap = new TreeMap<String,Object>(); // removes a lot of checking for null
+    private final Map<String,Object> paramMap = new TreeMap<String,Object>(); // removes a lot of checking for null
     private FileContent inputFileContent;
     
     /**
@@ -121,12 +121,15 @@ public class HttpPost extends HttpTransfer {
      * Ideal for large expected responses.
      * 
      * @param url The POST destination.
-     * @param map A map of the data to be posted.
+     * @param map A map of the parameter data to be posted.
      * @param outputStream An output stream to capture the response data.
      */
     public HttpPost(URL url, Map<String, Object> map, OutputStream outputStream) {
         super(url, true);
-        this.paramMap = map;
+        if (map != null) {
+            this.paramMap.putAll(map);
+        }
+        this.paramMap.putAll(map);
         super.responseDestination = outputStream;
     }
     
@@ -139,15 +142,14 @@ public class HttpPost extends HttpTransfer {
      * HttpPost constructor.
      * 
      * @param url The POST destination.
-     * @param map A map of the data to be posted.
+     * @param map A map of the data to be posted
      * @param followRedirects Whether or not to follow server redirects.
      */
     public HttpPost(URL url, Map<String, Object> map, boolean followRedirects) {
         super(url, followRedirects);
-        if (map == null || map.isEmpty()) {
-            throw new IllegalArgumentException("parameters cannot be empty.");
+        if (map != null) {
+            this.paramMap.putAll(map);
         }
-        this.paramMap = map;
     }
     
     /**
@@ -177,6 +179,16 @@ public class HttpPost extends HttpTransfer {
     @Deprecated
     public HttpPost(URL url, String content, String contentType, boolean followRedirects) {
         this(url, new FileContent(content, contentType, Charset.forName("UTF-8")), followRedirects);
+    }
+
+    /**
+     * Access current map of parameters. Additional parameters can be added to this map
+     * before calling prepare() or run().
+     * 
+     * @return post parameters
+     */
+    public Map<String, Object> getParameterMap() {
+        return paramMap;
     }
     
     @Override
