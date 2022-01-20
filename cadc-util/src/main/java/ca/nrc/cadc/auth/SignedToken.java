@@ -69,8 +69,6 @@
 
 package ca.nrc.cadc.auth;
 
-import ca.nrc.cadc.auth.encoding.TokenEncoderDecoder;
-import ca.nrc.cadc.auth.encoding.TokenEncoding;
 import ca.nrc.cadc.util.Base64;
 import ca.nrc.cadc.util.RsaSignatureGenerator;
 import ca.nrc.cadc.util.RsaSignatureVerifier;
@@ -111,8 +109,6 @@ public class SignedToken implements Serializable {
     public static String USER_LABEL = "userid";
     public static String EXPIRY_LABEL = "expirytime";
     public static String SIGNATURE_LABEL = "signature";
-
-    private static final TokenEncoderDecoder TOKEN_ENCODER_DECODER = new TokenEncoderDecoder();
 
     private Date expiryTime; // expiration time of the delegation (UTC)
     private URI scope; // resources that are the object of the delegation
@@ -176,24 +172,12 @@ public class SignedToken implements Serializable {
      * Serializes and signs the object into a string of attribute-value pairs.
      *
      * @param token the token to format the returned string
-     * @return String with DelegationToken information
-     * @throws IOException         Any IO Errors.
-     * @throws InvalidKeyException If the signature cannot be completed.
-     */
-    public static String format(SignedToken token) throws InvalidKeyException, IOException {
-        return format(token, TokenEncoding.BASE64);
-    }
-
-    /**
-     * Serializes and signs the object into a string of attribute-value pairs.
-     *
-     * @param token the token to format the returned string
      * @return String with DelegationToken information, with a "scheme" to indicate
      *         the encoding type.
      * @throws IOException         Any IO Errors.
      * @throws InvalidKeyException If the signature cannot be completed.
      */
-    public static String format(final SignedToken token, final TokenEncoding tokenEncoding)
+    public static String format(final SignedToken token)
             throws InvalidKeyException, IOException {
         StringBuilder sb = getContent(token);
 
@@ -205,14 +189,12 @@ public class SignedToken implements Serializable {
         sb.append(VALUE_DELIM);
 
         // Signature is always Base64 encoded. This is necessary because the value of
-        // the Signature alone cannot be
-        // easily transported.
+        // the Signature alone cannot be easily transported.
         final RsaSignatureGenerator su = new RsaSignatureGenerator();
         final byte[] sig = su.sign(new ByteArrayInputStream(toSign.getBytes()));
         sb.append(new String(Base64.encode(sig)));
 
-        return tokenEncoding.name().toLowerCase() + ":"
-                + new String(TOKEN_ENCODER_DECODER.encode(sb.toString().getBytes(), tokenEncoding));
+        return new String(Base64.encode(sb.toString().getBytes()));
     }
 
     // the formatted content without the signature
@@ -280,7 +262,7 @@ public class SignedToken implements Serializable {
             final String[] fields = text.split(FIELD_DELIM);
             return parse(fields, text);
         } else {
-            return parseEncoded(URI.create(text));
+            return parseEncoded(text);
         }
     }
 
@@ -358,12 +340,20 @@ public class SignedToken implements Serializable {
         return new SignedToken(principalSet, scope, expirytime, domains);
     }
 
-    private static SignedToken parseEncoded(final URI encodedURI) throws InvalidSignedTokenException {
-        // token encoding always base64.  The scheme is to be removed from tokens soon.
-        final TokenEncoding tokenEncoding = TokenEncoding.BASE64;
-        final byte[] decodedBytes = TOKEN_ENCODER_DECODER.decode(encodedURI.getSchemeSpecificPart(), tokenEncoding);
-        final String decodedString = new String(decodedBytes);
-        return parse(decodedString.split(FIELD_DELIM), decodedString);
+    private static SignedToken parseEncoded(final String encodedToken) throws InvalidSignedTokenException {
+        // token encoding always base64. 
+        final String deprecatedPrefix = "base64:";
+        try {
+            String toDecode = encodedToken;
+            if (encodedToken.startsWith(deprecatedPrefix)) {
+                toDecode = encodedToken.substring(deprecatedPrefix.length());
+            }
+            final byte[] decodedBytes = Base64.decode(toDecode);
+            final String decodedString = new String(decodedBytes);
+            return parse(decodedString.split(FIELD_DELIM), decodedString);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidSignedTokenException("failed to decode token", e);
+        }
     }
 
     private static void validateSignature(final String signatureString, final String text)
