@@ -67,7 +67,6 @@
 
 package ca.nrc.cadc.io;
 
-import ca.nrc.cadc.thread.ConditionVar;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.concurrent.BlockingQueue;
@@ -131,22 +130,36 @@ public class MultiBufferIO {
         }
         
         Worker w = new Worker(output);
-        Thread writer = new Thread(w);
-        writer.start();
-        
-        Throwable readFail = doit(input, w);
-        log.debug("reader completed: " + readFail);
-        if (readFail != null) {
-            writer.interrupt();
-        }
-        writer.join();
-        log.debug("writer completed: " + w.fail);
-        
-        if (readFail != null) {
-            throw new ReadException(READ_FAIL, readFail);
-        }
-        if (w.fail != null) {
-            throw new WriteException(WRITE_FAIL, w.fail);
+        Thread writer = new Thread(w, MultiBufferIO.class.getSimpleName() + "-writer");
+        try {
+            writer.start();
+
+            Throwable readFail = doit(input, w);
+            log.debug("reader completed: " + readFail);
+            if (readFail != null) {
+                writer.interrupt();
+            }
+            writer.join();
+            log.debug("writer completed: " + w.fail);
+
+            if (readFail != null) {
+                throw new ReadException(READ_FAIL, readFail);
+            }
+            if (w.fail != null) {
+                throw new WriteException(WRITE_FAIL, w.fail);
+            }
+        } finally {
+            if (writer.isAlive()) {
+                try {
+                    log.error("BUG: " + writer.getName() + " still alive in finally - interrupting...");
+                    writer.interrupt();
+                    log.error("BUG: " + writer.getName() + " interrupted in finally - waiting...");
+                    writer.join();
+                    log.error("BUG: " + writer.getName() + " still alive in finally - finished");
+                } catch (Exception ex) {
+                    log.error("OOPS: failed to kill " + writer.getName(), ex);
+                }
+            }
         }
     }
     
