@@ -898,7 +898,8 @@ public abstract class HttpTransfer implements Runnable {
                 throw new ExpectationFailedException(responseBody);
 
             case HttpURLConnection.HTTP_INTERNAL_ERROR:
-                throw new RemoteServiceException(responseBody);
+                String loggableURL = getLoggableString(url);
+                throw new RemoteServiceException("url=" + loggableURL + "msg=" + responseBody);
                 
             case HttpURLConnection.HTTP_UNAVAILABLE:
                 throw new TransientException(responseBody);
@@ -906,6 +907,30 @@ public abstract class HttpTransfer implements Runnable {
             default:
                 throw new IOException(responseBody);
         }
+    }
+    
+    // reduce url to minimal (max 2 path components) so they don't
+    // contain request-specific content; goal is to capture which service
+    // was called, not the details of the call
+    private String getLoggableString(URL url) {
+        String surl = url.toExternalForm();
+        String path = url.getPath();
+        int i = surl.indexOf(path);
+        String[] ss = path.split("/");
+        
+        StringBuilder sb = new StringBuilder();
+        sb.append(surl.substring(0, i));
+        
+        // leading / means ss[0] is empty string
+        sb.append("/");
+        if (ss.length > 1) {
+            sb.append(ss[1]).append("/");
+        }
+        if (ss.length > 2) {
+            sb.append(ss[2]).append("/");
+        }
+        sb.append("...");
+        return sb.toString();
     }
 
     protected void checkRedirects(URL url, HttpURLConnection conn) 
