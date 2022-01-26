@@ -923,14 +923,14 @@ public abstract class HttpTransfer implements Runnable {
             }
 
             String base = surl.substring(0, j);
-            log.warn("base: " + base);
+            log.debug("base: " + base);
             sb.append(base);
 
             String path = url.getPath();
             path = path.substring(1);
 
             String[] ss = path.split("/");
-            log.warn("path: " + path + " " + ss.length);
+            log.debug("path: " + path + " " + ss.length);
             if (ss.length > 0) {
                 sb.append("/").append(ss[0]);
             }
