@@ -898,7 +898,7 @@ public abstract class HttpTransfer implements Runnable {
                 throw new ExpectationFailedException(responseBody);
 
             case HttpURLConnection.HTTP_INTERNAL_ERROR:
-                String loggableURL = getLoggableString(url);
+                String loggableURL = toLoggableString(url);
                 throw new RemoteServiceException("url=" + loggableURL + "msg=" + responseBody);
                 
             case HttpURLConnection.HTTP_UNAVAILABLE:
@@ -912,25 +912,56 @@ public abstract class HttpTransfer implements Runnable {
     // reduce url to minimal (max 2 path components) so they don't
     // contain request-specific content; goal is to capture which service
     // was called, not the details of the call
-    private String getLoggableString(URL url) {
-        String surl = url.toExternalForm();
-        String path = url.getPath();
-        int i = surl.indexOf(path);
-        String[] ss = path.split("/");
-        
-        StringBuilder sb = new StringBuilder();
-        sb.append(surl.substring(0, i));
-        
-        // leading / means ss[0] is empty string
-        sb.append("/");
-        if (ss.length > 1) {
-            sb.append(ss[1]).append("/");
+    static String toLoggableString(URL url) {
+        try {
+            StringBuilder sb = new StringBuilder();
+
+            String surl = url.toExternalForm();
+
+            String server = url.getHost();
+            int i = surl.indexOf(server);
+            int j = surl.indexOf("/", i);
+            if (j == -1) {
+                return surl;
+            }
+
+            String base = surl.substring(0, j);
+            log.warn("base: " + base);
+            sb.append(base);
+
+            String path = url.getPath();
+            path = path.substring(1);
+
+            String[] ss = path.split("/");
+            log.warn("path: " + path + " " + ss.length);
+            if (ss.length > 0) {
+                sb.append("/").append(ss[0]);
+            }
+            if (ss.length > 1) {
+                sb.append("/").append(ss[1]);
+            }
+
+            if (ss.length > 2) {
+                // was truncated
+                sb.append("/...");
+            } else {
+                boolean trailingSlash = path.endsWith("/");
+                if (trailingSlash) {
+                    sb.append("/");
+                }
+            }
+
+            String query = url.getQuery();
+            if (query != null && !query.isEmpty()) {
+                // was truncated
+                sb.append("?...");
+            }
+
+            return sb.toString();
+        } catch (Exception oops) {
+            // never want an error message related method to cause a failure
+            return "to-loggable-failed-bug";
         }
-        if (ss.length > 2) {
-            sb.append(ss[2]).append("/");
-        }
-        sb.append("...");
-        return sb.toString();
     }
 
     protected void checkRedirects(URL url, HttpURLConnection conn) 
