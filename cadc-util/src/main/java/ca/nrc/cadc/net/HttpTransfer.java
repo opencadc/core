@@ -84,7 +84,6 @@ import ca.nrc.cadc.util.CaseInsensitiveStringComparator;
 import ca.nrc.cadc.util.FileMetadata;
 import ca.nrc.cadc.util.HexUtil;
 import ca.nrc.cadc.util.StringUtil;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -109,11 +108,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
 import javax.security.auth.Subject;
-
 import org.apache.log4j.Logger;
 
 /**
@@ -899,7 +896,7 @@ public abstract class HttpTransfer implements Runnable {
 
             case HttpURLConnection.HTTP_INTERNAL_ERROR:
                 String loggableURL = toLoggableString(url);
-                throw new RemoteServiceException("url=" + loggableURL + "msg=" + responseBody);
+                throw new RemoteServiceException("url=" + loggableURL + " msg=" + responseBody);
                 
             case HttpURLConnection.HTTP_UNAVAILABLE:
                 throw new TransientException(responseBody);
