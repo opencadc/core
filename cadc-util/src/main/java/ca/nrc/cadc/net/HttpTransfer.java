@@ -84,7 +84,6 @@ import ca.nrc.cadc.util.CaseInsensitiveStringComparator;
 import ca.nrc.cadc.util.FileMetadata;
 import ca.nrc.cadc.util.HexUtil;
 import ca.nrc.cadc.util.StringUtil;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -109,11 +108,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
 import javax.security.auth.Subject;
-
 import org.apache.log4j.Logger;
 
 /**
@@ -898,13 +895,69 @@ public abstract class HttpTransfer implements Runnable {
                 throw new ExpectationFailedException(responseBody);
 
             case HttpURLConnection.HTTP_INTERNAL_ERROR:
-                throw new RemoteServiceException(responseBody);
+                String loggableURL = toLoggableString(url);
+                throw new RemoteServiceException("url=" + loggableURL + " msg=" + responseBody);
                 
             case HttpURLConnection.HTTP_UNAVAILABLE:
                 throw new TransientException(responseBody);
 
             default:
                 throw new IOException(responseBody);
+        }
+    }
+    
+    // reduce url to minimal (max 2 path components) so they don't
+    // contain request-specific content; goal is to capture which service
+    // was called, not the details of the call
+    static String toLoggableString(URL url) {
+        try {
+            StringBuilder sb = new StringBuilder();
+
+            String surl = url.toExternalForm();
+
+            String server = url.getHost();
+            int i = surl.indexOf(server);
+            int j = surl.indexOf("/", i);
+            if (j == -1) {
+                return surl;
+            }
+
+            String base = surl.substring(0, j);
+            log.debug("base: " + base);
+            sb.append(base);
+
+            String path = url.getPath();
+            path = path.substring(1);
+
+            String[] ss = path.split("/");
+            log.debug("path: " + path + " " + ss.length);
+            if (ss.length > 0) {
+                sb.append("/").append(ss[0]);
+            }
+            if (ss.length > 1) {
+                sb.append("/").append(ss[1]);
+            }
+
+            if (ss.length > 2) {
+                // was truncated
+                sb.append("/...");
+            } else {
+                boolean trailingSlash = path.endsWith("/");
+                if (trailingSlash) {
+                    sb.append("/");
+                }
+            }
+
+            String query = url.getQuery();
+            if (query != null && !query.isEmpty()) {
+                // was truncated
+                sb.append("?...");
+            }
+
+            return sb.toString();
+        } catch (Exception oops) {
+            // never want an error message related method to cause a failure
+            return "to-loggable-failed-bug";
         }
     }
 

@@ -208,6 +208,80 @@ public class HttpTransferTest {
     }
 
     @Test
+    public void testGetLoggableURL() {
+        log.debug("TEST: testGetLoggableURL");
+        try {
+            // no trailing /
+            URL in = new URL("https://www.example.net");
+            String exp = "https://www.example.net";
+            String act = HttpTransfer.toLoggableString(in);
+            log.info("in: " + in + " loggable: " + act);
+            Assert.assertEquals(exp, act);
+            
+            // with trailing /
+            in = new URL("https://www.example.net/");
+            exp = "https://www.example.net/";
+            act = HttpTransfer.toLoggableString(in);
+            log.info("in: " + in + " loggable: " + act);
+            Assert.assertEquals(exp, act);
+            
+            // one path comp
+            in = new URL("https://www.example.net/foo");
+            exp = "https://www.example.net/foo";
+            act = HttpTransfer.toLoggableString(in);
+            log.info("in: " + in + " loggable: " + act);
+            Assert.assertEquals(exp, act);
+            
+            // one path comp; trailing /
+            in = new URL("https://www.example.net/foo/");
+            exp = "https://www.example.net/foo/";
+            act = HttpTransfer.toLoggableString(in);
+            log.info("in: " + in + " loggable: " + act);
+            Assert.assertEquals(exp, act);
+            
+            in = new URL("https://www.example.net/foo?BAR=1");
+            exp = "https://www.example.net/foo?...";
+            act = HttpTransfer.toLoggableString(in);
+            log.info("in: " + in + " loggable: " + act);
+            Assert.assertEquals(exp, act);
+            
+            in = new URL("https://www.example.net/foo/?BAR=1");
+            exp = "https://www.example.net/foo/?...";
+            act = HttpTransfer.toLoggableString(in);
+            log.info("in: " + in + " loggable: " + act);
+            Assert.assertEquals(exp, act);
+            
+            in = new URL("https://www.example.net/foo/bar?BAZ=1");
+            exp = "https://www.example.net/foo/bar?...";
+            act = HttpTransfer.toLoggableString(in);
+            log.info("in: " + in + " loggable: " + act);
+            Assert.assertEquals(exp, act);
+            
+            in = new URL("https://www.example.net/foo/bar/?BAZ=1");
+            exp = "https://www.example.net/foo/bar/?...";
+            act = HttpTransfer.toLoggableString(in);
+            log.info("in: " + in + " loggable: " + act);
+            Assert.assertEquals(exp, act);
+            
+            in = new URL("https://www.example.net/foo/bar/1234567890?BAZ=1");
+            exp = "https://www.example.net/foo/bar/...?...";
+            act = HttpTransfer.toLoggableString(in);
+            log.info("in: " + in + " loggable: " + act);
+            Assert.assertEquals(exp, act);
+            
+            in = new URL("https://www.example.net/foo/bar/1234567890/?BAZ=1");
+            exp = "https://www.example.net/foo/bar/...?...";
+            act = HttpTransfer.toLoggableString(in);
+            log.info("in: " + in + " loggable: " + act);
+            Assert.assertEquals(exp, act);
+            
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+    
+    @Test
     public void testBufferSize() throws Exception {
         log.debug("TEST: testBufferSize");
         try {
