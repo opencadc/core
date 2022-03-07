@@ -70,33 +70,40 @@
 package ca.nrc.cadc.util;
 
 import ca.nrc.cadc.date.DateUtil;
-
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.Filter;
+import org.apache.logging.log4j.core.appender.ConsoleAppender;
+import org.apache.logging.log4j.core.appender.WriterAppender;
+import org.apache.logging.log4j.core.config.AppenderRef;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.core.config.builder.api.AppenderComponentBuilder;
+import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilder;
+import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilderFactory;
+import org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
-import org.apache.log4j.WriterAppender;
-import org.apache.log4j.varia.LevelRangeFilter;
+// ABOUT imports
+// public API is log4j-1.2 package
+// implementation is log4j-2 package
 
 /**
- * Initialize log4j for the specified package and level. Logging is only
- * to the console.
+ * Initialize log4j for the specified package and level.
  *
  */
 public class Log4jInit {
     private static boolean consoleAppendersCreated = false;
 
     // SHORT_FORMAT applies to DEBUG and TRACE logging levels
-    private static final String SHORT_FORMAT = "%-4r [%t] %-5p %c{1} %x - %m\n";
+    private static final String SHORT_FORMAT = "%-4r [%t] %-5p %c{1} - %m\n";
 
     // LONG_FORMAT applies to INFO, WARN, ERROR and FATAL logging levels
-    private static final String LONG_FORMAT = "%d{" + DateUtil.ISO_DATE_FORMAT
-                                              + "} [%t] %-5p %c{1} %x - %m\n";
+    private static final String LONG_FORMAT_A = "%d{" + DateUtil.ISO_DATE_FORMAT + "}";
+    private static final String LONG_FORMAT_B = "[%t] %-5p %c{1} - %m\n";
 
     // LONG_FORMAT applies to machine oriented INFO logging levels
     private static final String MESSAGE_ONLY_FORMAT = "%m\n";
@@ -104,24 +111,49 @@ public class Log4jInit {
     private static List<Writer> logWriters = new ArrayList<Writer>();
     
     static {
-        Logger.getRootLogger().setLevel(Level.ERROR);
+        
+    }
+    
+    private static Level toV2(org.apache.log4j.Level level) {
+        switch (level.toInt()) {
+            case org.apache.log4j.Level.ERROR_INT:
+                return Level.ERROR;
+            case org.apache.log4j.Level.WARN_INT:
+                return Level.WARN;
+            case org.apache.log4j.Level.INFO_INT:
+                return Level.INFO;
+            case org.apache.log4j.Level.DEBUG_INT:
+                return Level.DEBUG;
+            case org.apache.log4j.Level.TRACE_INT:
+                return Level.TRACE;
+            default:
+                throw new IllegalArgumentException("unexpected level: " + level);
+        }
     }
     
     /**
-     * Initializes logging to the console.
+     * Initialize console logging.
      * 
-     * @param pkg the name of package or ancestors of package or classes. Can't be null.
-     * @param level the logging level.
+     * @param pkg the name of package or ancestors of package or classes
+     * @param level the logging level
      */
-    public static synchronized void setLevel(String pkg, Level level) {
+    public static synchronized void setLevel(String pkg, org.apache.log4j.Level level) {
         setLevel(null, pkg, level);
     }
     
-    public static synchronized void setLevel(String appName, String pkg, Level level) {
+    /**
+     * Initialize console logging with specified appName.
+     * 
+     * @param appName application name to add to log messages
+     * @param pkg the name of package or ancestors of package or classes
+     * @param level the logging level
+     */
+    public static synchronized void setLevel(String appName, String pkg, org.apache.log4j.Level level) {
         createLog4jConsoleAppenders(appName);
 
         // set specified package and level
-        Logger.getLogger(pkg).setLevel(level);
+        //Logger.getLogger(pkg).setLevel(level);
+        Configurator.setLevel(pkg, toV2(level));
     }
     
 
@@ -136,11 +168,11 @@ public class Log4jInit {
      * @param level log level for pkg
      * @param dest destination writer to log to  (may be null)
      */
-    public static synchronized void setLevel(String pkg, Level level, Writer dest) {
+    public static synchronized void setLevel(String pkg, org.apache.log4j.Level level, Writer dest) {
         createLog4jWriterAppender(dest);
 
         // set specified package and level
-        Logger.getLogger(pkg).setLevel(level);
+        Configurator.setLevel(pkg, toV2(level));
     }
 
     /**
@@ -154,62 +186,27 @@ public class Log4jInit {
     private static synchronized void createLog4jConsoleAppenders(String appName) {
         if (!consoleAppendersCreated) {
             // Clear all existing appenders, if there's any.
-            BasicConfigurator.resetConfiguration();
-            Logger.getRootLogger().setLevel(Level.ERROR); // must redo after reset
+            //BasicConfigurator.resetConfiguration();
+            //Logger.getRootLogger().setLevel(Level.ERROR); // must redo after reset
 
             boolean messageOnly = "true".equals(System.getProperty(Log4jInit.class.getName() + ".messageOnly"));
-            String errorLogFormat = LONG_FORMAT;
-            String infoLogFormat = LONG_FORMAT;
-            String debugLogFormat = SHORT_FORMAT;
+            String pattern = LONG_FORMAT_A + LONG_FORMAT_B;
             if (messageOnly) {
-                infoLogFormat = MESSAGE_ONLY_FORMAT;
+                pattern = MESSAGE_ONLY_FORMAT;
+            } else if (appName != null) {
+                pattern = LONG_FORMAT_A + " " + appName + " " + LONG_FORMAT_B;
             }
             
-            if (appName != null) {
-                errorLogFormat = "%d{" + DateUtil.ISO_DATE_FORMAT + "} "
-                                 + appName + " [%t] %-5p %c{1} %x - %m\n";
-
-                if (!messageOnly) {
-                    infoLogFormat =  "%d{" + DateUtil.ISO_DATE_FORMAT + "} "
-                                     + appName + " [%t] %-5p %c{1} %x - %m\n";
-                }
-
-                debugLogFormat = "%-4r " + appName
-                                 + " [%t] %-5p %c{1} %x - %m\n";
-            }
+            ConfigurationBuilder<BuiltConfiguration> builder = ConfigurationBuilderFactory.newConfigurationBuilder();
+            AppenderComponentBuilder appenderBuilder = builder.newAppender("out", "Console");
+            appenderBuilder.add(builder.newLayout("PatternLayout").addAttribute("pattern", pattern));
+            appenderBuilder.addAttribute("target", ConsoleAppender.Target.SYSTEM_OUT);
+            builder.add(appenderBuilder);
             
-            // Appender for WARN, ERROR and FATAL with LONG_FORMAT message prefix
-            LevelRangeFilter errorFilter = new LevelRangeFilter();
-            errorFilter.setLevelMax(Level.FATAL);
-            errorFilter.setLevelMin(Level.WARN);
-            errorFilter.setAcceptOnMatch(true);
-            ConsoleAppender conAppenderHigh =
-                    new ConsoleAppender(new PatternLayout(errorLogFormat));
-            conAppenderHigh.clearFilters();
-            conAppenderHigh.addFilter(errorFilter);
-            BasicConfigurator.configure(conAppenderHigh);
-
-            // Appender for INFO with LONG_FORMAT message prefix
-            LevelRangeFilter infoFilter = new LevelRangeFilter();
-            infoFilter.setLevelMax(Level.INFO);
-            infoFilter.setLevelMin(Level.INFO);
-            infoFilter.setAcceptOnMatch(true);
-            ConsoleAppender conAppenderInfo =
-                    new ConsoleAppender(new PatternLayout(infoLogFormat));
-            conAppenderInfo.clearFilters();
-            conAppenderInfo.addFilter(infoFilter);
-            BasicConfigurator.configure(conAppenderInfo);
-
-            // Appender for DEBUG and TRACE with LONG_FORMAT message prefix
-            LevelRangeFilter debugFilter = new LevelRangeFilter();
-            debugFilter.setLevelMax(Level.DEBUG);
-            debugFilter.setLevelMin(Level.TRACE);
-            debugFilter.setAcceptOnMatch(true);
-            ConsoleAppender conAppenderDebug =
-                    new ConsoleAppender(new PatternLayout(debugLogFormat));
-            conAppenderDebug.clearFilters();
-            conAppenderDebug.addFilter(debugFilter);
-            BasicConfigurator.configure(conAppenderDebug);
+            builder.add(builder.newRootLogger(Level.ERROR).add(builder.newAppenderRef("out")));
+            
+            Configuration conf = builder.build();
+            Configurator.reconfigure(conf);
             
             consoleAppendersCreated = true;
         }
@@ -223,14 +220,30 @@ public class Log4jInit {
      */
     private static synchronized void createLog4jWriterAppender(Writer writer) {
         if (writer != null && !logWriters.contains(writer)) {
-            LevelRangeFilter filter = new LevelRangeFilter();
-            filter.setLevelMax(Level.FATAL);
-            filter.setLevelMin(Level.DEBUG);
-            filter.setAcceptOnMatch(true);
-            WriterAppender app = new WriterAppender(new PatternLayout(LONG_FORMAT), writer);
-            app.clearFilters();
-            app.addFilter(filter);
-            BasicConfigurator.configure(app);
+            String pattern = LONG_FORMAT_A + LONG_FORMAT_B;
+            ConfigurationBuilder<BuiltConfiguration> builder = ConfigurationBuilderFactory.newConfigurationBuilder();
+            Configuration config = builder.build();
+            Configurator.reconfigure(config);
+
+            // remove default stdout appender
+            for (String aname : config.getRootLogger().getAppenders().keySet()) {
+                config.getRootLogger().removeAppender(aname);
+            }
+            // add WriterAppender
+            PatternLayout layout = PatternLayout.newBuilder().withPattern(pattern).build();
+            WriterAppender appender = WriterAppender.newBuilder()
+                    .setName("writeLogger")
+                    .setTarget(writer)
+                    .setLayout(layout)
+                    .build();
+            appender.start();
+            config.addAppender(appender);
+            final Level level = null;
+            final Filter filter = null;
+            for (final LoggerConfig loggerConfig : config.getLoggers().values()) {
+                loggerConfig.addAppender(appender, level, filter);
+            }
+            config.getRootLogger().addAppender(appender, level, filter);
             
             logWriters.add(writer);  // Keep writer in the list so it's not created more than once.
         }
