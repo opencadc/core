@@ -341,14 +341,10 @@ public class SignedToken implements Serializable {
     }
 
     private static SignedToken parseEncoded(final String encodedToken) throws InvalidSignedTokenException {
-        // token encoding always base64. 
-        final String deprecatedPrefix = "base64:";
+
         try {
-            String toDecode = encodedToken;
-            if (encodedToken.startsWith(deprecatedPrefix)) {
-                toDecode = encodedToken.substring(deprecatedPrefix.length());
-            }
-            final byte[] decodedBytes = Base64.decode(toDecode);
+            // token encoding always base64.
+            final byte[] decodedBytes = Base64.decode(encodedToken);
             final String decodedString = new String(decodedBytes);
             return parse(decodedString.split(FIELD_DELIM), decodedString);
         } catch (IllegalArgumentException e) {
