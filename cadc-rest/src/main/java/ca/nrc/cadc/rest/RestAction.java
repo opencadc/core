@@ -240,6 +240,15 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
     }
 
     /**
+     * Obtain the servlet container information.  Used mainly to set the "Server:"
+     * response header for IVOA compliance.
+     * @return  String server info, or null if not available.
+     */
+    protected String getServerInfo() {
+        return servletContext.getServerInfo();
+    }
+
+    /**
      * Create inline content handler to process non-form data. Non-form data could
      * be a document or part of a multi-part request). Null return value is allowed
      * if the service never expects non-form data or wants to ignore non-form data.
