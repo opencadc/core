@@ -81,6 +81,7 @@ import ca.nrc.cadc.net.ResourceAlreadyExistsException;
 import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.reg.client.RegistryClient;
+import ca.nrc.cadc.util.StringUtil;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -103,6 +104,7 @@ import org.apache.log4j.Logger;
 public abstract class RestAction implements PrivilegedExceptionAction<Object> {
 
     private static final Logger log = Logger.getLogger(RestAction.class);
+    private static final String SERVER_INFO = "OpenCADC/cadc-rest";
 
     public static final String STATE_MODE_KEY = "-" + RestAction.class.getName() + ".state";
     public static final String STATE_OFFLINE = "Offline";
@@ -240,12 +242,22 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
     }
 
     /**
-     * Obtain the servlet container information.  Used mainly to set the "Server:"
+     * Obtain the server application information.  Used mainly to set the "Server:"
      * response header for IVOA compliance.
-     * @return  String server info, or null if not available.
+     * @return  String server info.  Never null.
      */
     protected String getServerInfo() {
-        return servletContext.getServerInfo();
+        final String serverImpl = getServerImpl();
+        return RestAction.SERVER_INFO + (StringUtil.hasText(serverImpl) ? " + " + serverImpl : "");
+    }
+
+    /**
+     * Obtain the main implementation name of this application.  Implementors SHOULD override this with an appropriate
+     * name to be appended to the default server information.
+     * @return  String implementation name.  May be null.
+     */
+    protected String getServerImpl() {
+        return null;
     }
 
     /**
