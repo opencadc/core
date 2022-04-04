@@ -246,7 +246,7 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
      * response header for IVOA compliance.
      * @return  String server info.  Never null.
      */
-    protected String getServerInfo() {
+    private String getServerInfo() {
         final String serverImpl = getServerImpl();
         return RestAction.SERVER_INFO + (StringUtil.hasText(serverImpl) ? " + " + serverImpl : "");
     }
@@ -335,6 +335,11 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
         boolean authHeadersSet = false;
         try {
             logInfo.setSuccess(false);
+
+            // Set the Server header here.  All headers are converted to lowercase in HTTP/2, so do that here.
+            // See https://httpwg.org/specs/rfc7540.html#rfc.section.8.1.2.
+            syncOutput.setHeader("server", getServerInfo());
+
             if (syncInput != null) {
                 syncInput.init();
                 ioExceptionOnInput = false;
