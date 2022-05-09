@@ -16,19 +16,24 @@ sourceCompatibility = 1.8
 
 group = 'org.opencadc'
 
-version = '1.5.12'
+version = '1.6.0'
 
 description = 'OpenCADC core utility library'
 def git_url = 'https://github.com/opencadc/core'
 
 dependencies {
-    compile 'log4j:log4j:1.2.17'
+    compile 'org.apache.logging.log4j:log4j-1.2-api:[2.16.0,3.0)'
+    compile 'org.apache.logging.log4j:log4j-api:[2.16.0,3.0)'
+    compile 'org.apache.logging.log4j:log4j-core:[2.16.0,3.0)'
+    
     compile 'javax.servlet:javax.servlet-api:3.1.0'
     compile 'org.json:json:20160212'
     compile 'xerces:xercesImpl:2.12.0'
     compile 'org.jdom:jdom2:2.0.6'
     compile 'org.springframework:spring-jdbc:5.2.9.RELEASE'
 
+    runtime 'org.apache.logging.log4j:log4j:[2.16.0,3.0)'
+    
     testCompile 'junit:junit:4.13'
     testCompile 'org.easymock:easymock:3.6'
     testCompile 'org.skyscreamer:jsonassert:1.5.0'

@@ -1,2 +1,0 @@
-rootProject.name = 'core'
-include 'cadc-keygen', 'cadc-quality', 'cadc-test-servlet' ,'cadc-vodml', 'cadc-http-client', 'cadc-log', 'cadc-rest', 'cadc-util'

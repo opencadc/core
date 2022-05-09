@@ -34,53 +34,105 @@
 
 package ca.nrc.cadc.util;
 
-
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class Log4jInitTest
-{
-    private static final Logger LOG = Logger.getLogger(Log4jInitTest.class);
+public class Log4jInitTest {
 
-    @BeforeClass
-    public static void setUpBeforeClass() throws Exception
-    {
-    }
+    private static final Logger log = Logger.getLogger(Log4jInitTest.class);
 
-    @AfterClass
-    public static void tearDownAfterClass() throws Exception
-    {
-    }
-
-    @Before
-    public void setUp() throws Exception
-    {
-    }
-
-    @After
-    public void tearDown() throws Exception
-    {
-    }
-    
     @Test
-    public void changeLayoutFormatTest()
-    {
-        LOG.error("error msg 2.");
-        Log4jInit.setLevel("APP1", "ca.nrc.cadc", Level.DEBUG);
-        LOG.debug("debug msg1.");
-        LOG.debug("debug msg2.");
-        LOG.debug("debug msg3.");
-        LOG.debug("debug msg11.");
-        LOG.debug("debug msg12.");
-        LOG.debug("debug msg13.");
-        
-        LOG.error("error msg 2.");
-        LOG.error("error msg 3.");
+    public void testStdout() {
+        System.out.println("before init");
+        log.trace("before init");
+        log.debug("before init");
+        log.info("before init");
+        log.warn("before init");
+        log.error("before init");
+
+        Log4jInit.setLevel("ca.nrc.cadc.util", Level.WARN);
+        System.out.println("after WARN");
+        log.trace("after WARN");
+        log.debug("after WARN");
+        log.info("after WARN");
+        log.warn("after WARN");
+        log.error("after WARN");
+
+        Log4jInit.setLevel("ca.nrc.cadc.util", Level.INFO);
+        System.out.println("after INFO");
+        log.trace("after INFO");
+        log.debug("after INFO");
+        log.info("after INFO");
+        log.warn("after INFO");
+        log.error("after INFO");
+
+        Log4jInit.setLevel("ca.nrc.cadc.util", Level.DEBUG);
+        System.out.println("after DEBUG");
+        log.trace("after DEBUG");
+        log.debug("after DEBUG");
+        log.info("after DEBUG");
+        log.warn("after DEBUG");
+        log.error("after DEBUG");
+
+        Log4jInit.setLevel("ca.nrc.cadc.util", Level.INFO);
+        System.out.println("back to INFO");
+        log.trace("back to INFO");
+        log.debug("back to INFO");
+        log.info("back to INFO");
+        log.warn("back to INFO");
+        log.error("back to INFO");
     }
 
+    @Test
+    public void testWriter() {
+
+        StringWriter w = new StringWriter();
+
+        /*
+        Log4jInit.setLevel("ca.nrc.cadc.util", Level.WARN, w);
+        log.trace("after WARN");
+        log.debug("after WARN");
+        log.info("after WARN");
+        log.warn("after WARN");
+        log.error("after WARN");
+        */
+        
+        Log4jInit.setLevel("ca.nrc.cadc.util", Level.INFO, w);
+        System.out.println("after INFO");
+        log.trace("after INFO");
+        log.debug("after INFO");
+        log.info("after INFO");
+        log.warn("after INFO");
+        log.error("after INFO");
+
+        /*
+        Log4jInit.setLevel("ca.nrc.cadc.util", Level.DEBUG, w);
+        System.out.println("after DEBUG");
+        log.trace("after DEBUG");
+        log.debug("after DEBUG");
+        log.info("after DEBUG");
+        log.warn("after DEBUG");
+        log.error("after DEBUG");
+
+        Log4jInit.setLevel("ca.nrc.cadc.util", Level.INFO, w);
+        System.out.println("back to INFO");
+        log.trace("back to INFO");
+        log.debug("back to INFO");
+        log.info("back to INFO");
+        log.warn("back to INFO");
+        log.error("back to INFO");
+        */
+        
+        String s = w.toString();
+        System.out.println("----writer content----");
+        System.out.println(s);
+        System.out.println("----writer content----");
+        
+    }
 }
