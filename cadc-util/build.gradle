@@ -16,15 +16,15 @@ sourceCompatibility = 1.8
 
 group = 'org.opencadc'
 
-version = '1.6.0'
+version = '1.6.1'
 
 description = 'OpenCADC core utility library'
 def git_url = 'https://github.com/opencadc/core'
 
 dependencies {
-    compile 'org.apache.logging.log4j:log4j-1.2-api:[2.16.0,3.0)'
-    compile 'org.apache.logging.log4j:log4j-api:[2.16.0,3.0)'
-    compile 'org.apache.logging.log4j:log4j-core:[2.16.0,3.0)'
+    compile 'org.apache.logging.log4j:log4j-1.2-api:[2.17.2,3.0)'
+    compile 'org.apache.logging.log4j:log4j-api:[2.17.2,3.0)'
+    compile 'org.apache.logging.log4j:log4j-core:[2.17.2,3.0)'
     
     compile 'javax.servlet:javax.servlet-api:3.1.0'
     compile 'org.json:json:20160212'
