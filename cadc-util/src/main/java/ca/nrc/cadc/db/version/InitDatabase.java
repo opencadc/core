@@ -174,6 +174,7 @@ public abstract class InitDatabase {
                 // recheck upgrade with lock
                 if (modelVersion.equals(cur.value)) {
                     log.debug("doInit: already up to date - nothing to do");
+                    // empty ddls ok: need to commit so can't return here
                 } else if (prevModelVersion != null && prevModelVersion.equals(cur.value)) {
                     ddls = upgradeSQL;
                 } else {
@@ -185,6 +186,7 @@ public abstract class InitDatabase {
                 ddls = createSQL;
             }
 
+            boolean ret = false;
             if (!ddls.isEmpty()) {
                 // execute SQL
                 for (String fname : ddls) {
@@ -199,6 +201,7 @@ public abstract class InitDatabase {
                 prevVersion = cur.value;
                 cur.value = modelVersion;
                 vdao.put(cur);
+                ret = true;
             }
 
             // commit transaction
@@ -207,7 +210,7 @@ public abstract class InitDatabase {
             long dt = System.currentTimeMillis() - t;
             log.debug("doInit: " + modelName + " " + prevVersion + " to " + modelVersion + " " + dt + "ms");
             
-            return true;
+            return ret;
         } catch (UnsupportedOperationException ex) {
             if (txn.isOpen()) {
                 try {
