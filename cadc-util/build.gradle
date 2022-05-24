@@ -37,5 +37,7 @@ dependencies {
     testCompile 'junit:junit:4.13'
     testCompile 'org.easymock:easymock:3.6'
     testCompile 'org.skyscreamer:jsonassert:1.5.0'
+
+    intTestRuntime 'org.postgresql:postgresql:[42.2.8,)'
 }
 

@@ -118,6 +118,17 @@ public class KeyValueDAO {
         this.columnNames = new String[] { "value", "lastModified", "name" };
     }
 
+    public KeyValue lock(String name) {
+        SelectStatementCreator sel = new SelectStatementCreator(true);
+        sel.setValues(name);
+        try {
+            KeyValue ret = (KeyValue) jdbc.query(sel, extractor);
+            return ret;
+        } catch (BadSqlGrammarException ex) {
+            return null;
+        }
+    }
+    
     public KeyValue get(String name) {
         Object o = null;
 
@@ -144,11 +155,7 @@ public class KeyValueDAO {
                 o = null;
             }
         }
-        if (o == null) {
-            KeyValue mv = new KeyValue(name);
-            log.debug("created: " + mv);
-            return mv;
-        }
+        
         return (KeyValue) o;
     }
 
@@ -175,11 +182,17 @@ public class KeyValueDAO {
 
     private class SelectStatementCreator implements PreparedStatementCreator {
 
+        private final boolean forUpdate;
         private String model;
 
         public SelectStatementCreator() {
+            this.forUpdate = false;
         }
 
+        public SelectStatementCreator(boolean forUpdate) {
+            this.forUpdate = forUpdate;
+        }
+        
         public void setValues(String model) {
             if (model == null) {
                 throw new IllegalStateException("null model");
@@ -196,6 +209,9 @@ public class KeyValueDAO {
             sb.append(columnNames[2]);
             sb.append(" FROM ").append(tableName);
             sb.append(" WHERE ").append(columnNames[2]).append(" = ?");
+            if (forUpdate) {
+                sb.append(" FOR UPDATE");
+            }
             String sql = sb.toString();
             PreparedStatement prep = conn.prepareStatement(sql);
             log.debug(sql);

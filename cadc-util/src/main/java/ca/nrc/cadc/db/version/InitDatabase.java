@@ -105,9 +105,9 @@ public abstract class InitDatabase {
      * @param dataSource may be null to use parseDDL only
      * @param database may be null to use default database
      * @param schema may be null to use default schema
-     * @param modelName
-     * @param modelVersion
-     * @param prevModelVersion 
+     * @param modelName short name for the model
+     * @param modelVersion version of the model
+     * @param prevModelVersion previous version from which upgrade is supported, null for no upgrade
      */
     public InitDatabase(DataSource dataSource, String database, String schema,
             String modelName, String modelVersion, String prevModelVersion) {
@@ -119,6 +119,16 @@ public abstract class InitDatabase {
         this.prevModelVersion = prevModelVersion;
     }
 
+    // used by int test code
+    String getVersion() {
+        ModelVersionDAO vdao = new ModelVersionDAO(dataSource, database, schema);
+        KeyValue cur = vdao.get(modelName);
+        if (cur != null) {
+            return cur.value;
+        }
+        return null;
+    }
+    
     /**
      * Create or upgrade the configured database with CAOM tables and indices.
      *
@@ -137,47 +147,68 @@ public abstract class InitDatabase {
             ModelVersionDAO vdao = new ModelVersionDAO(dataSource, database, schema);
             KeyValue cur = vdao.get(modelName);
             log.debug("found: " + cur);
-            prevVersion = cur.value;
 
-            // select SQL to execute
-            List<String> ddls = createSQL; // default
-            boolean upgrade = false;
-            if (cur.value != null && modelVersion.equals(cur.value)) {
-                log.debug("doInit: already up to date - nothing to do");
-                return false;
-            }
-            if (cur.value != null && cur.value.equals(prevModelVersion)) {
-                ddls = upgradeSQL;
-                upgrade = true;
-            } else if (cur.value != null) {
-                throw new UnsupportedOperationException("doInit: cannot convert version " + cur.value + " (DB) to " + modelVersion + " (software)");
+            // quick check there is nothing to do and early return
+            if (cur != null) {
+                if (modelVersion.equals(cur.value)) {
+                    log.debug("doInit: already up to date - nothing to do");
+                    return false;
+                } else if (prevModelVersion != null && prevModelVersion.equals(cur.value)) {
+                    log.debug("doInit: possible to update - proceeding");
+                } else if (cur.value != null) {
+                    throw new UnsupportedOperationException("doInit: cannot convert version " + cur.value + " (DB) to " + modelVersion + " (software)");
+                }
+            } else {
+                log.debug("doInit: possible to create - proceeding");
             }
 
             // start transaction
             txn.startTransaction();
-
-            // execute SQL
-            for (String fname : ddls) {
-                log.info("process file: " + fname);
-                List<String> statements = parseDDL(fname, schema);
-                for (String sql : statements) {
-                    if (upgrade) {
-                        log.info("execute:\n" + sql);
-                    } else {
-                        log.debug("execute:\n" + sql);
-                    }
-                    jdbc.execute(sql);
-                }
+            if (cur != null) {
+                cur = vdao.lock(modelName);
             }
-            // update ModelVersion
-            cur.value = modelVersion;
-            vdao.put(cur);
+            
+            // select SQL to execute
+            List<String> ddls = new ArrayList<>(); // no-op
+            if (cur != null) {
+                // recheck upgrade with lock
+                if (modelVersion.equals(cur.value)) {
+                    log.debug("doInit: already up to date - nothing to do");
+                } else if (prevModelVersion != null && prevModelVersion.equals(cur.value)) {
+                    ddls = upgradeSQL;
+                } else {
+                    throw new UnsupportedOperationException("doInit: cannot convert version " + cur.value + " (DB) to " + modelVersion + " (software)");
+                }
+            } else {
+                // new installation
+                cur = new KeyValue(modelName);
+                ddls = createSQL;
+            }
+
+            if (!ddls.isEmpty()) {
+                // execute SQL
+                for (String fname : ddls) {
+                    log.info("process file: " + fname);
+                    List<String> statements = parseDDL(fname, schema);
+                    for (String sql : statements) {
+                        log.info("execute statement:\n" + sql);
+                        jdbc.execute(sql);
+                    }
+                }
+                // update ModelVersion
+                prevVersion = cur.value;
+                cur.value = modelVersion;
+                vdao.put(cur);
+            }
 
             // commit transaction
             txn.commitTransaction();
+            
+            long dt = System.currentTimeMillis() - t;
+            log.debug("doInit: " + modelName + " " + prevVersion + " to " + modelVersion + " " + dt + "ms");
+            
             return true;
         } catch (UnsupportedOperationException ex) {
-            log.debug("version incompatibility", ex);
             if (txn.isOpen()) {
                 try {
                     txn.rollbackTransaction();
@@ -207,9 +238,6 @@ public abstract class InitDatabase {
                     log.error("failed to rollback transaction in finally", ex);
                 }
             }
-
-            long dt = System.currentTimeMillis() - t;
-            log.debug("doInit: " + modelName + " " + prevVersion + " to " + modelVersion + " " + dt + "ms");
         }
     }
     
