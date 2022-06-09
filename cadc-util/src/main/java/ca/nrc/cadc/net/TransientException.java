@@ -73,7 +73,7 @@ package ca.nrc.cadc.net;
  * Exception indicating that a transient error occured.
  *
  */
-public class TransientException extends Exception {
+public class TransientException extends RuntimeException {
 
     private static final long serialVersionUID = 368806655217191211L;
 
