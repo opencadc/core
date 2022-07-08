@@ -82,17 +82,25 @@ public interface StorageResolver {
      * Returns the scheme for the storage resolver.
      * 
      * @return a String representing the schema.
+     * @deprecated breaks for a configurable/delegating resolver impl
      */
-    public String getScheme();
+    @Deprecated
+    default String getScheme() { 
+        return null; 
+    }
+    
     
     /**
-     * Convert the specified URI to one or more URL(s). 
+     * Convert the specified URI to a URL. 
      * 
      * @param uri the URI to convert
      * @return a URL to the identified resource
-     * @throws IllegalArgumentException if the scheme is not equal to the value from getScheme()
-     *         the uri is malformed such that a URL cannot be generated, or the uri is null
+     * @throws IllegalArgumentException if the scheme is not supported by this resolver
      */
     public URL toURL(URI uri)
         throws IllegalArgumentException;
+    
+    // TBD:
+    //URL toURL(URI uri, URI securityMethod);
+    //URL toURL(URI uri, AuthMethod authMethod);
 }
