@@ -98,7 +98,7 @@ import org.apache.log4j.Logger;
  */
 public class NetUtil {
     
-    private static Logger log = Logger.getLogger(HttpGet.class);
+    private static Logger log = Logger.getLogger(NetUtil.class);
 
     private static final int ERROR_BUFFER_SIZE = 512;
     private static final int MAX_ERROR_LENGTH = 16384;
