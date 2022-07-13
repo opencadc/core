@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2016.                            (c) 2016.
+ *  (c) 2022.                            (c) 2022.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -88,14 +88,17 @@ import java.net.UnknownHostException;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.log4j.Logger;
+
 
 /**
  * Miscellaneous network utility methods (static).
  *
  * @author pdowler
- * @version $Version$
  */
 public class NetUtil {
+    
+    private static Logger log = Logger.getLogger(NetUtil.class);
 
     private static final int ERROR_BUFFER_SIZE = 512;
     private static final int MAX_ERROR_LENGTH = 16384;
@@ -297,6 +300,7 @@ public class NetUtil {
      */
     public static String getClientIP(final HttpServletRequest request) {
         final String forwardedFor = request.getHeader(NetUtil.FORWARDED_FOR_CLIENT_IP_HEADER);
+        log.debug(NetUtil.FORWARDED_FOR_CLIENT_IP_HEADER + ": " + forwardedFor);
         return StringUtil.hasText(forwardedFor) ? forwardedFor.split(",")[0].trim() : request.getRemoteAddr();
     }
 }
