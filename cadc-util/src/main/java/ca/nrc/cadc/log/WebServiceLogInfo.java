@@ -76,6 +76,7 @@ import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.util.StringUtil;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.net.URI;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.List;
@@ -112,6 +113,9 @@ public abstract class WebServiceLogInfo {
     protected String runID;
     protected Boolean success;
     protected Long duration;
+    
+    protected URI resource;
+    protected String grant;
 
     public String user;
 
@@ -211,6 +215,10 @@ public abstract class WebServiceLogInfo {
                         } 
                         sb.append("\"").append(f.getName()).append("\"");
                         sb.append(":");
+                        if (o instanceof URI) {
+                            // convert to String so serialized as a String
+                            o = ((URI) o).toASCIIString();
+                        }
                         if (o instanceof List<?>) {
                             populateList(sb, (List<?>) o);
                         } else if (o instanceof String) {
@@ -291,6 +299,25 @@ public abstract class WebServiceLogInfo {
         }
     }
 
+    /**
+     * Set the logical resource being accessed.
+     * @param resource 
+     */
+    public void setResource(URI resource) {
+        this.resource = resource;
+    }
+
+    /**
+     * Set the grant allowing access to the resource. This is expected to be a 
+     * group identifier (URI) or the string "public" when the resource can be 
+     * accessed anonymously.
+     * 
+     * @param grant 
+     */
+    public void setGrant(String grant) {
+        this.grant = grant;
+    }
+    
     /**
      * Set jobID. This is normally only needed in requests that create new jobs.
      *

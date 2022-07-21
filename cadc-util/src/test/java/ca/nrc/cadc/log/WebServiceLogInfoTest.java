@@ -72,7 +72,7 @@ package ca.nrc.cadc.log;
 import ca.nrc.cadc.auth.HttpPrincipal;
 import ca.nrc.cadc.util.Log4jInit;
 
-import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.Arrays;
@@ -85,7 +85,6 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class WebServiceLogInfoTest {
@@ -170,9 +169,26 @@ public class WebServiceLogInfoTest {
         nonEmptyUUIDListLogInfo.setUUIDList(uuidList);
         start = nonEmptyUUIDListLogInfo.start();
         log.info("testListOfUUIDs: " + start);
-        expected = "\"phase\":\"start\",\"uuidList\":[\"" + uuid1 + "\",\"" + uuid2 + "\",\"" + uuid3 +"\"]";
+        expected = "\"phase\":\"start\",\"uuidList\":[\"" + uuid1 + "\",\"" + uuid2 + "\",\"" + uuid3 + "\"]";
         Assert.assertTrue("Wrong start", start.contains(expected));
+    }
+    
+    @Test
+    public void testResourceGrant() {
+        WebServiceLogInfo logInfo = new WebServiceLogInfo() {
+        };
         
+        String start = logInfo.start();
+        log.info("start: " + start);
+        Assert.assertFalse(start.contains("\"resource\""));
+        Assert.assertFalse(start.contains("\"grant\""));
+        
+        logInfo.setResource(URI.create("cadc:FOO/bar"));
+        logInfo.setGrant("read: public");
+        String end = logInfo.end();
+        log.info("end: " + end);
+        Assert.assertTrue(end.contains("\"resource\":\"cadc:FOO/bar\""));
+        Assert.assertTrue(end.contains("\"grant\":\"read: public\""));
         
     }
     
