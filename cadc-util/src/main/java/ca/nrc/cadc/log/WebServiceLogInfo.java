@@ -216,6 +216,7 @@ public abstract class WebServiceLogInfo {
                         sb.append("\"").append(f.getName()).append("\"");
                         sb.append(":");
                         if (o instanceof URI) {
+                            // convert to String so serialized as a String
                             o = ((URI) o).toASCIIString();
                         }
                         if (o instanceof List<?>) {
