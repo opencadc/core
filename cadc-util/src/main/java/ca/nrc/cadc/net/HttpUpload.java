@@ -338,7 +338,7 @@ public class HttpUpload extends HttpTransfer {
 
             fireEvent(TransferEvent.TRANSFERING);
             
-            log.warn("before ioLoop: content-length = " + conn.getRequestProperty(CONTENT_LENGTH));
+            log.debug("before ioLoop: content-length = " + conn.getRequestProperty(CONTENT_LENGTH));
 
             if (in != null) {
                 ioLoop(in, ostream, 2 * this.bufferSize, 0);
