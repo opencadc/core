@@ -77,8 +77,10 @@ public class PropertiesReader {
      * 2) Otherwise, the file will be read from ${user.home}/config/
      *
      * @param filename The file in which to read.
+     * @throws IOException If the properties file cannot be found (FileNotFoundException) or cannot be
+     *                      read (IOException).
      */
-    public PropertiesReader(String filename) throws FileNotFoundException, IllegalArgumentException {
+    public PropertiesReader(String filename) throws IOException {
         if (filename == null) {
             throw new IllegalArgumentException("fileName cannot be null.");
         }
@@ -96,7 +98,7 @@ public class PropertiesReader {
         if (!propertiesFile.exists()) {
             throw new FileNotFoundException("No such file: " + this.cachedPropsKey);
         } else if (!Files.isReadable(propertiesFile.toPath())) {
-            throw new IllegalArgumentException("Unreadable or unusable file: " + this.cachedPropsKey);
+            throw new IOException("Unreadable or unusable file: " + this.cachedPropsKey);
         }
 
         log.debug("PropertiesReader.init: OK");

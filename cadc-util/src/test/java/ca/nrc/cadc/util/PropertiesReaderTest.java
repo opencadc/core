@@ -31,6 +31,7 @@ package ca.nrc.cadc.util;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -144,7 +145,7 @@ public class PropertiesReaderTest
         try {
             new PropertiesReader(propFilePath.getName());
             Assert.fail("Should throw IllegalArgumentException.");
-        } catch (IllegalArgumentException illegalArgumentException) {
+        } catch (IOException ioException) {
             // Good.
         } finally {
             System.clearProperty(PropertiesReader.class.getName() + ".dir");
@@ -156,7 +157,9 @@ public class PropertiesReaderTest
         try {
             new PropertiesReader("BOGUSFILE.nope");
             Assert.fail("Should throw FileNotFoundException.");
-        } catch (FileNotFoundException fileNotFoundException) {
+        } catch (IOException fileNotFoundException) {
+            Assert.assertTrue("Should be FileNotFoundException.",
+                              fileNotFoundException instanceof FileNotFoundException);
             // Good.
         }
     }
