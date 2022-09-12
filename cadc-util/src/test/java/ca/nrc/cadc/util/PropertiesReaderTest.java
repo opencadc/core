@@ -31,6 +31,8 @@ package ca.nrc.cadc.util;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import org.junit.Assert;
@@ -132,9 +134,31 @@ public class PropertiesReaderTest
     }
 
     @Test
-    public void testCanNotRead() {
-        final PropertiesReader testSubject = new PropertiesReader("BOGUSFILE.nope");
-        Assert.assertFalse("Should return false readability.", testSubject.canRead());
+    public void testCanNotRead() throws Exception {
+        System.setProperty(PropertiesReader.class.getName() + ".dir", getTestConfigDir());
+        final File propFilePath = Files.createTempFile(new File(getTestConfigDir()).toPath(),
+                                                       "willNotBeReadable", ".properties").toFile();
+        propFilePath.setReadable(false);
+        propFilePath.setExecutable(false, false);
+
+        try {
+            new PropertiesReader(propFilePath.getName());
+            Assert.fail("Should throw IllegalArgumentException.");
+        } catch (IllegalArgumentException illegalArgumentException) {
+            // Good.
+        } finally {
+            System.clearProperty(PropertiesReader.class.getName() + ".dir");
+        }
+    }
+
+    @Test
+    public void testDoesNotExist() {
+        try {
+            new PropertiesReader("BOGUSFILE.nope");
+            Assert.fail("Should throw FileNotFoundException.");
+        } catch (FileNotFoundException fileNotFoundException) {
+            // Good.
+        }
     }
 
     @Test

@@ -30,8 +30,10 @@ package ca.nrc.cadc.util;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -76,7 +78,7 @@ public class PropertiesReader {
      *
      * @param filename The file in which to read.
      */
-    public PropertiesReader(String filename) {
+    public PropertiesReader(String filename) throws FileNotFoundException, IllegalArgumentException {
         if (filename == null) {
             throw new IllegalArgumentException("fileName cannot be null.");
         }
@@ -91,9 +93,13 @@ public class PropertiesReader {
         cachedPropsKey = propertiesFile.getAbsolutePath();
         log.debug("properties file: " + propertiesFile);
         
-        if (!canRead()) {
-            log.warn("File at " + propertiesFile + " does not exist or is unusable.");
+        if (!propertiesFile.exists()) {
+            throw new FileNotFoundException("No such file: " + this.cachedPropsKey);
+        } else if (!Files.isReadable(propertiesFile.toPath())) {
+            throw new IllegalArgumentException("Unreadable or unusable file: " + this.cachedPropsKey);
         }
+
+        log.debug("PropertiesReader.init: OK");
     }
 
     /**
