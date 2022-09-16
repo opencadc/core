@@ -29,9 +29,7 @@
 package ca.nrc.cadc.util;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -134,19 +132,31 @@ public class PropertiesReaderTest
         }
     }
 
+    /**
+     * Creating a file that actually cannot be read is problematic across systems, so just override the public method
+     * here instead to emulate it.
+     */
     @Test
     public void testCanNotRead() throws Exception {
         System.setProperty(PropertiesReader.class.getName() + ".dir", getTestConfigDir());
-        final File propFilePath = Files.createTempFile(new File(getTestConfigDir()).toPath(),
-                                                       "willNotBeReadable", ".properties").toFile();
-        propFilePath.setReadable(false);
-        propFilePath.setExecutable(false, false);
+        final String fileName = "unReadableFile.properties";
+        final Path path = new File(getTestConfigDir(), fileName).toPath();
+        Files.deleteIfExists(path);
+        Files.createFile(path);
 
         try {
-            new PropertiesReader(propFilePath.getName());
-            Assert.fail("Should throw IllegalArgumentException.");
-        } catch (IOException ioException) {
-            // Good.
+            new PropertiesReader(fileName) {
+                @Override
+                public boolean canRead() {
+                    return false;
+                }
+            };
+            Assert.fail("Should throw IOException.");
+        } catch (InvalidConfigException configException) {
+            Assert.assertEquals("Wrong message.",
+                                "Unreadable or unusable file: " + getTestConfigDir()
+                                + "/" + fileName,
+                                configException.getMessage());
         } finally {
             System.clearProperty(PropertiesReader.class.getName() + ".dir");
         }
@@ -154,13 +164,16 @@ public class PropertiesReaderTest
 
     @Test
     public void testDoesNotExist() {
+        System.setProperty(PropertiesReader.class.getName() + ".dir", getTestConfigDir());
         try {
             new PropertiesReader("BOGUSFILE.nope");
             Assert.fail("Should throw FileNotFoundException.");
-        } catch (IOException fileNotFoundException) {
-            Assert.assertTrue("Should be FileNotFoundException.",
-                              fileNotFoundException instanceof FileNotFoundException);
+        } catch (InvalidConfigException configException) {
+            Assert.assertEquals("Wrong message.", "No such file: " + getTestConfigDir() + "/BOGUSFILE.nope",
+                                configException.getMessage());
             // Good.
+        } finally {
+            System.clearProperty(PropertiesReader.class.getName() + ".dir");
         }
     }
 

@@ -77,10 +77,9 @@ public class PropertiesReader {
      * 2) Otherwise, the file will be read from ${user.home}/config/
      *
      * @param filename The file in which to read.
-     * @throws IOException If the properties file cannot be found (FileNotFoundException) or cannot be
-     *                      read (IOException).
+     * @throws InvalidConfigException If the properties file cannot be found or cannot be read.
      */
-    public PropertiesReader(String filename) throws IOException {
+    public PropertiesReader(String filename) throws InvalidConfigException {
         if (filename == null) {
             throw new IllegalArgumentException("fileName cannot be null.");
         }
@@ -90,15 +89,14 @@ public class PropertiesReader {
             configDir = System.getProperty(CONFIG_DIR_SYSTEM_PROPERTY);
         }
 
-        
         propertiesFile = new File(new File(configDir), filename);
         cachedPropsKey = propertiesFile.getAbsolutePath();
         log.debug("properties file: " + propertiesFile);
         
         if (!propertiesFile.exists()) {
-            throw new FileNotFoundException("No such file: " + this.cachedPropsKey);
-        } else if (!Files.isReadable(propertiesFile.toPath())) {
-            throw new IOException("Unreadable or unusable file: " + this.cachedPropsKey);
+            throw new InvalidConfigException("No such file: " + this.cachedPropsKey);
+        } else if (!canRead()) {
+            throw new InvalidConfigException("Unreadable or unusable file: " + this.cachedPropsKey);
         }
 
         log.debug("PropertiesReader.init: OK");
@@ -109,7 +107,7 @@ public class PropertiesReader {
      * @return  True if the provided file exists in the constrained locations and can be read.  False otherwise.
      */
     public boolean canRead() {
-        return propertiesFile.exists() && propertiesFile.isFile() && propertiesFile.canRead();
+        return Files.isReadable(this.propertiesFile.toPath());
     }
 
     /**
