@@ -30,8 +30,10 @@ package ca.nrc.cadc.util;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -75,8 +77,9 @@ public class PropertiesReader {
      * 2) Otherwise, the file will be read from ${user.home}/config/
      *
      * @param filename The file in which to read.
+     * @throws InvalidConfigException If the properties file cannot be found or cannot be read.
      */
-    public PropertiesReader(String filename) {
+    public PropertiesReader(String filename) throws InvalidConfigException {
         if (filename == null) {
             throw new IllegalArgumentException("fileName cannot be null.");
         }
@@ -86,14 +89,17 @@ public class PropertiesReader {
             configDir = System.getProperty(CONFIG_DIR_SYSTEM_PROPERTY);
         }
 
-        
         propertiesFile = new File(new File(configDir), filename);
         cachedPropsKey = propertiesFile.getAbsolutePath();
         log.debug("properties file: " + propertiesFile);
         
-        if (!canRead()) {
-            log.warn("File at " + propertiesFile + " does not exist or is unusable.");
+        if (!propertiesFile.exists()) {
+            throw new InvalidConfigException("No such file: " + this.cachedPropsKey);
+        } else if (!canRead()) {
+            throw new InvalidConfigException("Unreadable or unusable file: " + this.cachedPropsKey);
         }
+
+        log.debug("PropertiesReader.init: OK");
     }
 
     /**
@@ -101,7 +107,7 @@ public class PropertiesReader {
      * @return  True if the provided file exists in the constrained locations and can be read.  False otherwise.
      */
     public boolean canRead() {
-        return propertiesFile.exists() && propertiesFile.isFile() && propertiesFile.canRead();
+        return Files.isReadable(this.propertiesFile.toPath());
     }
 
     /**

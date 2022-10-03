@@ -119,7 +119,7 @@ public class RsaSignatureVerifier {
     protected static RsaSignatureVerifier inst;
     protected Set<PublicKey> pubKeys = new HashSet<PublicKey>();
     protected static final String KEY_ALGORITHM = "RSA";
-    protected static final String SIG_ALGORITHM = "SHA1withRSA";
+    protected static final String SIG_ALGORITHM = "SHA256withRSA";
     
     public static final String PUB_KEY_FILE_NAME = "RsaSignaturePub.key";
             
@@ -259,7 +259,7 @@ public class RsaSignatureVerifier {
                     "No public keys available for verifying");
         }
         try {       
-            Set<Signature> sigs = new HashSet<Signature>(pubKeys.size());
+            Set<Signature> sigs = new HashSet<>(pubKeys.size());
             for (PublicKey pubKey : pubKeys) {
                 Signature sig = getSignature();
                 sig.initVerify(pubKey);

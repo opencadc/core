@@ -73,11 +73,11 @@ package ca.nrc.cadc.auth;
 import ca.nrc.cadc.util.Base64;
 import ca.nrc.cadc.util.Log4jInit;
 import ca.nrc.cadc.util.PropertiesReader;
-import ca.nrc.cadc.util.RSASignatureGeneratorValidatorTest;
 import ca.nrc.cadc.util.RsaSignatureGenerator;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.net.URI;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -113,7 +113,7 @@ public class SSOCookieManagerTest
     {
         pubFile = new File(keysDir, RsaSignatureGenerator.PUB_KEY_FILE_NAME);
         privFile = new File(keysDir, RsaSignatureGenerator.PRIV_KEY_FILE_NAME);
-        int len = 1024;
+        int len = 2048;
         RsaSignatureGenerator.genKeyPair(pubFile, privFile, len);
 
         // dev domains at CADC
@@ -197,9 +197,11 @@ public class SSOCookieManagerTest
         sb.append("&");
         sb.append(SignedToken.SIGNATURE_LABEL);
         sb.append("=");
-        RsaSignatureGenerator su = new RsaSignatureGenerator(privFile);
-        byte[] sig =
-            su.sign(new ByteArrayInputStream(toSign.getBytes()));
+        final RsaSignatureGenerator su = new RsaSignatureGenerator(RsaSignatureGenerator.PRIV_KEY_FILE_NAME);
+        final InputStream inputStream = new ByteArrayInputStream(toSign.getBytes(StandardCharsets.UTF_8));
+        byte[] sig = su.sign(inputStream);
+        inputStream.close();
+
         sb.append(new String(Base64.encode(sig)));
 
         return sb.toString();
@@ -207,11 +209,9 @@ public class SSOCookieManagerTest
 
     @Test
     public void createCookieSet() throws Exception {
-        List<SSOCookieCredential> cookieList = new ArrayList<>();
-
         try {
             String cookieValue = createCookieString();
-            cookieList = new SSOCookieManager().getSSOCookieCredentials(cookieValue);
+            List<SSOCookieCredential> cookieList = new SSOCookieManager().getSSOCookieCredentials(cookieValue);
 
             // cookieList length should be same as list of expected domains
             assertEquals(cookieList.size(), domainList.size());

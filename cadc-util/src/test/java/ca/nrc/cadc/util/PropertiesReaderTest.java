@@ -29,8 +29,9 @@
 package ca.nrc.cadc.util;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import org.junit.Assert;
@@ -131,10 +132,49 @@ public class PropertiesReaderTest
         }
     }
 
+    /**
+     * Creating a file that actually cannot be read is problematic across systems, so just override the public method
+     * here instead to emulate it.
+     */
     @Test
-    public void testCanNotRead() {
-        final PropertiesReader testSubject = new PropertiesReader("BOGUSFILE.nope");
-        Assert.assertFalse("Should return false readability.", testSubject.canRead());
+    public void testCanNotRead() throws Exception {
+        System.setProperty(PropertiesReader.class.getName() + ".dir", getTestConfigDir());
+        final String fileName = "unReadableFile.properties";
+        final Path path = new File(getTestConfigDir(), fileName).toPath();
+        Files.deleteIfExists(path);
+        Files.createFile(path);
+
+        try {
+            new PropertiesReader(fileName) {
+                @Override
+                public boolean canRead() {
+                    return false;
+                }
+            };
+            Assert.fail("Should throw IOException.");
+        } catch (InvalidConfigException configException) {
+            Assert.assertEquals("Wrong message.",
+                                "Unreadable or unusable file: " + getTestConfigDir()
+                                + "/" + fileName,
+                                configException.getMessage());
+        } finally {
+            System.clearProperty(PropertiesReader.class.getName() + ".dir");
+        }
+    }
+
+    @Test
+    public void testDoesNotExist() {
+        System.setProperty(PropertiesReader.class.getName() + ".dir", getTestConfigDir());
+        try {
+            new PropertiesReader("BOGUSFILE.nope");
+            Assert.fail("Should throw FileNotFoundException.");
+        } catch (InvalidConfigException configException) {
+            Assert.assertEquals("Wrong message.", "No such file: " + getTestConfigDir() + "/BOGUSFILE.nope",
+                                configException.getMessage());
+            // Good.
+        } finally {
+            System.clearProperty(PropertiesReader.class.getName() + ".dir");
+        }
     }
 
     @Test
