@@ -97,7 +97,7 @@ import org.apache.log4j.Logger;
  * public RSA keys.
  * 
  * <p>Format of the keys:
- * Public keys in the MessageRSA.keys file must be in PEM TKCS#1These keys are
+ * Public keys in the keys file must be in PEM TKCS#1These keys are
  * in text format delimited by the following rows: "-----BEGIN PUBLIC KEY-----"
  * and "-----END PUBLIC KEY-----".
  * 
@@ -118,8 +118,16 @@ public class RsaSignatureVerifier {
     
     protected static RsaSignatureVerifier inst;
     protected Set<PublicKey> pubKeys = new HashSet<PublicKey>();
+    
+    // NOTE: changing these algorithm values will make newly signed tokens
+    // unverifiable by old versions of the verifier. To support moving forward,
+    // the verify() below will have to use a list of algorithms to try until one works.
+    // Then one could release the library in code that verifies first and then change
+    // the generator/signer once that was rolled out. Would need at least a current and
+    // one backwards compat in the verifier... maybe could convey the algorithm with the
+    // token to make change less painful.
     protected static final String KEY_ALGORITHM = "RSA";
-    protected static final String SIG_ALGORITHM = "SHA256withRSA";
+    protected static final String SIG_ALGORITHM = "SHA1withRSA";
     
     public static final String PUB_KEY_FILE_NAME = "RsaSignaturePub.key";
             
