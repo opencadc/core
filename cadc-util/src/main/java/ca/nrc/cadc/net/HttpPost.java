@@ -401,6 +401,9 @@ public class HttpPost extends HttpTransfer {
                 } else {
                     sb.append(pe.getKey());
                     sb.append("=");
+                    if (v instanceof char[]) {
+                        v = String.valueOf((char[]) v);
+                    }
                     sb.append(URLEncoder.encode(v.toString(), "UTF-8"));
                     sb.append("&");
                 }
