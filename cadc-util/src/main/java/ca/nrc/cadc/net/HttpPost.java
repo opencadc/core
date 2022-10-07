@@ -405,8 +405,8 @@ public class HttpPost extends HttpTransfer {
                         v = String.valueOf((char[]) v);
                     }
                     sb.append(URLEncoder.encode(v.toString(), "UTF-8"));
+                    sb.append("&");
                 }
-                sb.append("&");
             }
         }
         
