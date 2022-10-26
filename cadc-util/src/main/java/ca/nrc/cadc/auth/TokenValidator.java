@@ -136,28 +136,33 @@ public class TokenValidator {
                         "missing authorization challenge");
                 }
                 challengeType = p.getHeaderValue().substring(0, spaceIndex).trim();
-                credentials = p.getHeaderValue().substring(spaceIndex + 1).trim();
-                if (!AuthenticationUtil.CHALLENGE_TYPE_BEARER.equalsIgnoreCase(challengeType)) {
-                    throw new NotAuthenticatedException(challengeType, AuthError.INVALID_REQUEST,
-                        "unsupported challenge type: " + challengeType);
+                if (AuthenticationUtil.CHALLENGE_TYPE_BEARER.equalsIgnoreCase(challengeType)) {
+                    credentials = p.getHeaderValue().substring(spaceIndex + 1).trim();
+                }
+                // else: ignore
+                //    throw new NotAuthenticatedException(challengeType, AuthError.INVALID_REQUEST,
+                //        "unsupported challenge type: " + challengeType);
+                //}
+            }
+            if (challengeType != null && credentials != null) {
+                log.debug("challenge type: " + challengeType);
+                log.debug("credentials: " + credentials);
+
+                try {
+                    SignedToken validatedToken = SignedToken.parse(credentials);
+                    subject.getPrincipals().add(validatedToken.getUser());
+
+                    AuthorizationToken authToken = new AuthorizationToken(
+                        challengeType, credentials, validatedToken.getDomains(), validatedToken.getScope());
+
+                    log.debug("Adding token credential to subject, removing token principal");
+                    subject.getPublicCredentials().add(authToken);
+                    subject.getPrincipals().remove(p);
+                } catch (Exception ex) {
+                    throw new NotAuthenticatedException(challengeType, AuthError.INVALID_TOKEN, ex.getMessage(), ex);
                 }
             }
-            log.debug("challenge type: " + challengeType);
-            log.debug("credentials: " + credentials);
-            
-            try {
-                SignedToken validatedToken = SignedToken.parse(credentials);
-                subject.getPrincipals().add(validatedToken.getUser());
-                
-                AuthorizationToken authToken = new AuthorizationToken(
-                    challengeType, credentials, validatedToken.getDomains(), validatedToken.getScope());
-                
-                log.debug("Adding token credential to subject, removing token principal");
-                subject.getPublicCredentials().add(authToken);
-                subject.getPrincipals().remove(p);
-            } catch (Exception ex) {
-                throw new NotAuthenticatedException(challengeType, AuthError.INVALID_TOKEN, ex.getMessage(), ex);
-            }
+            // ignore other challenge types
         }
 
         return subject;
