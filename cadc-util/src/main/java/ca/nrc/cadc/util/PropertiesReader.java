@@ -92,14 +92,6 @@ public class PropertiesReader {
         propertiesFile = new File(new File(configDir), filename);
         cachedPropsKey = propertiesFile.getAbsolutePath();
         log.debug("properties file: " + propertiesFile);
-        
-        if (!propertiesFile.exists()) {
-            throw new InvalidConfigException("No such file: " + this.cachedPropsKey);
-        } else if (!canRead()) {
-            throw new InvalidConfigException("Unreadable or unusable file: " + this.cachedPropsKey);
-        }
-
-        log.debug("PropertiesReader.init: OK");
     }
 
     /**
@@ -111,36 +103,32 @@ public class PropertiesReader {
     }
 
     /**
-     * Get all the properties
+     * Get all the properties (possibly returning a previously cached version if the
+     * file is now missing.
      *
-     * @return MultiValuedProperties
+     * @return MultiValuedProperties or null if properties file cannot be read
      */
     public MultiValuedProperties getAllProperties() {
+        
         MultiValuedProperties properties = null;
-        if (canRead()) {
-            try {
+        try {
+            if (canRead()) {
                 InputStream in = new FileInputStream(propertiesFile);
                 properties = new MultiValuedProperties();
                 properties.load(in);
-            } catch (IOException e) {
-                // File could not be opened
-                properties = null;
             }
+        } catch (IOException ex) {
+            log.warn("failed to read " + cachedPropsKey + ": " + ex);
+            
         }
 
         if (properties == null) {
-            log.warn("No file resource available at " + cachedPropsKey);
-            MultiValuedProperties cachedVersion = cachedProperties.get(cachedPropsKey);
-            if (cachedVersion == null) {
+            properties = cachedProperties.get(cachedPropsKey);
+            if (properties == null) {
                 log.warn("No cached resource available at " + cachedPropsKey);
-                return null;
             }
-
-            log.warn("Properties missing at " + cachedPropsKey + " Using earlier version.");
-            properties = cachedVersion;
         } else {
             cachedProperties.put(cachedPropsKey, properties);
-            log.debug("stored content of " + propertiesFile + " in cache");
         }
 
         return properties;
@@ -159,12 +147,13 @@ public class PropertiesReader {
             throw new IllegalArgumentException("Provided key is null.");
         }
 
+        List<String> ret = null;
         MultiValuedProperties properties = getAllProperties();
         if (properties != null) {
-            return properties.getProperty(key);
+            ret = properties.getProperty(key);
         }
 
-        return null;
+        return ret;
     }
 
     /**

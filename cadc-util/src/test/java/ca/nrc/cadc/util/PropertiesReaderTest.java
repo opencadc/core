@@ -72,30 +72,28 @@ public class PropertiesReaderTest
 
             // get the properties
             PropertiesReader propReader = new PropertiesReader(propFile.getName());
-            List<String> prop1 = propReader.getPropertyValues("prop1");
-            Assert.assertEquals("missing prop 1, value 1", "value1",
-                                prop1.get(0));
-            List<String> prop2 = propReader.getPropertyValues("prop2");
-            Assert.assertEquals("missing prop 2, value a", "value2a",
-                                prop2.get(0));
-            Assert.assertEquals("missing prop 2, value b", "value2b",
-                                prop2.get(1));
+            MultiValuedProperties mvp  = propReader.getAllProperties();
+            Assert.assertNotNull(mvp);
+            
+            List<String> prop1 = mvp.getProperty("prop1");
+            Assert.assertEquals("missing prop 1, value 1", "value1", prop1.get(0));
+            List<String> prop2 = mvp.getProperty("prop2");
+            Assert.assertEquals("missing prop 2, value a", "value2a", prop2.get(0));
+            Assert.assertEquals("missing prop 2, value b", "value2b", prop2.get(1));
 
             // delete the test properties file and ensure the properties are
             // still available
             propFile.delete();
 
             // get the properties from inTwo (should be saved from first config)
-            prop1 = propReader.getPropertyValues("prop1");
-            Assert.assertEquals("missing prop 1, value 1", "value1",
-                                prop1.get(0));
-            prop2 = propReader.getPropertyValues("prop2");
-            Assert.assertEquals("missing prop 2, value a", "value2a",
-                                prop2.get(0));
-            Assert.assertEquals("missing prop 2, value b", "value2b",
-                                prop2.get(1));
+            mvp  = propReader.getAllProperties();
+            prop1 = mvp.getProperty("prop1");
+            Assert.assertEquals("missing prop 1, value 1", "value1", prop1.get(0));
+            prop2 = mvp.getProperty("prop2");
+            Assert.assertEquals("missing prop 2, value a", "value2a", prop2.get(0));
+            Assert.assertEquals("missing prop 2, value b", "value2b", prop2.get(1));
 
-            String prop3 = propReader.getFirstPropertyValue("prop2");
+            String prop3 = mvp.getFirstPropertyValue("prop2");
             Assert.assertEquals("missing prop 2, value a", "value2a", prop3);
         }
         finally
@@ -145,18 +143,14 @@ public class PropertiesReaderTest
         Files.createFile(path);
 
         try {
-            new PropertiesReader(fileName) {
+            PropertiesReader r = new PropertiesReader(fileName) {
                 @Override
                 public boolean canRead() {
                     return false;
                 }
             };
-            Assert.fail("Should throw IOException.");
-        } catch (InvalidConfigException configException) {
-            Assert.assertEquals("Wrong message.",
-                                "Unreadable or unusable file: " + getTestConfigDir()
-                                + "/" + fileName,
-                                configException.getMessage());
+            MultiValuedProperties mvp = r.getAllProperties();
+            Assert.assertNull(mvp);
         } finally {
             System.clearProperty(PropertiesReader.class.getName() + ".dir");
         }
@@ -166,12 +160,9 @@ public class PropertiesReaderTest
     public void testDoesNotExist() {
         System.setProperty(PropertiesReader.class.getName() + ".dir", getTestConfigDir());
         try {
-            new PropertiesReader("BOGUSFILE.nope");
-            Assert.fail("Should throw FileNotFoundException.");
-        } catch (InvalidConfigException configException) {
-            Assert.assertEquals("Wrong message.", "No such file: " + getTestConfigDir() + "/BOGUSFILE.nope",
-                                configException.getMessage());
-            // Good.
+            PropertiesReader r = new PropertiesReader("BOGUSFILE.nope");
+            MultiValuedProperties mvp = r.getAllProperties();
+            Assert.assertNull(mvp);
         } finally {
             System.clearProperty(PropertiesReader.class.getName() + ".dir");
         }
