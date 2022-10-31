@@ -74,6 +74,7 @@ public class PropertiesReaderTest
             PropertiesReader propReader = new PropertiesReader(propFile.getName());
             MultiValuedProperties mvp  = propReader.getAllProperties();
             Assert.assertNotNull(mvp);
+            Assert.assertFalse("not empty", mvp.isEmpty());
             
             List<String> prop1 = mvp.getProperty("prop1");
             Assert.assertEquals("missing prop 1, value 1", "value1", prop1.get(0));
@@ -87,6 +88,8 @@ public class PropertiesReaderTest
 
             // get the properties from inTwo (should be saved from first config)
             mvp  = propReader.getAllProperties();
+            Assert.assertFalse("not empty", mvp.isEmpty());
+            
             prop1 = mvp.getProperty("prop1");
             Assert.assertEquals("missing prop 1, value 1", "value1", prop1.get(0));
             prop2 = mvp.getProperty("prop2");
@@ -150,7 +153,8 @@ public class PropertiesReaderTest
                 }
             };
             MultiValuedProperties mvp = r.getAllProperties();
-            Assert.assertNull(mvp);
+            Assert.assertNotNull(mvp);
+            Assert.assertTrue(mvp.isEmpty());
         } finally {
             System.clearProperty(PropertiesReader.class.getName() + ".dir");
         }
@@ -162,7 +166,8 @@ public class PropertiesReaderTest
         try {
             PropertiesReader r = new PropertiesReader("BOGUSFILE.nope");
             MultiValuedProperties mvp = r.getAllProperties();
-            Assert.assertNull(mvp);
+            Assert.assertNotNull(mvp);
+            Assert.assertTrue(mvp.isEmpty());
         } finally {
             System.clearProperty(PropertiesReader.class.getName() + ".dir");
         }

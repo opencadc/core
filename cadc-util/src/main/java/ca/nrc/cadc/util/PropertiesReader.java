@@ -109,28 +109,29 @@ public class PropertiesReader {
      * @return MultiValuedProperties or null if properties file cannot be read
      */
     public MultiValuedProperties getAllProperties() {
-        
-        MultiValuedProperties properties = null;
+        // possiblty return empty properties if !read and !cached
+        MultiValuedProperties properties = new MultiValuedProperties();
+        boolean tryCache = false;
         try {
             if (canRead()) {
                 InputStream in = new FileInputStream(propertiesFile);
-                properties = new MultiValuedProperties();
                 properties.load(in);
+                cachedProperties.put(cachedPropsKey, properties);
+            } else {
+                tryCache = true;
             }
         } catch (IOException ex) {
             log.warn("failed to read " + cachedPropsKey + ": " + ex);
-            
+            tryCache = true;
         }
 
-        if (properties == null) {
-            properties = cachedProperties.get(cachedPropsKey);
-            if (properties == null) {
-                log.warn("No cached resource available at " + cachedPropsKey);
+        if (tryCache) {
+            MultiValuedProperties cached = cachedProperties.get(cachedPropsKey);
+            if (cached != null) {
+                properties = cached;
             }
-        } else {
-            cachedProperties.put(cachedPropsKey, properties);
         }
-
+        
         return properties;
     }
 

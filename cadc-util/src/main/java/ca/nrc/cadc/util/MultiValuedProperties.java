@@ -88,12 +88,15 @@ import java.util.Set;
  * @author pdowler
  */
 public class MultiValuedProperties {
-    private Map<String, List<String>> props;
+    
+    private final Map<String, List<String>> props = new HashMap<String, List<String>>();
 
-    
-    
     public MultiValuedProperties() { }
 
+    public boolean isEmpty() {
+        return props.isEmpty();
+    }
+    
     /**
      * Get all values for a property.
      * 
@@ -134,10 +137,7 @@ public class MultiValuedProperties {
         return props.keySet();
     }
 
-    public void load(InputStream istream)
-        throws IOException {
-        this.props = new HashMap<String, List<String>>();
-
+    public void load(InputStream istream) throws IOException {
         String strLine;
         String key;
         String value;
