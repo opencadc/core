@@ -74,8 +74,10 @@ import ca.nrc.cadc.auth.Authorizer;
 import ca.nrc.cadc.cred.client.CredUtil;
 import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.util.Log4jInit;
+import ca.nrc.cadc.util.MultiValuedProperties;
 import ca.nrc.cadc.util.PropertiesReader;
 import ca.nrc.cadc.util.StringUtil;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -91,6 +93,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
+
 import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
 import javax.servlet.ServletConfig;
@@ -98,6 +101,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.opencadc.gms.GroupClient;
@@ -387,23 +391,21 @@ public class LogControlServlet extends HttpServlet {
 
         logger.debug(subject.toString());
 
-        // Get the logControl properties if they exist.
-        PropertiesReader propertiesReader = getLogControlProperties();
-
+        MultiValuedProperties mvp = getLogControlProperties();
+        
         // first check if request user matches authorized config file users
-        Set<Principal> authorizedUsers = getAuthorizedUserPrincipals(propertiesReader);
+        Set<Principal> authorizedUsers = getAuthorizedUserPrincipals(mvp);
         if (isAuthorizedUser(subject, authorizedUsers)) {
-            logger.info(subject.getPrincipals(X500Principal.class) + " is an authorized user");
+            logger.debug(subject.getPrincipals(X500Principal.class) + " is an authorized user");
             return;
         }
 
         // Check for groups configured in servlet init or properties file.
-        Set<GroupURI> groupUris = getAuthorizedGroupUris(propertiesReader);
+        Set<GroupURI> groupUris = getAuthorizedGroupUris(mvp);
 
-        // If no user or groups configured, then public access.
-        if (authorizedUsers.isEmpty() && groupUris.isEmpty() && accessGroup == null) {
-            logger.info("Authorization not configured, log control is public.");
-            return;
+        if (groupUris.isEmpty() && accessGroup == null) {
+            // early return to avoid checkCredentials below
+            throw new AccessControlException("permission denied");
         }
 
         // Check if calling user is a member of a properties file group.
@@ -424,7 +426,7 @@ public class LogControlServlet extends HttpServlet {
                 }
             }
         } catch (Exception e) {
-            logger.warn("Credential check failed: " + e.getMessage());
+            throw new AccessControlException("permission denied, reason: credential check failed: " + e.getMessage());
         }
 
         // Check if calling user is a member of a servlet init group.
@@ -432,13 +434,12 @@ public class LogControlServlet extends HttpServlet {
         if (authorizer != null) {
             GroupAuthorizationAction groupCheck = new GroupAuthorizationAction(authorizer, readOnly);
             if (isAuthorizedGroup(groupCheck, subject)) {
-                logger.info(subject.getPrincipals(X500Principal.class) + " is member of " + accessGroup);
+                logger.debug(subject.getPrincipals(X500Principal.class) + " is member of " + accessGroup);
                 return;
             }
         }
 
-        // If all authorization failed, throw AccessControlException.
-        throw new AccessControlException("User and group authorization failed.");
+        throw new AccessControlException("permission denied");
     }
 
     /**
@@ -534,11 +535,11 @@ public class LogControlServlet extends HttpServlet {
      *
      * @return Set of authorized X500Principals, can be an empty Set if none configured.
      */
-    Set<Principal> getAuthorizedUserPrincipals(PropertiesReader propertiesReader) {
+    Set<Principal> getAuthorizedUserPrincipals(MultiValuedProperties mvp) {
         Set<Principal> principals = new HashSet<Principal>();
-        if (propertiesReader != null) {
+        if (mvp != null) {
             try {
-                List<String> properties = propertiesReader.getPropertyValues(USER_DNS_PROPERTY);
+                List<String> properties = mvp.getProperty(USER_DNS_PROPERTY);
                 if (properties != null) {
                     for (String property : properties) {
                         if (!property.isEmpty()) {
@@ -559,11 +560,11 @@ public class LogControlServlet extends HttpServlet {
      *
      * @return Set of authorized groupURI's, can be an empty Set if none configured.
      */
-    Set<GroupURI> getAuthorizedGroupUris(PropertiesReader propertiesReader) {
+    Set<GroupURI> getAuthorizedGroupUris(MultiValuedProperties mvp) {
         Set<GroupURI> groupUris = new HashSet<GroupURI>();
-        if (propertiesReader != null) {
+        if (mvp != null) {
             try {
-                List<String> properties = propertiesReader.getPropertyValues(GROUP_URIS_PROPERTY);
+                List<String> properties = mvp.getProperty(GROUP_URIS_PROPERTY);
                 if (properties != null) {
                     for (String property : properties) {
                         if (StringUtil.hasLength(property)) {
@@ -588,15 +589,15 @@ public class LogControlServlet extends HttpServlet {
      * @return A PropertiesReader, or null if the properties file does not
      *          exist or can not be read.
      */
-    private PropertiesReader getLogControlProperties() {
-        PropertiesReader reader = null;
+    private MultiValuedProperties getLogControlProperties() {
+        
         if (logControlProperties != null) {
-            reader = new PropertiesReader(logControlProperties);
-            if (!reader.canRead()) {
-                reader = null;
-            }
+            PropertiesReader reader = new PropertiesReader(logControlProperties);
+            return reader.getAllProperties();
+            
         }
-        return reader;
+        // empty
+        return new MultiValuedProperties();
     }
 
     static class GroupAuthorizationAction implements PrivilegedExceptionAction<Object> {
