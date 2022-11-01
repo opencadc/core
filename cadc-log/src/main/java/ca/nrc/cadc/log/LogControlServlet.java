@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2016.                            (c) 2016.
+*  (c) 2022.                            (c) 2022.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -77,7 +77,6 @@ import ca.nrc.cadc.util.Log4jInit;
 import ca.nrc.cadc.util.MultiValuedProperties;
 import ca.nrc.cadc.util.PropertiesReader;
 import ca.nrc.cadc.util.StringUtil;
-
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -93,7 +92,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
-
 import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
 import javax.servlet.ServletConfig;
@@ -101,7 +99,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.opencadc.gms.GroupClient;
@@ -168,8 +165,8 @@ public class LogControlServlet extends HttpServlet {
     private static final String GROUP_AUTHORIZER = "groupAuthorizer";
 
     private static final String LOG_CONTROL_PROPERTIES = "logControlProperties";
-    static final String USER_DNS_PROPERTY = "users";
-    static final String GROUP_URIS_PROPERTY = "groups";
+    static final String USER_DNS_PROPERTY = "user";
+    static final String GROUP_URIS_PROPERTY = "group";
 
     private Level level = null;
     private List<String> packages;
