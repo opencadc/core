@@ -47,7 +47,8 @@ The servlet will configure a default logging at `warn` level and the specified p
 
 The LogControlServlet supports GET and POST requests to view and change the current log levels and/or
 configured packages. This requires permission using either of the optional init params in the example
-above. 
+above. The latter runtime configuration of permissions is preferred because then configuration ends 
+up in the config dir instead of hard coded inside the application (war file).
 
 ## example-logControl.properties
 
