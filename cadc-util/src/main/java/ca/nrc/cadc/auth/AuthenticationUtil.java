@@ -350,6 +350,10 @@ public class AuthenticationUtil {
 
         Subject subject = new Subject(false, principals, publicCred, privateCred);
         subject = validateSubject(subject);
+        // remove all un-validated authorization
+        for (AuthorizationTokenPrincipal tp : subject.getPrincipals(AuthorizationTokenPrincipal.class)) {
+            subject.getPrincipals().remove(tp);
+        }
         setAuthMethod(subject, am);
         if (augmentSubject) {
             return augmentSubject(subject);

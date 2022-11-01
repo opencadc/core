@@ -153,7 +153,9 @@ public class ServletPrincipalExtractor implements PrincipalExtractor {
                 principals.add(bearerTokenPrincipal);
             } else {
                 // don't add basic auth--done by the servlet container
-                if (!authToken.toLowerCase().startsWith(AuthenticationUtil.CHALLENGE_TYPE_BASIC.toLowerCase() + " ")) {
+                String allowBasicATP = System.getProperty(AuthenticationUtil.class.getName() + ".allowBasicATP");
+                if ("true".equals(allowBasicATP)
+                    || !authToken.toLowerCase().startsWith(AuthenticationUtil.CHALLENGE_TYPE_BASIC.toLowerCase() + " ")) {
                     AuthorizationTokenPrincipal principal = new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, authToken);
                     principals.add(principal);
                 }

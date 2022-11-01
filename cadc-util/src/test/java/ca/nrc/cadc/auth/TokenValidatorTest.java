@@ -184,13 +184,14 @@ public class TokenValidatorTest {
             value = SignedToken.format(token);
             authPrincipal = new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, "Foo " + value);
             subject.getPrincipals().add(authPrincipal);
-            try {
-                subject = TokenValidator.validateTokens(subject);
-                Assert.fail("Should have received NotAuthenticatedException");
-            } catch (NotAuthenticatedException e) {
-                Assert.assertEquals("Foo", e.getChallenge());
-                Assert.assertEquals("invalid_request", e.getAuthError().getValue());
-            }
+            //try {
+            subject = TokenValidator.validateTokens(subject);
+            Assert.assertTrue("unknown challenge ignored", subject.getPrincipals().contains(authPrincipal));
+            //    Assert.fail("Should have received NotAuthenticatedException");
+            //} catch (NotAuthenticatedException e) {
+            //    Assert.assertEquals("Foo", e.getChallenge());
+            //    Assert.assertEquals("invalid_request", e.getAuthError().getValue());
+            //}
             
         } catch (Throwable t) {
             log.error("unexpected", t);
