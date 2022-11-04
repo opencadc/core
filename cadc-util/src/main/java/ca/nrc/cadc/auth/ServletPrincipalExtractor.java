@@ -152,8 +152,8 @@ public class ServletPrincipalExtractor implements PrincipalExtractor {
                 BearerTokenPrincipal bearerTokenPrincipal = new BearerTokenPrincipal(authToken);
                 principals.add(bearerTokenPrincipal);
             } else {
-                // don't add basic auth--done by the servlet container
-                String allowBasicATP = System.getProperty(AuthenticationUtil.class.getName() + ".allowBasicATP");
+                // don't add basic auth unless explicitly enabled -- usually done by the servlet container
+                String allowBasicATP = System.getProperty(PrincipalExtractor.ALLOW_BASIC);
                 if ("true".equals(allowBasicATP)
                     || !authToken.toLowerCase().startsWith(AuthenticationUtil.CHALLENGE_TYPE_BASIC.toLowerCase() + " ")) {
                     AuthorizationTokenPrincipal principal = new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, authToken);

@@ -354,7 +354,7 @@ public class AuthenticationUtil {
         Set<AuthorizationTokenPrincipal> unvalidated = subject.getPrincipals(AuthorizationTokenPrincipal.class);
         if (!unvalidated.isEmpty()) {
             AuthorizationTokenPrincipal atp = unvalidated.iterator().next();
-            throw new NotAuthenticatedException("could not accept auth: " + atp.getHeaderKey() + " " + atp.getName());
+            throw new NotAuthenticatedException("unhandled auth: " + atp.getHeaderKey() + " " + atp.getHeaderValue());
         }
         setAuthMethod(subject, am);
         if (augmentSubject) {
