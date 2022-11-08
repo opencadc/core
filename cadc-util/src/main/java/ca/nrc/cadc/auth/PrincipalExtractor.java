@@ -57,6 +57,12 @@ public interface PrincipalExtractor {
     public static final String CERT_HEADER_ENABLE = PrincipalExtractor.class.getName() + ".enableClientCertHeader";
     
     /**
+     * System property to enable using HTTP basic auth. This requires a custom AUthenticator
+     * to validate the AuthorizationTokenPrincipal (e.g. perform the login).
+     */
+    public static final String ALLOW_BASIC = PrincipalExtractor.class.getName() + ".allowBasicATP";
+    
+    /**
      * HTTP Header value for getting the client certificate. 
      * The value is <em>X-Client-Certificate</em>.
      */

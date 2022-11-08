@@ -350,9 +350,11 @@ public class AuthenticationUtil {
 
         Subject subject = new Subject(false, principals, publicCred, privateCred);
         subject = validateSubject(subject);
-        // remove all un-validated authorization
-        for (AuthorizationTokenPrincipal tp : subject.getPrincipals(AuthorizationTokenPrincipal.class)) {
-            subject.getPrincipals().remove(tp);
+        // reject un-validated authorization
+        Set<AuthorizationTokenPrincipal> unvalidated = subject.getPrincipals(AuthorizationTokenPrincipal.class);
+        if (!unvalidated.isEmpty()) {
+            AuthorizationTokenPrincipal atp = unvalidated.iterator().next();
+            throw new NotAuthenticatedException("unhandled auth: " + atp.getHeaderKey() + " " + atp.getHeaderValue());
         }
         setAuthMethod(subject, am);
         if (augmentSubject) {
