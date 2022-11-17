@@ -69,6 +69,7 @@
 
 package ca.nrc.cadc.net;
 
+import ca.nrc.cadc.util.HexUtil;
 import ca.nrc.cadc.util.StringUtil;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -108,9 +109,24 @@ public class DigestUtil {
     }
 
     /**
-     * Parse the given string and return a URI of the form: {algorithm}:{checksum}
-     * @param digest value to parse
-     * @return digest URI
+     * Convert a checksum URI of the form {algorithm}:{hex checksum} into a
+     * valid HTTP Digest header value.
+     * 
+     * @param checksumURI URI of the form {algorithm}:{hex checksum}
+     * @return HTTP digest header value
+     */
+    public static String toDigest(URI checksumURI) {
+        String algorithm = checksumURI.getScheme();
+        String checksum = checksumURI.getSchemeSpecificPart();
+        String base64Checksum = DigestUtil.base64EncodeHex(checksum);
+        return algorithm + "=" + base64Checksum;
+    }
+    
+    /**
+     * Parse the given string and return a URI of the form: {algorithm}:{hex checksum}.
+     * 
+     * @param digest header value to parse
+     * @return digest URI of the form {algorithm}:{hex checksum}
      */
     public static URI getURI(String digest) {
         if (!StringUtil.hasLength(digest)) {
@@ -143,7 +159,7 @@ public class DigestUtil {
             throw new IllegalArgumentException(String.format("Unsupported algorithm %s", scheme));
         }
 
-        String checksum = base64Decode(base64Checksum);
+        String checksum = base64DecodeToHex(base64Checksum);
 
         // MD5 16 bytes or 32 chars
         if (algorithm == Algorithm.MD5 && checksum.length() != 32) {
@@ -185,27 +201,27 @@ public class DigestUtil {
 
     /**
      * Encode the given value using the Base64 encoding scheme.
-     * @param value Value to encode.
-     * @return Base64 encode of the value.
+     * @param value hex representation of checksum value
+     * @return Base64 encoded bytes
      */
-    public static String base64Encode(String value) {
+    static String base64EncodeHex(String value) {
         if (value == null) {
             throw new IllegalArgumentException("value can not be null");
         }
-        return Base64.getEncoder().encodeToString(value.getBytes(StandardCharsets.UTF_8));
+        byte[] bytes = HexUtil.toBytes(value);
+        return Base64.getEncoder().encodeToString(bytes);
     }
 
     /**
      * Decode the given value using the Base64 encoding scheme.
-     * @param value Value to decode.
-     * @return Base64 decode of the value.
+     * @param value Base64 encoded bytes
+     * @return hex representation of checksum value
      */
-    public static String base64Decode(String value) {
+    static String base64DecodeToHex(String value) {
         if (value == null) {
             throw new IllegalArgumentException("value can not be null");
         }
-        byte[] decoded = Base64.getDecoder().decode(value.getBytes(StandardCharsets.UTF_8));
-        return new String(decoded, StandardCharsets.UTF_8);
+        byte[] decoded = Base64.getDecoder().decode(value);
+        return HexUtil.toHex(decoded);
     }
-
 }

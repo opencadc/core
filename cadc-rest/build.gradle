@@ -24,7 +24,7 @@ def git_url = 'https://github.com/opencadc/core'
 dependencies {
     compile 'commons-fileupload:commons-fileupload:1.4'
     compile 'javax.servlet:javax.servlet-api:3.1.0'
-    compile 'org.opencadc:cadc-util:[1.8.1,2.0)'
+    compile 'org.opencadc:cadc-util:[1.8.2,2.0)'
     compile 'org.opencadc:cadc-registry:[1.5,)'
 
     testCompile 'junit:junit:4.13'

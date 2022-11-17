@@ -182,10 +182,7 @@ public class SyncOutput {
     public void setDigest(URI uri) {
         String digest = null;
         if (uri != null) {
-            String algorithm = uri.getScheme();
-            String checksum = uri.getSchemeSpecificPart();
-            String base64Checksum = DigestUtil.base64Encode(checksum);
-            digest = algorithm + "=" + base64Checksum;
+            digest = DigestUtil.toDigest(uri);
         }
         log.debug("setDigest: " + digest);
         setHeader("Digest", digest);
