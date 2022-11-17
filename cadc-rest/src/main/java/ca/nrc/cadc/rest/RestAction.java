@@ -261,6 +261,31 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
     }
 
     /**
+     * Read the VERSION file and extract the semantic version number from a line
+     * with VER=1.2.3
+     * 
+     * @return version or null if VERSION file not found or does not have expected content
+     */
+    protected Version getVersionFromResource() {
+        try {
+            URL resURL = getResource("VERSION");
+            if (resURL != null) {
+                String versionFileContent = StringUtil.readFromInputStream(resURL.openStream(), "UTF-8");
+                String[] lines = versionFileContent.split("\n");
+                for (String s : lines) {
+                    if (s.startsWith("VER=")) {
+                        String ver = s.substring(4);
+                        return new Version(ver);
+                    }
+                }
+            }
+        } catch (Exception ex) { 
+            log.warn("failed to extract version from VERSION file: " + ex);
+        }
+        return null;
+    }
+    
+    /**
      * Create inline content handler to process non-form data. Non-form data could
      * be a document or part of a multi-part request). Null return value is allowed
      * if the service never expects non-form data or wants to ignore non-form data.
