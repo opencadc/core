@@ -69,6 +69,7 @@
 
 package ca.nrc.cadc.net;
 
+import ca.nrc.cadc.util.HexUtil;
 import ca.nrc.cadc.util.StringUtil;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -143,7 +144,7 @@ public class DigestUtil {
             throw new IllegalArgumentException(String.format("Unsupported algorithm %s", scheme));
         }
 
-        String checksum = base64Decode(base64Checksum);
+        String checksum = base64Decode(algorithm.value, base64Checksum);
 
         // MD5 16 bytes or 32 chars
         if (algorithm == Algorithm.MD5 && checksum.length() != 32) {
@@ -200,11 +201,18 @@ public class DigestUtil {
      * @param value Value to decode.
      * @return Base64 decode of the value.
      */
-    public static String base64Decode(String value) {
+    public static String base64Decode(String scheme, String value) {
         if (value == null) {
             throw new IllegalArgumentException("value can not be null");
         }
         byte[] decoded = Base64.getDecoder().decode(value.getBytes(StandardCharsets.UTF_8));
+
+        // temporary spec-compliant support for md5
+        if ("md5".equals(scheme) && decoded.length == 16) {
+            // base64 encoded binary
+            return HexUtil.toHex(decoded);
+        }
+        // default: backwards compat to incorrect base64-encoded hex string
         return new String(decoded, StandardCharsets.UTF_8);
     }
 

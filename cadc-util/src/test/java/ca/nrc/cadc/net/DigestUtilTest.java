@@ -70,15 +70,22 @@
 package ca.nrc.cadc.net;
 
 import ca.nrc.cadc.util.HexUtil;
+import ca.nrc.cadc.util.Log4jInit;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.Base64;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class DigestUtilTest {
     private static Logger log = Logger.getLogger(DigestUtilTest.class);
+
+    static {
+        Log4jInit.setLevel("ca.nrc.cadc.net", Level.INFO);
+    }
 
     @Test
     public void testGetDigest() throws Exception {
@@ -307,4 +314,31 @@ public class DigestUtilTest {
         }
     }
 
+    @Test
+    public void testTempCompat() throws Exception {
+        String input = "Hello World";
+        MessageDigest md = MessageDigest.getInstance("md5");
+        byte[] md5Bytes = md.digest(input.getBytes(StandardCharsets.UTF_8));
+        
+        String md5Hex = HexUtil.toHex(md5Bytes);
+        
+        URI orig = URI.create("md5:" + md5Hex);
+        // currently incorrect:
+        String currentHdrVal = "md5=" + DigestUtil.base64Encode(md5Hex);
+        // http-spec compliant:
+        String correctHdrVal = "md5=" + Base64.getEncoder().encodeToString(md5Bytes);
+        
+        log.info("parse current: " + currentHdrVal);
+        URI actual1 = DigestUtil.getURI(currentHdrVal);
+        log.info("got: " + actual1);
+        Assert.assertNotNull(actual1);
+        Assert.assertEquals(orig, actual1);
+        
+        log.info("parse correct: " + correctHdrVal);
+        URI actual2 = DigestUtil.getURI(correctHdrVal);
+        log.info("got: " + actual2);
+        Assert.assertNotNull(actual2);
+        Assert.assertEquals(orig, actual2);
+            
+    }
 }
