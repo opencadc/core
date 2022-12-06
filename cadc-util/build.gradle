@@ -34,10 +34,10 @@ dependencies {
     compile 'org.apache.logging.log4j:log4j:2.17.2'
     
     compile 'javax.servlet:javax.servlet-api:3.1.0'
-    compile 'org.json:json:20160212'
-    compile 'xerces:xercesImpl:2.12.0'
-    compile 'org.jdom:jdom2:2.0.6'
-    compile 'org.springframework:spring-jdbc:5.2.9.RELEASE'
+    compile 'org.json:json:[20160212,)'
+    compile 'xerces:xercesImpl:[2.12.2,)'
+    compile 'org.jdom:jdom2:[2.0.6.1,)'
+    compile 'org.springframework:spring-jdbc:[5.2.9.RELEASE,5.3)'
 
     runtime 'org.apache.logging.log4j:log4j:[2.17.2,3.0)'
     
@@ -46,5 +46,9 @@ dependencies {
     testCompile 'org.skyscreamer:jsonassert:1.5.0'
 
     intTestRuntime 'org.postgresql:postgresql:[42.2.8,)'
+}
+
+configurations {
+  //compile.exclude group: 'org.springframework', module:'spring-beans'
 }
 
