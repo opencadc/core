@@ -211,7 +211,7 @@ public abstract class InitDatabase {
                 if (modelVersion.equals(cur.value)) {
                     log.debug("doInit: already up to date - nothing to do");
                     // empty ddls ok: need to commit so can't return here
-                } else if (prevModelVersion != null && prevModelVersion.equals(cur.value)) {
+                } else if (prevModelVersion == null || prevModelVersion.equals(cur.value)) {
                     ddls = upgradeSQL;
                 } else {
                     throw new UnsupportedOperationException("doInit: cannot convert version " + cur.value + " (DB) to " + modelVersion + " (software)");
