@@ -34,13 +34,11 @@ dependencies {
     compile 'org.apache.logging.log4j:log4j:2.17.2'
     
     compile 'javax.servlet:javax.servlet-api:3.1.0'
-    compile 'org.json:json:[20160212,)'
-    compile 'xerces:xercesImpl:[2.12.2,)'
-    compile 'org.jdom:jdom2:[2.0.6.1,)'
-    compile 'org.springframework:spring-jdbc:[5.2.9.RELEASE,5.3)'
+    compile 'org.json:json:20220924'
+    compile 'xerces:xercesImpl:2.12.2'
+    compile 'org.jdom:jdom2:2.0.6.1'
+    compile 'org.springframework:spring-jdbc:5.2.22.RELEASE'
 
-    runtime 'org.apache.logging.log4j:log4j:[2.17.2,3.0)'
-    
     testCompile 'junit:junit:4.13'
     testCompile 'org.easymock:easymock:3.6'
     testCompile 'org.skyscreamer:jsonassert:1.5.0'
