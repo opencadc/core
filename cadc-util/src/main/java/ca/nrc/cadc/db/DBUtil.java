@@ -74,11 +74,17 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.Properties;
 
+import javax.management.ObjectName;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
+import org.apache.commons.dbcp2.ConnectionFactory;
+import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
+import org.apache.commons.dbcp2.PoolableConnectionFactory;
+import org.apache.commons.dbcp2.PoolingDataSource;
+import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.springframework.dao.TransientDataAccessException;
@@ -313,4 +319,72 @@ public class DBUtil {
         }
         return ret;
     }
+
+    public static class PoolConfig {
+        private ConnectionConfig cc;
+
+        private int poolSize;
+
+        private long maxWait;
+
+        private String validationQuery;
+
+        public PoolConfig(ConnectionConfig cc, int poolSize, long maxWait, String validationQuery) {
+            this.cc = cc;
+            this.poolSize = poolSize;
+            this.maxWait = maxWait;
+            this.validationQuery = validationQuery;
+        }
+    }
+
+    public static void createJNDIDataSource(String dataSourceName, PoolConfig config) throws NamingException {
+        log.debug("createJNDIDataSource: " + dataSourceName + " POOL START");
+
+        StandaloneContextFactory.initJNDI();
+
+        Context initContext = new InitialContext();
+        Context envContext = (Context) initContext.lookup(DEFAULT_JNDI_ENV_CONTEXT);
+        if (envContext == null) {
+            envContext = initContext.createSubcontext(DEFAULT_JNDI_ENV_CONTEXT);
+        }
+        log.debug("env: " + envContext);
+
+        DataSource dataSource = createPool(config);
+
+        envContext.bind(dataSourceName, dataSource);
+        log.debug("createJNDIDataSource: " + dataSourceName + " POOL DONE");
+    }
+
+    private static DataSource createPool(PoolConfig config) {
+        try {
+            // load JDBC driver
+            Class.forName(config.cc.getDriver());
+
+            ConnectionFactory connectionFactory =
+                new DriverManagerConnectionFactory(config.cc.getURL(), config.cc.getUsername(), config.cc.getPassword());
+
+            ObjectName jmxObjectName = null; // TODO?
+            PoolableConnectionFactory poolableConnectionFactory =
+                new PoolableConnectionFactory(connectionFactory, jmxObjectName);
+            poolableConnectionFactory.setValidationQuery(config.validationQuery);
+
+            GenericObjectPool objectPool = new GenericObjectPool(poolableConnectionFactory);
+            objectPool.setMinIdle(config.poolSize);
+            objectPool.setMaxIdle(config.poolSize);
+            objectPool.setMaxTotal(config.poolSize);
+            objectPool.setTestOnBorrow(true);
+            objectPool.setTestOnCreate(true);
+            objectPool.setMaxWaitMillis(config.maxWait);
+            poolableConnectionFactory.setPool(objectPool);
+
+            PoolingDataSource dataSource = new PoolingDataSource(objectPool);
+
+            return dataSource;
+        } catch (ClassNotFoundException ex) {
+            throw new DBConfigException("failed to load JDBC driver: " + config.cc.getDriver(), ex);
+        } catch (Exception ex) {
+            throw new DBConfigException("failed to init connection pool: " + config.cc.getURL(), ex);
+        }
+    }
+
 }
