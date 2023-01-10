@@ -208,6 +208,24 @@ public class DBUtil {
         log.debug("createDataSource: " + dataSourceName + " DONE");
     }
 
+    public static void createJNDIDataSource(String dataSourceName, PoolConfig config) throws NamingException {
+        log.debug("createJNDIDataSource: " + dataSourceName + " POOL START");
+
+        StandaloneContextFactory.initJNDI();
+
+        Context initContext = new InitialContext();
+        Context envContext = (Context) initContext.lookup(DEFAULT_JNDI_ENV_CONTEXT);
+        if (envContext == null) {
+            envContext = initContext.createSubcontext(DEFAULT_JNDI_ENV_CONTEXT);
+        }
+        log.debug("env: " + envContext);
+
+        DataSource dataSource = createPool(config);
+
+        envContext.bind(dataSourceName, dataSource);
+        log.debug("createJNDIDataSource: " + dataSourceName + " POOL DONE");
+    }
+
     /**
      * Find a JNDI DataSource in an application server context. This is a
      * convenience method for finding a DataSource via the default context
@@ -335,24 +353,6 @@ public class DBUtil {
             this.maxWait = maxWait;
             this.validationQuery = validationQuery;
         }
-    }
-
-    public static void createJNDIDataSource(String dataSourceName, PoolConfig config) throws NamingException {
-        log.debug("createJNDIDataSource: " + dataSourceName + " POOL START");
-
-        StandaloneContextFactory.initJNDI();
-
-        Context initContext = new InitialContext();
-        Context envContext = (Context) initContext.lookup(DEFAULT_JNDI_ENV_CONTEXT);
-        if (envContext == null) {
-            envContext = initContext.createSubcontext(DEFAULT_JNDI_ENV_CONTEXT);
-        }
-        log.debug("env: " + envContext);
-
-        DataSource dataSource = createPool(config);
-
-        envContext.bind(dataSourceName, dataSource);
-        log.debug("createJNDIDataSource: " + dataSourceName + " POOL DONE");
     }
 
     private static DataSource createPool(PoolConfig config) {
