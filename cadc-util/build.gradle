@@ -16,7 +16,7 @@ sourceCompatibility = 1.8
 
 group = 'org.opencadc'
 
-version = '1.8.4'
+version = '1.8.5'
 
 description = 'OpenCADC core utility library'
 def git_url = 'https://github.com/opencadc/core'
@@ -38,6 +38,7 @@ dependencies {
     compile 'xerces:xercesImpl:[2.12.2,)'
     compile 'org.jdom:jdom2:2.0.6.1'
     compile 'org.springframework:spring-jdbc:5.2.22.RELEASE'
+    compile 'org.apache.commons:commons-dbcp2:[2.8.0,2.9.0)'
 
     testCompile 'junit:junit:4.13'
     testCompile 'org.easymock:easymock:3.6'
