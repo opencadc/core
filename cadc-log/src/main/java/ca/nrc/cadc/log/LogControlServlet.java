@@ -167,6 +167,7 @@ public class LogControlServlet extends HttpServlet {
     private static final String LOG_CONTROL_PROPERTIES = "logControlProperties";
     static final String USER_DNS_PROPERTY = "user";
     static final String GROUP_URIS_PROPERTY = "group";
+    static final String ANON_PROPERTY = "anon";
 
     private Level level = null;
     private List<String> packages;
@@ -389,6 +390,10 @@ public class LogControlServlet extends HttpServlet {
         logger.debug(subject.toString());
 
         MultiValuedProperties mvp = getLogControlProperties();
+
+        if (isAnonymousAccess(mvp)) {
+            return;
+        }
         
         // first check if request user matches authorized config file users
         Set<Principal> authorizedUsers = getAuthorizedUserPrincipals(mvp);
@@ -492,6 +497,16 @@ public class LogControlServlet extends HttpServlet {
             logger.debug("Authorized users not configured.");
         }
         return false;
+    }
+
+    /**
+     * Whether this servlet is configured for anonymous level setting.
+     * @param multiValuedProperties     The MultiValuedProperties object representing the Servlet's Web Configuration.
+     * @return  True if anon is set to true, False otherwise.
+     */
+    private boolean isAnonymousAccess(final MultiValuedProperties multiValuedProperties) {
+        final String configuredAnon = multiValuedProperties.getFirstPropertyValue(ANON_PROPERTY);
+        return StringUtil.hasLength(configuredAnon) && configuredAnon.equalsIgnoreCase(Boolean.toString(true));
     }
 
     /**
