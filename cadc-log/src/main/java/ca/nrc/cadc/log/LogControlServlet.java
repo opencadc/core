@@ -384,6 +384,10 @@ public class LogControlServlet extends HttpServlet {
             response.setHeader(REQUEST_HEADER_SECRET_KEY, secretHeader);
         }
 
+        if (StringUtil.hasLength(request.getHeader("Authorization"))) {
+            response.setHeader("Authorization", request.getHeader("Authorization"));
+        }
+
         response.setHeader("Location", url);
     }
 
@@ -525,7 +529,8 @@ public class LogControlServlet extends HttpServlet {
      */
     private boolean isAuthorizedUser(Subject subject, Set<Principal> authorizedUsers) {
         if (!authorizedUsers.isEmpty()) {
-            Set<X500Principal> principals = subject.getPrincipals(X500Principal.class);
+            // Allow all principals to be checked.
+            Set<Principal> principals = subject.getPrincipals(Principal.class);
             for (Principal caller : principals) {
                 for (Principal authorizedUser : authorizedUsers) {
                     if (AuthenticationUtil.equals(authorizedUser, caller)) {
