@@ -170,7 +170,6 @@ public class LogControlServlet extends HttpServlet {
     static final String GROUP_URIS_PROPERTY = "group";
     static final String USERNAME_PROPERTY = "username";
     static final String SECRET_PROPERTY = "secret";
-    static final String REQUEST_HEADER_SECRET_KEY = "x-cadc-logcontrol";
 
     private Level level = null;
     private List<String> packages;
@@ -371,17 +370,10 @@ public class LogControlServlet extends HttpServlet {
         response.setStatus(HttpServletResponse.SC_SEE_OTHER);
         String url = request.getRequestURI();
 
-        // We could condense this and just redirect to one of them, but it seems more proper to just carry forward what
-        // the caller submitted.
         String secretQuery = request.getParameter(SECRET_PROPERTY);
-        String secretHeader = request.getHeader(REQUEST_HEADER_SECRET_KEY);
 
         if (StringUtil.hasLength(secretQuery)) {
             url = url + "?" + SECRET_PROPERTY + "=" + secretQuery;
-        }
-
-        if (StringUtil.hasLength(secretHeader)) {
-            response.setHeader(REQUEST_HEADER_SECRET_KEY, secretHeader);
         }
 
         if (StringUtil.hasLength(request.getHeader("Authorization"))) {
@@ -507,13 +499,11 @@ public class LogControlServlet extends HttpServlet {
      * @return      True if a provided secret matches a configured one.  False otherwise.
      */
     private boolean isAuthorizedSecret(HttpServletRequest request, MultiValuedProperties multiValuedProperties) {
-        String requestHeaderSecret = request.getHeader(LogControlServlet.REQUEST_HEADER_SECRET_KEY);
         String requestParamSecret = request.getParameter(LogControlServlet.SECRET_PROPERTY);
-
         List<String> configuredSecrets = multiValuedProperties.getProperty(SECRET_PROPERTY);
         for (String configuredSecret : configuredSecrets) {
             // Intentionally kept as case-sensitive.
-            if (configuredSecret.equals(requestHeaderSecret) || configuredSecret.equals(requestParamSecret)) {
+            if (configuredSecret.equals(requestParamSecret)) {
                 return true;
             }
         }
