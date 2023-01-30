@@ -376,10 +376,6 @@ public class LogControlServlet extends HttpServlet {
             url = url + "?" + SECRET_PROPERTY + "=" + secretQuery;
         }
 
-        if (StringUtil.hasLength(request.getHeader("Authorization"))) {
-            response.setHeader("Authorization", request.getHeader("Authorization"));
-        }
-
         response.setHeader("Location", url);
     }
 
