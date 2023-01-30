@@ -71,6 +71,7 @@ package ca.nrc.cadc.log;
 
 import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.Authorizer;
+import ca.nrc.cadc.auth.HttpPrincipal;
 import ca.nrc.cadc.cred.client.CredUtil;
 import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.util.Log4jInit;
@@ -167,6 +168,8 @@ public class LogControlServlet extends HttpServlet {
     private static final String LOG_CONTROL_PROPERTIES = "logControlProperties";
     static final String USER_DNS_PROPERTY = "user";
     static final String GROUP_URIS_PROPERTY = "group";
+    static final String USERNAME_PROPERTY = "username";
+    static final String SECRET_PROPERTY = "secret";
 
     private Level level = null;
     private List<String> packages;
@@ -366,6 +369,13 @@ public class LogControlServlet extends HttpServlet {
         // redirect the caller to the resulting settings
         response.setStatus(HttpServletResponse.SC_SEE_OTHER);
         String url = request.getRequestURI();
+
+        String secretQuery = request.getParameter(SECRET_PROPERTY);
+
+        if (StringUtil.hasLength(secretQuery)) {
+            url = url + "?" + SECRET_PROPERTY + "=" + secretQuery;
+        }
+
         response.setHeader("Location", url);
     }
 
@@ -374,6 +384,14 @@ public class LogControlServlet extends HttpServlet {
      */
     private void authorize(HttpServletRequest request, boolean readOnly)
         throws AccessControlException, TransientException {
+
+        MultiValuedProperties mvp = getLogControlProperties();
+
+        // Check the secret first.
+        if (isAuthorizedSecret(request, mvp)) {
+            logger.debug("Secret authorized.");
+            return;
+        }
 
         // Get the calling subject.  If possible, augment the subject,
         // but if augmenting fails, use the subject provided only.
@@ -387,8 +405,6 @@ public class LogControlServlet extends HttpServlet {
         }
 
         logger.debug(subject.toString());
-
-        MultiValuedProperties mvp = getLogControlProperties();
         
         // first check if request user matches authorized config file users
         Set<Principal> authorizedUsers = getAuthorizedUserPrincipals(mvp);
@@ -473,6 +489,25 @@ public class LogControlServlet extends HttpServlet {
     }
 
     /**
+     * Supported secret submission is from a query parameter (secret=) or a header (X-CADC-LOGCONTROL).
+     * @param request               The HTTP Servlet request.
+     * @param multiValuedProperties The current log control properties.
+     * @return      True if a provided secret matches a configured one.  False otherwise.
+     */
+    private boolean isAuthorizedSecret(HttpServletRequest request, MultiValuedProperties multiValuedProperties) {
+        String requestParamSecret = request.getParameter(LogControlServlet.SECRET_PROPERTY);
+        List<String> configuredSecrets = multiValuedProperties.getProperty(SECRET_PROPERTY);
+        for (String configuredSecret : configuredSecrets) {
+            // Intentionally kept as case-sensitive.
+            if (configuredSecret.equals(requestParamSecret)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Checks if the caller Principal matches an authorized Principal
      * from the properties file.
 
@@ -480,7 +515,8 @@ public class LogControlServlet extends HttpServlet {
      */
     private boolean isAuthorizedUser(Subject subject, Set<Principal> authorizedUsers) {
         if (!authorizedUsers.isEmpty()) {
-            Set<X500Principal> principals = subject.getPrincipals(X500Principal.class);
+            // Allow all principals to be checked.
+            Set<Principal> principals = subject.getPrincipals(Principal.class);
             for (Principal caller : principals) {
                 for (Principal authorizedUser : authorizedUsers) {
                     if (AuthenticationUtil.equals(authorizedUser, caller)) {
@@ -533,7 +569,7 @@ public class LogControlServlet extends HttpServlet {
      * @return Set of authorized X500Principals, can be an empty Set if none configured.
      */
     Set<Principal> getAuthorizedUserPrincipals(MultiValuedProperties mvp) {
-        Set<Principal> principals = new HashSet<Principal>();
+        Set<Principal> principals = new HashSet<>();
         if (mvp != null) {
             try {
                 List<String> properties = mvp.getProperty(USER_DNS_PROPERTY);
@@ -543,6 +579,11 @@ public class LogControlServlet extends HttpServlet {
                             principals.add(new X500Principal(property));
                         }
                     }
+                }
+
+                List<String> allowedUsernames = mvp.getProperty(LogControlServlet.USERNAME_PROPERTY);
+                for (String allowedUsername : allowedUsernames) {
+                    principals.add(new HttpPrincipal(allowedUsername));
                 }
             } catch (IllegalArgumentException e) {
                 logger.debug("No authorized users configured");
