@@ -68,10 +68,10 @@
 package ca.nrc.cadc.rest;
 
 import ca.nrc.cadc.auth.AuthMethod;
-import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.AuthorizationToken;
-import ca.nrc.cadc.auth.AuthorizationTokenPrincipal;
 import ca.nrc.cadc.auth.HttpPrincipal;
+import ca.nrc.cadc.auth.IdentityManager;
+import ca.nrc.cadc.auth.NoOpIdentityManager;
 import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.auth.NotAuthenticatedException.AuthError;
 import ca.nrc.cadc.reg.AccessURL;
@@ -86,10 +86,13 @@ import ca.nrc.cadc.util.PropertiesReader;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.security.Principal;
 import java.util.ArrayList;
 
+import java.util.Set;
 import javax.security.auth.Subject;
 
+import javax.security.auth.x500.X500Principal;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
@@ -115,7 +118,8 @@ public class RestServletTest {
         try {
             
             System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, "src/test/resources");
-
+            System.setProperty(IdentityManager.class.getName(), TestIdentityManager.class.getName());
+            
             SyncOutput out = EasyMock.createMock(SyncOutput.class);
             
             // Authenticated scenarios "x-vo-authenticated"
@@ -130,16 +134,16 @@ public class RestServletTest {
             
             // "<other principal name if userid missing>"
             s = new Subject();
-            s.getPrincipals().add(new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, "some-value"));
+            s.getPrincipals().add(new X500Principal("C=ca,O=peole,CN=me"));
             s.getPublicCredentials().add(new AuthorizationToken("type", "creds", new ArrayList<String>()));
             s.getPublicCredentials().add(AuthMethod.TOKEN);
-            out.addHeader("x-vo-authenticated", "some-value");
+            out.addHeader("x-vo-authenticated", "C=ca,O=peole,CN=me");
             EasyMock.expectLastCall().once();
             runTest(s, out, null);
             
             // "<http userid if multiple>"
             s = new Subject();
-            s.getPrincipals().add(new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, "some-value"));
+            s.getPrincipals().add(new X500Principal("C=ca,O=peole,CN=me"));
             s.getPrincipals().add(new HttpPrincipal("userid"));
             s.getPublicCredentials().add(new AuthorizationToken("type", "creds", new ArrayList<String>()));
             s.getPublicCredentials().add(AuthMethod.TOKEN);
@@ -153,7 +157,7 @@ public class RestServletTest {
             s = new Subject();
             out.addHeader("WWW-Authenticate", "ivoa_bearer standard_id=\"ivo://ivoa.net/sso#tls-with-password\", access_url=\"https://example.com/ac/login\"");
             EasyMock.expectLastCall().once();
-            out.addHeader("WWW-Authenticate", "ivoa_bearer standard_id=\"ivo://ivoa.net/sso#OpenID\", access_url=\"https://example.com/ac\"");
+            out.addHeader("WWW-Authenticate", "ivoa_bearer standard_id=\"ivo://ivoa.net/sso#OpenID\", access_url=\"https://oidc.example.net/\"");
             EasyMock.expectLastCall().once();
             out.addHeader("WWW-Authenticate", "ivoa_x509 standard_id=\"ivo://ivoa.net/sso#BasicAA\", access_url=\"https://example.com/cred/priv/basic\"");
             EasyMock.expectLastCall().once();
@@ -169,7 +173,7 @@ public class RestServletTest {
             s = new Subject();
             out.addHeader("WWW-Authenticate", "ivoa_bearer standard_id=\"ivo://ivoa.net/sso#tls-with-password\", access_url=\"https://example.com/ac/login\", error=\"insufficient_scope\"");
             EasyMock.expectLastCall().once();
-            out.addHeader("WWW-Authenticate", "ivoa_bearer standard_id=\"ivo://ivoa.net/sso#OpenID\", access_url=\"https://example.com/ac\", error=\"insufficient_scope\"");
+            out.addHeader("WWW-Authenticate", "ivoa_bearer standard_id=\"ivo://ivoa.net/sso#OpenID\", access_url=\"https://oidc.example.net/\", error=\"insufficient_scope\"");
             EasyMock.expectLastCall().once();
             out.addHeader("WWW-Authenticate", "ivoa_x509 standard_id=\"ivo://ivoa.net/sso#BasicAA\", access_url=\"https://example.com/cred/priv/basic\"");
             EasyMock.expectLastCall().once();
@@ -186,7 +190,7 @@ public class RestServletTest {
             s = new Subject();
             out.addHeader("WWW-Authenticate", "ivoa_bearer standard_id=\"ivo://ivoa.net/sso#tls-with-password\", access_url=\"https://example.com/ac/login\", error=\"insufficient_scope\", error_description=\"text\"");
             EasyMock.expectLastCall().once();
-            out.addHeader("WWW-Authenticate", "ivoa_bearer standard_id=\"ivo://ivoa.net/sso#OpenID\", access_url=\"https://example.com/ac\", error=\"insufficient_scope\", error_description=\"text\"");
+            out.addHeader("WWW-Authenticate", "ivoa_bearer standard_id=\"ivo://ivoa.net/sso#OpenID\", access_url=\"https://oidc.example.net/\", error=\"insufficient_scope\", error_description=\"text\"");
             EasyMock.expectLastCall().once();
             out.addHeader("WWW-Authenticate", "ivoa_x509 standard_id=\"ivo://ivoa.net/sso#BasicAA\", access_url=\"https://example.com/cred/priv/basic\"");
             EasyMock.expectLastCall().once();
@@ -203,7 +207,7 @@ public class RestServletTest {
             s = new Subject();
             out.addHeader("WWW-Authenticate", "ivoa_bearer standard_id=\"ivo://ivoa.net/sso#tls-with-password\", access_url=\"https://example.com/ac/login\"");
             EasyMock.expectLastCall().once();
-            out.addHeader("WWW-Authenticate", "ivoa_bearer standard_id=\"ivo://ivoa.net/sso#OpenID\", access_url=\"https://example.com/ac\"");
+            out.addHeader("WWW-Authenticate", "ivoa_bearer standard_id=\"ivo://ivoa.net/sso#OpenID\", access_url=\"https://oidc.example.net/\"");
             EasyMock.expectLastCall().once();
             out.addHeader("WWW-Authenticate", "ivoa_x509 standard_id=\"ivo://ivoa.net/sso#BasicAA\", access_url=\"https://example.com/cred/priv/basic\"");
             EasyMock.expectLastCall().once();
@@ -220,7 +224,7 @@ public class RestServletTest {
             s = new Subject();
             out.addHeader("WWW-Authenticate", "ivoa_bearer standard_id=\"ivo://ivoa.net/sso#tls-with-password\", access_url=\"https://example.com/ac/login\"");
             EasyMock.expectLastCall().once();
-            out.addHeader("WWW-Authenticate", "ivoa_bearer standard_id=\"ivo://ivoa.net/sso#OpenID\", access_url=\"https://example.com/ac\"");
+            out.addHeader("WWW-Authenticate", "ivoa_bearer standard_id=\"ivo://ivoa.net/sso#OpenID\", access_url=\"https://oidc.example.net/\"");
             EasyMock.expectLastCall().once();
             out.addHeader("WWW-Authenticate", "ivoa_x509 standard_id=\"ivo://ivoa.net/sso#BasicAA\", access_url=\"https://example.com/cred/priv/basic\"");
             EasyMock.expectLastCall().once();
@@ -282,4 +286,28 @@ public class RestServletTest {
         
     }
 
+    public static class TestIdentityManager extends NoOpIdentityManager {
+
+        public TestIdentityManager() {
+            super();
+        }
+        
+        @Override
+        public String toDisplayString(Subject subject) {
+            // x-vo-authenticated
+            if (subject != null) {
+                // prefer username
+                Set<HttpPrincipal> ps = subject.getPrincipals(HttpPrincipal.class);
+                if (!ps.isEmpty()) {
+                    return ps.iterator().next().getName();
+                }
+                // default to first
+                Set<Principal> ps2 = subject.getPrincipals();
+                if (!ps2.isEmpty()) {
+                    return ps2.iterator().next().getName();
+                }
+            }
+            return null;
+        }
+    }
 }
