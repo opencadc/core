@@ -77,6 +77,7 @@ import org.apache.log4j.Logger;
  * 
  * @author pdowler
  */
+@Deprecated
 public class NoOpAuthenticator implements Authenticator {
     private static final Logger log = Logger.getLogger(NoOpAuthenticator.class);
 

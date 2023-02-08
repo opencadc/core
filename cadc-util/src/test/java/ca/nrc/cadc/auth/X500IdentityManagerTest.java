@@ -71,7 +71,6 @@ package ca.nrc.cadc.auth;
 
 import ca.nrc.cadc.util.Log4jInit;
 import java.security.Principal;
-import java.sql.Types;
 import java.util.HashSet;
 import java.util.Set;
 import javax.security.auth.Subject;
@@ -113,9 +112,6 @@ public class X500IdentityManagerTest
         try
         {
             X500IdentityManager im = new X500IdentityManager();
-
-            int sqlType = im.getOwnerType();
-            Assert.assertEquals("SQL TYPE", Types.VARCHAR, sqlType);
 
             Object persist = im.toOwner(callerS);
             Assert.assertNotNull("toOwner", persist);

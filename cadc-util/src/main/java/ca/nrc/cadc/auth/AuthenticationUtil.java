@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2018.                            (c) 2018.
+ *  (c) 2023.                            (c) 2023.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -71,12 +71,10 @@ package ca.nrc.cadc.auth;
 
 import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.net.NetUtil;
-import ca.nrc.cadc.util.StringUtil;
-
-import java.io.IOException;
+import ca.nrc.cadc.util.InvalidConfigException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.security.AccessControlContext;
-import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.Principal;
 import java.security.PrivateKey;
@@ -93,14 +91,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
 import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
 import javax.servlet.http.HttpServletRequest;
-
 import org.apache.log4j.Logger;
 
 /**
@@ -138,76 +134,70 @@ public class AuthenticationUtil {
 
     private static Logger log = Logger.getLogger(AuthenticationUtil.class);
 
-    private static Authenticator getAuthenticator() {
-        String defaultImplClass = Authenticator.class.getName() + "Impl";
-        String cname = System.getProperty(Authenticator.class.getName());
-        Class c = null;
-        if (cname == null) {
-            cname = defaultImplClass;
-        }
-        try {
-            c = Class.forName(cname);
-            Object o = c.newInstance();
-            Authenticator ret = (Authenticator) o;
-            log.debug("Authenticator: " + cname);
-            return ret;
-        } catch (Throwable t) {
-            if (!defaultImplClass.equals(cname) || c != null) {
-                log.error("failed to load Authenticator: " + cname, t);
-            }
-            log.debug("failed to load Authenticator: " + cname, t);
-        }
-        log.debug("Authenticator: null");
-        return null;
-    }
-
     /**
      * Load the available IdentityManager implementation. This utility method will
      * check the <code>ca.nrc.cadc.auth.IdentityManager</code> system property for a
-     * configured class name (default class name:
-     * <code>ca.nrc.cadc.auth.IdentityManagerImpl</code>). The easiest way for
-     * software implementers to customize behavior is to create their own
-     * IdentityManagerimpl class and add it to the classpath.
+     * configured class name. If not configured or loading the configured implementation
+     * fails, the default is the <code>ca.nrc.cadc.auth.NoOpIdentityManager</code>.
      * 
-     * @return an IdentityManager implementation or null if none provided
+     * @return an IdentityManager implementation
      */
     public static IdentityManager getIdentityManager() {
-        String defaultImplClass = IdentityManager.class.getName() + "Impl";
         String cname = System.getProperty(IdentityManager.class.getName());
-        Class c = null;
-        if (cname == null) {
-            cname = defaultImplClass;
-        }
-        try {
-            c = Class.forName(cname);
-            Object o = c.newInstance();
-            IdentityManager ret = (IdentityManager) o;
-            log.debug("IdentityManager: " + cname);
-            return ret;
-        } catch (Throwable t) {
-            if (!defaultImplClass.equals(cname) || c != null) {
-                log.error("failed to load configured IdentityManager: " + cname, t);
+        if (cname != null) {
+            try {
+                Class c = Class.forName(cname);
+                Object o = c.getConstructor().newInstance();
+                IdentityManager ret = (IdentityManager) o;
+                log.debug("IdentityManager: " + cname);
+                return ret;
+            } catch (ClassNotFoundException 
+                    | IllegalAccessException | IllegalArgumentException | InstantiationException 
+                    | NoSuchMethodException | SecurityException | InvocationTargetException ex) {
+                throw new InvalidConfigException("failed to load configured IdentityManager: " + cname, ex);
             }
-            log.debug("failed to load default IdentityManager: " + cname, t);
         }
-        log.debug("IdentityManager: null");
-        return null;
+        // default
+        return new NoOpIdentityManager();
     }
 
-    public static Subject augmentSubject(Subject s) {
-        final Authenticator auth = getAuthenticator();
-        if (auth != null) {
-            return auth.augment(s);
+    // backwards compat
+    private static Authenticator getAuthenticator(IdentityManager im) {
+        String cname = System.getProperty(Authenticator.class.getName());
+        if (cname != null && im instanceof NoOpIdentityManager) {
+            try {
+                Class c = Class.forName(cname);
+                Object o = c.getConstructor().newInstance();
+                Authenticator ret = (Authenticator) o;
+                log.warn("DEPRECATED: using " + Authenticator.class.getName() + " = " + cname);
+                return ret;
+            } catch (ClassNotFoundException 
+                    | IllegalAccessException | IllegalArgumentException | InstantiationException 
+                    | NoSuchMethodException | SecurityException | InvocationTargetException ex) {
+                throw new InvalidConfigException("failed to load configured IdentityManager: " + cname, ex);
+            }
         }
-        return s;
+        return null;
+    }
+    
+    public static Subject augmentSubject(Subject s) {
+        IdentityManager auth = getIdentityManager();
+        // temporary backwards compat
+        Authenticator alt = getAuthenticator(auth);
+        if (alt != null) {
+            return alt.augment(s);
+        }
+        return auth.augment(s);
     }
     
     public static Subject validateSubject(Subject s) throws NotAuthenticatedException {
-        final Authenticator auth = getAuthenticator();
-        if (auth != null) {
-            return auth.validate(s);
+        IdentityManager auth = getIdentityManager();
+        // temporary backwards compat
+        Authenticator alt = getAuthenticator(auth);
+        if (alt != null) {
+            return alt.augment(s);
         }
-        return s;
+        return auth.validate(s);
     }
 
     public static Subject getAnonSubject() {
@@ -298,15 +288,12 @@ public class AuthenticationUtil {
      * safe to use with Subject.doAs(...).
      * </p>
      * <p>
-     * This method will also try to load an implementation of the Authenticator
+     * This method will also try to load an implementation of the IdentityManager
      * interface and use it to process the Subject before return. By default, it
-     * will try to load a class named
-     * <code>ca.nrc.cadc.auth.AuthenticatorImpl</code>. Applications may override
-     * this default class name by setting the
-     * <em>ca.nrc.cadc.auth.Authenticator</em> system property to the class name of
-     * their implementation. Note that the default implementation class does not
-     * exist in this library so implementors can provide that exact class and then
-     * not need the system property.
+     * will try to load the <code>ca.nrc.cadc.auth.NoOpIdentityManager</code> and
+     * simply ignore all authentication. Applications may override this default class 
+     * name by setting the <em>ca.nrc.cadc.auth.IdentityManager</em> system property 
+     * to the class name of their implementation.
      * </p>
      *
      * @param principalExtractor The PrincipalExtractor to provide Principals.
