@@ -71,7 +71,7 @@ import javax.security.auth.Subject;
 import org.apache.log4j.Logger;
 
 /**
- * Dummy IdentityManager for use when there is no A&A available.
+ * Dummy IdentityManager for use when there is no authentication is needed.
  * 
  * @author pdowler
  */
