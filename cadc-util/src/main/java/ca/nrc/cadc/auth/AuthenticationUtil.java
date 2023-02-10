@@ -144,21 +144,20 @@ public class AuthenticationUtil {
      */
     public static IdentityManager getIdentityManager() {
         String cname = System.getProperty(IdentityManager.class.getName());
+        IdentityManager ret = new NoOpIdentityManager();
         if (cname != null) {
             try {
                 Class c = Class.forName(cname);
                 Object o = c.getConstructor().newInstance();
-                IdentityManager ret = (IdentityManager) o;
-                log.debug("IdentityManager: " + cname);
-                return ret;
+                ret = (IdentityManager) o;
             } catch (ClassNotFoundException 
                     | IllegalAccessException | IllegalArgumentException | InstantiationException 
                     | NoSuchMethodException | SecurityException | InvocationTargetException ex) {
                 throw new InvalidConfigException("failed to load configured IdentityManager: " + cname, ex);
             }
         }
-        // default
-        return new NoOpIdentityManager();
+        log.debug("loaded IdentityManager: " + ret.getClass().getName());
+        return ret;
     }
 
     // backwards compat
