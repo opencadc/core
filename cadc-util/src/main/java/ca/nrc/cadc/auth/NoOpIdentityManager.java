@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2016.                            (c) 2016.
+*  (c) 2023.                            (c) 2023.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,30 +62,25 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
 */
 
 package ca.nrc.cadc.auth;
 
-import java.security.Principal;
-import java.util.HashSet;
-import java.util.Set;
 import javax.security.auth.Subject;
-import javax.security.auth.x500.X500Principal;
+import org.apache.log4j.Logger;
 
 /**
- * Implementation of IdentityManager that uses the X500Principal as the
- * definitive identifying object in a subject. Use this class if you want to
- * store the X509 distinguished name and be able to reconstruct the subject from
- * it later. Other principals and credentials in the callers Subject will not be
- * saved and restored: only a single X500Principal (the first one found).
+ * Dummy IdentityManager for use when there is no authentication is needed.
  * 
  * @author pdowler
  */
-public class X500IdentityManager implements IdentityManager {
+public class NoOpIdentityManager implements IdentityManager {
+    private static final Logger log = Logger.getLogger(NoOpIdentityManager.class);
 
+    public NoOpIdentityManager() { 
+    }
+    
     @Override
     public Subject validate(Subject subject) throws NotAuthenticatedException {
         return subject;
@@ -97,28 +92,17 @@ public class X500IdentityManager implements IdentityManager {
     }
 
     @Override
-    public String toDisplayString(Subject subject) {
-        if (subject != null) {
-            Set<X500Principal> principals = subject.getPrincipals(X500Principal.class);
-            for (X500Principal principal : principals) {
-                return AuthenticationUtil.canonizeDistinguishedName(principal.getName());
-            }
-        }
+    public Subject toSubject(Object owner) {
         return null;
     }
 
     @Override
     public Object toOwner(Subject subject) {
-        return toDisplayString(subject);
+        return null;
     }
 
     @Override
-    public Subject toSubject(Object owner) {
-        String str = (String) owner;
-        X500Principal p = new X500Principal(str);
-        Set<Principal> pset = new HashSet<>();
-        pset.add(p);
-        return new Subject(false, pset, new HashSet(), new HashSet());
+    public String toDisplayString(Subject subject) {
+        return null;
     }
-
 }

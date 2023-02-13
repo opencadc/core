@@ -237,20 +237,19 @@ public class VersionUtil {
     }
 
     /**
-     * <p>Returs a string containing the version/vendor information for all the
+     * Returns a string containing the version/vendor information for all the
      * jar file in the classpath of the argument jarFile (typically the
      * the application jar file). 
-     * </p><p>
      * The version/vendor information for a given jar file is return only if
      * the jar files has a manifest with the version/vendor information set 
      * in the main header of the manifest. It is also required that the
      * classpath is specified in the manifest of the argument jarFile.
-     * </p>
+     * 
      * @param jarFile path to the application jar file. Hint: most of the
-     *     time <tt>System.getProperty("java.class.path", ".")</tt> suffices for
+     *     time <code>System.getProperty("java.class.path", ".")</code> suffices for
      *     obtaining the path to the application jar file.
      * @return Formatted string containing information regarding the jar files
-     *     in the class path and theri corresponding versions/vendors.
+     *     in the class path and the corresponding versions/vendors.
      */
     public static String detailedVersion(String jarFile) {
         String result = "";

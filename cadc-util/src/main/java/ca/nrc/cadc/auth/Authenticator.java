@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2016.                            (c) 2016.
+ *  (c) 2023.                            (c) 2023.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -76,7 +76,9 @@ import javax.security.auth.Subject;
  * validate(subject) is called before augment(subject).
  *
  * @author pdowler
+ * @deprecated in favour of the complete IdentityManager interface.
  */
+@Deprecated
 public interface Authenticator {
     
     /**
