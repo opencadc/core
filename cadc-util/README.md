@@ -3,6 +3,35 @@ This is the OpenCADC utility library.
 It includes classes that are very general purpose and used in multiple other OpenCADC
 projects. 
 
+## configuration
+
+Some classes in the `cadc-util` library can have their behaviour controlled by
+setting Java system properties.
+```
+# configure an IdentityManager implementation 
+# (default: ca.nrc.cadc.auth.NoOpIdentityManager)
+ca.nrc.cadc.auth.IdentityManager={class name of IdentityManager implementation}
+
+# OBSOLETE: functionaility merged into IdentityManager
+ca.nrc.cadc.auth.Authenticator={class name of Authenticator implementation}
+
+# capture a basic authorization attempt in an AuthorizationTokenPrincipal
+# so it can be validated by the IdentityManager (default: false aka ignore)
+ca.nrc.cadc.auth.PrincipalExtractor.allowBasicATP=true
+
+# trust an external proxy doing SSL termination to pass a validated client
+# certificate via the x-client-certificate header (default: false aka ignore)
+ca.nrc.cadc.auth.PrincipalExtractor.enableClientCertHeader=true
+
+#  configure logging to only print the message (INFO only?)
+(default: false aka print extra log4j preamble)
+ca.nrc.cadc.util.Log4jInit.messageOnly=true
+
+# following to be verified:
+ca.nrc.cadc.net.HttpTransfer.bufferSize={buffer size in bytes for ??}
+ca.nrc.cadc.util.PropertiesReader.dir={alt config dir?}
+```
+
 
 * Note about the SSL support in ca.nrc.cadc.auth
 
