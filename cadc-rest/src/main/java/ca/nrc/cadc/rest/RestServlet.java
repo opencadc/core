@@ -72,6 +72,7 @@ package ca.nrc.cadc.rest;
 import ca.nrc.cadc.auth.AuthMethod;
 import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.HttpPrincipal;
+import ca.nrc.cadc.auth.IdentityManager;
 import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.log.ServletLogInfo;
 import ca.nrc.cadc.log.WebServiceLogInfo;
@@ -87,6 +88,7 @@ import ca.nrc.cadc.util.Enumerator;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.security.Principal;
@@ -466,29 +468,16 @@ public class RestServlet extends HttpServlet {
         
         if (subject != null && !subject.getPrincipals().isEmpty()) {
             // Authenticated...
-            
             log.debug("Setting " + AuthenticationUtil.VO_AUTHENTICATED_HEADER + " header");
-            
-            Principal p = null;
-            // prefer HttpPrincipal, then X500Principal, then whatever is available
-            Set<? extends Principal> principals = subject.getPrincipals(HttpPrincipal.class);
-            if (!principals.isEmpty()) {
-                p = principals.iterator().next();
-            } else {
-                principals = subject.getPrincipals(X500Principal.class);
-                if (!principals.isEmpty()) {
-                    p = principals.iterator().next();
-                }
+            IdentityManager im = AuthenticationUtil.getIdentityManager();
+            String val = im.toDisplayString(subject);
+            if (val != null) {
+                out.addHeader(AuthenticationUtil.VO_AUTHENTICATED_HEADER, val);
             }
-            if (p == null) {
-                p = subject.getPrincipals().iterator().next();
-            }
-            out.addHeader(AuthenticationUtil.VO_AUTHENTICATED_HEADER, p.getName());
             return;
             
         } else {
             // Not authenticated...
-            
             log.debug("Setting " + AuthenticationUtil.AUTHENTICATE_HEADER + " header");
             
             try {
@@ -508,7 +497,14 @@ public class RestServlet extends HttpServlet {
             try {
                 // set a header for info on how to obtain tokens with OAuth2 authorize
                 URI authorizeServiceURI = getLocalServiceURI(Standards.SECURITY_METHOD_OPENID);
-                URL authorizeURL = rc.getServiceURL(authorizeServiceURI, Standards.SECURITY_METHOD_OPENID, AuthMethod.ANON);
+                URL authorizeURL = null;
+                if ("https".equals(authorizeServiceURI.getScheme())) {
+                    authorizeURL = authorizeServiceURI.toURL();
+                } else if ("ivo".equals(authorizeServiceURI.getScheme())) {
+                    authorizeURL = rc.getServiceURL(authorizeServiceURI, Standards.SECURITY_METHOD_OPENID, AuthMethod.ANON);
+                } else {
+                    log.warn("unrecognized URI scheme in LocalAuthority: " + authorizeServiceURI);
+                }
                 StringBuilder sb = new StringBuilder();
                 sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA_BEARER).append(" standard_id=\"")
                     .append(Standards.SECURITY_METHOD_OPENID.toString()).append("\", ");
@@ -521,6 +517,8 @@ public class RestServlet extends HttpServlet {
                 sb.append(AuthenticationUtil.CHALLENGE_TYPE_BEARER);
                 appendAuthenticateErrorInfo(AuthenticationUtil.CHALLENGE_TYPE_BEARER, sb, ex, true);
                 out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
+            } catch (MalformedURLException cex) {
+                log.error("failed to create access_url for " + Standards.SECURITY_METHOD_OPENID, cex);
             } catch (NoSuchElementException notSupported) {
                 log.debug("LocalAuthority -- not found: " + Standards.SECURITY_METHOD_OAUTH, notSupported);
             }

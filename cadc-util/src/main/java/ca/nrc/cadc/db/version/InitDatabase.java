@@ -107,18 +107,54 @@ public abstract class InitDatabase {
      * @param schema may be null to use default schema
      * @param modelName short name for the model
      * @param modelVersion version of the model
-     * @param prevModelVersion previous version from which upgrade is supported, null for no upgrade
+     * @param prevModelVersion previous version from which upgrade is supported
      */
     public InitDatabase(DataSource dataSource, String database, String schema,
             String modelName, String modelVersion, String prevModelVersion) {
+        assertNotNull("dataSource", dataSource);
+        assertNotNull("modelName", modelName);
+        assertNotNull("modelVersion", modelVersion);
+        assertNotNull("prevModelVersion", prevModelVersion);
         this.dataSource = dataSource;
-        this.database = database;
-        this.schema = schema;
         this.modelName = modelName;
         this.modelVersion = modelVersion;
         this.prevModelVersion = prevModelVersion;
+        
+        this.database = database;
+        this.schema = schema;
     }
 
+    /**
+     * Constructor. Create or idempotent upgrade when the previous version doesn't matter.
+     * This can be used when the upgrade scripts can wipe and redo the entire init process,
+     * such as populating the tap_schema for a TAP service.
+     * 
+     * @param dataSource may be null to use parseDDL only
+     * @param database may be null to use default database
+     * @param schema may be null to use default schema
+     * @param modelName short name for the model
+     * @param modelVersion version of the model
+     */
+    public InitDatabase(DataSource dataSource, String database, String schema,
+            String modelName, String modelVersion) {
+        assertNotNull("dataSource", dataSource);
+        assertNotNull("modelName", modelName);
+        assertNotNull("modelVersion", modelVersion);
+        this.dataSource = dataSource;
+        this.modelName = modelName;
+        this.modelVersion = modelVersion;
+        
+        this.database = database;
+        this.schema = schema;
+        this.prevModelVersion = null;
+    }
+    
+    private void assertNotNull(String name, Object value) {
+        if (value == null) {
+            throw new IllegalArgumentException(InitDatabase.class.getSimpleName() + ": " + name + " cannot be null");
+        }
+    }
+    
     // used by int test code
     String getVersion() {
         ModelVersionDAO vdao = new ModelVersionDAO(dataSource, database, schema);
@@ -153,7 +189,7 @@ public abstract class InitDatabase {
                 if (modelVersion.equals(cur.value)) {
                     log.debug("doInit: already up to date - nothing to do");
                     return false;
-                } else if (prevModelVersion != null && prevModelVersion.equals(cur.value)) {
+                } else if (prevModelVersion == null || prevModelVersion.equals(cur.value)) {
                     log.debug("doInit: possible to update - proceeding");
                 } else if (cur.value != null) {
                     throw new UnsupportedOperationException("doInit: cannot convert version " + cur.value + " (DB) to " + modelVersion + " (software)");
@@ -175,7 +211,7 @@ public abstract class InitDatabase {
                 if (modelVersion.equals(cur.value)) {
                     log.debug("doInit: already up to date - nothing to do");
                     // empty ddls ok: need to commit so can't return here
-                } else if (prevModelVersion != null && prevModelVersion.equals(cur.value)) {
+                } else if (prevModelVersion == null || prevModelVersion.equals(cur.value)) {
                     ddls = upgradeSQL;
                 } else {
                     throw new UnsupportedOperationException("doInit: cannot convert version " + cur.value + " (DB) to " + modelVersion + " (software)");

@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2021.                            (c) 2021.
+ *  (c) 2023.                            (c) 2023.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -70,15 +70,22 @@
 package ca.nrc.cadc.net;
 
 import ca.nrc.cadc.util.HexUtil;
+import ca.nrc.cadc.util.Log4jInit;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.Base64;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class DigestUtilTest {
     private static Logger log = Logger.getLogger(DigestUtilTest.class);
+
+    static {
+        Log4jInit.setLevel("ca.nrc.cadc.net", Level.INFO);
+    }
 
     @Test
     public void testRoundtrip() {
@@ -325,5 +332,4 @@ public class DigestUtilTest {
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
-
 }

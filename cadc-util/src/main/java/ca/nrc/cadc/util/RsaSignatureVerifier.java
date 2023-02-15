@@ -139,11 +139,20 @@ public class RsaSignatureVerifier {
     /**
      * Default constructor. This will look for a key file named RsaSignaturePub.key
      * and use it to verify.
+     * 
+     * @deprecated use RsaSignatureVerifier(File keyFile)
      */
+    @Deprecated
     public RsaSignatureVerifier() {
         this(PUB_KEY_FILE_NAME);
     }
     
+    /**
+     * Constructor.
+     * 
+     * @param keyFilename
+     * @deprecated use RsaSignatureVerifier(File keyFile)
+     */
     @Deprecated
     public RsaSignatureVerifier(String keyFilename) {
         File keyFile = findFile(keyFilename);

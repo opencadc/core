@@ -62,54 +62,88 @@
  *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
  *                                       <http://www.gnu.org/licenses/>.
  *
- *  $Revision: 5 $
+ *  : 5 $
  *
  ************************************************************************
  */
 
-package ca.nrc.cadc.auth;
+package ca.nrc.cadc.db;
 
-import javax.security.auth.Subject;
+import ca.nrc.cadc.util.Log4jInit;
+import java.sql.Connection;
+import java.sql.SQLException;
+import javax.sql.DataSource;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
-/**
- * Subject validation and modification interface.
- * validate(subject) is called before augment(subject).
- *
- * @author pdowler
- * @deprecated in favour of the complete IdentityManager interface.
- */
-@Deprecated
-public interface Authenticator {
-    
-    /**
-     * Parse and validate any principals in the subject.
-     * Some principals, such as X500Principal, do not require validation
-     * as that is done with TLS.
-     * AuthorizationTokenPrincipals must be parsed and validated.  If
-     * validation is successful, an associated AuthorizationToken must
-     * be put into the subject's public credentials.  At the end of the
-     * validate/augment calls, the principal must remain in the subject
-     * or be replaced by an HttpPrincipal with userid if available.
-     * Failed validation must result in a NotAuthenticatedException.
-     * 
-     * @param subject The subject, with principals, to validate.
-     * @return The validated subject with public credentials added.
-     * @throws NotAuthenticatedException If validation fails.
-     */
-    public Subject validate(final Subject subject) throws NotAuthenticatedException;
-    
-    /**
-     * Modify a Subject and return it. Implementations can modify the specified
-     * Subject by adding identities (Principals) or credentials. The argument
-     * subject will typically have an HttpPrinncipal if the request went through
-     * HTTP authentication, or an X500principal if the user authenticated via SSL
-     * with client certificate. The typical usage is to add additional principals
-     * with internal identity information. This could then be used in an Authorizer
-     * implementation elsewhere in the application.
-     *
-     * @param subject The initial subject.
-     * @return The modified subject.
-     */
-    public Subject augment(final Subject subject);
-    
+public class DBUtilTest {
+
+    private static final Logger log = Logger.getLogger(DBUtilTest.class);
+
+    static {
+        Log4jInit.setLevel("ca.nrc.cadc.db", Level.INFO);
+    }
+
+    public DBUtilTest() {
+    }
+
+    @Test
+    public void testCreatePool() {
+        String poolName = "jdbc/create-pool";
+        long maxWait = 6000L;
+        try {
+            DBConfig dbrc = new DBConfig();
+            ConnectionConfig cc = dbrc.getConnectionConfig("DBUTIL_TEST", "cadctest");
+            DBUtil.PoolConfig pc = new DBUtil.PoolConfig(cc, 2, maxWait, "select 123");
+
+            DBUtil.createJNDIDataSource(poolName, pc);
+
+            DataSource pool = DBUtil.findJNDIDataSource(poolName);
+            Assert.assertNotNull("pool", pool);
+
+            Connection con1 = pool.getConnection();
+            Assert.assertNotNull("connection 1", con1);
+            log.info("connection 1: " + con1.getCatalog() + " " + con1.isValid(0));
+
+            Connection con2 = pool.getConnection();
+            Assert.assertNotNull("connection 2", con2);
+            log.info("connection 2: " + con2.getCatalog() + " " + con2.isValid(0));
+
+            long t1 = System.currentTimeMillis();
+            try {
+                log.info("get connection: BLOCKED for " + maxWait + " ...");
+                Connection con3 = pool.getConnection();
+                Assert.fail("expected pool timeout, got: " + con3.getCatalog() + " " + con3.isValid(0));
+            } catch (SQLException ex) {
+                if (!ex.getMessage().toLowerCase().contains("timeout")) {
+                    throw ex;
+                }
+
+                long t2 = System.currentTimeMillis();
+                log.info("  caught: " + ex);
+                long timeout = t2 - t1;
+                log.info("timeout: " + timeout);
+                long dt = Math.abs(timeout - maxWait);
+                Assert.assertTrue("timeout", dt < 1000L); // within 3 ms
+            }
+
+            con1.close();
+            con2.close();
+
+            t1 = System.currentTimeMillis();
+            con1 = pool.getConnection();
+            Assert.assertNotNull("connection 1", con1);
+            log.info("connection 1: " + con1.getCatalog() + " " + con1.isValid(0));
+            long t2 = System.currentTimeMillis();
+            long dt = t2 - t1;
+            Assert.assertTrue("connection returned to pool", dt < 1000L);
+
+        } catch (Exception t) {
+            log.error("unexpected exception", t);
+            Assert.fail("unexpected exception: " + t);
+        }
+    }
+
 }

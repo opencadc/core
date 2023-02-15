@@ -123,7 +123,7 @@ public class InitDatabaseTest {
     @Test
     public void testCreate() {
         try {
-            InitDatabase init = new InitDatabase(dataSource, null, SCHEMA, "InitDatabaseTest", "0.1", null) {
+            InitDatabase init = new InitDatabase(dataSource, null, SCHEMA, "InitDatabaseTest", "0.1") {
                 @Override
                 protected URL findSQL(String fname) {
                     // runtime resources from intTest/resources
@@ -152,7 +152,7 @@ public class InitDatabaseTest {
     public void testUpgrade() {
         try {
             log.info("init 0.1 ...");
-            InitDatabase init = new InitDatabase(dataSource, null, SCHEMA, "InitDatabaseTest", "0.1", null) {
+            InitDatabase init = new InitDatabase(dataSource, null, SCHEMA, "InitDatabaseTest", "0.1") {
                 @Override
                 protected URL findSQL(String fname) {
                     // runtime resources from intTest/resources
@@ -198,7 +198,7 @@ public class InitDatabaseTest {
     public void testUpgradeRejected() {
         try {
             log.info("init 0.1 ...");
-            InitDatabase init = new InitDatabase(dataSource, null, SCHEMA, "InitDatabaseTest", "0.1", null) {
+            InitDatabase init = new InitDatabase(dataSource, null, SCHEMA, "InitDatabaseTest", "0.1") {
                 @Override
                 protected URL findSQL(String fname) {
                     // runtime resources from intTest/resources
