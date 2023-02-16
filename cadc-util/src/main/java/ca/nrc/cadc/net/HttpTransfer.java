@@ -656,9 +656,10 @@ public abstract class HttpTransfer implements Runnable {
      * @param checksumURI
      */
     public void setDigest(URI checksumURI) {
-        String algorithm = checksumURI.getScheme();
-        String checksum = DigestUtil.base64Encode(checksumURI.getSchemeSpecificPart());
-        setRequestProperty(DIGEST, String.format("%s=%s", algorithm, checksum));
+        if (checksumURI != null) {
+            String val = DigestUtil.toDigest(checksumURI);
+            setRequestProperty(DIGEST, val);
+        }
     }
 
     /**

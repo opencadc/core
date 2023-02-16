@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2021.                            (c) 2021.
+ *  (c) 2023.                            (c) 2023.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -74,7 +74,6 @@ import ca.nrc.cadc.util.Log4jInit;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.Base64;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -88,33 +87,52 @@ public class DigestUtilTest {
     }
 
     @Test
-    public void testGetDigest() throws Exception {
+    public void testRoundtrip() {
         try {
             String input = "Hello World";
             MessageDigest md = MessageDigest.getInstance("md5");
             byte[] md5Bytes = md.digest(input.getBytes(StandardCharsets.UTF_8));
             String md5Hex = HexUtil.toHex(md5Bytes);
-            String md5Base64 = DigestUtil.base64Encode(md5Hex);
+            URI checksumURI = URI.create("md5:" + md5Hex);
+            
+            String digestValue = DigestUtil.toDigest(checksumURI);
+            URI roundTrip = DigestUtil.getURI(digestValue);
+            Assert.assertEquals(checksumURI, roundTrip);
+            
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+    
+    @Test
+    public void testGetDigest() {
+        try {
+            String input = "Hello World";
+            MessageDigest md = MessageDigest.getInstance("md5");
+            byte[] md5Bytes = md.digest(input.getBytes(StandardCharsets.UTF_8));
+            String md5Hex = HexUtil.toHex(md5Bytes);
+            String md5Base64 = DigestUtil.base64EncodeHex(md5Hex);
 
             md = MessageDigest.getInstance("sha-1");
             byte[] sha1Bytes = md.digest(input.getBytes(StandardCharsets.UTF_8));
             String sha1Hex = HexUtil.toHex(sha1Bytes);
-            String sha1Base64 = DigestUtil.base64Encode(sha1Hex);
+            String sha1Base64 = DigestUtil.base64EncodeHex(sha1Hex);
 
             md = MessageDigest.getInstance("sha-256");
             byte[] sha256Bytes = md.digest(input.getBytes(StandardCharsets.UTF_8));
             String sha256Hex = HexUtil.toHex(sha256Bytes);
-            String sha256Base64 = DigestUtil.base64Encode(sha256Hex);
+            String sha256Base64 = DigestUtil.base64EncodeHex(sha256Hex);
 
             md = MessageDigest.getInstance("sha-384");
             byte[] sha384Bytes = md.digest(input.getBytes(StandardCharsets.UTF_8));
             String sha384Hex = HexUtil.toHex(sha384Bytes);
-            String sha384Base64 = DigestUtil.base64Encode(sha384Hex);
+            String sha384Base64 = DigestUtil.base64EncodeHex(sha384Hex);
 
             md = MessageDigest.getInstance("sha-512");
             byte[] sha512Bytes = md.digest(input.getBytes(StandardCharsets.UTF_8));
             String sha512Hex = HexUtil.toHex(sha512Bytes);
-            String sha512Base64 = DigestUtil.base64Encode(sha512Hex);
+            String sha512Base64 = DigestUtil.base64EncodeHex(sha512Hex);
 
             String digest;
             URI uri;
@@ -312,33 +330,5 @@ public class DigestUtilTest {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
-    }
-
-    @Test
-    public void testTempCompat() throws Exception {
-        String input = "Hello World";
-        MessageDigest md = MessageDigest.getInstance("md5");
-        byte[] md5Bytes = md.digest(input.getBytes(StandardCharsets.UTF_8));
-        
-        String md5Hex = HexUtil.toHex(md5Bytes);
-        
-        URI orig = URI.create("md5:" + md5Hex);
-        // currently incorrect:
-        String currentHdrVal = "md5=" + DigestUtil.base64Encode(md5Hex);
-        // http-spec compliant:
-        String correctHdrVal = "md5=" + Base64.getEncoder().encodeToString(md5Bytes);
-        
-        log.info("parse current: " + currentHdrVal);
-        URI actual1 = DigestUtil.getURI(currentHdrVal);
-        log.info("got: " + actual1);
-        Assert.assertNotNull(actual1);
-        Assert.assertEquals(orig, actual1);
-        
-        log.info("parse correct: " + correctHdrVal);
-        URI actual2 = DigestUtil.getURI(correctHdrVal);
-        log.info("got: " + actual2);
-        Assert.assertNotNull(actual2);
-        Assert.assertEquals(orig, actual2);
-            
     }
 }
