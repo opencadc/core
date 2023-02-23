@@ -113,6 +113,7 @@ public abstract class WebServiceLogInfo {
     protected String runID;
     protected Boolean success;
     protected Long duration;
+    protected Long overhead;
     
     protected URI resource;
     protected String grant;
@@ -279,6 +280,15 @@ public abstract class WebServiceLogInfo {
         this.duration = elapsedTime;
     }
 
+    /**
+     * Set the overhead time spent processing the request.
+     * 
+     * @param overhead 
+     */
+    public void setOverhead(Long overhead) {
+        this.overhead = overhead;
+    }
+    
     /**
      * Set the number of bytes transferred in the request.
      *
