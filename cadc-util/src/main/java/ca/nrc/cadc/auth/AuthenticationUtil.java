@@ -194,7 +194,7 @@ public class AuthenticationUtil {
         // temporary backwards compat
         Authenticator alt = getAuthenticator(auth);
         if (alt != null) {
-            return alt.augment(s);
+            return alt.validate(s);
         }
         return auth.validate(s);
     }
