@@ -68,11 +68,13 @@
 package ca.nrc.cadc.db.version;
 
 import ca.nrc.cadc.db.DatabaseTransactionManager;
+import ca.nrc.cadc.net.ResourceNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import javax.sql.DataSource;
 import org.apache.log4j.Logger;
@@ -91,9 +93,23 @@ public abstract class InitDatabase {
     private final String modelVersion;
     private final String prevModelVersion;
 
+    /**
+     * Sequence of SQL files to run to create from empty. Used by doInit().
+     */
     protected final List<String> createSQL = new ArrayList<String>();
     
+    /**
+     * Sequence of SQL files to run to upgrade to current version. The
+     * previous version is optional but requires that upgrade be idempotent.
+     * Used by doInit().
+     */
     protected final List<String> upgradeSQL = new ArrayList<String>();
+    
+    /**
+     * Sequence of SQL files to run to perform database maintenance.
+     * Used by doMaintenance().
+     */
+    protected final List<String> maintenanceSQL = new ArrayList<String>();
 
     private final DataSource dataSource;
     private final String database;
@@ -281,6 +297,116 @@ public abstract class InitDatabase {
     }
     
     /**
+     * Do time-based maintenance. 
+     * 
+     * @param lastModified minimum last modification timestamp before doing the work
+     * @param tag optional tag value used to replace tag symbol in SQL
+     * @return true if performed, false if not time yet
+     */
+    public boolean doMaintenance(Date lastModified, String tag) {
+        log.debug("doMaintenance: " + modelName + " " + modelVersion);
+        long t = System.currentTimeMillis();
+        String prevVersion = null;
+        if (lastModified == null) {
+            throw new IllegalArgumentException("lastModified cannot be null");
+        }
+
+        DatabaseTransactionManager txn = new DatabaseTransactionManager(dataSource);
+        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+
+        try {
+            // get current ModelVersion
+            ModelVersionDAO vdao = new ModelVersionDAO(dataSource, database, schema);
+            KeyValue cur = vdao.get(modelName);
+            log.debug("found: " + cur);
+
+            // quick check there is nothing to do and early return
+            if (cur == null) {
+                throw new ResourceNotFoundException("ModelVersion not found: " + modelName);
+            }
+            if (lastModified.before(cur.lastModified)) {
+                if (modelVersion.equals(cur.value)) {
+                    log.debug("doMaintenance: possible to update - proceeding");
+                } else {
+                    throw new UnsupportedOperationException("doMaintenance: cannot operate on " + cur.value + " (DB) with " + modelVersion + " (software)");
+                }
+            } else {
+                return false;
+            }
+
+            // start transaction
+            txn.startTransaction();
+            cur = vdao.lock(modelName);
+            
+            // recheck
+            if (lastModified.before(cur.lastModified)) {
+                if (modelVersion.equals(cur.value)) {
+                    log.debug("doMaintenance: possible to update - proceeding");
+                } else {
+                    throw new UnsupportedOperationException("doMaintenance: cannot operate on " + cur.value + " (DB) with " + modelVersion + " (software)");
+                }
+            } else {
+                return false;
+            }
+            
+            boolean ret = false;
+            if (!maintenanceSQL.isEmpty()) {
+                // execute SQL
+                for (String fname : maintenanceSQL) {
+                    log.info("process file: " + fname);
+                    List<String> statements = parseDDL(fname, schema, tag);
+                    for (String sql : statements) {
+                        log.info("execute statement:\n" + sql);
+                        jdbc.execute(sql);
+                    }
+                }
+                
+                // update ModelVersion timestamp
+                vdao.put(cur);
+                ret = true;
+            }
+
+            // commit transaction
+            txn.commitTransaction();
+            
+            long dt = System.currentTimeMillis() - t;
+            log.debug("doMaintenance: " + modelName + " " + modelVersion + " " + dt + "ms");
+            
+            return ret;
+        } catch (UnsupportedOperationException ex) {
+            if (txn.isOpen()) {
+                try {
+                    txn.rollbackTransaction();
+                } catch (Exception oops) {
+                    log.error("failed to rollback transaction", oops);
+                }
+            }
+            throw ex;
+        } catch (Exception ex) {
+            log.debug("epic fail", ex);
+
+            if (txn.isOpen()) {
+                try {
+                    txn.rollbackTransaction();
+                } catch (Exception oops) {
+                    log.error("failed to rollback transaction", oops);
+                }
+            }
+            throw new RuntimeException("failed to init database", ex);
+        } finally {
+            // check for open transaction
+            if (txn.isOpen()) {
+                log.error("BUG: open transaction in finally");
+                try {
+                    txn.rollbackTransaction();
+                } catch (Exception ex) {
+                    log.error("failed to rollback transaction in finally", ex);
+                }
+            }
+        }
+    }
+    
+    /**
      * Find SQL with the given filename.
      * 
      * @param fname
@@ -289,6 +415,10 @@ public abstract class InitDatabase {
     protected abstract URL findSQL(String fname);
     
     public List<String> parseDDL(String fname, String schema) throws IOException {
+        return parseDDL(fname, schema, null);
+    }
+    
+    public List<String> parseDDL(String fname, String schema, String tag) throws IOException {
         List<String> ret = new ArrayList<>();
 
         // find file
@@ -320,6 +450,9 @@ public abstract class InitDatabase {
                         String st = sb.toString();
                         
                         st = st.replaceAll("<schema>", schema);
+                        if (tag != null) {
+                            st = st.replace("<tag>", tag);
+                        }
                         
                         log.debug("statement: " + st);
                         ret.add(st);
