@@ -67,12 +67,15 @@
 
 package ca.nrc.cadc.db.version;
 
+import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.db.ConnectionConfig;
 import ca.nrc.cadc.db.DBConfig;
 import ca.nrc.cadc.db.DBUtil;
 import ca.nrc.cadc.util.Log4jInit;
 import java.net.URL;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.util.Date;
 import javax.sql.DataSource;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -94,7 +97,8 @@ public class InitDatabaseTest {
     private static String SCHEMA = "dbversion";
     static String[] TABLE_NAMES = new String[] {
         SCHEMA + ".ModelVersion",
-        SCHEMA + ".test_table"
+        SCHEMA + ".test_table",
+        SCHEMA + ".test_table_backup"
     };
     
     private DataSource dataSource;
@@ -195,6 +199,47 @@ public class InitDatabaseTest {
     }
     
     @Test
+    public void testMaintenance() {
+        try {
+            InitDatabase init = new InitDatabase(dataSource, null, SCHEMA, "InitDatabaseTest", "0.1") {
+                @Override
+                protected URL findSQL(String fname) {
+                    // runtime resources from intTest/resources
+                    return InitDatabaseTest.class.getClassLoader().getResource(fname);
+                }
+            };
+            init.createSQL.add(SCHEMA + ".ModelVersion.sql");
+            init.createSQL.add(SCHEMA + ".test_table.sql");
+            init.createSQL.add(SCHEMA + ".permissions.sql");
+            
+            init.maintenanceSQL.add(SCHEMA + ".rollover.sql");
+            init.maintenanceSQL.add(SCHEMA + ".test_table.sql");
+            init.maintenanceSQL.add(SCHEMA + ".permissions.sql");
+            
+            Date start = new Date();
+            Thread.sleep(10L);
+            boolean b1 = init.doInit();
+            Assert.assertTrue(b1);
+            
+            // SQL table name safe tag
+            //DateFormat df = DateUtil.getDateFormat("yyyyMMdd", DateUtil.UTC);
+            //String tag = df.format(start);
+            String tag = "backup"; // see above cleanup
+            log.info("rollover tag: " + tag);
+            boolean b2 = init.doMaintenance(start, tag);
+            Assert.assertTrue(b2);
+            
+            // verify that the rename worked 
+            
+            String ver = init.getVersion();
+            Assert.assertEquals("0.1", ver);
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+    
+    @Test
     public void testUpgradeRejected() {
         try {
             log.info("init 0.1 ...");
@@ -223,9 +268,9 @@ public class InitDatabaseTest {
                     return InitDatabaseTest.class.getClassLoader().getResource(fname);
                 }
             };
-            upgrade.createSQL.add(SCHEMA + ".ModelVersion.sql");
-            upgrade.createSQL.add(SCHEMA + ".test_table.sql");
-            upgrade.createSQL.add(SCHEMA + ".permissions.sql");
+            upgrade.upgradeSQL.add(SCHEMA + ".ModelVersion.sql");
+            upgrade.upgradeSQL.add(SCHEMA + ".test_table.sql");
+            upgrade.upgradeSQL.add(SCHEMA + ".permissions.sql");
             upgrade.upgradeSQL.add(SCHEMA + ".upgrade-0.2.sql");
             
             boolean u1 = upgrade.doInit();
