@@ -12,7 +12,7 @@ setting Java system properties.
 # (default: ca.nrc.cadc.auth.NoOpIdentityManager)
 ca.nrc.cadc.auth.IdentityManager={class name of IdentityManager implementation}
 
-# OBSOLETE: functionaility merged into IdentityManager
+# OBSOLETE: functionality merged into IdentityManager
 ca.nrc.cadc.auth.Authenticator={class name of Authenticator implementation}
 
 # capture a basic authorization attempt in an AuthorizationTokenPrincipal
