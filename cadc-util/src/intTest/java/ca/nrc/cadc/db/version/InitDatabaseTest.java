@@ -216,18 +216,22 @@ public class InitDatabaseTest {
             init.maintenanceSQL.add(SCHEMA + ".test_table.sql");
             init.maintenanceSQL.add(SCHEMA + ".permissions.sql");
             
-            Date start = new Date();
-            Thread.sleep(10L);
             boolean b1 = init.doInit();
             Assert.assertTrue(b1);
+            Thread.sleep(10L);
             
             // SQL table name safe tag
             //DateFormat df = DateUtil.getDateFormat("yyyyMMdd", DateUtil.UTC);
             //String tag = df.format(start);
+            Date now = new Date();
+            Date past = new Date(now.getTime() - 10000L);
             String tag = "backup"; // see above cleanup
             log.info("rollover tag: " + tag);
-            boolean b2 = init.doMaintenance(start, tag);
-            Assert.assertTrue(b2);
+            boolean b2 = init.doMaintenance(past, tag);
+            Assert.assertFalse("past no-op", b2);
+            
+            boolean b3 = init.doMaintenance(now, tag);
+            Assert.assertFalse("no doit", b2);
             
             // verify that the rename worked 
             
