@@ -299,7 +299,7 @@ public abstract class InitDatabase {
     /**
      * Do time-based maintenance. 
      * 
-     * @param lastModified minimum last modification timestamp before doing the work
+     * @param lastModified if last modification timestamp is older than this: do the work
      * @param tag optional tag value used to replace tag symbol in SQL
      * @return true if performed, false if not time yet
      */
@@ -324,7 +324,7 @@ public abstract class InitDatabase {
             if (cur == null) {
                 throw new ResourceNotFoundException("ModelVersion not found: " + modelName);
             }
-            if (lastModified.before(cur.lastModified)) {
+            if (lastModified.after(cur.lastModified)) {
                 if (modelVersion.equals(cur.value)) {
                     log.debug("doMaintenance: possible to update - proceeding");
                 } else {
@@ -339,13 +339,14 @@ public abstract class InitDatabase {
             cur = vdao.lock(modelName);
             
             // recheck
-            if (lastModified.before(cur.lastModified)) {
+            if (lastModified.after(cur.lastModified)) {
                 if (modelVersion.equals(cur.value)) {
                     log.debug("doMaintenance: possible to update - proceeding");
                 } else {
                     throw new UnsupportedOperationException("doMaintenance: cannot operate on " + cur.value + " (DB) with " + modelVersion + " (software)");
                 }
             } else {
+                txn.rollbackTransaction();
                 return false;
             }
             
