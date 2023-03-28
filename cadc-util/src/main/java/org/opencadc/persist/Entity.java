@@ -67,6 +67,7 @@
 
 package org.opencadc.persist;
 
+import ca.nrc.cadc.auth.NumericPrincipal;
 import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.util.HexUtil;
 import java.io.UnsupportedEncodingException;
@@ -428,6 +429,14 @@ public abstract class Entity {
             ret = new byte[16];
             System.arraycopy(msb, 0, ret, 0, 8);
             System.arraycopy(lsb, 0, ret, 8, 8);
+        } else if (o instanceof NumericPrincipal) {
+            NumericPrincipal np = (NumericPrincipal) o;
+            UUID uuid = np.getUUID();
+            byte[] msb = HexUtil.toBytes(uuid.getMostSignificantBits());
+            byte[] lsb = HexUtil.toBytes(uuid.getLeastSignificantBits());
+            ret = new byte[16];
+            System.arraycopy(msb, 0, ret, 0, 8);
+            System.arraycopy(lsb, 0, ret, 8, 8);
         }
 
         if (ret != null) {
@@ -444,8 +453,7 @@ public abstract class Entity {
             return ret;
         }
 
-        throw new UnsupportedOperationException(
-                "unexpected primitive/value type: " + o.getClass().getName());
+        throw new UnsupportedOperationException("unexpected primitive/value type: " + o.getClass().getName());
     }
 
     private static class FieldComparator implements Comparator<Field> {
