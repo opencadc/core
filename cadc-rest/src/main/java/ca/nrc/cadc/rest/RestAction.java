@@ -78,6 +78,7 @@ import ca.nrc.cadc.net.HttpTransfer;
 import ca.nrc.cadc.net.PreconditionFailedException;
 import ca.nrc.cadc.net.RangeNotSatisfiableException;
 import ca.nrc.cadc.net.ResourceAlreadyExistsException;
+import ca.nrc.cadc.net.ResourceLockedException;
 import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.reg.client.RegistryClient;
@@ -385,6 +386,9 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
                     AuthenticationUtil.getCurrentSubject(), syncOutput, ex, new RegistryClient());
             }
             handleException(ex, 401, ex.getMessage(), false, false);
+        } catch (ResourceLockedException ex) {
+            logInfo.setSuccess(true);
+            handleException(ex, 423, ex.getMessage(), false, false);
         } catch (AccessControlException ex) {
             logInfo.setSuccess(true);
             logInfo.setMessage(ex.getMessage());
