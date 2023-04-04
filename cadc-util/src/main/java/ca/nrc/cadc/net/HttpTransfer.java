@@ -879,8 +879,9 @@ public abstract class HttpTransfer implements Runnable {
             case HttpURLConnection.HTTP_UNAUTHORIZED:
                 throw new NotAuthenticatedException(responseBody);
             case HttpURLConnection.HTTP_FORBIDDEN:
+                throw new AccessControlException(responseBody);
             case HTTP_LOCKED:
-                throw new ResourceAlreadyExistsException(responseBody);
+                throw new ResourceLockedException(responseBody);
             case HttpURLConnection.HTTP_NOT_FOUND:
                 throw new ResourceNotFoundException(responseBody);
             case HttpURLConnection.HTTP_CONFLICT:
