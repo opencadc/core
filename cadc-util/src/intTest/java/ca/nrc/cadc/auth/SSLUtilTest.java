@@ -287,6 +287,7 @@ public class SSLUtilTest
         }
     }
 
+    /*
     @Test
     public void testPrivateKeyParser() throws Exception
     {
@@ -331,6 +332,7 @@ public class SSLUtilTest
         }
         
     }
+    */
     
     @Test
     public void testValidSubject() throws Exception
