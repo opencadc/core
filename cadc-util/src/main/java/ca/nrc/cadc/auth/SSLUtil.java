@@ -560,7 +560,7 @@ public class SSLUtil {
 
         Object obj = parser.readObject();
         while (obj != null) {
-            log.warn("found: " + obj.getClass().getName());
+            log.debug("found: " + obj.getClass().getName());
             // if private key first: PEMKeyPair followed by PemObject(s) with type=certificate
             // if cert/key/cert...: X509CertificateHolder followed by PemObject(s)
             if (obj instanceof PEMKeyPair) {
@@ -568,31 +568,31 @@ public class SSLUtil {
                 PrivateKeyInfo pki = pkp.getPrivateKeyInfo();
                 JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
                 privateKey = converter.getPrivateKey(pki);
-                log.warn(" private key: " + privateKey.getEncoded().length);
+                log.debug(" private key: " + privateKey.getEncoded().length);
             } else if (obj instanceof PrivateKeyInfo) {
                 PrivateKeyInfo pki = (PrivateKeyInfo) obj;
                 JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
                 privateKey = converter.getPrivateKey(pki);
-                log.warn(" private key: " + privateKey.getEncoded().length);
+                log.debug(" private key: " + privateKey.getEncoded().length);
             } else if (obj instanceof X509CertificateHolder) {
                 X509CertificateHolder xch = (X509CertificateHolder) obj;
                 byte[] bytes = xch.toASN1Structure().getEncoded("DER");
                 certs.add(bytes);
                 byteSize += bytes.length;
-                log.warn(" certificate: " + bytes.length);
+                log.debug(" certificate: " + bytes.length);
             } else if (obj instanceof PemObject) {
                 PemObject po = (PemObject) obj;
                 if ("certificate".equalsIgnoreCase(po.getType())) {
                     certs.add(po.getContent());
                     byteSize += po.getContent().length;
-                    log.warn(" certificate: " + po.getContent().length);
+                    log.debug(" certificate: " + po.getContent().length);
                 } else if ("rsa private key".equalsIgnoreCase(po.getType())) {
                     KeyFactory keyFactory = KeyFactory.getInstance("RSA");
                     PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(po.getContent());
                     privateKey = keyFactory.generatePrivate(keySpec);
-                    log.warn(" private key: " + po.getContent().length);
+                    log.debug(" private key: " + po.getContent().length);
                 } else {
-                    log.warn("unexpected PemObject type: " + po.getType());
+                    log.warn("readPEM: unexpected PemObject type: " + po.getType() + " aka " + obj.getClass().getName());
                 }
             }
             
