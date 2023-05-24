@@ -81,6 +81,7 @@ import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.Set;
 import javax.net.SocketFactory;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLHandshakeException;
@@ -171,7 +172,7 @@ public class SSLUtilTest
         Log4jInit.setLevel("ca.nrc.cadc.auth", Level.INFO);
         SSL_PEM = FileUtil.getFileFromResource(TEST_PEM_FN, SSLUtilTest.class);
     }
-
+    
     @Test
     public void testReadPem() throws Exception
     {
@@ -223,6 +224,72 @@ public class SSLUtilTest
         {
             t.printStackTrace();
             Assert.fail("unexpected exception: " + t);
+        }
+    }
+    
+    @Test
+    public void testReadCert() {
+        try {
+            File f = new File(System.getProperty("user.home") + "/.ssl/" + System.getProperty("user.name") + ".pem");
+            log.info("in: " + f.getAbsolutePath());
+            
+            Subject s = SSLUtil.createSubject(f);
+            log.info("created: " + s);
+            Assert.assertFalse(s.getPrincipals().isEmpty());
+            
+            Set<X509CertificateChain> cs = s.getPublicCredentials(X509CertificateChain.class);
+            Assert.assertFalse("chain", cs.isEmpty());
+            X509CertificateChain chain = cs.iterator().next();
+            Assert.assertNotNull(chain.getChain());
+            Assert.assertEquals(1, chain.getChain().length);
+            Assert.assertNotNull(chain.getPrivateKey());
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+    
+    @Test
+    public void testReadUserProxyCert() {
+        try {
+            File f = new File(System.getProperty("user.home") + "/.ssl/cadcproxy.pem");
+            log.info("in: " + f.getAbsolutePath());
+            
+            Subject s = SSLUtil.createSubject(f);
+            log.info("created: " + s);
+            Assert.assertFalse(s.getPrincipals().isEmpty());
+            
+            Set<X509CertificateChain> cs = s.getPublicCredentials(X509CertificateChain.class);
+            Assert.assertFalse("chain", cs.isEmpty());
+            X509CertificateChain chain = cs.iterator().next();
+            Assert.assertNotNull(chain.getChain());
+            Assert.assertEquals(2, chain.getChain().length);
+            Assert.assertNotNull(chain.getPrivateKey());
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+    
+    @Test
+    public void testReadProxyCert() {
+        try {
+            File f = SSL_PEM;
+            log.info("in: " + f.getAbsolutePath());
+            
+            Subject s = SSLUtil.createSubject(f);
+            log.info("created: " + s);
+            Assert.assertFalse(s.getPrincipals().isEmpty());
+            
+            Set<X509CertificateChain> cs = s.getPublicCredentials(X509CertificateChain.class);
+            Assert.assertFalse("chain", cs.isEmpty());
+            X509CertificateChain chain = cs.iterator().next();
+            Assert.assertNotNull(chain.getChain());
+            Assert.assertEquals(2, chain.getChain().length);
+            Assert.assertNotNull(chain.getPrivateKey());
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
@@ -287,53 +354,6 @@ public class SSLUtilTest
         }
     }
 
-    /*
-    @Test
-    public void testPrivateKeyParser() throws Exception
-    {
-        // tests the parser with different size keys
-        // 512 bit
-        byte[] privateKey = SSLUtil.getPrivateKey(KEY_512.getBytes());
-        try
-        {
-            log.debug("test parsing of RSA 512 bit key: ");
-            SSLUtil.parseKeySpec(privateKey);
-        }
-        catch (Throwable t)
-        {
-            t.printStackTrace();
-            Assert.fail("unexpected exception: " + t);
-        }
-        
-        // 1024 bit
-        privateKey = SSLUtil.getPrivateKey(KEY_1024.getBytes());
-        try
-        {
-            log.debug("test parsing of RSA 1024 bit key: ");
-            SSLUtil.parseKeySpec(privateKey);
-        }
-        catch (Throwable t)
-        {
-            t.printStackTrace();
-            Assert.fail("unexpected exception: " + t);
-        }
-        
-        // 2048 bit
-        privateKey = SSLUtil.getPrivateKey(KEY_2048.getBytes());
-        try
-        {
-            log.debug("test parsing of RSA 2048 bit key: ");
-            SSLUtil.parseKeySpec(privateKey);
-        }
-        catch (Throwable t)
-        {
-            t.printStackTrace();
-            Assert.fail("unexpected exception: " + t);
-        }
-        
-    }
-    */
-    
     @Test
     public void testValidSubject() throws Exception
     {
