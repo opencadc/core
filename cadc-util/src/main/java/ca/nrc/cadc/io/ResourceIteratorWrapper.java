@@ -73,10 +73,10 @@ import java.util.Iterator;
 /**
  * Wrapper of a simple iterator to a ResourceIterator with noop close method. This is
  * useful primarily in testing.
- * 
+ *
  * @param <T>
  */
-public class ResourceIteratorWrapper<T> implements ResourceIterator{
+public class ResourceIteratorWrapper<T> implements ResourceIterator {
     private final Iterator<T> it;
 
     public ResourceIteratorWrapper(Iterator it) {
@@ -88,11 +88,12 @@ public class ResourceIteratorWrapper<T> implements ResourceIterator{
     }
 
     public T next() {
-            return it.next();
+        return it.next();
     }
 
     public void close() throws IOException {
         // noop
     }
-};
+
+}
 
