@@ -75,6 +75,9 @@ import org.jdom2.Element;
 
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jdom2.Attribute;
@@ -125,7 +128,7 @@ public class JsonOutputterTest
         //final JSONObject result2 = new JSONObject(actual2);
         //JSONAssert.assertEquals(expected, result2, true);
     }
-    
+
     @Test
     public void writeEmptyList() throws Exception
     {
@@ -143,30 +146,38 @@ public class JsonOutputterTest
                                                    + "\"items\" : {"
                                                    + "\"$\" : ["
                                                    + "] } } }");
-        
+
         doit("writeEmptyList", document, expected);
     }
-    
+
+
+
     @Test
     public void writeMultiObject() throws Exception
     {
         final Element root = new Element("root");
-        final Element itemsElement = new Element("items");
 
         // Array of five items.
-        for (int i = 0; i < 5; i++)
-        {
-            final Element itemElement = new Element("item");
-            itemElement.getAttributes().add(new Attribute("i", Integer.toString(i)));
-            itemElement.addContent(new Text(Integer.toString(i)));
-            itemsElement.addContent(itemElement);
-        }
+        List<Integer> items = new ArrayList<Integer>(Arrays.asList(0, 1, 2, 3, 4));
+
+        // converter array item -> Element
+        ContentConverter<Element, Integer> cc = new ContentConverter<Element, Integer>() {
+            public Element convert(Integer item) {
+                final Element itemElement = new Element("item");
+                itemElement.getAttributes().add(new Attribute("i", item.toString()));
+                itemElement.addContent(new Text(item.toString()));
+                return itemElement;
+            }
+        };
+
+        IterableContent<Element, Integer> ic =
+                new IterableContent<Element, Integer>("items", null, items.iterator(), cc);
 
         final Element metaElement = new Element("meta");
         metaElement.addContent(new Text("META"));
 
         root.addContent(metaElement);
-        root.addContent(itemsElement);
+        root.addContent(ic);
 
         final Document document = new Document();
         document.setRootElement(root);
@@ -191,7 +202,7 @@ public class JsonOutputterTest
                                                    + "\"item\" : {\"@i\" : \"4\", \"$\" : \"4\"}"
                                                    + "}\r\n"
                                                    + "] } } }");
-        
+
         doit("writeMultiObject", document, expected);
     }
 
@@ -200,7 +211,7 @@ public class JsonOutputterTest
     {
         final Element itemsElement = new Element("items");
 
-        // Array of five items.
+        // Array of five items. The outputter also works with list of items in membory besides element iterators
         for (int i = 0; i < 5; i++)
         {
             final Element itemElement = new Element("item");
@@ -208,6 +219,7 @@ public class JsonOutputterTest
 
             itemsElement.addContent(itemElement);
         }
+
 
         final Document document = new Document();
 
@@ -231,28 +243,34 @@ public class JsonOutputterTest
                                                    + "\"item\" : {\"$\" : \"4\"}"
                                                    + "}\r\n"
                                                    + "] } }");
-        
+
         doit("writeRootArray", document, expected);
     }
-    
+
     @Test
     public void writeNamespacePrefix() throws Exception
     {
         // no prefix
         Namespace ns = Namespace.getNamespace("nsi", "http://ns.items.com");
-        final Element itemsElement = new Element("items", ns);
 
         // Array of five items.
-        for (int i = 0; i < 5; i++)
-        {
-            final Element itemElement = new Element("item", ns);
-            itemElement.addContent(new Text(Integer.toString(i)));
-            itemsElement.addContent(itemElement);
-        }
+        List<Integer> items = new ArrayList<Integer>(Arrays.asList(0, 1, 2, 3, 4));
+
+        // converter array item -> Element
+        ContentConverter<Element, Integer> cc = new ContentConverter<Element, Integer>() {
+            public Element convert(Integer item) {
+                Element itemElement = new Element("item");
+                itemElement.addContent(new Text(item.toString()));
+                return itemElement;
+            }
+        };
+
+        IterableContent<Element, Integer> ic =
+                new IterableContent<Element, Integer>("items", ns, items.iterator(), cc);
 
         final Document document = new Document();
-        document.setRootElement(itemsElement);
-        
+        document.setRootElement(ic);
+
         final JSONObject expected = new JSONObject("{\r\n"
                                                    + "\"nsi:items\" : {"
                                                    + "\"@xmlns:nsi\": \"http://ns.items.com\","
@@ -273,26 +291,32 @@ public class JsonOutputterTest
                                                    + "\"item\" : {\"$\" : \"4\"}"
                                                    + "}\r\n"
                                                    + "] } }");
-        
+
         doit("writeNamespacePrefix", document, expected);
     }
-    
+
     @Test
     public void writeNamespaceNoPrefix() throws Exception
     {
         Namespace ns = Namespace.getNamespace("http://ns.items.com");
-        final Element itemsElement = new Element("items", ns);
 
         // Array of five items.
-        for (int i = 0; i < 5; i++)
-        {
-            final Element itemElement = new Element("item", ns);
-            itemElement.addContent(new Text(Integer.toString(i)));
-            itemsElement.addContent(itemElement);
-        }
+        List<Integer> items = new ArrayList<Integer>(Arrays.asList(0, 1, 2, 3, 4));
+
+        // converter array item -> Element
+        ContentConverter<Element, Integer> cc = new ContentConverter<Element, Integer>() {
+            public Element convert(Integer item) {
+                Element itemElement = new Element("item");
+                itemElement.addContent(new Text(item.toString()));
+                return itemElement;
+            }
+        };
+
+        IterableContent<Element, Integer> ic =
+                new IterableContent<Element, Integer>("items", ns, items.iterator(), cc);
 
         final Document document = new Document();
-        document.setRootElement(itemsElement);
+        document.setRootElement(ic);
 
         final JSONObject expected = new JSONObject("{\r\n"
                                                    + "\"items\" : {"
@@ -314,28 +338,35 @@ public class JsonOutputterTest
                                                    + "\"item\" : {\"$\" : \"4\"}"
                                                    + "}\r\n"
                                                    + "] } }");
-        
+
         doit("writeNamespaceNoPrefix", document, expected);
     }
-    
+
     @Test
     public void testNamespaceOnMultipleBranches() throws Exception
     {
         Namespace ns = Namespace.getNamespace("nsi", "http://ns.items.com");
         Namespace otherNS = Namespace.getNamespace("nso", "http://ns.items.com/other");
-        Element itemsElement = new Element("items", ns);
 
-        for (int i = 0; i < 2; i++)
-        {
-            Element itemElement = new Element("item", ns);
-            Element child = new Element("other", otherNS);
-            child.addContent("stuff"+i);
-            itemElement.addContent(child);
-            itemsElement.addContent(itemElement);
-        }
+        // Array of five items.
+        List<Integer> items = new ArrayList<Integer>(Arrays.asList(0, 1));
+
+        // converter array item -> Element
+        ContentConverter<Element, Integer> cc = new ContentConverter<Element, Integer>() {
+            public Element convert(Integer item) {
+                Element itemElement = new Element("item");
+                Element child = new Element("other", otherNS);
+                child.addContent("stuff"+item.toString());
+                itemElement.addContent(child);
+                return itemElement;
+            }
+        };
+
+        IterableContent<Element, Integer> ic =
+                new IterableContent<Element, Integer>("items", ns, items.iterator(), cc);
 
         final Document document = new Document();
-        document.setRootElement(itemsElement);
+        document.setRootElement(ic);
 
         final JSONObject expected = new JSONObject("{"
                                                    + "\"nsi:items\" : {"

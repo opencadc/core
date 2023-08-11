@@ -305,12 +305,16 @@ public class JsonOutputter implements Serializable {
     // comma separated list of children
     private boolean writeChildElements(Element e, PrintWriter w, int i, boolean listItem, boolean parentAttrs)
         throws IOException {
+
         boolean ret = false;
         Iterator<Element> iter = e.getChildren().iterator();
+        if (e instanceof IterableContent) {
+            iter = ((IterableContent)e).getContent().iterator();
+        }
         if (iter.hasNext() && (parentAttrs && !listItem)) {
             w.print(",");
         }
-        
+
         while (iter.hasNext()) {
             Element c = iter.next();
             ret = true;
@@ -333,7 +337,7 @@ public class JsonOutputter implements Serializable {
         }
         return ret;
     }
-    
+
     private boolean isBoolean(String ename, String s) {
         if (stringElementNames.contains(ename)) {
             return false;
