@@ -273,7 +273,7 @@ public abstract class Entity {
                         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
                             throw new RuntimeException("BUG - enum " + ac.getName() + " does not have getValue()", ex);
                         }
-                    } else if (isLocalClass(ac)) {
+                    } else if (isDataModelClass(ac)) {
                         // depth-first recursion
                         calcMetaChecksum(ac, fo, digest);
                     } else if (fo instanceof Collection) {
@@ -290,7 +290,7 @@ public abstract class Entity {
                                 } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
                                     throw new RuntimeException("BUG", ex);
                                 }
-                            } else if (isLocalClass(cc)) {
+                            } else if (isDataModelClass(cc)) {
                                 // depth-first recursion
                                 calcMetaChecksum(cc, co, digest);
                             } else {
@@ -310,7 +310,18 @@ public abstract class Entity {
         }
     }
     
-    private boolean isLocalClass(Class c) {
+    /**
+     * Determine if the argument type is part of a data model implementation
+     * so reflection can be used to drill down into the structure. The standard
+     * implementation checks that the class is in the same package or a subpackage
+     * of the entity implementation. Subclasses can override this method and return
+     * true for classes that are outside their package (imported data model classes)
+     * and must otherwise call this method to return the standard value.
+     * 
+     * @param c
+     * @return true if the class is a data model class, otherwise false
+     */
+    protected boolean isDataModelClass(Class c) {
         if (c.isPrimitive() || c.isArray()) {
             return false;
         }
