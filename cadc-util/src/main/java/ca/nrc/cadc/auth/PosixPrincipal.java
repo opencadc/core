@@ -44,6 +44,9 @@ import java.security.Principal;
 public class PosixPrincipal implements Principal, Serializable {
     private static final long serialVersionUID = 5423257890488724644L;
     private int uidNumber;
+    
+    public Integer defaultGroup;
+    public String username;
 
     /**
      * Ctor
