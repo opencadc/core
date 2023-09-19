@@ -775,6 +775,9 @@ public class AuthenticationUtil {
         if (userID instanceof NumericPrincipal) {
             return IdentityType.CADC.getValue().toLowerCase();
         }
+        if (userID instanceof PosixPrincipal) {
+            return IdentityType.POSIX.getValue().toLowerCase();
+        }
         return null;
     }
 }
