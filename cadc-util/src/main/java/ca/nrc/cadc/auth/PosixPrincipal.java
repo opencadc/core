@@ -41,9 +41,12 @@ import java.security.Principal;
  * Class that represents a Posix Principal. This is useful for representing a
  * user with a PosixAccount key reference.
  */
-public class PosixPrincipal implements Principal, Serializable {
+public class PosixPrincipal implements Comparable<PosixPrincipal>, Principal, Serializable {
     private static final long serialVersionUID = 5423257890488724644L;
     private int uidNumber;
+    
+    public Integer defaultGroup;
+    public String username;
 
     /**
      * Ctor
@@ -100,6 +103,11 @@ public class PosixPrincipal implements Principal, Serializable {
         }
 
         return true;
+    }
+
+    @Override
+    public int compareTo(PosixPrincipal t) {
+        return Integer.compare(uidNumber, t.uidNumber);
     }
 
     @Override
