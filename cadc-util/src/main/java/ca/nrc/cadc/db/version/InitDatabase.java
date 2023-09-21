@@ -454,6 +454,7 @@ public abstract class InitDatabase {
                         if (tag != null) {
                             st = st.replace("<tag>", tag);
                         }
+                        st = finalizeDDL(st);
                         
                         log.debug("statement: " + st);
                         ret.add(st);
@@ -470,4 +471,13 @@ public abstract class InitDatabase {
         return ret;
     }
 
+    /**
+     * Allow implementors to customize parameters or further processing of the DDL.  Leave empty if none desired.
+     *
+     * @param ddlDocument   The DDL String AFTER <code><schema></code> and <code><tag></code> are processed.
+     * @return  The processed DDL.
+     */
+    public String finalizeDDL(final String ddlDocument) {
+        return ddlDocument;
+    }
 }
