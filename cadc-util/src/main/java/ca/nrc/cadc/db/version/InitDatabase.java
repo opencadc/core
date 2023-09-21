@@ -474,7 +474,7 @@ public abstract class InitDatabase {
     /**
      * Allow implementors to customize parameters or further processing of the DDL.  Leave empty if none desired.
      *
-     * @param ddlDocument   The DDL String AFTER <code><schema></code> and <code><tag></code> are processed.
+     * @param ddlDocument   The DDL String AFTER <code>&lt;schema&gt;</code> and <code>&lt;tag&gt;</code> are processed.
      * @return  The processed DDL.
      */
     public String finalizeDDL(final String ddlDocument) {
