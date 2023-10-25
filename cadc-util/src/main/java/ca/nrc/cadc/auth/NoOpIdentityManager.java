@@ -67,6 +67,10 @@
 
 package ca.nrc.cadc.auth;
 
+import java.net.URI;
+import java.util.Collections;
+import java.util.Set;
+import java.util.TreeSet;
 import javax.security.auth.Subject;
 import org.apache.log4j.Logger;
 
@@ -80,6 +84,12 @@ public class NoOpIdentityManager implements IdentityManager {
 
     public NoOpIdentityManager() { 
     }
+
+    @Override
+    public Set<URI> getSecurityMethods() {
+        return Collections.EMPTY_SET;
+    }
+    
     
     @Override
     public Subject validate(Subject subject) throws NotAuthenticatedException {
