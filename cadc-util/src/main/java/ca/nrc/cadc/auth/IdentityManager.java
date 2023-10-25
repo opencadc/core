@@ -69,6 +69,8 @@
 
 package ca.nrc.cadc.auth;
 
+import java.net.URI;
+import java.util.Set;
 import javax.security.auth.Subject;
 
 /**
@@ -77,6 +79,18 @@ import javax.security.auth.Subject;
  * @author pdowler
  */
 public interface IdentityManager {
+    
+    /**
+     * Get the set of authentication methods supported by the
+     * validate() method. Constants for the identifers are
+     * available in the <code>Standards</code> class in the
+     * <code>cadc-registry</code> library and derived from the
+     * IVOA SSO standard.
+     * 
+     * @return set of security method identifiers
+     */
+    public Set<URI> getSecurityMethods();
+    
     /**
      * Parse and validate any principals in the subject.
      * Some principals, such as X500Principal, do not require validation

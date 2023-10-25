@@ -69,9 +69,11 @@
 
 package ca.nrc.cadc.auth;
 
+import java.net.URI;
 import java.security.Principal;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeSet;
 import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
 
@@ -86,6 +88,7 @@ import javax.security.auth.x500.X500Principal;
  */
 public class X500IdentityManager implements IdentityManager {
 
+    
     @Override
     public Subject validate(Subject subject) throws NotAuthenticatedException {
         return subject;
@@ -121,4 +124,10 @@ public class X500IdentityManager implements IdentityManager {
         return new Subject(false, pset, new HashSet(), new HashSet());
     }
 
+    @Override
+    public Set<URI> getSecurityMethods() {
+        Set<URI> ret = new TreeSet<>();
+        ret.add(URI.create("ivo://ivoa.net/sso#tls-with-certificate"));
+        return ret;
+    }
 }
