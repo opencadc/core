@@ -260,21 +260,14 @@ public class HttpUpload extends HttpTransfer {
 
             doPut(conn);
             this.responseStream = conn.getInputStream();
-        } catch (InterruptedException iex) {
-            // need to catch this or it looks like a failure instead of a cancel
-            this.go = false;
-        } catch (TransientException tex) {
-            log.debug("caught: " + tex);
-            throwTE = true;
-            throw tex;
-        } catch (Throwable t) {
-            failure = t;
+            log.debug("completed");
+            fireEvent(TransferEvent.COMPLETED);
         } finally {
             if (istream != null) {
                 log.debug("closing InputStream");
                 try { 
                     istream.close(); 
-                } catch (Exception ignore) { 
+                } catch (IOException ignore) { 
                     // do nothing
                 }
             }
@@ -289,17 +282,6 @@ public class HttpUpload extends HttpTransfer {
                     
                     this.thread = null;
                 }
-            }
-
-            if (!go) {
-                log.debug("cancelled");
-                fireEvent(TransferEvent.CANCELLED);
-            } else if (failure != null) {
-                log.debug("failed: " + failure);
-                fireEvent(failure);
-            } else if (!throwTE) {
-                log.debug("completed");
-                fireEvent(TransferEvent.COMPLETED);
             }
         }
     }
