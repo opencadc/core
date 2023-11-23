@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2020.                            (c) 2020.
+*  (c) 2023.                            (c) 2023.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -71,7 +71,6 @@ package ca.nrc.cadc.rest;
 
 import ca.nrc.cadc.auth.AuthMethod;
 import ca.nrc.cadc.auth.AuthenticationUtil;
-import ca.nrc.cadc.auth.HttpPrincipal;
 import ca.nrc.cadc.auth.IdentityManager;
 import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.log.ServletLogInfo;
@@ -84,30 +83,24 @@ import ca.nrc.cadc.reg.Standards;
 import ca.nrc.cadc.reg.client.LocalAuthority;
 import ca.nrc.cadc.reg.client.RegistryClient;
 import ca.nrc.cadc.util.Enumerator;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
-import java.security.Principal;
 import java.security.PrivilegedActionException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Set;
 import java.util.TreeMap;
-
 import javax.security.auth.Subject;
-import javax.security.auth.x500.X500Principal;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import org.apache.log4j.Logger;
 
 /**
@@ -481,7 +474,6 @@ public class RestServlet extends HttpServlet {
             log.debug("Setting " + AuthenticationUtil.AUTHENTICATE_HEADER + " header");
             boolean addBearerChallenge = false;
             try {
-                // set a header for info on how to obtain bearer tokens with username/password over tls
                 URI loginServiceURI = getLocalServiceURI(Standards.SECURITY_METHOD_PASSWORD);
                 URL loginURL = rc.getServiceURL(loginServiceURI, Standards.SECURITY_METHOD_PASSWORD, AuthMethod.ANON);
                 StringBuilder sb = new StringBuilder();
@@ -496,7 +488,6 @@ public class RestServlet extends HttpServlet {
             }
             
             try {
-                // set a header for info on how to obtain tokens with OAuth2 authorize
                 URI authorizeServiceURI = getLocalServiceURI(Standards.SECURITY_METHOD_OPENID);
                 if (authorizeServiceURI != null) {
                     URL authorizeURL = null;
