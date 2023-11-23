@@ -99,6 +99,11 @@ public class SyncOutput {
         this.outputStream = null;
     }
 
+    // unit test usage
+    protected SyncOutput() {
+        response = null;
+    }
+    
     /**
      * Check is the output stream is open. If true, the header has been committed and additional
      * calls to setHeader will be ignored.
