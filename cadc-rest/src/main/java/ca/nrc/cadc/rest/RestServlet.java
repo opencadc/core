@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2020.                            (c) 2020.
+*  (c) 2023.                            (c) 2023.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -71,7 +71,6 @@ package ca.nrc.cadc.rest;
 
 import ca.nrc.cadc.auth.AuthMethod;
 import ca.nrc.cadc.auth.AuthenticationUtil;
-import ca.nrc.cadc.auth.HttpPrincipal;
 import ca.nrc.cadc.auth.IdentityManager;
 import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.log.ServletLogInfo;
@@ -84,30 +83,24 @@ import ca.nrc.cadc.reg.Standards;
 import ca.nrc.cadc.reg.client.LocalAuthority;
 import ca.nrc.cadc.reg.client.RegistryClient;
 import ca.nrc.cadc.util.Enumerator;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
-import java.security.Principal;
 import java.security.PrivilegedActionException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Set;
 import java.util.TreeMap;
-
 import javax.security.auth.Subject;
-import javax.security.auth.x500.X500Principal;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import org.apache.log4j.Logger;
 
 /**
@@ -479,9 +472,8 @@ public class RestServlet extends HttpServlet {
         } else {
             // Not authenticated...
             log.debug("Setting " + AuthenticationUtil.AUTHENTICATE_HEADER + " header");
-            
+            boolean addBearerChallenge = false;
             try {
-                // set a header for info on how to obtain bearer tokens with username/password over tls
                 URI loginServiceURI = getLocalServiceURI(Standards.SECURITY_METHOD_PASSWORD);
                 URL loginURL = rc.getServiceURL(loginServiceURI, Standards.SECURITY_METHOD_PASSWORD, AuthMethod.ANON);
                 StringBuilder sb = new StringBuilder();
@@ -490,52 +482,69 @@ public class RestServlet extends HttpServlet {
                 sb.append("access_url=\"").append(loginURL).append("\"");
                 appendAuthenticateErrorInfo(AuthenticationUtil.CHALLENGE_TYPE_IVOA_BEARER, sb, ex, false);
                 out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
+                addBearerChallenge = true;
             } catch (NoSuchElementException notSupported) {
                 log.debug("LocalAuthority -- not found: " + Standards.SECURITY_METHOD_PASSWORD, notSupported);
             }
             
             try {
-                // set a header for info on how to obtain tokens with OAuth2 authorize
                 URI authorizeServiceURI = getLocalServiceURI(Standards.SECURITY_METHOD_OPENID);
-                URL authorizeURL = null;
-                if ("https".equals(authorizeServiceURI.getScheme())) {
-                    authorizeURL = authorizeServiceURI.toURL();
-                } else if ("ivo".equals(authorizeServiceURI.getScheme())) {
-                    authorizeURL = rc.getServiceURL(authorizeServiceURI, Standards.SECURITY_METHOD_OPENID, AuthMethod.ANON);
-                } else {
-                    log.warn("unrecognized URI scheme in LocalAuthority: " + authorizeServiceURI);
+                if (authorizeServiceURI != null) {
+                    URL authorizeURL = null;
+                    if ("https".equals(authorizeServiceURI.getScheme())) {
+                        try {
+                            authorizeURL = authorizeServiceURI.toURL();
+                        } catch (MalformedURLException configEx) {
+                            throw new RuntimeException("CONFIG: invalid OpenID provider URL: " + authorizeURL, configEx);
+                        }
+                    } else if ("ivo".equals(authorizeServiceURI.getScheme())) {
+                        authorizeURL = rc.getServiceURL(authorizeServiceURI, Standards.SECURITY_METHOD_OPENID, AuthMethod.ANON);
+                    } else {
+                        log.warn("unrecognized URI scheme for OpenID provider: " + authorizeServiceURI);
+                    }
+                    // only the challenge - not the token acquisition info
+                    if (authorizeURL != null) {
+                        addBearerChallenge = true;
+                    }
                 }
+            } catch (NoSuchElementException notSupported) {
+                log.debug("LocalAuthority -- not found: " + Standards.SECURITY_METHOD_OAUTH, notSupported);
+            }
+            
+            if (addBearerChallenge) {
+                // plain bearer challenge
                 StringBuilder sb = new StringBuilder();
-                sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA_BEARER).append(" standard_id=\"")
-                    .append(Standards.SECURITY_METHOD_OPENID.toString()).append("\", ");
-                sb.append("access_url=\"").append(authorizeURL).append("\"");
-                appendAuthenticateErrorInfo(AuthenticationUtil.CHALLENGE_TYPE_IVOA_BEARER, sb, ex, false);
-                out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
-                
-                // also set a header for oauth2 bearer tokens
-                sb = new StringBuilder();
                 sb.append(AuthenticationUtil.CHALLENGE_TYPE_BEARER);
                 appendAuthenticateErrorInfo(AuthenticationUtil.CHALLENGE_TYPE_BEARER, sb, ex, true);
                 out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
-            } catch (MalformedURLException cex) {
-                log.error("failed to create access_url for " + Standards.SECURITY_METHOD_OPENID, cex);
-            } catch (NoSuchElementException notSupported) {
-                log.debug("LocalAuthority -- not found: " + Standards.SECURITY_METHOD_OAUTH, notSupported);
             }
             
             try {
                 // header for delegated x509 client proxy certificates
                 URI cdpProxyServiceURI = getLocalServiceURI(Standards.CRED_PROXY_10);
-                Capabilities caps = rc.getCapabilities(cdpProxyServiceURI);
-                Capability c = caps.findCapability(Standards.CRED_PROXY_10);
-                for (Interface i : c.getInterfaces()) {
-                    List<URI> securityMethods = i.getSecurityMethods();
-                    for (URI s : securityMethods) {
-                        if (s.equals(Standards.SECURITY_METHOD_HTTP_BASIC) || s.equals(Standards.SECURITY_METHOD_PASSWORD)) {
+                if (cdpProxyServiceURI != null) {
+                    Capabilities caps = rc.getCapabilities(cdpProxyServiceURI);
+                    if (caps != null) {
+                        Capability c = caps.findCapability(Standards.CRED_PROXY_10);
+                        if (c != null) {
+                            for (Interface i : c.getInterfaces()) {
+                                List<URI> securityMethods = i.getSecurityMethods();
+                                for (URI s : securityMethods) {
+                                    if (s.equals(Standards.SECURITY_METHOD_HTTP_BASIC) || s.equals(Standards.SECURITY_METHOD_PASSWORD)) {
+                                        StringBuilder sb = new StringBuilder();
+                                        sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA_X509).append(" standard_id=\"")
+                                        .append(s.toASCIIString()).append("\", ");
+                                        sb.append("access_url=\"").append(i.getAccessURL().getURL()).append("\"");
+                                        out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
+                                    }
+                                }
+                            }
+                        }
+                        // assumption: if there is a local CDP#delegate configured, then client certs are supported
+                        Capability dc = caps.findCapability(Standards.CRED_DELEGATE_10);
+                        if (dc != null) {
                             StringBuilder sb = new StringBuilder();
-                            sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA_X509).append(" standard_id=\"")
-                            .append(s.toASCIIString()).append("\", ");
-                            sb.append("access_url=\"").append(i.getAccessURL().getURL()).append("\"");
+                            sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA_X509);
                             out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
                         }
                     }
@@ -543,12 +552,6 @@ public class RestServlet extends HttpServlet {
             } catch (NoSuchElementException | ResourceNotFoundException | IOException notSupported) {
                 log.debug("LocalAuthority -- not found: " + Standards.CRED_PROXY_10, notSupported);
             }
-            
-            // header for regular x509 client certificates
-            StringBuilder sb = new StringBuilder();
-            sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA_X509);
-            out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
-            
         }
     }
     

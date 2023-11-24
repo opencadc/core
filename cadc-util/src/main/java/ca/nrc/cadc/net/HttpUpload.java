@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2020.                            (c) 2020.
+*  (c) 2023.                            (c) 2023.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -98,18 +98,17 @@ public class HttpUpload extends HttpTransfer {
     private static Logger log = Logger.getLogger(HttpUpload.class);
 
     // input
-    private File srcFile;
     private InputStream istream;
     private OutputStreamWrapper wrapper;
     private FileContent fileContent;
     
     public HttpUpload(File src, URL dest) {
         super(dest, false);
-        this.srcFile = src;
-        if (srcFile == null) {
+        this.localFile = src;
+        if (localFile == null) {
             throw new IllegalArgumentException("source File cannot be null");
         }
-        setRequestProperty(CONTENT_LENGTH, Long.toString(srcFile.length()));
+        setRequestProperty(CONTENT_LENGTH, Long.toString(localFile.length()));
     }
 
     public HttpUpload(FileContent src, URL dest) {
@@ -211,7 +210,7 @@ public class HttpUpload extends HttpTransfer {
 
     @Override
     public String toString() { 
-        return "HttpUpload[" + remoteURL + "," + srcFile + "]"; 
+        return "HttpUpload[" + remoteURL + "," + localFile + "]"; 
     }
     
     @Override
@@ -222,8 +221,15 @@ public class HttpUpload extends HttpTransfer {
             ResourceAlreadyExistsException, ResourceNotFoundException, 
             TransientException, IOException, InterruptedException,
             RangeNotSatisfiableException {
-        
-        doActionWithRetryLoop();
+        boolean ok = false;
+        try {
+            doActionWithRetryLoop();
+            ok = true;
+        } finally {
+            if (!ok) {
+                fireEvent(TransferEvent.FAILED);
+            }
+        }
     }
     
     @Override
@@ -260,25 +266,9 @@ public class HttpUpload extends HttpTransfer {
 
             doPut(conn);
             this.responseStream = conn.getInputStream();
-        } catch (InterruptedException iex) {
-            // need to catch this or it looks like a failure instead of a cancel
-            this.go = false;
-        } catch (TransientException tex) {
-            log.debug("caught: " + tex);
-            throwTE = true;
-            throw tex;
-        } catch (Throwable t) {
-            failure = t;
+            log.debug("completed");
+            fireEvent(TransferEvent.COMPLETED);
         } finally {
-            if (istream != null) {
-                log.debug("closing InputStream");
-                try { 
-                    istream.close(); 
-                } catch (Exception ignore) { 
-                    // do nothing
-                }
-            }
-
             synchronized (this) {
                 // vs sync block in terminate()
                 if (thread != null) {
@@ -289,17 +279,6 @@ public class HttpUpload extends HttpTransfer {
                     
                     this.thread = null;
                 }
-            }
-
-            if (!go) {
-                log.debug("cancelled");
-                fireEvent(TransferEvent.CANCELLED);
-            } else if (failure != null) {
-                log.debug("failed: " + failure);
-                fireEvent(failure);
-            } else if (!throwTE) {
-                log.debug("completed");
-                fireEvent(TransferEvent.COMPLETED);
             }
         }
     }
@@ -319,8 +298,8 @@ public class HttpUpload extends HttpTransfer {
             ostream = conn.getOutputStream();
             fireEvent(TransferEvent.CONNECTED);
             
-            if (srcFile != null) {
-                fin = new FileInputStream(srcFile);
+            if (localFile != null) {
+                fin = new FileInputStream(localFile);
                 in = fin;
             } else if (istream != null) {
                 in = istream;
@@ -357,6 +336,15 @@ public class HttpUpload extends HttpTransfer {
             
             log.debug("OutputStream.flush OK");
         } finally {
+            // this makes the upload non-retry-able when streaming
+            if (istream != null) {
+                log.debug("closing InputStream");
+                try { 
+                    istream.close(); 
+                } catch (IOException ignore) { 
+                    // do nothing
+                }
+            }
             try {
                 if (ostream != null) {
                     log.debug("OutputStream.close");

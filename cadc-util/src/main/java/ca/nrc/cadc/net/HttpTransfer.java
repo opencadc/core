@@ -358,7 +358,7 @@ public abstract class HttpTransfer implements Runnable {
                     Thread.sleep(dt);
                     fireEvent(TransferEvent.RETRYING);
                 } catch (InterruptedException iex) {
-                    log.debug("retry interrupted");
+                    fireEvent(TransferEvent.CANCELLED);
                     done = true;
                 }
             }
