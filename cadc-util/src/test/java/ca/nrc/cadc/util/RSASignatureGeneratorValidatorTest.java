@@ -38,6 +38,9 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.MissingResourceException;
 import org.apache.log4j.Level;
@@ -71,6 +74,30 @@ public class RSASignatureGeneratorValidatorTest {
             // successful test
             RsaSignatureGenerator sg = new RsaSignatureGenerator(priv);
             RsaSignatureVerifier sv = new RsaSignatureVerifier(pub);
+            assertTrue("Signature does not work!!!!",
+                    sv.verify(new ByteArrayInputStream(testString.getBytes()),
+                            sg.sign(new ByteArrayInputStream(testString.getBytes()))));
+        }
+    }
+
+    @Test
+    public void testSignVerifyBytes() throws Exception {
+        final String testString = "cadcauthtest1-" + new Date();
+        KeyPairGenerator kpg;
+        try {
+            kpg = KeyPairGenerator.getInstance(RsaSignatureVerifier.KEY_ALGORITHM);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(
+                    "BUG: illegal key algorithm - " + RsaSignatureVerifier.KEY_ALGORITHM, e);
+        }
+        int[] keyLengths = { 512, 1024, 2048, 4096 };
+        for (int len : keyLengths) {
+            log.info("testSignVerifyBytes: " + len);
+
+            kpg.initialize(len);
+            KeyPair keyPair = kpg.genKeyPair();
+            RsaSignatureGenerator sg = new RsaSignatureGenerator(keyPair.getPrivate().getEncoded());
+            RsaSignatureVerifier sv = new RsaSignatureVerifier(keyPair.getPublic().getEncoded());
             assertTrue("Signature does not work!!!!",
                     sv.verify(new ByteArrayInputStream(testString.getBytes()),
                             sg.sign(new ByteArrayInputStream(testString.getBytes()))));
