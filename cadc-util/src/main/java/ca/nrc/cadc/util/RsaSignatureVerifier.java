@@ -92,7 +92,7 @@ import org.apache.log4j.Logger;
  * This class is used to verify signed messages. The class requires
  * an RSA public key to verify a message.
  * 
- * <p>The keys are passed to the class via a file or as a binary array.
+ * <p>The keys are passed to the class via a file or as in-memory byte array.
  * 
  * <p>Format of the keys:
  * Public keys in the keys file must be in PEM TKCS#1These keys are
