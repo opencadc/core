@@ -294,17 +294,7 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier {
     }
     
     public static void genKeyPair(File pubKey, File privKey, int keyLength) throws FileNotFoundException {
-        // generate the certs
-        KeyPairGenerator kpg;
-        try {
-            kpg = KeyPairGenerator.getInstance(KEY_ALGORITHM);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(
-                    "BUG: illegal key algorithm - " + KEY_ALGORITHM, e);
-        }
-        
-        kpg.initialize(keyLength);
-        KeyPair keyPair = kpg.genKeyPair();
+        KeyPair keyPair = getKeyPair(keyLength);
 
         String base64PrivKey = 
                 Base64.encodeLines(keyPair.getPrivate().getEncoded());
@@ -328,5 +318,20 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier {
         } finally {
             outPriv.close();
         }   
+    }
+
+    public static KeyPair getKeyPair(int keyLength) {
+        // generate the certs
+        KeyPairGenerator kpg;
+        try {
+            kpg = KeyPairGenerator.getInstance(KEY_ALGORITHM);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(
+                    "BUG: illegal key algorithm - " + KEY_ALGORITHM, e);
+        }
+
+        kpg.initialize(keyLength);
+        KeyPair keyPair = kpg.genKeyPair();
+        return keyPair;
     }
 }

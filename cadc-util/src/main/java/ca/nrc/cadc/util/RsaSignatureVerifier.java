@@ -169,8 +169,9 @@ public class RsaSignatureVerifier {
     }
 
     public RsaSignatureVerifier(byte[] keyContent, boolean isPrivateKey) {
-        if(!isPrivateKey)
+        if (!isPrivateKey) {
             init(keyContent);
+        }
     }
     
     // ctors for use by RsaSignatureGenerator subclass

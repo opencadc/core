@@ -83,19 +83,11 @@ public class RSASignatureGeneratorValidatorTest {
     @Test
     public void testSignVerifyBytes() throws Exception {
         final String testString = "cadcauthtest1-" + new Date();
-        KeyPairGenerator kpg;
-        try {
-            kpg = KeyPairGenerator.getInstance(RsaSignatureVerifier.KEY_ALGORITHM);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(
-                    "BUG: illegal key algorithm - " + RsaSignatureVerifier.KEY_ALGORITHM, e);
-        }
         int[] keyLengths = { 512, 1024, 2048, 4096 };
         for (int len : keyLengths) {
             log.info("testSignVerifyBytes: " + len);
 
-            kpg.initialize(len);
-            KeyPair keyPair = kpg.genKeyPair();
+            KeyPair keyPair = RsaSignatureGenerator.getKeyPair(len);
             RsaSignatureGenerator sg = new RsaSignatureGenerator(keyPair.getPrivate().getEncoded());
             RsaSignatureVerifier sv = new RsaSignatureVerifier(keyPair.getPublic().getEncoded());
             assertTrue("Signature does not work!!!!",
