@@ -92,9 +92,7 @@ import org.apache.log4j.Logger;
  * This class is used to verify signed messages. The class requires
  * an RSA public key to verify a message.
  * 
- * <p>The keys are passed to the class via the RsaSignaturePub.key file in the 
- * classpath. This class cannot be instantiated without this file containing
- * public RSA keys.
+ * <p>The keys are passed to the class via a file or as in-memory byte array.
  * 
  * <p>Format of the keys:
  * Public keys in the keys file must be in PEM TKCS#1These keys are
@@ -135,18 +133,18 @@ public class RsaSignatureVerifier {
     public static final String PUB_KEY_START = "-----BEGIN PUBLIC KEY-----";
     public static final String PUB_KEY_END = "-----END PUBLIC KEY-----";
 
-    
+
     /**
      * Default constructor. This will look for a key file named RsaSignaturePub.key
      * and use it to verify.
-     * 
+     *
      * @deprecated use RsaSignatureVerifier(File keyFile)
      */
     @Deprecated
     public RsaSignatureVerifier() {
         this(PUB_KEY_FILE_NAME);
     }
-    
+
     /**
      * Constructor.
      * 
@@ -164,6 +162,16 @@ public class RsaSignatureVerifier {
             throw new MissingResourceException(keyFile.getAbsolutePath(), null, null);
         }
         init(keyFile);
+    }
+
+    public RsaSignatureVerifier(byte[] keyContent) {
+        init(keyContent);
+    }
+
+    public RsaSignatureVerifier(byte[] keyContent, boolean isPrivateKey) {
+        if (!isPrivateKey) {
+            init(keyContent);
+        }
     }
     
     // ctors for use by RsaSignatureGenerator subclass
@@ -183,7 +191,7 @@ public class RsaSignatureVerifier {
             init(keyFile);
         }
     }
-    
+
     protected final File findFile(String fname) throws MissingResourceException {
         File ret = new File(DEFAULT_CONFIG_DIR, fname);
         if (!ret.exists()) {
@@ -198,68 +206,72 @@ public class RsaSignatureVerifier {
      * @param keysFile
      */
     protected void init(File keysFile) {
-        KeyFactory keyFactory = null;
-        try {
-            keyFactory = KeyFactory.getInstance(KEY_ALGORITHM);
-        }  catch (NoSuchAlgorithmException e1) {
-            throw new RuntimeException("BUG: Wrong algorithm " + KEY_ALGORITHM, e1);
-        }
         // try to load the keys
         try {
             log.debug("read pub keys: " + keysFile);
-            BufferedReader br = new BufferedReader(new 
-                    FileReader(keysFile));
-            try {
+            try (BufferedReader br = new BufferedReader(new
+                    FileReader(keysFile))) {
                 StringBuilder sb = null;
                 boolean readPub = false;
-                String line = null;
+                String line;
                 while ((line = br.readLine()) != null) {
                     if (line.equalsIgnoreCase(PUB_KEY_START)) {
                         if (readPub) {
-                            throw new 
-                                IllegalArgumentException("Corrupted keys file");
+                            throw new
+                                    IllegalArgumentException("Corrupted keys file");
                         }
-                        
+
                         readPub = true;
                         sb = new StringBuilder();
                         continue;
                     }
-                    
+
                     if (line.equalsIgnoreCase(PUB_KEY_END)) {
                         if (!readPub) {
-                            throw new 
-                            IllegalArgumentException("Corrupted keys file");
+                            throw new
+                                    IllegalArgumentException("Corrupted keys file");
                         }
-                        
+
                         readPub = false;
                         String payload = sb.toString();
                         byte[] bytes = Base64.decode(payload);
-                        X509EncodedKeySpec publicKeySpec = 
-                                new X509EncodedKeySpec(bytes);
-                        try {
-                            pubKeys.add(keyFactory.generatePublic(publicKeySpec));
-                        } catch (InvalidKeySpecException e) {
-                            log.warn("Could not parse public key", e);
-                        }
+                        init(bytes);
                     }
                     if (readPub) {
                         sb.append(line);
                     }
                 }
-            } finally {
-                br.close();
             }
         } catch (IOException e) {
             String msg = "Could not read keys";
             throw new RuntimeException(msg, e);
         }
-        
         if (pubKeys.isEmpty()) {
             String msg = "No valid public keys found";
             throw new IllegalStateException(msg);
-        }       
+        }
     }
 
+    /**
+     * Init public keys from binary content.
+     *
+     * @param keysContent
+     */
+    protected void init(byte[] keysContent) {
+        KeyFactory keyFactory = null;
+        try {
+            keyFactory = KeyFactory.getInstance(KEY_ALGORITHM);
+        } catch (NoSuchAlgorithmException e1) {
+            throw new RuntimeException("BUG: Wrong algorithm " + KEY_ALGORITHM, e1);
+        }
+
+        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(keysContent);
+        try {
+            pubKeys.add(keyFactory.generatePublic(publicKeySpec));
+        } catch (InvalidKeySpecException e) {
+            log.warn("Could not parse public key", e);
+        }
+    }
 
     /**
      * Method use to verify a stream

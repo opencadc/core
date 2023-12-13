@@ -96,12 +96,10 @@ import org.apache.log4j.Logger;
  * This class is used to sign and/or verify signed messages. The class requires
  * and RSA private key to sign a message.
  * 
- * <p>The key is passed to the class via the MessageRSA.keys file in the 
- * classpath. This class cannot be instantiated without this file containing
- * a private RSA key.
+ * <p>The key is passed to the class via a file or as a binary array.
  * 
  * <p>Format of the key:
- * The private key in the MessageRSA.keys file must be in PEM TKCS#8 to work 
+ * The private key in the MessageRSA.keys file must be in PEM TKCS#8 to work
  * with basic Java. These keys are in text format delimited by the following 
  * rows: 
  * "-----BEGIN PRIVATE KEY-----" and "-----END PRIVATE KEY-----".
@@ -150,9 +148,67 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier {
         super(keyFile, true);
         initPrivateKey(keyFile);
     }
+
+    public RsaSignatureGenerator(byte[] keyContent) {
+        super(keyContent, true);
+        initPrivateKey(keyContent);
+    }
     
     private void initPrivateKey(File keysFile) {
         
+        // try to load the keys
+        try {
+            try (BufferedReader br = new BufferedReader(new FileReader(keysFile))) {
+                StringBuilder sb = null;
+                boolean read = false;
+                String line = null;
+                while ((line = br.readLine()) != null) {
+                    if (line.equalsIgnoreCase(PRIV_KEY_START)) {
+                        if (read) {
+                            throw new
+                                    IllegalArgumentException("Corrupted keys file");
+                        }
+
+                        if (privKey != null) {
+                            throw new
+                                    IllegalStateException("Found two private keys");
+                        }
+
+                        read = true;
+                        sb = new StringBuilder();
+                        continue;
+                    }
+
+                    if (line.equalsIgnoreCase(PRIV_KEY_END)) {
+                        if (!read) {
+                            throw new
+                                    IllegalArgumentException("Corrupted keys file");
+                        }
+
+                        read = false;
+                        String payload = sb.toString();
+                        byte[] bytes = Base64.decode(payload);
+                        initPrivateKey(bytes);
+                    }
+
+                    if (read) {
+                        sb.append(line);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            String msg = "Could not read keys";
+            throw new RuntimeException(msg, e);
+        }
+
+        if (privKey == null) {
+            String msg = "No valid private key found";
+            throw new IllegalStateException(msg);
+        }
+    }
+
+    private void initPrivateKey(byte[] keysContent) {
+
         KeyFactory keyFactory = null;
         try {
             keyFactory = KeyFactory.getInstance(KEY_ALGORITHM);
@@ -160,76 +216,26 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier {
             throw new RuntimeException("BUG: Wrong algorithm " + KEY_ALGORITHM,
                     e1);
         }
-        // try to load the keys
-        try {
-            BufferedReader br = new BufferedReader(new FileReader(keysFile));
-            try {
-                StringBuilder sb = null;
-                boolean read = false;
-                String line = null;
-                while ((line = br.readLine()) != null) {
-                    if (line.equalsIgnoreCase(PRIV_KEY_START)) {
-                        if (read) {
-                            throw new 
-                                IllegalArgumentException("Corrupted keys file");
-                        }
-                        
-                        if (privKey != null) {
-                            throw new
-                            IllegalStateException("Found two private keys");
-                        }
-                        
-                        read = true;
-                        sb = new StringBuilder();
-                        continue;
-                    }
-                    
-                    if (line.equalsIgnoreCase(PRIV_KEY_END)) {
-                        if (!read) {
-                            throw new 
-                            IllegalArgumentException("Corrupted keys file");
-                        }
-                        
-                        read = false;
-                        String payload = sb.toString();
-                        byte[] bytes = Base64.decode(payload);
-                        PKCS8EncodedKeySpec privateKeySpec = new 
-                                PKCS8EncodedKeySpec(bytes);
-                        try {
-                            privKey = 
-                                    keyFactory.generatePrivate(privateKeySpec);
-                            // get corresponding public key
-                            RSAPrivateCrtKey privk = 
-                                    (RSAPrivateCrtKey)privKey;
-                            RSAPublicKeySpec publicKeySpec = 
-                                    new java.security.spec.RSAPublicKeySpec(
-                                            privk.getModulus(), 
-                                            privk.getPublicExponent());
 
-                            PublicKey publicKey = 
-                                    keyFactory.generatePublic(publicKeySpec);
-                            pubKeys.add(publicKey);
-                        } catch (InvalidKeySpecException e) {
-                            log.warn("Could not parse private key", e);
-                        }
-                    }
-                    
-                    if (read) {
-                        sb.append(line);
-                    }
-                }
-            } finally {
-                br.close();
-            }
-        } catch (IOException e) {
-            String msg = "Could not read keys";
-            throw new RuntimeException(msg, e);
+        PKCS8EncodedKeySpec privateKeySpec = new
+                PKCS8EncodedKeySpec(keysContent);
+        try {
+            privKey =
+                    keyFactory.generatePrivate(privateKeySpec);
+            // get corresponding public key
+            RSAPrivateCrtKey privk =
+                    (RSAPrivateCrtKey)privKey;
+            RSAPublicKeySpec publicKeySpec =
+                    new java.security.spec.RSAPublicKeySpec(
+                            privk.getModulus(),
+                            privk.getPublicExponent());
+
+            PublicKey publicKey =
+                    keyFactory.generatePublic(publicKeySpec);
+            pubKeys.add(publicKey);
+        } catch (InvalidKeySpecException e) {
+            log.warn("Could not parse private key", e);
         }
-        
-        if (privKey == null) {
-            String msg = "No valid private key found";
-            throw new IllegalStateException(msg);
-        }       
     }
 
     /**
@@ -288,17 +294,7 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier {
     }
     
     public static void genKeyPair(File pubKey, File privKey, int keyLength) throws FileNotFoundException {
-        // generate the certs
-        KeyPairGenerator kpg;
-        try {
-            kpg = KeyPairGenerator.getInstance(KEY_ALGORITHM);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(
-                    "BUG: illegal key algorithm - " + KEY_ALGORITHM, e);
-        }
-        
-        kpg.initialize(keyLength);
-        KeyPair keyPair = kpg.genKeyPair();
+        KeyPair keyPair = getKeyPair(keyLength);
 
         String base64PrivKey = 
                 Base64.encodeLines(keyPair.getPrivate().getEncoded());
@@ -322,5 +318,20 @@ public class RsaSignatureGenerator extends RsaSignatureVerifier {
         } finally {
             outPriv.close();
         }   
+    }
+
+    public static KeyPair getKeyPair(int keyLength) {
+        // generate the certs
+        KeyPairGenerator kpg;
+        try {
+            kpg = KeyPairGenerator.getInstance(KEY_ALGORITHM);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(
+                    "BUG: illegal key algorithm - " + KEY_ALGORITHM, e);
+        }
+
+        kpg.initialize(keyLength);
+        KeyPair keyPair = kpg.genKeyPair();
+        return keyPair;
     }
 }
