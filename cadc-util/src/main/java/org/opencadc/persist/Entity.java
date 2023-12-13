@@ -448,6 +448,9 @@ public abstract class Entity {
             ret = new byte[16];
             System.arraycopy(msb, 0, ret, 0, 8);
             System.arraycopy(lsb, 0, ret, 8, 8);
+        } else if (o instanceof byte[]) {
+            byte[] bytes = (byte[]) o;
+            return bytes;
         }
 
         if (ret != null) {
