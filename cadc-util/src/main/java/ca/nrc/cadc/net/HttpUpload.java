@@ -120,6 +120,9 @@ public class HttpUpload extends HttpTransfer {
         byte[] b = fileContent.getBytes();
         this.istream = new ByteArrayInputStream(b);
         setRequestProperty(CONTENT_LENGTH, Long.toString(b.length));
+        if (src.getContentType() != null) {
+            setRequestProperty(CONTENT_TYPE, src.getContentType());
+        }
     }
     
     public HttpUpload(InputStream src, URL dest) {
