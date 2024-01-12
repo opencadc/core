@@ -93,6 +93,20 @@ public class PropertiesReader {
         cachedPropsKey = propertiesFile.getAbsolutePath();
         log.debug("properties file: " + propertiesFile);
     }
+    
+    /**
+     * Read the specified file (no search in usual locations).
+     * 
+     * @param src 
+     */
+    public PropertiesReader(File src) {
+        if (src == null) {
+            throw new IllegalArgumentException("src cannot be null.");
+        }
+        this.propertiesFile = src;
+        cachedPropsKey = propertiesFile.getAbsolutePath();
+        log.debug("properties file: " + propertiesFile);
+    }
 
     /**
      * Obtain whether the file associated with this Properties Reader can be accessed and read from.
