@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2022.                            (c) 2022.
+*  (c) 2024.                            (c) 2024.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -162,10 +162,7 @@ public class LogControlServlet extends HttpServlet {
     private static final String LOG_LEVEL_PARAM = "logLevel";
     private static final String PACKAGES_PARAM = "logLevelPackages";
 
-    private static final String GROUP_PARAM = "logAccessGroup";
-    private static final String GROUP_AUTHORIZER = "groupAuthorizer";
-
-    private static final String LOG_CONTROL_PROPERTIES = "logControlProperties";
+    private static final String LOG_CONTROL_CONFIG = "cadc-log.properties";
     static final String USER_DNS_PROPERTY = "user";
     static final String GROUP_URIS_PROPERTY = "group";
     static final String USERNAME_PROPERTY = "username";
@@ -235,13 +232,6 @@ public class LogControlServlet extends HttpServlet {
                 }
             }
         }
-
-        // get the access group and group authorizer
-        accessGroup = config.getInitParameter(GROUP_PARAM);
-        authorizerClassName = config.getInitParameter(GROUP_AUTHORIZER);
-
-        // get the logControl properties file for this service if it exists
-        logControlProperties = config.getInitParameter(LOG_CONTROL_PROPERTIES);
 
         // these are here to help detect problems with logging setup
         logger.warn("init complete");
@@ -629,10 +619,9 @@ public class LogControlServlet extends HttpServlet {
      */
     private MultiValuedProperties getLogControlProperties() {
         
-        if (logControlProperties != null) {
-            PropertiesReader reader = new PropertiesReader(logControlProperties);
+        PropertiesReader reader = new PropertiesReader(LOG_CONTROL_CONFIG);
+        if (reader.canRead()) {
             return reader.getAllProperties();
-            
         }
         // empty
         return new MultiValuedProperties();
