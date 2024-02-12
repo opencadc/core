@@ -13,13 +13,20 @@ endpoint are configured with a `cadc-log.properties` file at runtime.
 This file can be added to service config to grant perrmission to use the LogControlServlet at runtime.
 ```properties
 user = {X509 distinguished name}
-user = {X509 distinguished name}
+user = ...
+
+username = {network username}
+username = ...
 
 group = {IVOA GMS group identifier}
-group = {IVOA GMS group identifier}
+group = ...
 ```
-Both the `user` and `group` properties are optional and support multiple values. The specified
+All of the `user`, `username`, and `group` properties are optional and support multiple values. The specified
 users are granted permission to view (GET) and change (POST) log levels in the running service.
+
+For the X509 distinguished name, the log control endpoint can successfully authorise the user even when the
+associated AAI system is unavailable, so this mechanism is slightly more robust when trying to diagnose AAI
+related issues.
 
 ## log control REST API
 
