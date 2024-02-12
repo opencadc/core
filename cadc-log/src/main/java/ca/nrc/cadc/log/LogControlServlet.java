@@ -72,6 +72,7 @@ package ca.nrc.cadc.log;
 import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.Authorizer;
 import ca.nrc.cadc.auth.HttpPrincipal;
+import ca.nrc.cadc.auth.IdentityManager;
 import ca.nrc.cadc.cred.client.CredUtil;
 import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.util.Log4jInit;
@@ -102,9 +103,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.opencadc.gms.GroupClient;
 import org.opencadc.gms.GroupURI;
-import org.opencadc.gms.GroupUtil;
+import org.opencadc.gms.IvoaGroupClient;
 
 /**
  * Sets up log4j for whichever webapp contains this
@@ -163,17 +163,13 @@ public class LogControlServlet extends HttpServlet {
     private static final String PACKAGES_PARAM = "logLevelPackages";
 
     private static final String LOG_CONTROL_CONFIG = "cadc-log.properties";
-    static final String USER_DNS_PROPERTY = "user";
+    static final String USER_X509_PROPERTY = "user";
     static final String GROUP_URIS_PROPERTY = "group";
     static final String USERNAME_PROPERTY = "username";
     static final String SECRET_PROPERTY = "secret";
 
     private Level level = null;
     private List<String> packages;
-
-    private String authorizerClassName;
-    private String accessGroup;
-    private String logControlProperties;
 
     /**
      * Initialize the logging. This method should only get
@@ -215,7 +211,6 @@ public class LogControlServlet extends HttpServlet {
 
         String thisPkg = LogControlServlet.class.getPackage().getName();
         Log4jInit.setLevel(webapp, thisPkg, Level.WARN);
-        packages.add(thisPkg);
         logger.warn("log level: " + thisPkg + " =  " + Level.WARN);
 
         String packageParamValues = config.getInitParameter(PACKAGES_PARAM);
@@ -379,103 +374,55 @@ public class LogControlServlet extends HttpServlet {
 
         // Check the secret first.
         if (isAuthorizedSecret(request, mvp)) {
-            logger.debug("Secret authorized.");
+            logger.warn("Secret authorized.");
             return;
         }
 
-        // Get the calling subject.  If possible, augment the subject,
-        // but if augmenting fails, use the subject provided only.
+        // ugh: this should happen earlier and all code should already be inside
+        // a Subject.doAs(...) but this allows us to fall back to lazy augment
+        // if normal augment fails
         Subject subject;
 
         try {
-            subject = AuthenticationUtil.getSubject(request);
+            subject = AuthenticationUtil.getSubject(request, true);
         } catch (Exception e) {
             logger.error("Augment subject failed, using non-augmented subject: " + e.getMessage());
             subject = AuthenticationUtil.getSubject(request, false);
         }
 
-        logger.debug(subject.toString());
+        logger.debug("caller: " + subject);
+        IdentityManager im = AuthenticationUtil.getIdentityManager();
+        String userDisplay = im.toDisplayString(subject);
         
-        // first check if request user matches authorized config file users
         Set<Principal> authorizedUsers = getAuthorizedUserPrincipals(mvp);
         if (isAuthorizedUser(subject, authorizedUsers)) {
-            logger.debug(subject.getPrincipals(X500Principal.class) + " is an authorized user");
+            logger.warn(userDisplay + " is an authorized user");
             return;
         }
 
-        // Check for groups configured in servlet init or properties file.
         Set<GroupURI> groupUris = getAuthorizedGroupUris(mvp);
-
-        if (groupUris.isEmpty() && accessGroup == null) {
-            // early return to avoid checkCredentials below
-            throw new AccessControlException("permission denied");
-        }
-
-        // Check if calling user is a member of a properties file group.
-        try {
-            if (CredUtil.checkCredentials(subject)) {
-                URI serviceID = null;
-                GroupClient groupClient = null;
-                for (GroupURI groupUri : groupUris) {
-                    if (!groupUri.getServiceID().equals(serviceID)) {
-                        serviceID = groupUri.getServiceID();
-                        groupClient = GroupUtil.getGroupClient(serviceID);
-                    }
-                    GroupMemberAction memberCheck = new GroupMemberAction(groupClient, groupUri);
-                    if (isAuthorizedGroup(memberCheck, subject)) {
-                        logger.info(subject.getPrincipals(X500Principal.class) + " is a member of " + groupUri);
+        if (!groupUris.isEmpty()) {
+            try {
+                if (CredUtil.checkCredentials(subject)) {
+                    IvoaGroupClient groupClient = new IvoaGroupClient();
+                    Set<GroupURI> mem = Subject.doAs(subject, 
+                            (PrivilegedExceptionAction<Set<GroupURI>>) () -> groupClient.getMemberships(groupUris));
+                    if (!mem.isEmpty()) {
+                        StringBuilder sb = new StringBuilder();
+                        sb.append(userDisplay).append(" is a member of:");
+                        for (GroupURI g : mem) {
+                            sb.append(" ").append(g.getURI().toASCIIString());
+                        }
+                        logger.warn(sb.toString());
                         return;
                     }
                 }
-            }
-        } catch (Exception e) {
-            throw new AccessControlException("permission denied, reason: credential check failed: " + e.getMessage());
-        }
-
-        // Check if calling user is a member of a servlet init group.
-        Authorizer authorizer = getAuthorizer(accessGroup);
-        if (authorizer != null) {
-            GroupAuthorizationAction groupCheck = new GroupAuthorizationAction(authorizer, readOnly);
-            if (isAuthorizedGroup(groupCheck, subject)) {
-                logger.debug(subject.getPrincipals(X500Principal.class) + " is member of " + accessGroup);
-                return;
+            } catch (Exception e) {
+                throw new AccessControlException("permission denied, reason: credential check failed: " + e.getMessage());
             }
         }
 
         throw new AccessControlException("permission denied");
-    }
-
-    /**
-     * Get a Group authorizer for the given group URI.
-     *
-     * @param groupURI groupURI string value.
-     * @return A Group authorizer.
-     */
-    private Authorizer getAuthorizer(String groupURI) {
-        Authorizer authorizer = null;
-        if (authorizerClassName != null) {
-            try {
-                Class authClass = Class.forName(authorizerClassName);
-                if (groupURI != null) {
-                    try {
-                        Constructor ctor = authClass.getConstructor(String.class);
-                        Object o = ctor.newInstance(groupURI);
-                        authorizer = (Authorizer) o;
-                    } catch (NoSuchMethodException ex) {
-                        logger.warn("authorizer " + authorizerClassName + " has no constructor(String), ignoring groupURI=" + groupURI);
-                        Object o = authClass.newInstance();
-                        authorizer = (Authorizer) o;
-                    }
-                } else {
-                    // no-arg constructor
-                    Object o = authClass.newInstance();
-                    authorizer = (Authorizer) o;
-                }
-            } catch (Exception e) {
-                logger.error("Could not load group authorizer for groupURI=" + groupURI, e);
-            }
-        }
-        return authorizer;
     }
 
     /**
@@ -521,38 +468,6 @@ public class LogControlServlet extends HttpServlet {
     }
 
     /**
-     * Check that the subject can perform the action to authorize access.
-     *
-     * @param action The PrivilegedExceptionAction
-     * @param subject The Subject to check
-     * @return true if the calling user is a member of an authorized group, false otherwise.
-     */
-    private boolean isAuthorizedGroup(PrivilegedExceptionAction action, Subject subject)
-        throws TransientException {
-        try {
-            if (subject == null) {
-                action.run();
-            } else {
-                try {
-                    Subject.doAs(subject, action);
-                } catch (PrivilegedActionException e) {
-                    throw e.getException();
-                }
-            }
-            return true;
-        } catch (Exception e) {
-            if (e instanceof AccessControlException) {
-                logger.debug("Group authorization failed: " + e.getMessage());
-            } else if (e instanceof TransientException) {
-                throw (TransientException) e;
-            } else {
-                throw new IllegalStateException(e);
-            }
-        }
-        return false;
-    }
-
-    /**
      * Get a Set of X500Principal's from the logControl properties. Return
      * an empty set if the properties do not exist or can't be read.
      *
@@ -562,7 +477,7 @@ public class LogControlServlet extends HttpServlet {
         Set<Principal> principals = new HashSet<>();
         if (mvp != null) {
             try {
-                List<String> properties = mvp.getProperty(USER_DNS_PROPERTY);
+                List<String> properties = mvp.getProperty(USER_X509_PROPERTY);
                 if (properties != null) {
                     for (String property : properties) {
                         if (!property.isEmpty()) {
@@ -626,55 +541,4 @@ public class LogControlServlet extends HttpServlet {
         // empty
         return new MultiValuedProperties();
     }
-
-    static class GroupAuthorizationAction implements PrivilegedExceptionAction<Object> {
-
-        private Authorizer authorizer;
-        private boolean readOnly;
-
-        GroupAuthorizationAction(Authorizer authorizer, boolean readOnly) {
-            this.authorizer = authorizer;
-            this.readOnly = readOnly;
-        }
-
-        @Override
-        public Object run() throws Exception {
-            try {
-                if (readOnly) {
-                    authorizer.getReadPermission(null);
-                } else {
-                    authorizer.getWritePermission(null);
-                }
-            } catch (FileNotFoundException e) {
-                throw new IllegalStateException("UnexpectedException", e);
-            }
-
-            return null;
-        }
-    }
-
-    static class GroupMemberAction implements PrivilegedExceptionAction<Object> {
-
-        private GroupClient groupClient;
-        private GroupURI groupURI;
-
-        GroupMemberAction(GroupClient groupClient, GroupURI groupURI) {
-            this.groupClient = groupClient;
-            this.groupURI = groupURI;
-        }
-
-        @Override
-        public Object run() throws Exception {
-            // GMSClient can throw a RuntimeException for an auth failure.
-            try {
-                if (!groupClient.isMember(groupURI)) {
-                    throw new AccessControlException("not a member of " + groupURI);
-                }
-            } catch (RuntimeException e) {
-                throw new AccessControlException(e.getMessage());
-            }
-            return null;
-        }
-    }
-
 }
