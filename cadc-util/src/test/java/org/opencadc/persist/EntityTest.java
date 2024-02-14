@@ -85,7 +85,7 @@ public class EntityTest {
     private static final Logger log = Logger.getLogger(EntityTest.class);
 
     static {
-        Log4jInit.setLevel("org.opencadc.persist", Level.INFO);
+        Log4jInit.setLevel("org.opencadc.persist", Level.DEBUG);
     }
     
     public EntityTest() { 
@@ -105,9 +105,28 @@ public class EntityTest {
     
     @Test
     public void testEntity() {
-        
+        // base: the cadc-inventory-0.x configuration
+        doEntityTest(false, false);
+        doNewVersionTest(false, false);
+    }
+    
+    @Test
+    public void testEntityTruncateDates() {
+        // the caom2-2.4 configuration
+        doEntityTest(true, false);
+        doNewVersionTest(true, false);
+    }
+    
+    @Test
+    public void testEntityDigestFieldNames() {
+        // the cadc-vos-2.x configuration
+        //doEntityTest(false, true);
+        doNewVersionTest(false, true);
+    }
+
+    private void doEntityTest(boolean trunc, boolean dig) {
         try {
-            SampleEntity sample = new SampleEntity("name-of-this-entity");
+            SampleEntity sample = new SampleEntity("name-of-this-entity", trunc, dig);
             log.info("created: " + sample);
             
             URI mcs1 = sample.computeMetaChecksum(MessageDigest.getInstance("MD5"));
@@ -148,14 +167,22 @@ public class EntityTest {
             URI mcs10 = sample.computeMetaChecksum(MessageDigest.getInstance("MD5"));
             Assert.assertEquals(mcs7, mcs10);
             
-            // entities do not get included in metaChecksum
-            sample.children.add(new SampleEntity("flibble"));
+            // nested object
+            sample.nested = new SampleEntity.Nested();
             URI mcs11 = sample.computeMetaChecksum(MessageDigest.getInstance("MD5"));
-            Assert.assertEquals(mcs10, mcs11);
+            Assert.assertEquals(mcs7, mcs11);
+            sample.nested.nstr = "boo";
+            URI mcs12 = sample.computeMetaChecksum(MessageDigest.getInstance("MD5"));
+            Assert.assertNotEquals(mcs7, mcs12);
             
-            sample.relation = new SampleEntity("flibble");
+            // entities do not get included in metaChecksum
+            sample.children.add(new SampleEntity("flibble", trunc, dig));
+            URI tcs1 = sample.computeMetaChecksum(MessageDigest.getInstance("MD5"));
+            Assert.assertEquals(mcs12, tcs1);
+            
+            sample.relation = new SampleEntity("flibble", trunc, dig);
             mcs11 = sample.computeMetaChecksum(MessageDigest.getInstance("MD5"));
-            Assert.assertEquals(mcs10, mcs11);
+            Assert.assertEquals(mcs12, mcs11);
             
             // revert
             sample.dateVal = null;
@@ -164,8 +191,9 @@ public class EntityTest {
             sample.uriVal = null;
             sample.sampleSE = null;
             sample.sampleIE = null;
-            URI mcs12 = sample.computeMetaChecksum(MessageDigest.getInstance("MD5"));
-            Assert.assertEquals(mcs1, mcs12);
+            sample.nested = null;
+            URI clearCS = sample.computeMetaChecksum(MessageDigest.getInstance("MD5"));
+            Assert.assertEquals(mcs1, clearCS);
             
         } catch (Exception ex) {
             log.error("unexpected exception", ex);
@@ -173,16 +201,35 @@ public class EntityTest {
         }
     }
     
-    @Test
-    public void testArtifactTransientState() {
+    private void doNewVersionTest(boolean trunc, boolean dig) {
         try {
-            SampleEntity sample = new SampleEntity("name-of-this-entity");
+            Entity.MCS_DEBUG = true;
+            SampleEntity v1 = new SampleEntity("name-of-this-entity", trunc, dig);
+            log.info("created: " + v1);
+            URI mcs1 = v1.computeMetaChecksum(MessageDigest.getInstance("MD5"));
+            
+            SampleEntityV2 v2 = new SampleEntityV2(v1.getID(), v1.getName(), trunc, dig);
+            log.info("created: " + v1);
+            URI mcs2 = v2.computeMetaChecksum(MessageDigest.getInstance("MD5"));
+            
+            Assert.assertEquals(mcs1, mcs2);
+        } catch (Exception ex) {
+            log.error("unexpected exception", ex);
+            Assert.fail("unexpected exception: " + ex);
+        }
+    }
+    
+    @Test
+    public void testNonState() {
+        try {
+            SampleEntity sample = new SampleEntity("name-of-this-entity", false, false);
             log.info("created: " + sample);
             
             URI mcs1 = sample.computeMetaChecksum(MessageDigest.getInstance("MD5"));
             
-            sample.transientVal = "mrs flibble";
-            SampleEntity.staticVal = "electricity";
+            sample.transientVal = "mrs flibble";    // transient
+            SampleEntity.staticVal = "electricity"; // static
+            
             URI mcs2 = sample.computeMetaChecksum(MessageDigest.getInstance("MD5"));
             Assert.assertEquals(mcs1, mcs2);
             
