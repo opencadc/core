@@ -126,6 +126,13 @@ public class EntityTest {
         doEntityTest(false, true);
         doNewVersionTest(false, true);
     }
+    
+    @Test
+    public void testEntitySafeMode() {
+        // no known use, but truncateDates and digestFieldNames is the safest mode
+        doEntityTest(true, true);
+        doNewVersionTest(true, true);
+    }
 
     private void doEntityTest(boolean trunc, boolean dig) {
         try {
