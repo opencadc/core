@@ -302,7 +302,7 @@ public abstract class Entity {
                 if (ce.metaProducer != null) {
                     digest.update(primitiveValueToBytes(ce.metaProducer, "Entity.metaProducer"));
                     if (digestFieldNames) {
-                        digest.update(primitiveValueToBytes("metaProducer", "Entity.metaProducer"));
+                        digest.update(primitiveValueToBytes("Entity.metaProducer", "Entity.metaProducer"));
                     }
                 }
             }

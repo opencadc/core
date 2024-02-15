@@ -71,7 +71,6 @@ import ca.nrc.cadc.util.Log4jInit;
 import java.net.URI;
 import java.security.MessageDigest;
 import java.util.Date;
-import java.util.UUID;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -86,6 +85,10 @@ public class EntityTest {
 
     static {
         Log4jInit.setLevel("org.opencadc.persist", Level.DEBUG);
+        // this actually controls the large amoutn of debug output from checksum
+        // algorithm, but it effects the whole jvm so only enable when running
+        // these tests specificially and looking at output
+        //Entity.MCS_DEBUG = true;
     }
     
     public EntityTest() { 
@@ -120,7 +123,7 @@ public class EntityTest {
     @Test
     public void testEntityDigestFieldNames() {
         // the cadc-vos-2.x configuration
-        //doEntityTest(false, true);
+        doEntityTest(false, true);
         doNewVersionTest(false, true);
     }
 
@@ -201,9 +204,9 @@ public class EntityTest {
         }
     }
     
+    // also doubles as a sub-class/extension test
     private void doNewVersionTest(boolean trunc, boolean dig) {
         try {
-            Entity.MCS_DEBUG = true;
             SampleEntity v1 = new SampleEntity("name-of-this-entity", trunc, dig);
             log.info("created: " + v1);
             URI mcs1 = v1.computeMetaChecksum(MessageDigest.getInstance("MD5"));
