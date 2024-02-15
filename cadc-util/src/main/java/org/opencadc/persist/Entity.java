@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2023.                            (c) 2023.
+*  (c) 2024.                            (c) 2024.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -91,7 +91,12 @@ import java.util.UUID;
 import org.apache.log4j.Logger;
 
 /**
- * Base class for entity persistence.
+ * Base class for entity persistence. The metaChecksum algorithm implemented here has a
+ * flaw where moving a value from one optional field to another (with no values contributing
+ * bytes in between) does not cause the computed metaChecksum to change. If a specific
+ * data model is susceptible to this, it can use the "digestFieldNames" option to prevent
+ * it, but changing options will change existing (stored) metaChecksum values so a change
+ * like this has an operational impact that needs to be evaluated.
  * 
  * @author pdowler
  */
@@ -101,6 +106,7 @@ public abstract class Entity {
     private final String localPackage;
     public static boolean MCS_DEBUG = false;  // way to much debug when true
     
+    private final boolean digestFieldNames;
     private final boolean truncateDateToSec;
     private UUID id;
     private Date lastModified;
@@ -124,24 +130,57 @@ public abstract class Entity {
     }
     
     /**
-     * Constructor.
+     * Backwards compatible constructor: digestFieldNames==false.
      * 
      * @param truncateDateToSec truncate Date values to seconds when converting to bytes for meta checksum calculation
+     * @deprecated hard code Entity(boolean, boolean) in model
      */
+    @Deprecated
     protected Entity(boolean truncateDateToSec) {
-        this(UUID.randomUUID(), truncateDateToSec);
+        this(truncateDateToSec, false);
     }
     
     /**
-     * Constructor.
+     * Backwards compatible constructor: digestFieldNames==false.
+     *
+     * @param id assign the specified Entity.id
+     * @param truncateDateToSec truncate Date values to seconds when converting to bytes for meta checksum calculation
+     * @deprecated hard code Entity(UUID, boolean, boolean) in model
+     */
+    @Deprecated
+    protected Entity(UUID id, boolean truncateDateToSec) {
+        this(id, truncateDateToSec, false);
+    }
+    
+    /**
+     * Constructor. This creates a new entity with a random UUID.
+     * 
+     * @param truncateDateToSec truncate Date values to seconds when converting to bytes for meta checksum calculation
+     * @param digestFieldNames when a field is not null (or collection is non-empty), include the field name in the
+     *                         metaChecksum calculation
+     */
+    protected Entity(boolean truncateDateToSec, boolean digestFieldNames) {
+        this(UUID.randomUUID(), truncateDateToSec, digestFieldNames);
+    }
+    
+    /**
+     * Constructor. This creates an entity with an existing UUID when reconstructing an instance. The
+     * truncateDateToSec option should be used if instances of the model are to be serialised or stored
+     * in a way that does not recover the exact timestamp to milliseconds. The digestFieldNames option
+     * is needed for any model with "adjacent" fields that could contain the same value; this option
+     * ensures that "moving" the value from one field to another will change the checksum by changing
+     * the sequence of bytes that are digested.
      * 
      * @param id unique ID value to assign/restore
      * @param truncateDateToSec truncate Date values to seconds when converting to bytes for meta checksum calculation
+     * @param digestFieldNames when a field is not null (or collection is non-empty), include the field name in the
+     *                         metaChecksum calculation
      */
-    protected Entity(UUID id, boolean truncateDateToSec) {
+    protected Entity(UUID id, boolean truncateDateToSec, boolean digestFieldNames) {
         Entity.assertNotNull(Entity.class, "id", id);
         this.id = id;
         this.truncateDateToSec = truncateDateToSec;
+        this.digestFieldNames = digestFieldNames;
         this.localPackage = this.getClass().getPackage().getName();
     }
 
@@ -212,7 +251,11 @@ public abstract class Entity {
      */
     public URI computeMetaChecksum(MessageDigest digest) {
         try {
-            calcMetaChecksum(this.getClass(), this, digest);
+            MessageDigestWrapper mdw = new MessageDigestWrapper(digest);
+            calcMetaChecksum(this.getClass(), this, mdw);
+            if (MCS_DEBUG) {
+                log.debug("computeMetaChecksum: " + mdw.getNumBytes() + " bytes");
+            }
             byte[] metaChecksumBytes = digest.digest();
             String hexMetaChecksum = HexUtil.toHex(metaChecksumBytes);
             String alg = digest.getAlgorithm().toLowerCase();
@@ -232,35 +275,41 @@ public abstract class Entity {
      * @param o
      * @param digest 
      */
-    protected void calcMetaChecksum(Class c, Object o, MessageDigest digest) {
+    protected final void calcMetaChecksum(Class c, Object o, MessageDigestWrapper digest) {
         // calculation order:
         // 1. Entity.id for entities
         // 2. Entity.metaProducer
         // 3. state fields in alphabetic order; depth-first recursion
         // value handling:
         // enum: find and call getValue() by reflection and continue
-        // Date: truncate time to whole number of seconds and treat as a long
+        // Date: normally milliseconds to long
+        // optional Date handling: truncate time to whole number of seconds
         // String: UTF-8 encoded bytes
         // URI: UTF-8 encoded bytes of string representation
         // float: IEEE754 single (4 bytes)
         // double: IEEE754 double (8 bytes)
-        // boolean: convert to single byte, false=0, true=1 (1 bytes)
-        // byte: as-is (1 byte)
+        // boolean: convert to single byte, false=0, true=1 (1 byte)
+        // byte: as-is
         // short: (2 bytes, network byte order == big endian))
         // integer: (4 bytes, network byte order == big endian)
         // long: (8 bytes, network byte order == big endian)
+        // UUID: 8 most-significant bytes + 8 least significant bytes (16 bytes)
+        // optional for ALL fields: if non-zero bytes updated the digest, UTF-8 encoded bytes of the field name
         try {
             if (o instanceof Entity) {
                 Entity ce = (Entity) o;
-                digest.update(primitiveValueToBytes(ce.id, "Entity.id", digest.getAlgorithm()));
+                digest.update(primitiveValueToBytes(ce.id, "Entity.id"));
                 if (ce.metaProducer != null) {
-                    digest.update(primitiveValueToBytes(ce.metaProducer, "Entity.metaProducer", digest.getAlgorithm()));
+                    digest.update(primitiveValueToBytes(ce.metaProducer, "Entity.metaProducer"));
+                    if (digestFieldNames) {
+                        digest.update(primitiveValueToBytes("Entity.metaProducer", "Entity.metaProducer"));
+                    }
                 }
             }
 
             SortedSet<Field> fields = getStateFields(c);
             for (Field f : fields) {
-                String cf = c.getSimpleName() + "." + f.getName();
+                String cf = f.getDeclaringClass().getSimpleName() + "." + f.getName();
                 f.setAccessible(true);
                 Object fo = f.get(o);
                 if (fo != null) {
@@ -269,36 +318,51 @@ public abstract class Entity {
                         try {
                             Method m = ac.getMethod("getValue");
                             Object val = m.invoke(fo);
-                            digest.update(primitiveValueToBytes(val, cf, digest.getAlgorithm()));
+                            digest.update(primitiveValueToBytes(val, cf));
+                            if (digestFieldNames) {
+                                digest.update(primitiveValueToBytes(cf, cf)); // field name
+                            }
                         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
                             throw new RuntimeException("BUG - enum " + ac.getName() + " does not have getValue()", ex);
                         }
                     } else if (isDataModelClass(ac)) {
                         // depth-first recursion
+                        int num = digest.getNumBytes();
                         calcMetaChecksum(ac, fo, digest);
+                        if (digestFieldNames && num < digest.getNumBytes()) {
+                            digest.update(primitiveValueToBytes(cf, cf)); // field name
+                        }
                     } else if (fo instanceof Collection) {
                         Collection stuff = (Collection) fo;
-                        Iterator i = stuff.iterator();
-                        while (i.hasNext()) {
-                            Object co = i.next();
-                            Class cc = co.getClass();
-                            if (cc.isEnum()) {
-                                try {
-                                    Method m = cc.getMethod("getValue");
-                                    Object val = m.invoke(co);
-                                    digest.update(primitiveValueToBytes(val, cf, digest.getAlgorithm()));
-                                } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
-                                    throw new RuntimeException("BUG", ex);
+                        if (!stuff.isEmpty()) {
+                            Iterator i = stuff.iterator();
+                            while (i.hasNext()) {
+                                Object co = i.next();
+                                Class cc = co.getClass();
+                                if (cc.isEnum()) {
+                                    try {
+                                        Method m = cc.getMethod("getValue");
+                                        Object val = m.invoke(co);
+                                        digest.update(primitiveValueToBytes(val, cf));
+                                    } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
+                                        throw new RuntimeException("BUG", ex);
+                                    }
+                                } else if (isDataModelClass(cc)) {
+                                    // depth-first recursion
+                                    calcMetaChecksum(cc, co, digest);
+                                } else {
+                                    digest.update(primitiveValueToBytes(co, cf));
                                 }
-                            } else if (isDataModelClass(cc)) {
-                                // depth-first recursion
-                                calcMetaChecksum(cc, co, digest);
-                            } else {
-                                digest.update(primitiveValueToBytes(co, cf, digest.getAlgorithm()));
+                            }
+                            if (digestFieldNames) {
+                                digest.update(primitiveValueToBytes(cf, cf)); // field name
                             }
                         }
                     } else {
-                        digest.update(primitiveValueToBytes(fo, cf, digest.getAlgorithm()));
+                        digest.update(primitiveValueToBytes(fo, cf));
+                        if (digestFieldNames) {
+                            digest.update(primitiveValueToBytes(cf, cf)); // field name
+                        }
                     }
                 } else if (MCS_DEBUG) {
                     log.debug("skip null: " + cf);
@@ -307,6 +371,24 @@ public abstract class Entity {
 
         } catch (IllegalAccessException bug) {
             throw new RuntimeException("Unable to calculate metaChecksum for class " + c.getName(), bug);
+        }
+    }
+    
+    private static class MessageDigestWrapper {
+        private MessageDigest digest;
+        private int numBytes = 0;
+
+        public MessageDigestWrapper(MessageDigest digest) {
+            this.digest = digest;
+        }
+        
+        public void update(byte[] b) {
+            digest.update(b);
+            numBytes += b.length;
+        }
+
+        public int getNumBytes() {
+            return numBytes;
         }
     }
     
@@ -392,7 +474,7 @@ public abstract class Entity {
         return false;
     }
 
-    protected byte[] primitiveValueToBytes(Object o, String name, String digestAlg) {
+    protected byte[] primitiveValueToBytes(Object o, String name) {
         byte[] ret = null;
         if (o instanceof Byte) {
             ret = HexUtil.toBytes((Byte) o); // auto-unbox
@@ -449,20 +531,16 @@ public abstract class Entity {
             System.arraycopy(msb, 0, ret, 0, 8);
             System.arraycopy(lsb, 0, ret, 8, 8);
         } else if (o instanceof byte[]) {
-            byte[] bytes = (byte[]) o;
-            return bytes;
+            ret = (byte[]) o;
         }
 
         if (ret != null) {
             if (MCS_DEBUG) {
-                try {
-                    MessageDigest md  = MessageDigest.getInstance(digestAlg);
-                    byte[] dig = md.digest(ret);
-                    log.debug(o.getClass().getSimpleName() + " " + name + " = " + o.toString()
-                        + " -- " + HexUtil.toHex(dig));
-                } catch (Exception ignore) {
-                    log.debug("OOPS", ignore);
+                String dfn = "";
+                if (o == name) {
+                    dfn = " digest-field-name";
                 }
+                log.debug(o.getClass().getSimpleName() + " " + name + " = " + o.toString() + " " + ret.length + " bytes" + dfn);
             }
             return ret;
         }

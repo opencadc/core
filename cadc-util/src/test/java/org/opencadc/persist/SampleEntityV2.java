@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2023.                            (c) 2023.
+*  (c) 2024.                            (c) 2024.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -67,11 +67,6 @@
 
 package org.opencadc.persist;
 
-import java.net.URI;
-import java.util.Date;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.UUID;
 import org.apache.log4j.Logger;
 
@@ -79,54 +74,17 @@ import org.apache.log4j.Logger;
  *
  * @author pdowler
  */
-public class SampleEntity extends Entity implements Comparable<SampleEntity> {
-    private static final Logger log = Logger.getLogger(SampleEntity.class);
+public class SampleEntityV2 extends SampleEntity {
+    private static final Logger log = Logger.getLogger(SampleEntityV2.class);
 
-    private final String name;
+    public Integer optionalInt;
+    public String optionalString;
     
-    public URI uriVal;
-    public Double doubleVal;
-    public Long longVal;
-    public Date dateVal;
-    public final SortedSet<String> strList = new TreeSet<>();
-    public SampleStringEnum sampleSE;
-    public SampleIntEnum sampleIE;
-    public Nested nested;
-    
-    // not included
-    public Set<SampleEntity> children = new TreeSet<>();
-    public SampleEntity relation;
-    public static String staticVal;
-    public transient String transientVal;
-    
-    
-    public SampleEntity(String name, boolean truncateDateToSec, boolean digestFieldNames) { 
-        super(truncateDateToSec, digestFieldNames);
-        this.name = name;
-    }
-    
-    public SampleEntity(UUID id, String name, boolean truncateDateToSec, boolean digestFieldNames) {
-        super(id, truncateDateToSec, digestFieldNames);
-        this.name = name;
-    }
-
-    public String getName() {
-        return name;
+    public SampleEntityV2(UUID id, String name, boolean trunc, boolean dig) {
+        super(id, name, trunc, dig);
     }
     
     public String toString() {
-        return "SampleEntity[" + name + "]";
-    }
-
-    @Override
-    public int compareTo(SampleEntity se) {
-        if (se == null) {
-            return 1; // nulls after
-        }
-        return name.compareTo(se.name);
-    }
-    
-    static class Nested {
-        public String nstr;
+        return "SampleEntityV2[" + getName() + "]";
     }
 }
