@@ -150,7 +150,7 @@ public class TokenValidator {
 
                 try {
                     SignedToken validatedToken = SignedToken.parse(credentials);
-                    subject.getPrincipals().add(validatedToken.getUser());
+                    subject.getPrincipals().addAll(validatedToken.getIdentityPrincipals());
 
                     AuthorizationToken authToken = new AuthorizationToken(
                         challengeType, credentials, validatedToken.getDomains(), validatedToken.getScope());
