@@ -386,7 +386,8 @@ public class SSLUtil {
         return readPrivateKey(priv);
     }
 
-    private static PrivateKey readPrivateKey(byte[] bytesPrivateKey)
+    // needed by cadc-cdp-server
+    public static PrivateKey readPrivateKey(byte[] bytesPrivateKey)
             throws InvalidKeySpecException, NoSuchAlgorithmException, IOException {
         KeyFactory kf = KeyFactory.getInstance("RSA");
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(bytesPrivateKey);
