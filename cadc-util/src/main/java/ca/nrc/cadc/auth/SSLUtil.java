@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2016.                            (c) 2016.
+ *  (c) 2024.                            (c) 2024.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -71,17 +71,16 @@ package ca.nrc.cadc.auth;
 
 import ca.nrc.cadc.util.Base64;
 import ca.nrc.cadc.util.FileUtil;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
@@ -89,6 +88,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
+import java.security.Security;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -98,14 +98,12 @@ import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.RSAPrivateCrtKeySpec;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -116,8 +114,14 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 import javax.security.auth.Subject;
-
 import org.apache.log4j.Logger;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.util.io.pem.PemObject;
 
 /**
  * Utility class to setup SSL before trying to use HTTPS.
@@ -126,6 +130,10 @@ import org.apache.log4j.Logger;
  */
 public class SSLUtil {
     private static Logger log = Logger.getLogger(SSLUtil.class);
+    
+    static {
+        Security.addProvider(new BouncyCastleProvider());
+    }
 
     // SSL, SSLv2mm SSLv3, TLS, TLSv1, TLSv1.1
     private static final String SSL_PROTOCOL = "TLS";
@@ -140,51 +148,9 @@ public class SSLUtil {
 
     private static final char[] THE_PASSWORD = CERT_ALIAS.toCharArray();
 
-    /**
-     * Initialise the default SSL socket factory so that all HTTPS connections use
-     * the provided key store to authenticate (when the server requires client
-     * authentication).
-     * 
-     * @see HttpsURLConnection#setDefaultSSLSocketFactory(javax.net.ssl.SSLSocketFactory)
-     * @param certFile proxy certificate
-     * @param keyFile  private key file in DER format
-     */
-    public static void initSSL(File certFile, File keyFile) {
-        SSLSocketFactory sf = getSocketFactory(certFile, keyFile);
-        HttpsURLConnection.setDefaultSSLSocketFactory(sf);
-    }
-
     public static void initSSL(File pemFile) {
-        try {
-            X509CertificateChain chain = readPemCertificateAndKey(pemFile);
-            SSLSocketFactory sf = getSocketFactory(chain);
-            HttpsURLConnection.setDefaultSSLSocketFactory(sf);
-        } catch (InvalidKeySpecException ex) {
-            throw new RuntimeException("failed to read RSA private key from " + pemFile, ex);
-        } catch (NoSuchAlgorithmException ex) {
-            throw new RuntimeException("BUG: failed to create empty KeyStore", ex);
-        } catch (FileNotFoundException ex) {
-            throw new RuntimeException("failed to find certificate and/or key file " + pemFile, ex);
-        } catch (IOException ex) {
-            throw new RuntimeException("failed to read certificate file " + pemFile, ex);
-        } catch (CertificateException ex) {
-            throw new RuntimeException("failed to load certificate from file " + pemFile, ex);
-        }
-    }
-
-    /**
-     * Initialise the default SSL socket factory so that all HTTPS connections use
-     * the provided key store to authenticate (when the server requies client
-     * authentication).
-     * 
-     * @param certFile proxy certificate
-     * @param keyFile  private key file in DER format
-     * @return configured SSL socket factory
-     */
-    public static SSLSocketFactory getSocketFactory(File certFile, File keyFile) {
-        KeyStore ks = getKeyStore(certFile, keyFile);
-        KeyStore ts = null;
-        return getSocketFactory(ks, ts);
+        SSLSocketFactory sf = getSocketFactory(pemFile);
+        HttpsURLConnection.setDefaultSSLSocketFactory(sf);
     }
 
     /**
@@ -210,7 +176,7 @@ public class SSLUtil {
         }
         return getSocketFactory(chain);
     }
-
+    
     /**
      * Create an SSLSocketfactory from the credentials in the specified Subject.
      * This method extracts a X509CertificateChain from the public credentials and
@@ -249,30 +215,13 @@ public class SSLUtil {
     }
 
     // may in future try to support other KeyStore formats
-    static SSLSocketFactory getSocketFactory(KeyStore keyStore, KeyStore trustStore) {
+    @Deprecated
+    private static SSLSocketFactory getSocketFactory(KeyStore keyStore, KeyStore trustStore) {
         KeyManagerFactory kmf = getKeyManagerFactory(keyStore);
         TrustManagerFactory tmf = getTrustManagerFactory(trustStore);
         SSLContext ctx = getContext(kmf, tmf, keyStore);
         SSLSocketFactory sf = ctx.getSocketFactory();
         return sf;
-    }
-
-    public static Subject createSubject(File certFile, File keyFile) {
-        try {
-            PrivateKey pk = readPrivateKey(keyFile);
-            X509Certificate[] chain = readCertificateChain(certFile);
-            return AuthenticationUtil.getSubject(chain, pk);
-        } catch (InvalidKeySpecException ex) {
-            throw new RuntimeException("failed to read RSA private key from " + keyFile, ex);
-        } catch (NoSuchAlgorithmException ex) {
-            throw new RuntimeException("BUG: failed to create empty KeyStore", ex);
-        } catch (FileNotFoundException ex) {
-            throw new RuntimeException("failed to find certificate and/or key file " + certFile + "," + keyFile, ex);
-        } catch (IOException ex) {
-            throw new RuntimeException("failed to read certificate file " + certFile, ex);
-        } catch (CertificateException ex) {
-            throw new RuntimeException("failed to load certificate from file " + certFile, ex);
-        }
     }
 
     public static Subject createSubject(File certKeyFile) {
@@ -290,15 +239,17 @@ public class SSLUtil {
         }
     }
 
-    static byte[] getPrivateKey(byte[] certBuf) throws IOException {
+    @Deprecated
+    private static byte[] getPrivateKey(byte[] certBuf) throws IOException {
         BufferedReader rdr = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(certBuf)));
         String line = rdr.readLine();
         StringBuilder base64 = new StringBuilder();
         while (line != null) {
-            if (line.startsWith("-----BEGIN RSA PRIVATE KEY-")) {
+            if (line.matches("-----BEGIN.*PRIVATE KEY-----")) {
                 // log.debug(line);
                 line = rdr.readLine();
-                while (line != null && !line.startsWith("-----END RSA PRIVATE KEY-")) {
+                while (line != null && !line.startsWith("-----END ")) {
+                
                     // log.debug(line + " (" + line.length() + ")");
                     base64.append(line.trim());
                     line = rdr.readLine();
@@ -387,7 +338,6 @@ public class SSLUtil {
         return result;
     }
 
-    @SuppressWarnings("unchecked")
     public static X509Certificate[] readCertificateChain(File certFile) throws CertificateException, IOException {
         try {
             X509Certificate[] chain = readCertificateChain(FileUtil.readFile(certFile));
@@ -399,12 +349,6 @@ public class SSLUtil {
 
     }
 
-    /**
-     * @param certBuf
-     * @return certificate chain
-     * @throws CertificateException
-     * @throws IOException
-     */
     public static X509Certificate[] readCertificateChain(byte[] certBuf) throws CertificateException, IOException {
         BufferedInputStream istream = new BufferedInputStream(new ByteArrayInputStream(certBuf));
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
@@ -435,13 +379,14 @@ public class SSLUtil {
         return chain;
     }
 
-    public static PrivateKey readPrivateKey(File keyFile)
+    @Deprecated
+    private static PrivateKey readPrivateKey(File keyFile)
             throws InvalidKeySpecException, NoSuchAlgorithmException, IOException {
         byte[] priv = FileUtil.readFile(keyFile);
         return readPrivateKey(priv);
     }
 
-    public static PrivateKey readPrivateKey(byte[] bytesPrivateKey)
+    private static PrivateKey readPrivateKey(byte[] bytesPrivateKey)
             throws InvalidKeySpecException, NoSuchAlgorithmException, IOException {
         KeyFactory kf = KeyFactory.getInstance("RSA");
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(bytesPrivateKey);
@@ -472,25 +417,8 @@ public class SSLUtil {
         }
     }
 
-    private static KeyStore getKeyStore(File certFile, File keyFile) {
-        try {
-            PrivateKey pk = readPrivateKey(keyFile);
-            Certificate[] chain = readCertificateChain(certFile);
-            return getKeyStore(chain, pk);
-        } catch (InvalidKeySpecException ex) {
-            throw new RuntimeException("failed to read RSA private key from " + keyFile, ex);
-        } catch (NoSuchAlgorithmException ex) {
-            throw new RuntimeException("BUG: failed to create empty KeyStore", ex);
-        } catch (FileNotFoundException ex) {
-            throw new RuntimeException("failed to find certificate and/or key file " + certFile + "," + keyFile, ex);
-        } catch (IOException ex) {
-            throw new RuntimeException("failed to read certificate file " + certFile, ex);
-        } catch (CertificateException ex) {
-            throw new RuntimeException("failed to load certificate from file " + certFile, ex);
-        }
-    }
-
     // currently broken trying to parse the openssl-generated pkcs12 file
+    @Deprecated
     private static KeyStore readPKCS12(File f) {
         InputStream istream = null;
         try {
@@ -600,8 +528,8 @@ public class SSLUtil {
      */
     public static X509CertificateChain readPemCertificateAndKey(File pemFile)
             throws InvalidKeySpecException, NoSuchAlgorithmException, IOException, CertificateException {
-        byte[] data = FileUtil.readFile(pemFile);
-        return readPemCertificateAndKey(data);
+        PEMParser parser = new PEMParser(new FileReader(pemFile));
+        return readPEM(parser);
     }
 
     /**
@@ -618,35 +546,73 @@ public class SSLUtil {
      */
     public static X509CertificateChain readPemCertificateAndKey(byte[] data)
             throws InvalidKeySpecException, NoSuchAlgorithmException, IOException, CertificateException {
-        // Currently only RSA keys are supported. If the need to support
-        // other encoding algorithms arises in the future, then the
-        // PEMReader in the bouncycastle package should be a good
-        // candidate for the job. To use this class without creating a
-        // dependency on the bc package, the implementation of this method
-        // can be change to look for the bc PEMReader in the classpath and
-        // use it if present, otherwise default to the RSA implementation
-        // below. Clients that want to use other encoding schemas will
-        // have to pass the PEMReader class into the class path themselves.
-
-        byte[] key = getPrivateKey(data);
-
-        KeyFactory kf = KeyFactory.getInstance("RSA");
-        RSAPrivateCrtKeySpec spec = parseKeySpec(key);
-        PrivateKey pk = kf.generatePrivate(spec);
-
-        byte[] certificates = getCertificates(data);
-        X509Certificate[] chain = readCertificateChain(certificates);
-
-        return new X509CertificateChain(chain, pk);
+        InputStreamReader r = new InputStreamReader(new ByteArrayInputStream(data));
+        PEMParser parser = new PEMParser(r);
+        return readPEM(parser);
     }
+    
+    private static X509CertificateChain readPEM(PEMParser parser) 
+        throws InvalidKeySpecException, NoSuchAlgorithmException, IOException, CertificateException {
+        
+        PrivateKey privateKey = null;
+        List<byte[]> certs = new ArrayList<>();
+        int byteSize = 0;
 
-    /**
-     * Parses a byte array and constructs the corresponding RSAPrivateCrtKeySpec.
-     * 
-     * @param code byte array containing the key
-     * @return RSAPrivateCrtKeySpec
-     * @throws IOException
-     */
+        Object obj = parser.readObject();
+        while (obj != null) {
+            log.debug("found: " + obj.getClass().getName());
+            // if private key first: PEMKeyPair followed by PemObject(s) with type=certificate
+            // if cert/key/cert...: X509CertificateHolder followed by PemObject(s)
+            if (obj instanceof PEMKeyPair) {
+                PEMKeyPair pkp = (PEMKeyPair) obj;
+                PrivateKeyInfo pki = pkp.getPrivateKeyInfo();
+                JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
+                privateKey = converter.getPrivateKey(pki);
+                log.debug(" private key: " + privateKey.getEncoded().length);
+            } else if (obj instanceof PrivateKeyInfo) {
+                PrivateKeyInfo pki = (PrivateKeyInfo) obj;
+                JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
+                privateKey = converter.getPrivateKey(pki);
+                log.debug(" private key: " + privateKey.getEncoded().length);
+            } else if (obj instanceof X509CertificateHolder) {
+                X509CertificateHolder xch = (X509CertificateHolder) obj;
+                byte[] bytes = xch.toASN1Structure().getEncoded("DER");
+                certs.add(bytes);
+                byteSize += bytes.length;
+                log.debug(" certificate: " + bytes.length);
+            } else if (obj instanceof PemObject) {
+                PemObject po = (PemObject) obj;
+                if ("certificate".equalsIgnoreCase(po.getType())) {
+                    certs.add(po.getContent());
+                    byteSize += po.getContent().length;
+                    log.debug(" certificate: " + po.getContent().length);
+                } else if ("rsa private key".equalsIgnoreCase(po.getType())) {
+                    KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+                    PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(po.getContent());
+                    privateKey = keyFactory.generatePrivate(keySpec);
+                    log.debug(" private key: " + po.getContent().length);
+                } else {
+                    log.warn("readPEM: unexpected PemObject type: " + po.getType() + " aka " + obj.getClass().getName());
+                }
+            }
+            
+            obj = parser.readPemObject();
+        }
+        
+        // flatten out the certificate bytes into one byte[]
+        byte[] flat = new byte[byteSize];
+        byteSize = 0;
+        for (byte[] cert : certs) {
+            System.arraycopy(cert, 0, flat, byteSize, cert.length);
+            byteSize += cert.length;
+        }
+        X509Certificate[] chain = readCertificateChain(flat);
+        
+        return new X509CertificateChain(chain, privateKey);
+    }
+            
+
+    /*
     public static RSAPrivateCrtKeySpec parseKeySpec(byte[] code) throws IOException {
         DerParser parser = new DerParser(code);
 
@@ -657,8 +623,11 @@ public class SSLUtil {
 
         // Parse inside the sequence
         parser = sequence.getParser();
+        log.debug("type integer: " + Asn1Object.INTEGER);
 
-        parser.read(); // Skip version
+        Asn1Object version = parser.read();
+        log.debug("version: " + version.getType() + " " + version.getLength());
+        
         BigInteger modulus = parser.read().getInteger();
         BigInteger publicExp = parser.read().getInteger();
         BigInteger privateExp = parser.read().getInteger();
@@ -674,7 +643,8 @@ public class SSLUtil {
         return keySpec;
 
     }
-
+    */
+    
     /**
      * Build a PEM string of certificates and private key.
      * 
