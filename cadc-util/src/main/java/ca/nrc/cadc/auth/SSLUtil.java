@@ -148,19 +148,20 @@ public class SSLUtil {
 
     private static final char[] THE_PASSWORD = CERT_ALIAS.toCharArray();
 
+    /**
+     * Set the default SSL socket factory with client credentials. This is in 
+     * use in some test code but it's a very bad idea because all threads in the
+     * JVM use those same credentials for SSL (https) calls.
+     * 
+     * @param pemFile
+     * @deprecated
+     */
+    @Deprecated
     public static void initSSL(File pemFile) {
         SSLSocketFactory sf = getSocketFactory(pemFile);
         HttpsURLConnection.setDefaultSSLSocketFactory(sf);
     }
 
-    /**
-     * Initialise the default SSL socket factory so that all HTTPS connections use
-     * the provided key store to authenticate (when the server requires client
-     * authentication).
-     * 
-     * @param pemFile proxy certificate
-     * @return configured SSL socket factory
-     */
     public static SSLSocketFactory getSocketFactory(File pemFile) {
         X509CertificateChain chain;
         try {
@@ -211,15 +212,9 @@ public class SSLUtil {
             ks = getKeyStore(chain.getChain(), chain.getPrivateKey());
         }
         
-        return getSocketFactory(ks, ts);
-    }
-
-    // may in future try to support other KeyStore formats
-    @Deprecated
-    private static SSLSocketFactory getSocketFactory(KeyStore keyStore, KeyStore trustStore) {
-        KeyManagerFactory kmf = getKeyManagerFactory(keyStore);
-        TrustManagerFactory tmf = getTrustManagerFactory(trustStore);
-        SSLContext ctx = getContext(kmf, tmf, keyStore);
+        KeyManagerFactory kmf = getKeyManagerFactory(ks);
+        TrustManagerFactory tmf = getTrustManagerFactory(ts);
+        SSLContext ctx = getContext(kmf, tmf, ks);
         SSLSocketFactory sf = ctx.getSocketFactory();
         return sf;
     }
@@ -237,38 +232,6 @@ public class SSLUtil {
         } catch (CertificateException ex) {
             throw new RuntimeException("failed to load certificate from file " + certKeyFile, ex);
         }
-    }
-
-    @Deprecated
-    private static byte[] getPrivateKey(byte[] certBuf) throws IOException {
-        BufferedReader rdr = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(certBuf)));
-        String line = rdr.readLine();
-        StringBuilder base64 = new StringBuilder();
-        while (line != null) {
-            if (line.matches("-----BEGIN.*PRIVATE KEY-----")) {
-                // log.debug(line);
-                line = rdr.readLine();
-                while (line != null && !line.startsWith("-----END ")) {
-                
-                    // log.debug(line + " (" + line.length() + ")");
-                    base64.append(line.trim());
-                    line = rdr.readLine();
-                }
-                // log.debug(line);
-                line = null; // break from outer loop
-            } else {
-                line = rdr.readLine();
-            }
-        }
-        rdr.close();
-        String encoded = base64.toString();
-        // log.debug("RSA PRIVATE KEY: " + encoded);
-        // log.debug("RSA private key: " + encoded.length() + " chars");
-        // now: base64 -> byte[]
-        byte[] ret = Base64.decode(encoded);
-        // log.debug("RSA private key: " + ret.length + " bytes");
-
-        return ret;
     }
 
     /**
@@ -379,13 +342,6 @@ public class SSLUtil {
         return chain;
     }
 
-    @Deprecated
-    private static PrivateKey readPrivateKey(File keyFile)
-            throws InvalidKeySpecException, NoSuchAlgorithmException, IOException {
-        byte[] priv = FileUtil.readFile(keyFile);
-        return readPrivateKey(priv);
-    }
-
     // needed by cadc-cdp-server
     public static PrivateKey readPrivateKey(byte[] bytesPrivateKey)
             throws InvalidKeySpecException, NoSuchAlgorithmException, IOException {
@@ -415,35 +371,6 @@ public class SSLUtil {
                         + System.getProperty("java.vendor") + ", does not support CADC Certificates.");
             }
             throw new RuntimeException("failed to find/load KeyStore of type " + KEYSTORE_TYPE, ex);
-        }
-    }
-
-    // currently broken trying to parse the openssl-generated pkcs12 file
-    @Deprecated
-    private static KeyStore readPKCS12(File f) {
-        InputStream istream = null;
-        try {
-            istream = new FileInputStream(f);
-            KeyStore ks = KeyStore.getInstance("PKCS12");
-            // assume a non-password-protected proxy cert
-            ks.load(istream, THE_PASSWORD); 
-            return ks;
-        } catch (KeyStoreException ex) {
-            throw new RuntimeException("failed to find KeyStore for " + KEYSTORE_TYPE, ex);
-        } catch (FileNotFoundException ex) {
-            throw new RuntimeException("failed to find key store file " + f, ex);
-        } catch (IOException ex) {
-            throw new RuntimeException("failed to read key store file " + f, ex);
-        } catch (NoSuchAlgorithmException ex) {
-            throw new RuntimeException("failed to check integtrity of key store file " + f, ex);
-        } catch (CertificateException ex) {
-            throw new RuntimeException("failed to load proxy certificate(s) from key store file " + f, ex);
-        } finally {
-            try {
-                istream.close();
-            } catch (Throwable ignore) {
-                // do nothing
-            }
         }
     }
 
@@ -611,96 +538,7 @@ public class SSLUtil {
         
         return new X509CertificateChain(chain, privateKey);
     }
-            
-
-    /*
-    public static RSAPrivateCrtKeySpec parseKeySpec(byte[] code) throws IOException {
-        DerParser parser = new DerParser(code);
-
-        Asn1Object sequence = parser.read();
-        if (sequence.getType() != Asn1Object.SEQUENCE) {
-            throw new IOException("Invalid DER: not a sequence"); //$NON-NLS-1$
-        }
-
-        // Parse inside the sequence
-        parser = sequence.getParser();
-        log.debug("type integer: " + Asn1Object.INTEGER);
-
-        Asn1Object version = parser.read();
-        log.debug("version: " + version.getType() + " " + version.getLength());
-        
-        BigInteger modulus = parser.read().getInteger();
-        BigInteger publicExp = parser.read().getInteger();
-        BigInteger privateExp = parser.read().getInteger();
-        BigInteger prime1 = parser.read().getInteger();
-        BigInteger prime2 = parser.read().getInteger();
-        BigInteger exp1 = parser.read().getInteger();
-        BigInteger exp2 = parser.read().getInteger();
-        BigInteger crtCoef = parser.read().getInteger();
-
-        RSAPrivateCrtKeySpec keySpec = new RSAPrivateCrtKeySpec(modulus, publicExp, privateExp, prime1, prime2, exp1,
-                exp2, crtCoef);
-
-        return keySpec;
-
-    }
-    */
-    
-    /**
-     * Build a PEM string of certificates and private key.
-     * 
-     * @param certChainStr
-     * @param bytesPrivateKey
-     * @return certificate chain and private key as a PEM encoded string
-     */
-    private static String buildPEM(String certChainStr, byte[] bytesPrivateKey) {
-        if (certChainStr == null || bytesPrivateKey == null) {
-            throw new RuntimeException("Cannot build PEM of cert & privateKey. An argument is null.");
-        }
-
-        // locate the 2nd occurance of CERT_BEGIN string
-        int posCertEnd = certChainStr.indexOf(X509CertificateChain.CERT_END);
-        if (posCertEnd == -1) {
-            throw new RuntimeException("Cannot find END mark of certificate.");
-        }
-
-        StringBuilder sb = new StringBuilder();
-        sb.append(X509CertificateChain.PRIVATE_KEY_BEGIN);
-        sb.append(X509CertificateChain.NEW_LINE);
-        sb.append(Base64.encodeLines64(bytesPrivateKey));
-        sb.append(X509CertificateChain.PRIVATE_KEY_END);
-        String privateKeyStr = sb.toString();
-
-        int posSecondCertStart = certChainStr.indexOf(X509CertificateChain.CERT_BEGIN, posCertEnd);
-        if (posSecondCertStart == -1) {
-            // this is an end user certificate, number of certificates==1
-            return (certChainStr + X509CertificateChain.NEW_LINE + privateKeyStr);
-        } else {
-            // private key goes in between the first and second
-            // certificate in the chain
-            String certStrPart1 = certChainStr.substring(0, posSecondCertStart);
-            String certStrPart2 = certChainStr.substring(posSecondCertStart);
-            return (certStrPart1 + privateKeyStr + X509CertificateChain.NEW_LINE + certStrPart2);
-        }
-    }
-
-    /**
-     * @param chain
-     * @return certificate chain and private key as a PEM encoded string
-     */
-    // THIS IS NOT WORKING.
-    // getEncoded() in privateKey does not use the encoding expected by PEM.
-
-    /*
-     * public static String writePEMCertificateAndKey(X509CertificateChain chain) {
-     * if (chain == null) return null;
-     * 
-     * String certChainStr = chain.certificateString(); byte[] bytesPrivateKey =
-     * chain.getPrivateKey().getEncoded(); if (certChainStr == null ||
-     * bytesPrivateKey == null) return null; String pemStr =
-     * SSLUtil.buildPEM(certChainStr, bytesPrivateKey); return pemStr; }
-     */
-
+   
     /**
      * Checks whether the subject's certificate credentials are valid at a given
      * date. If date is missing, current time is used as reference.
@@ -718,7 +556,7 @@ public class SSLUtil {
             throws CertificateException, CertificateExpiredException, CertificateNotYetValidException {
         if (subject != null) {
             Set<X509CertificateChain> certs = subject.getPublicCredentials(X509CertificateChain.class);
-            if (certs.size() == 0) {
+            if (certs.isEmpty()) {
                 // subject without certs
                 throw new CertificateException("No certificates associated with subject");
             }
