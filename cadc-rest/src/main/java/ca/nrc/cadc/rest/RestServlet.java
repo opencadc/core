@@ -150,7 +150,8 @@ public class RestServlet extends HttpServlet {
         this.deleteAction = loadAction(config, "delete");
         this.headAction = loadAction(config, "head");
         
-        this.appName = config.getServletContext().getServletContextName();
+        // appName: war file foo#bar.war, context path /foo/bar -> foo-bar
+        this.appName = config.getServletContext().getContextPath().substring(1).replaceAll("/", "-");
         this.componentID = appName  + "." + config.getServletName();
         String augment = config.getInitParameter(AUGMENT_SUBJECT_PARAM);
         if (augment != null && augment.equalsIgnoreCase(Boolean.FALSE.toString())) {
