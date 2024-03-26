@@ -83,7 +83,6 @@ import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.reg.client.RegistryClient;
 import ca.nrc.cadc.util.StringUtil;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
@@ -92,9 +91,7 @@ import java.security.AccessControlException;
 import java.security.PrivilegedExceptionAction;
 import java.security.cert.CertificateException;
 import java.util.Map;
-
 import javax.servlet.ServletContext;
-
 import org.apache.log4j.Logger;
 
 /**
@@ -270,20 +267,15 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
     protected Version getVersionFromResource() {
         try {
             URL resURL = getResource("VERSION");
-            if (resURL != null) {
-                String versionFileContent = StringUtil.readFromInputStream(resURL.openStream(), "UTF-8");
-                String[] lines = versionFileContent.split("\n");
-                for (String s : lines) {
-                    if (s.startsWith("VER=")) {
-                        String ver = s.substring(4);
-                        return new Version(ver);
-                    }
-                }
-            }
-        } catch (Exception ex) { 
+            return InitAction.getVersionFromResource(resURL);
+        }  catch (Exception ex) { 
             log.warn("failed to extract version from VERSION file: " + ex);
         }
         return null;
+    }
+    
+    protected static Version getLibraryVersion(Class probe) {
+        return InitAction.getLibraryVersion(probe);
     }
     
     /**

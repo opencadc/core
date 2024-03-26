@@ -67,6 +67,8 @@
 
 package ca.nrc.cadc.rest;
 
+import ca.nrc.cadc.util.StringUtil;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
@@ -133,6 +135,77 @@ public abstract class InitAction {
      */
     protected URL getResource(String resource) throws MalformedURLException {
         return servletContext.getResource(resource);
+    }
+    
+    /**
+     * Read the VERSION file and extract the semantic version number from a line
+     * with VER=1.2.3
+     * 
+     * @return version or null if VERSION file not found or does not have expected content
+     */
+    protected Version getVersionFromResource() {
+        try {
+            URL resURL = getResource("VERSION");
+            return getVersionFromResource(resURL);
+        }  catch (Exception ex) { 
+            log.warn("failed to extract version from VERSION file: " + ex);
+        }
+        return null;
+    }
+    
+    static Version getVersionFromResource(URL resURL) throws IOException {
+        if (resURL != null) {
+            String versionFileContent = StringUtil.readFromInputStream(resURL.openStream(), "UTF-8");
+            String[] lines = versionFileContent.split("\n");
+            for (String s : lines) {
+                if (s.startsWith("VER=")) {
+                    String ver = s.substring(4);
+                    return new Version(ver);
+                }
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Get the library version that provides the specified class.
+     * 
+     * @param probe class to search for
+     * @return library version in {name}-{major}.{minor} form 
+     */
+    protected static Version getLibraryVersion(Class probe) {
+        String ret = "no-version-found";
+        String rname = probe.getSimpleName() + ".class";
+        try {
+            
+            URL resURL = probe.getResource(rname);
+            log.debug("library URL: " + resURL);
+            // assume maven-central naming conventions for jar
+            // jar:file:/path/to/{library}-{ver}.jar!/package/subpackage/{rname}
+            if (resURL != null) {
+                String[] parts = resURL.toExternalForm().split("[:!]");
+                int i = 0;
+                for (String p : parts) {
+                    if (p.endsWith(".jar")) {
+                        int s = p.lastIndexOf('/');
+                        String ver = p.substring(s + 1); // {library}-{ver}.jar
+                        ver = ver.replace(".jar", "");   // {library}-{ver}
+                        
+                        // extract {major}.{minor} only
+                        String[] mmp = ver.split("\\.");
+                        if (mmp.length > 2) {
+                            ret = mmp[0] + "." + mmp[1];
+                        } else {
+                            ret = ver;
+                        }
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            log.error("failed to find version for " + rname + " from classpath", ex);
+        }
+        
+        return new Version(ret);
     }
     
     /**
