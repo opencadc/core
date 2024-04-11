@@ -182,20 +182,20 @@ public class AuthenticationUtil {
     public static Subject augmentSubject(Subject s) {
         IdentityManager auth = getIdentityManager();
         // temporary backwards compat
-        Authenticator alt = getAuthenticator(auth);
-        if (alt != null) {
-            return alt.augment(s);
-        }
+        //Authenticator alt = getAuthenticator(auth);
+        //if (alt != null) {
+        //    return alt.augment(s);
+        //}
         return auth.augment(s);
     }
     
     public static Subject validateSubject(Subject s) throws NotAuthenticatedException {
         IdentityManager auth = getIdentityManager();
         // temporary backwards compat
-        Authenticator alt = getAuthenticator(auth);
-        if (alt != null) {
-            return alt.validate(s);
-        }
+        //Authenticator alt = getAuthenticator(auth);
+        //if (alt != null) {
+        //    return alt.validate(s);
+        //}
         return auth.validate(s);
     }
 
@@ -344,8 +344,9 @@ public class AuthenticationUtil {
         }
         setAuthMethod(subject, am);
         if (augmentSubject) {
-            return augmentSubject(subject);
+            subject = augmentSubject(subject);
         }
+        log.debug("getSubject(augment=" + augmentSubject + "): " + subject);
         return subject;
     }
 

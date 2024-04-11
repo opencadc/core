@@ -112,6 +112,6 @@ public class PosixPrincipal implements Comparable<PosixPrincipal>, Principal, Se
 
     @Override
     public String toString() {
-        return "PosixPrincipal [uidNumber=" + uidNumber + "]";
+        return "PosixPrincipal [uidNumber=" + uidNumber + "," + defaultGroup + "," + username + "]";
     }
 }
