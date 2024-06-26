@@ -14,7 +14,7 @@ sourceCompatibility = 1.8
 
 group = 'org.opencadc'
 
-version = '1.0'
+version = '1.1'
 
 description = 'OpenCADC Checkstyle Code Quality Rules'
 def git_url = 'https://github.com/opencadc/core'
