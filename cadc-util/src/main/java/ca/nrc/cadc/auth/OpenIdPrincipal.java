@@ -2,7 +2,7 @@
  ************************************************************************
  ****  C A N A D I A N   A S T R O N O M Y   D A T A   C E N T R E  *****
  *
- * (c) 2016.                            (c) 2016.
+ * (c) 2024.                            (c) 2024.
  * National Research Council            Conseil national de recherches
  * Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
  * All rights reserved                  Tous droits reserves
@@ -35,31 +35,42 @@
 package ca.nrc.cadc.auth;
 
 import java.io.Serializable;
+import java.net.URL;
 import java.security.Principal;
 
 /**
- * Class that represents an openID identity.
+ * Class that represents an openID identity. The principal consists of an immutable
+ * open ID and its corresponding issuer.
  */
 public class OpenIdPrincipal implements Principal, Serializable {
-    private static final long serialVersionUID = 20140625143750L;
+    private static final long serialVersionUID = 202407041230L;
 
     private String openID;
+    private URL issuer;
 
     /**
      * Ctor
      * 
      * @param openID
      */
-    public OpenIdPrincipal(final String openID) {
+    public OpenIdPrincipal(final URL issuer, final String openID) {
+        if (issuer == null) {
+            throw new IllegalArgumentException("null issuer");
+        }
         if (openID == null) {
             throw new IllegalArgumentException("null openID");
         }
         this.openID = openID;
+        this.issuer = issuer;
     }
 
     @Override
     public String getName() {
         return openID;
+    }
+
+    public URL getIssuer() {
+        return issuer;
     }
 
     /*
@@ -71,7 +82,7 @@ public class OpenIdPrincipal implements Principal, Serializable {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((openID == null) ? 0 : openID.hashCode());
+        result = prime * result + openID.hashCode() + issuer.hashCode();
         return result;
     }
 
@@ -92,19 +103,12 @@ public class OpenIdPrincipal implements Principal, Serializable {
             return false;
         }
         OpenIdPrincipal other = (OpenIdPrincipal) obj;
-        if (openID == null) {
-            if (other.openID != null) {
-                return false;
-            }
-        } else if (!openID.equals(other.openID)) {
-            return false;
-        }
-        return true;
+        return openID.equals(other.openID) && issuer.equals(other.issuer);
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + getName() + "]";
+        return getClass().getSimpleName() + "[issuer=" + getIssuer() + ", openID=" + getName() + "]";
     }
 
 }
