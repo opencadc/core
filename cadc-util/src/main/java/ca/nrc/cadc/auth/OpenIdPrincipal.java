@@ -45,28 +45,29 @@ import java.security.Principal;
 public class OpenIdPrincipal implements Principal, Serializable {
     private static final long serialVersionUID = 202407041230L;
 
-    private String openID;
-    private URL issuer;
+    private final String sub;
+    private final URL issuer;
 
     /**
      * Ctor
-     * 
-     * @param openID
+     *
+     * @param issuer The issuer of the Open ID
+     * @param sub Subject identifier.
      */
-    public OpenIdPrincipal(final URL issuer, final String openID) {
+    public OpenIdPrincipal(final URL issuer, final String sub) {
         if (issuer == null) {
             throw new IllegalArgumentException("null issuer");
         }
-        if (openID == null) {
-            throw new IllegalArgumentException("null openID");
+        if (sub == null) {
+            throw new IllegalArgumentException("null sub");
         }
-        this.openID = openID;
+        this.sub = sub;
         this.issuer = issuer;
     }
 
     @Override
     public String getName() {
-        return openID;
+        return sub;
     }
 
     public URL getIssuer() {
@@ -82,7 +83,7 @@ public class OpenIdPrincipal implements Principal, Serializable {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + openID.hashCode() + issuer.hashCode();
+        result = prime * result + sub.hashCode() + issuer.hashCode();
         return result;
     }
 
@@ -103,7 +104,7 @@ public class OpenIdPrincipal implements Principal, Serializable {
             return false;
         }
         OpenIdPrincipal other = (OpenIdPrincipal) obj;
-        return openID.equals(other.openID) && issuer.equals(other.issuer);
+        return sub.equals(other.sub) && issuer.equals(other.issuer);
     }
 
     @Override
