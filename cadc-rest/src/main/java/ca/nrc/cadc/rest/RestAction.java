@@ -345,6 +345,13 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
         this.syncOutput = syncOutput;
     }
 
+    private String getRealm() {
+        String str = syncInput.getRequestURI();
+        // remove endpoint name
+        str = str.replace(syncInput.getComponentPath(), "");
+        return str;
+    }
+
     // return Object ignored; method signature from PrivilegedExceptionAction
     @Override
     public Object run()
@@ -365,7 +372,7 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
             initAction();
             if (setAuthHeaders()) {
                 RestServlet.setAuthenticateHeaders(
-                    AuthenticationUtil.getCurrentSubject(), syncOutput, null, new RegistryClient());
+                    AuthenticationUtil.getCurrentSubject(), getRealm(), syncOutput, null);
                 authHeadersSet = true;
             }
             doAction();
@@ -375,7 +382,7 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
             logInfo.setMessage(ex.getMessage());
             if (!authHeadersSet && setAuthHeaders()) {
                 RestServlet.setAuthenticateHeaders(
-                    AuthenticationUtil.getCurrentSubject(), syncOutput, ex, new RegistryClient());
+                    AuthenticationUtil.getCurrentSubject(), getRealm(), syncOutput, ex);
             }
             handleException(ex, 401, ex.getMessage(), false, false);
         } catch (ResourceLockedException ex) {

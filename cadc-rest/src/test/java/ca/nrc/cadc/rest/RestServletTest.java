@@ -69,12 +69,9 @@ package ca.nrc.cadc.rest;
 
 import ca.nrc.cadc.auth.AuthMethod;
 import ca.nrc.cadc.auth.AuthenticationUtil;
-import ca.nrc.cadc.auth.AuthorizationToken;
 import ca.nrc.cadc.auth.HttpPrincipal;
 import ca.nrc.cadc.auth.IdentityManager;
 import ca.nrc.cadc.auth.NoOpIdentityManager;
-import ca.nrc.cadc.auth.NotAuthenticatedException;
-import ca.nrc.cadc.auth.NotAuthenticatedException.AuthError;
 import ca.nrc.cadc.reg.AccessURL;
 import ca.nrc.cadc.reg.Capabilities;
 import ca.nrc.cadc.reg.Capability;
@@ -92,6 +89,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
 import org.apache.log4j.Level;
@@ -110,6 +108,8 @@ public class RestServletTest {
     static {
         Log4jInit.setLevel("ca.nrc.cadc.rest", Level.DEBUG);
     }
+    
+    static final String REALM = "opencadc.org";
 
     private class Output extends SyncOutput {
 
@@ -153,7 +153,7 @@ public class RestServletTest {
             Subject s = new Subject();
             s.getPrincipals().add(new HttpPrincipal("userid"));
             out = new Output();
-            RestServlet.setAuthenticateHeaders(s, out, null, new TestRegistryClient());
+            RestServlet.setAuthenticateHeaders(s, REALM, out, null);
             // verify
             List<String> xvoauth = out.headers.get(AuthenticationUtil.VO_AUTHENTICATED_HEADER);
             Assert.assertNotNull(xvoauth);
@@ -167,7 +167,7 @@ public class RestServletTest {
             s = new Subject();
             s.getPrincipals().add(new X500Principal("C=ca,O=people,CN=me"));
             out = new Output();
-            RestServlet.setAuthenticateHeaders(s, out, null, new TestRegistryClient());
+            RestServlet.setAuthenticateHeaders(s, REALM, out, null);
             // verify
             xvoauth = out.headers.get(AuthenticationUtil.VO_AUTHENTICATED_HEADER);
             Assert.assertNotNull(xvoauth);
@@ -182,7 +182,7 @@ public class RestServletTest {
             s.getPrincipals().add(new X500Principal("C=ca,O=people,CN=me"));
             s.getPrincipals().add(new HttpPrincipal("userid"));
             out = new Output();
-            RestServlet.setAuthenticateHeaders(s, out, null, new TestRegistryClient());
+            RestServlet.setAuthenticateHeaders(s, REALM, out, null);
             // verify
             xvoauth = out.headers.get(AuthenticationUtil.VO_AUTHENTICATED_HEADER);
             Assert.assertNotNull(xvoauth);
@@ -212,7 +212,7 @@ public class RestServletTest {
             // username
             Subject s = AuthenticationUtil.getAnonSubject();
             out = new Output();
-            RestServlet.setAuthenticateHeaders(s, out, null, new TestRegistryClient());
+            RestServlet.setAuthenticateHeaders(s, REALM, out, null);
             // verify
             List<String> xvoauth = out.headers.get(AuthenticationUtil.VO_AUTHENTICATED_HEADER);
             Assert.assertNull(xvoauth);
@@ -229,14 +229,14 @@ public class RestServletTest {
                     foundBearer++;
                 } else if (csLower.startsWith("ivoa_bearer standard_id=")) {
                     foundIvoaBearer++;
-                } else if (csLower.startsWith("ivoa_x509 standard_id=")) {
+                } else if (csLower.startsWith("ivoa_x509")) {
                     foundIvoaX509++;
                 }
             }
             // expectation based on cadc-registry.properties and TestRegistryClient capability output below
             Assert.assertEquals("bearer", 1, foundBearer);
             Assert.assertEquals("ivoa_bearer", 1, foundIvoaBearer);
-            Assert.assertEquals("ivoa_x509", 2, foundIvoaX509);
+            Assert.assertEquals("ivoa_x509", 1, foundIvoaX509);
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
@@ -283,6 +283,15 @@ public class RestServletTest {
         public TestIdentityManager() {
             super();
         }
+
+        @Override
+        public Set<URI> getSecurityMethods() {
+            Set<URI> ret = new TreeSet<>();
+            ret.add(Standards.SECURITY_METHOD_CERT);
+            ret.add(Standards.SECURITY_METHOD_OPENID);
+            return ret;
+        }
+        
         
         @Override
         public String toDisplayString(Subject subject) {
