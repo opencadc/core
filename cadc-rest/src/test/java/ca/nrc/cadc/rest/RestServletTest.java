@@ -235,7 +235,7 @@ public class RestServletTest {
             }
             // expectation based on cadc-registry.properties and TestRegistryClient capability output below
             Assert.assertEquals("bearer", 1, foundBearer);
-            Assert.assertEquals("ivoa_bearer", 1, foundIvoaBearer);
+            Assert.assertEquals("ivoa_bearer", 1, foundIvoaBearer); // unable to configure for this hack
             Assert.assertEquals("ivoa_x509", 1, foundIvoaX509);
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
