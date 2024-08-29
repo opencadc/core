@@ -479,10 +479,10 @@ public class RestServlet extends HttpServlet {
             return;
             
         } else {
-            log.warn("adding challenges for " + im.getClass().getName());
+            log.debug("adding challenges for " + im.getClass().getName());
             for (URI sm :  im.getSecurityMethods()) {
                 String challenge = SEC_METHOD_CHALLENGES.get(sm);
-                log.warn(sm + " -> " + challenge);
+                log.debug(sm + " -> " + challenge);
                 if (challenge != null) {
                     // TODO: check System.getProperty(CERT_HEADER_ENABLE) aka trust ingress to do client cert validation?
                     // TODO: check for duplicate challenges (map does contain them)?
