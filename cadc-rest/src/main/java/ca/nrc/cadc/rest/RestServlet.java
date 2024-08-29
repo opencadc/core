@@ -75,10 +75,6 @@ import ca.nrc.cadc.auth.IdentityManager;
 import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.log.ServletLogInfo;
 import ca.nrc.cadc.log.WebServiceLogInfo;
-import ca.nrc.cadc.net.ResourceNotFoundException;
-import ca.nrc.cadc.reg.Capabilities;
-import ca.nrc.cadc.reg.Capability;
-import ca.nrc.cadc.reg.Interface;
 import ca.nrc.cadc.reg.Standards;
 import ca.nrc.cadc.reg.client.LocalAuthority;
 import ca.nrc.cadc.reg.client.RegistryClient;
@@ -86,7 +82,6 @@ import ca.nrc.cadc.util.Enumerator;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.security.PrivilegedActionException;
@@ -114,6 +109,8 @@ public class RestServlet extends HttpServlet {
 
     private static final Logger log = Logger.getLogger(RestServlet.class);
 
+    private static final Map<URI,String> SEC_METHOD_CHALLENGES = new TreeMap<>();
+    
     private static final List<String> CITEMS = new ArrayList<String>();
     
     static final String AUGMENT_SUBJECT_PARAM = "augmentSubject";
@@ -126,6 +123,12 @@ public class RestServlet extends HttpServlet {
         CITEMS.add("post");
         CITEMS.add("put");
         CITEMS.add("delete");
+        
+        SEC_METHOD_CHALLENGES.put(Standards.SECURITY_METHOD_HTTP_BASIC, AuthenticationUtil.CHALLENGE_TYPE_BASIC);
+        SEC_METHOD_CHALLENGES.put(Standards.SECURITY_METHOD_CERT, AuthenticationUtil.CHALLENGE_TYPE_IVOA_X509);
+        SEC_METHOD_CHALLENGES.put(Standards.SECURITY_METHOD_OPENID, AuthenticationUtil.CHALLENGE_TYPE_BEARER);
+        SEC_METHOD_CHALLENGES.put(Standards.SECURITY_METHOD_TOKEN, AuthenticationUtil.CHALLENGE_TYPE_BEARER);
+        SEC_METHOD_CHALLENGES.put(Standards.SECURITY_METHOD_COOKIE, "ivoa_cookie");
     }
             
     private Class<RestAction> getAction;
@@ -336,7 +339,7 @@ public class RestServlet extends HttpServlet {
                 logInfo.setSuccess(true);
                 logInfo.setMessage(nae.getMessage());
                 if (setAuthHeaders) {
-                    setAuthenticateHeaders(null, out, nae, new RegistryClient());
+                    setAuthenticateHeaders(null, in.getRequestURI(), out, nae);
                 }
                 handleException(out, response, nae, 401, nae.getMessage(), false);   
             } else {
@@ -453,17 +456,15 @@ public class RestServlet extends HttpServlet {
      * If authentication failed and a challenge was presented, add the error type and error
      * description in the WWW-Authenticate header associated with the challenge.
      */
-    static void setAuthenticateHeaders(Subject subject, SyncOutput out, NotAuthenticatedException ex, RegistryClient rc) {
+    static void setAuthenticateHeaders(Subject subject, String realm, SyncOutput out, NotAuthenticatedException ex) {
 
         if (out.isOpen()) {
             log.debug("SyncOutput already open, can't set auth headers");
             return;
         }
         
+        final IdentityManager im = AuthenticationUtil.getIdentityManager();
         if (subject != null && !subject.getPrincipals().isEmpty()) {
-            // Authenticated...
-            log.debug("Setting " + AuthenticationUtil.VO_AUTHENTICATED_HEADER + " header");
-            IdentityManager im = AuthenticationUtil.getIdentityManager();
             String val = im.toDisplayString(subject);
             if (val != null) {
                 out.addHeader(AuthenticationUtil.VO_AUTHENTICATED_HEADER, val);
@@ -471,7 +472,45 @@ public class RestServlet extends HttpServlet {
             return;
             
         } else {
-            // Not authenticated...
+            log.debug("adding challenges for " + im.getClass().getName());
+            for (URI sm :  im.getSecurityMethods()) {
+                String challenge = SEC_METHOD_CHALLENGES.get(sm);
+                log.debug(sm + " -> " + challenge);
+                if (challenge != null) {
+                    // TODO: check System.getProperty(CERT_HEADER_ENABLE) aka trust ingress to do client cert validation?
+                    // TODO: check for duplicate challenges (map does contain them)?
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(challenge);
+                    if (challenge.equals(AuthenticationUtil.CHALLENGE_TYPE_BASIC)) {
+                        sb.append(" realm=\"").append(realm).append("\"");
+                    } else if (challenge.equalsIgnoreCase(AuthenticationUtil.CHALLENGE_TYPE_BEARER)) {
+                        // temporary hack to add ivoa_token challenge with standard_id
+                        try {
+                            URI loginServiceURI = getLocalServiceURI(Standards.SECURITY_METHOD_PASSWORD);
+                            if (loginServiceURI != null) {
+                                RegistryClient rc = new RegistryClient();
+                                URL loginURL = rc.getServiceURL(loginServiceURI, Standards.SECURITY_METHOD_PASSWORD, AuthMethod.ANON);
+                                if (loginURL != null) {
+                                    StringBuilder c2 = new StringBuilder();
+                                    c2.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA_BEARER);
+                                    c2.append(" standard_id=\"").append(Standards.SECURITY_METHOD_PASSWORD.toString()).append("\"");
+                                    c2.append(", access_url=\"").append(loginURL).append("\"");
+                                    c2.append(", HACK=temporary");
+                                    out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, c2.toString());
+                                }
+                            }                            
+                        } catch (NoSuchElementException notSupported) {
+                            log.debug("LocalAuthority -- not found: " + Standards.SECURITY_METHOD_PASSWORD, notSupported);
+                        }
+                    }
+                    
+                    appendAuthenticateErrorInfo(challenge, sb, ex, true);
+                    out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
+                }
+            }
+        }
+
+        /*
             log.debug("Setting " + AuthenticationUtil.AUTHENTICATE_HEADER + " header");
             boolean addBearerChallenge = false;
             try {
@@ -554,6 +593,7 @@ public class RestServlet extends HttpServlet {
                 log.debug("LocalAuthority -- not found: " + Standards.CRED_PROXY_10, notSupported);
             }
         }
+        */
     }
     
     /**
