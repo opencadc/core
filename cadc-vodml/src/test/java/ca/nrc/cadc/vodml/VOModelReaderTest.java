@@ -138,7 +138,8 @@ public class VOModelReaderTest {
         }
     }
     
-    @Test
+    //@Test
+    // version attribute was removed from the current xsd on ivoa.net
     public void testVersionAttrSchemaValid() {
         try {
             File testVODML = FileUtil.getFileFromResource(VALID_VERSION_VODML_FILE, VOModelReaderTest.class);
