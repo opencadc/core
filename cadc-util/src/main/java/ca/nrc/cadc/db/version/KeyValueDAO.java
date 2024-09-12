@@ -136,7 +136,7 @@ public class KeyValueDAO {
         sel.setValues(name);
         try {
             o = jdbc.query(sel, extractor);
-        } catch (BadSqlGrammarException ex) {
+        } catch (Exception ex) {
             try {
                 // try simples query possible to see if table exists
                 String sql = "SELECT count(*) from " + tableName;
@@ -153,6 +153,27 @@ public class KeyValueDAO {
             } catch (BadSqlGrammarException ex2) {
                 log.debug("previous install not found: " + ex2.getMessage());
                 o = null;
+            } catch (Exception ex2) {
+                Throwable cause = ex2;
+                boolean notExists = false;
+                while (cause != null) {
+                    if (cause instanceof SQLException) {
+                        String msg = cause.getMessage();
+                        if (msg != null) {
+                            msg = msg.trim().toLowerCase();
+                            if (msg.contains("does not exist")) {
+                                log.debug("previous install not found: " + ex2.getMessage());
+                                o = null;
+                                notExists = true;
+                            }
+                        }
+                    }
+                    cause = cause.getCause();
+                }
+                if (!notExists) {
+                    // some other kind of error
+                    throw ex;
+                }
             }
         }
         
