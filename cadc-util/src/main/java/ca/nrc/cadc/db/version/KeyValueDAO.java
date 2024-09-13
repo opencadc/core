@@ -69,6 +69,7 @@ package ca.nrc.cadc.db.version;
 
 import ca.nrc.cadc.date.DateUtil;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -93,7 +94,12 @@ public class KeyValueDAO {
 
     protected String[] columnNames;
 
+    private final String database;
+    private final String schema;
+    private final String table;
+    
     private final String tableName;
+    private final DataSource dataSource;
     private final JdbcTemplate jdbc;
     private final ResultSetExtractor extractor;
 
@@ -104,6 +110,10 @@ public class KeyValueDAO {
     }
 
     public KeyValueDAO(DataSource dataSource, String database, String schema, Class tupleType) {
+        this.dataSource = dataSource;
+        this.database = database;
+        this.schema = schema;
+        this.table = tupleType.getSimpleName();
         this.jdbc = new JdbcTemplate(dataSource);
         StringBuilder tn = new StringBuilder();
         if (database != null) {
@@ -112,7 +122,7 @@ public class KeyValueDAO {
         if (schema != null) {
             tn.append(schema).append(".");
         }
-        tn.append(tupleType.getSimpleName());
+        tn.append(table);
         this.tableName = tn.toString();
         this.extractor = new ModelVersionExtractor();
         this.columnNames = new String[] { "value", "lastModified", "name" };
@@ -137,44 +147,30 @@ public class KeyValueDAO {
         try {
             o = jdbc.query(sel, extractor);
         } catch (Exception ex) {
+            Connection con = null;
             try {
-                // try simples query possible to see if table exists
-                String sql = "SELECT count(*) from " + tableName;
-                log.debug("check exists: " + sql);
-                jdbc.queryForObject(sql, new RowMapper<Integer>() { 
-                    @Override
-                    public Integer mapRow(ResultSet rs, int i) throws SQLException {
-                        return rs.getInt(1);
-                    }
-                });
-
-                // some other kind of error
-                throw ex;
-            } catch (BadSqlGrammarException ex2) {
-                log.debug("previous install not found: " + ex2.getMessage());
-                o = null;
-            } catch (Exception ex2) {
-                Throwable cause = ex2;
-                boolean notExists = false;
-                while (cause != null) {
-                    if (cause instanceof SQLException) {
-                        String msg = cause.getMessage();
-                        if (msg != null) {
-                            msg = msg.trim().toLowerCase();
-                            if (msg.contains("does not exist")) {
-                                log.debug("previous install not found: " + ex2.getMessage());
-                                o = null;
-                                notExists = true;
-                            }
-                        }
-                    }
-                    cause = cause.getCause();
+                log.debug("query fail - check if table exists: " + tableName);
+                con = jdbc.getDataSource().getConnection();
+                DatabaseMetaData dm = con.getMetaData();
+                ResultSet rs = dm.getTables(database, schema, table, null);
+                if (rs != null && !rs.next()) {
+                    log.debug("table does not exist: " + tableName);
+                    return null;
                 }
-                if (!notExists) {
-                    // some other kind of error
-                    throw ex;
+            } catch (SQLException oops) {
+                throw new RuntimeException("failed to determine if table exists: " + tableName, oops);
+            } finally {
+                if (con != null) {
+                    try {
+                        con.close();
+                    } catch (SQLException ignore) {
+                        log.debug("failed to close database metadata query result", ignore);
+                    }
                 }
             }
+
+            // some other kind of error
+            throw ex;
         }
         
         return (KeyValue) o;
