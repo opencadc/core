@@ -140,31 +140,17 @@ public class X509CertificateChain {
     }
 
     private void initPrincipal() {
-        for (X509Certificate c : chain) {
-            this.endEntity = c;
-            X500Principal sp = c.getSubjectX500Principal();
-            String sdn = sp.getName(X500Principal.RFC1779);
-            X500Principal ip = c.getIssuerX500Principal();
-            String idn = ip.getName(X500Principal.RFC1779);
-            log.debug("found: subject=" + sdn + ", issuer=" + idn);
-            if (sdn.endsWith(idn)) {
-                this.principal = ip;
-                this.isProxy = true;
-            } else {
-                this.principal = sp;
-            }
-
-        }
-
-        String canonizedDn = AuthenticationUtil.canonizeDistinguishedName(principal.getName());
-        // TODO: some upstream SSL termination engines (haproxy, tomcat) only pass the
-        // first certificate in the
-        // chain which makes the correct method above fail if the proxy certificate has
-        // more than two certificates
-        // in the chain. The following is just a workaround to remove extra leading
-        // CN(s):
-        if (canonizedDn.lastIndexOf("cn=") > -1) {
-            canonizedDn = canonizedDn.substring(canonizedDn.lastIndexOf("cn="));
+        X509Certificate c = chain[0];
+        X500Principal xp = c.getSubjectX500Principal();
+        
+        // put into canonical form and look for multiple CN: proxy cert
+        String canonizedDn = AuthenticationUtil.canonizeDistinguishedName(xp.getName());
+        
+        int cn1 = canonizedDn.indexOf("cn=");
+        int cnex = canonizedDn.lastIndexOf("cn=");
+        if (cnex > cn1) {
+            canonizedDn = canonizedDn.substring(cnex);
+            this.isProxy = true;
         }
         this.principal = new X500Principal(canonizedDn);
         log.debug("principal: " + principal.getName(X500Principal.RFC1779));
