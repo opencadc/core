@@ -111,7 +111,7 @@ public class RestServlet extends HttpServlet {
 
     private static final Map<URI,String> SEC_METHOD_CHALLENGES = new TreeMap<>();
     
-    private static final List<String> CITEMS = new ArrayList<String>();
+    private static final List<String> CITEMS = new ArrayList<>();
     
     static final String AUGMENT_SUBJECT_PARAM = "augmentSubject";
     static final String AUTH_HEADERS_PARAM = "authHeaders";
@@ -143,15 +143,18 @@ public class RestServlet extends HttpServlet {
     protected String componentID;
     protected boolean augmentSubject = true;
     protected boolean setAuthHeaders = true;
+    
+    private String allowHeaderValue;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
-        this.getAction = loadAction(config, "get");
-        this.postAction = loadAction(config, "post");
-        this.putAction = loadAction(config, "put");
-        this.deleteAction = loadAction(config, "delete");
-        this.headAction = loadAction(config, "head");
+        this.getAction = loadAction(config, "get", true);
+        this.postAction = loadAction(config, "post", true);
+        this.putAction = loadAction(config, "put", true);
+        this.deleteAction = loadAction(config, "delete", true);
+        this.headAction = loadAction(config, "head", true);
+        StringBuilder sb = new StringBuilder();
         
         // appName: war file foo#bar.war, context path /foo/bar -> foo-bar
         this.appName = config.getServletContext().getContextPath().substring(1).replaceAll("/", "-");
@@ -166,14 +169,14 @@ public class RestServlet extends HttpServlet {
         }
         
         // application specific config
-        for (String name : new Enumerator<String>(config.getInitParameterNames())) {
+        for (String name : new Enumerator<>(config.getInitParameterNames())) {
             if (!CITEMS.contains(name)) {
                 initParams.put(name, config.getInitParameter(name));
             }
         }
         
         try {
-            Class<InitAction> initActionClass = loadAction(config, "init");
+            Class<InitAction> initActionClass = loadAction(config, "init", false);
             if (initActionClass != null) {
                 initAction = initActionClass.getDeclaredConstructor().newInstance();
                 initAction.setServletContext(getServletContext());
@@ -199,12 +202,19 @@ public class RestServlet extends HttpServlet {
         }
     }
 
-    private <T> Class<T> loadAction(ServletConfig config, String method) {
+    private <T> Class<T> loadAction(ServletConfig config, String method, boolean httpAction) {
         String cname = config.getInitParameter(method);
         if (cname != null) {
             try {
                 Class<T> ret = (Class<T>) Class.forName(cname);
                 log.info(method + ": " + cname + " [loaded]");
+                if (httpAction) {
+                    if (allowHeaderValue == null) {
+                        allowHeaderValue = method.toUpperCase();
+                    } else {
+                        allowHeaderValue += ", " + method.toUpperCase();
+                    }
+                }
                 return ret;
             } catch (Exception ex) {
                 log.error(method + ": " + cname + " [FAILED]", ex);
@@ -224,7 +234,8 @@ public class RestServlet extends HttpServlet {
      */
     protected void handleUnsupportedAction(String action, HttpServletResponse response)
         throws IOException {
-        response.setStatus(400);
+        response.setStatus(405);
+        response.setHeader("Allow", allowHeaderValue);
         response.setHeader("Content-Type", "text/plain");
         PrintWriter w = response.getWriter();
         w.println("unsupported: HTTP " + action);
@@ -311,7 +322,7 @@ public class RestServlet extends HttpServlet {
                 nae = ex;
             }
 
-            RestAction action = actionClass.newInstance();
+            RestAction action = actionClass.getDeclaredConstructor().newInstance();
             action.setServletContext(getServletContext());
             action.setAppName(appName);
             action.setComponentID(componentID);
