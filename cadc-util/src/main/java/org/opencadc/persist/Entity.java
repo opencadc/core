@@ -374,7 +374,7 @@ public abstract class Entity {
         }
     }
     
-    private static class MessageDigestWrapper {
+    public static class MessageDigestWrapper {
         private MessageDigest digest;
         private int numBytes = 0;
 
@@ -473,7 +473,7 @@ public abstract class Entity {
         }
         return false;
     }
-
+    
     protected byte[] primitiveValueToBytes(Object o, String name) {
         byte[] ret = null;
         if (o instanceof Byte) {
