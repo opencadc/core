@@ -74,15 +74,16 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import javax.sql.DataSource;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.ResultSetExtractor;
-import org.springframework.jdbc.core.RowMapper;
 
 /**
  *
@@ -197,6 +198,41 @@ public class KeyValueDAO {
         jdbc.update(sql, arg);
     }
 
+    public List<KeyValue> list() {
+        String select = String.format("SELECT %s, %s, %s FROM %s", columnNames[0], columnNames[1], columnNames[2], tableName);
+        ResultSetExtractor<List<KeyValue>> keyValueListExtractor = new KeyValueListExtractor();
+        List<KeyValue> keyValues;
+        try {
+            keyValues = jdbc.query(select, keyValueListExtractor);
+        } catch (Exception ex) {
+            Connection con = null;
+            try {
+                log.debug("query fail - check if table exists: " + tableName);
+                con = jdbc.getDataSource().getConnection();
+                DatabaseMetaData dm = con.getMetaData();
+                ResultSet rs = dm.getTables(database, schema, table, null);
+                if (rs != null && !rs.next()) {
+                    log.debug("table does not exist: " + tableName);
+                    return null;
+                }
+            } catch (SQLException oops) {
+                throw new RuntimeException("failed to determine if table exists: " + tableName, oops);
+            } finally {
+                if (con != null) {
+                    try {
+                        con.close();
+                    } catch (SQLException ignore) {
+                        log.debug("failed to close database metadata query result", ignore);
+                    }
+                }
+            }
+
+            // some other kind of error
+            throw ex;
+        }
+        return keyValues;
+    }
+
     private class SelectStatementCreator implements PreparedStatementCreator {
 
         private final boolean forUpdate;
@@ -309,6 +345,22 @@ public class KeyValueDAO {
             }
             return ret;
         }
+    }
+
+    private class KeyValueListExtractor implements ResultSetExtractor<List<KeyValue>> {
+
+        @Override
+        public List<KeyValue> extractData(ResultSet rs) throws SQLException {
+            List<KeyValue> list = new ArrayList<>();
+            while (rs.next()) {
+                KeyValue keyValue = new KeyValue(rs.getString(3));
+                keyValue.value = rs.getString(1);
+                keyValue.lastModified = getDate(rs, 2, utcCalendar);
+                list.add(keyValue);
+            }
+            return list;
+        }
+
     }
 
     private static Date getDate(ResultSet rs, int col, Calendar cal) throws SQLException {
