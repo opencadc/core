@@ -90,54 +90,39 @@ public class KeyValueDAOTest {
 
     private static final String SCHEMA = "dbversion";
     private static final String DATABASE = "cadctest";
-    private static final String MODELNAME = "KeyValueDAOTest";
-    private static final String MODELVERSION = "0.1";
-    private static final String TABLE_NAME = SCHEMA + ".KeyValue";
+    private static final String TABLE = KeyValue.class.getSimpleName();
+    private static final String TABLE_NAME = String.format("%s.%s", SCHEMA, TABLE);
     private static DataSource dataSource;
 
-    private static final String CREATE = "create table dbversion.KeyValue " +
-            "(name varchar(32) not null primary key,value varchar(32) not null,lastModified timestamp not null)";
+    private static final String CREATE_TEST_TABLE = "CREATE TABLE " + TABLE_NAME +
+            " (name VARCHAR(32) NOT NULL PRIMARY KEY, value VARCHAR(32) NOT NULL, lastModified TIMESTAMP NOT NULL)";
+    private static final String DELETE_FROM_TEST_TABLE = "DELETE FROM " + TABLE_NAME;
+    private static final String DROP_TEST_TABLE = "DROP TABLE IF EXISTS " + TABLE_NAME;
 
     public KeyValueDAOTest() {
     }
 
     @BeforeClass
-    public static void setup() {
-        Log4jInit.setLevel("ca.nrc.cadc.db.version", Level.DEBUG);
+    public static void setup() throws Exception {
+        Log4jInit.setLevel("ca.nrc.cadc.db.version", Level.INFO);
 
-        try {
-            DBConfig dbrc = new DBConfig();
-            ConnectionConfig cc = dbrc.getConnectionConfig("KEYVALUE_DAO_TEST", DATABASE);
-            DBUtil.createJNDIDataSource("jdbc/KeyValueDAOTest", cc);
-            dataSource = DBUtil.findJNDIDataSource("jdbc/KeyValueDAOTest");
+        DBConfig dbrc = new DBConfig();
+        ConnectionConfig cc = dbrc.getConnectionConfig("KEYVALUE_DAO_TEST", DATABASE);
+        DBUtil.createJNDIDataSource("jdbc/KeyValueDAOTest", cc);
+        dataSource = DBUtil.findJNDIDataSource("jdbc/KeyValueDAOTest");
 
-            DatabaseTransactionManager txn = new DatabaseTransactionManager(dataSource);
-            JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+        DatabaseTransactionManager txn = new DatabaseTransactionManager(dataSource);
+        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
 
-            try {
-                jdbc.execute(String.format("DROP TABLE %s", TABLE_NAME));
-            } catch (Exception e) {
-                log.warn("drop failed: " + e);
-            }
-
-            try {
-                jdbc.execute(CREATE);
-            } catch (Exception e) {
-                log.error("create failed: " + e);
-                Assert.fail("create failed: " + e);
-            }
-        } catch (Exception e) {
-            log.error("unexpected exception", e);
-            Assert.fail("unexpected exception: " + e);
-        }
+        jdbc.execute(DROP_TEST_TABLE);
+        jdbc.execute(CREATE_TEST_TABLE);
     }
 
     @Before
-    public void cleanup() throws Exception {
-        String sql = String.format("DELETE FROM %s", TABLE_NAME);
-        log.info("cleanup: "  + sql);
+    public void cleanup() {
+        log.info("cleanup: "  + DELETE_FROM_TEST_TABLE);
         try {
-            dataSource.getConnection().createStatement().execute(sql);
+            dataSource.getConnection().createStatement().execute(DELETE_FROM_TEST_TABLE);
         } catch (SQLException oops) {
             log.warn("delete failed: " + oops);
         }
@@ -158,11 +143,7 @@ public class KeyValueDAOTest {
             Assert.assertEquals(expected.value, actual.value);
             Assert.assertEquals(expected.lastModified, actual.lastModified);
 
-            try {
-                dao.delete(expected.getName());
-            } catch (Exception e) {
-                Assert.fail("keyValue delete error: " + e);
-            }
+            dao.delete(expected.getName());
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
@@ -186,12 +167,7 @@ public class KeyValueDAOTest {
             kv3.value = "test-value-3";
             dao.put(kv3);
 
-            List<KeyValue> actual = null;
-            try {
-                actual = dao.list();
-            } catch (Exception e) {
-                Assert.fail("keyValue list error: " + e);
-            }
+            List<KeyValue> actual = dao.list();
 
             Assert.assertNotNull(actual);
             Assert.assertEquals(3, actual.size());

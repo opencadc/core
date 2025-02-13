@@ -136,8 +136,8 @@ public class KeyValueDAO {
      * @return a KeyValue object or null if there was an locking the KeyValue.
      */
     public KeyValue lock(String name) {
-        SelectStatementCreator sel = new SelectStatementCreator(true);
-        sel.setValues(name);
+        SelectStatementCreator sel = new SelectStatementCreator();
+        sel.setValue(name, true);
         try {
             KeyValue ret = (KeyValue) jdbc.query(sel, extractor);
             return ret;
@@ -156,7 +156,7 @@ public class KeyValueDAO {
      */
     public KeyValue get(String name) {
         SelectStatementCreator sel = new SelectStatementCreator();
-        sel.setValues(name);
+        sel.setValue(name, false);
         return jdbc.query(sel, extractor);
     }
 
@@ -207,8 +207,7 @@ public class KeyValueDAO {
 
     private class SelectStatementCreator implements PreparedStatementCreator {
 
-        private final boolean forUpdate;
-        private String model;
+        private boolean forUpdate;
         private String name;
 
 
@@ -216,19 +215,9 @@ public class KeyValueDAO {
             this.forUpdate = false;
         }
 
-        public SelectStatementCreator(boolean forUpdate) {
-            this.forUpdate = forUpdate;
-        }
-        
-        public void setValues(String model) {
-            if (model == null) {
-                throw new IllegalStateException("null model");
-            }
-            this.model = model;
-        }
-
-        public void setWhere(String name) {
+        public void setValue(String name, boolean forUpdate) {
             this.name = name;
+            this.forUpdate = forUpdate;
         }
 
         @Override
@@ -240,7 +229,7 @@ public class KeyValueDAO {
             sb.append(columnNames[2]);
             sb.append(" FROM ").append(tableName);
             if (StringUtil.hasText(name)) {
-                sb.append(" WHERE ").append(name).append(" = ?");
+                sb.append(" WHERE ").append(columnNames[2]).append(" = ?");
             }
             if (forUpdate) {
                 sb.append(" FOR UPDATE");
@@ -255,7 +244,7 @@ public class KeyValueDAO {
         }
 
         private void loadValues(PreparedStatement ps) throws SQLException {
-            ps.setString(1, model);
+            ps.setString(1, name);
         }
     }
 
