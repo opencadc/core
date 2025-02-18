@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2018.                            (c) 2018.
+ *  (c) 2025.                            (c) 2025.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -68,14 +68,15 @@
 package ca.nrc.cadc.db.version;
 
 import ca.nrc.cadc.date.DateUtil;
+import ca.nrc.cadc.util.StringUtil;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import javax.sql.DataSource;
 import org.apache.log4j.Logger;
 import org.springframework.jdbc.BadSqlGrammarException;
@@ -101,7 +102,7 @@ public class KeyValueDAO {
     private final String tableName;
     private final DataSource dataSource;
     private final JdbcTemplate jdbc;
-    private final ResultSetExtractor extractor;
+    private final ResultSetExtractor<KeyValue> extractor;
 
     private final Calendar utcCalendar = Calendar.getInstance(DateUtil.UTC);
 
@@ -124,58 +125,47 @@ public class KeyValueDAO {
         }
         tn.append(table);
         this.tableName = tn.toString();
-        this.extractor = new ModelVersionExtractor();
+        this.extractor = new KeyValueExtractor();
         this.columnNames = new String[] { "value", "lastModified", "name" };
     }
 
+    /**
+     * Lock the KeyValue with the given name for update.
+     *
+     * @param name the name of the key.
+     * @return a KeyValue object or null if there was an locking the KeyValue.
+     */
     public KeyValue lock(String name) {
-        SelectStatementCreator sel = new SelectStatementCreator(true);
-        sel.setValues(name);
+        SelectStatementCreator sel = new SelectStatementCreator();
+        sel.setValue(name, true);
         try {
             KeyValue ret = (KeyValue) jdbc.query(sel, extractor);
             return ret;
         } catch (BadSqlGrammarException ex) {
+            log.error("error locking: " + name, ex);
             return null;
         }
     }
-    
+
+    /**
+     * Get the KeyValue for the given name.
+     *
+     * @param name the name of the KeyValue.
+     * @return a KeyValue object or null if not found.
+     * @throws org.springframework.dao.DataAccessException if there is a problem querying the database.
+     */
     public KeyValue get(String name) {
-        Object o = null;
-
         SelectStatementCreator sel = new SelectStatementCreator();
-        sel.setValues(name);
-        try {
-            o = jdbc.query(sel, extractor);
-        } catch (Exception ex) {
-            Connection con = null;
-            try {
-                log.debug("query fail - check if table exists: " + tableName);
-                con = jdbc.getDataSource().getConnection();
-                DatabaseMetaData dm = con.getMetaData();
-                ResultSet rs = dm.getTables(database, schema, table, null);
-                if (rs != null && !rs.next()) {
-                    log.debug("table does not exist: " + tableName);
-                    return null;
-                }
-            } catch (SQLException oops) {
-                throw new RuntimeException("failed to determine if table exists: " + tableName, oops);
-            } finally {
-                if (con != null) {
-                    try {
-                        con.close();
-                    } catch (SQLException ignore) {
-                        log.debug("failed to close database metadata query result", ignore);
-                    }
-                }
-            }
-
-            // some other kind of error
-            throw ex;
-        }
-        
-        return (KeyValue) o;
+        sel.setValue(name, false);
+        return jdbc.query(sel, extractor);
     }
 
+    /**
+     * Put the KeyValue into the database.
+     *
+     * @param kv the KeyValue to put.
+     * @throws org.springframework.dao.DataAccessException if there is a problem inserting into the database.
+     */
     public void put(KeyValue kv) {
         boolean update = true;
         if (kv.lastModified == null) {
@@ -187,6 +177,12 @@ public class KeyValueDAO {
         jdbc.update(put);
     }
 
+    /**
+     * Delete the KeyValue with the given name.
+     *
+     * @param name the name of the KeyValue.
+     * @throws org.springframework.dao.DataAccessException if there is a problem deleting from the database.
+     */
     public void delete(String name) {
         if (name == null) {
             throw new IllegalArgumentException("name arg cannot be null");
@@ -197,24 +193,31 @@ public class KeyValueDAO {
         jdbc.update(sql, arg);
     }
 
+    /**
+     * List all the KeyValue objects in the database.
+     *
+     * @return List of KeyValue objects.
+     * @throws org.springframework.dao.DataAccessException if there is a problem querying the database.
+     */
+    public List<KeyValue> list() {
+
+        SelectStatementCreator sel = new SelectStatementCreator();
+        return jdbc.query(sel, new KeyValueRowMapper());
+    }
+
     private class SelectStatementCreator implements PreparedStatementCreator {
 
-        private final boolean forUpdate;
-        private String model;
+        private boolean forUpdate;
+        private String name;
+
 
         public SelectStatementCreator() {
             this.forUpdate = false;
         }
 
-        public SelectStatementCreator(boolean forUpdate) {
+        public void setValue(String name, boolean forUpdate) {
+            this.name = name;
             this.forUpdate = forUpdate;
-        }
-        
-        public void setValues(String model) {
-            if (model == null) {
-                throw new IllegalStateException("null model");
-            }
-            this.model = model;
         }
 
         @Override
@@ -225,19 +228,23 @@ public class KeyValueDAO {
             sb.append(columnNames[1]).append(",");
             sb.append(columnNames[2]);
             sb.append(" FROM ").append(tableName);
-            sb.append(" WHERE ").append(columnNames[2]).append(" = ?");
+            if (StringUtil.hasText(name)) {
+                sb.append(" WHERE ").append(columnNames[2]).append(" = ?");
+            }
             if (forUpdate) {
                 sb.append(" FOR UPDATE");
             }
             String sql = sb.toString();
             PreparedStatement prep = conn.prepareStatement(sql);
             log.debug(sql);
-            loadValues(prep);
+            if (StringUtil.hasText(name)) {
+                loadValues(prep);
+            }
             return prep;
         }
 
         private void loadValues(PreparedStatement ps) throws SQLException {
-            ps.setString(1, model);
+            ps.setString(1, name);
         }
     }
 
@@ -294,25 +301,34 @@ public class KeyValueDAO {
         }
     }
 
-    private class ModelVersionExtractor implements ResultSetExtractor {
+    private class KeyValueExtractor implements ResultSetExtractor<KeyValue> {
 
         @Override
-        public Object extractData(ResultSet rs) throws SQLException {
-            KeyValue ret = null;
-            if (rs.next()) {
-                String value = rs.getString(1);
-                Date lastModified = getDate(rs, 2, utcCalendar);
-                String name = rs.getString(3);
-                ret = new KeyValue(name);
-                ret.value = value;
-                ret.lastModified = lastModified;
+        public KeyValue extractData(ResultSet rs) throws SQLException {
+            if (!rs.next()) {
+                return null;
             }
-            return ret;
+            KeyValueRowMapper m = new KeyValueRowMapper();
+            return m.mapRow(rs, 1);
         }
+    }
+
+    private class KeyValueRowMapper implements RowMapper<KeyValue> {
+        Calendar utc = Calendar.getInstance(DateUtil.UTC);
+
+        @Override
+        public KeyValue mapRow(ResultSet rs, int i) throws SQLException {
+            KeyValue keyValue = new KeyValue(rs.getString(3));
+            keyValue.value = rs.getString(1);
+            keyValue.lastModified = getDate(rs, 2, utcCalendar);
+            return keyValue;
+        }
+
     }
 
     private static Date getDate(ResultSet rs, int col, Calendar cal) throws SQLException {
         Object o = rs.getTimestamp(col, cal);
         return DateUtil.toDate(o);
     }
+
 }

@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2018.                            (c) 2018.
+ *  (c) 2025.                            (c) 2025.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -73,6 +73,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.net.URL;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -195,35 +199,51 @@ public abstract class InitDatabase {
         JdbcTemplate jdbc = new JdbcTemplate(dataSource);
 
         try {
-            // get current ModelVersion
-            ModelVersionDAO vdao = new ModelVersionDAO(dataSource, database, schema);
-            KeyValue cur = vdao.get(modelName);
-            log.debug("found: " + cur);
+            // Current modelVersion
+            KeyValue cur;
 
-            // quick check there is nothing to do and early return
-            if (cur != null) {
-                if (modelVersion.equals(cur.value)) {
-                    log.debug("doInit: already up to date - nothing to do");
-                    return false;
-                } else if (prevModelVersion == null || prevModelVersion.equals(cur.value)) {
-                    log.debug("doInit: possible to update - proceeding");
-                } else if (cur.value != null) {
-                    throw new UnsupportedOperationException("doInit: cannot convert version " + cur.value + " (DB) to " + modelVersion + " (software)");
+            // create new tables
+            boolean createTables = false;
+
+            // select SQL to execute
+            List<String> ddls = new ArrayList<>();
+
+            ModelVersionDAO vdao = new ModelVersionDAO(dataSource, database, schema);
+
+            // check if model exists in the database
+            if (tableInDatabase()) {
+                log.debug("table exists: " + modelName);
+
+                // get current ModelVersion
+                cur = vdao.get(modelName);
+                log.debug("found: " + cur);
+
+                // quick check there is nothing to do and early return
+                if (cur != null) {
+                    if (modelVersion.equals(cur.value)) {
+                        log.debug("doInit: already up to date - nothing to do");
+                        return false;
+                    } else if (prevModelVersion == null || prevModelVersion.equals(cur.value)) {
+                        log.debug("doInit: possible to update - proceeding");
+                    } else if (cur.value != null) {
+                        throw new UnsupportedOperationException("doInit: cannot convert version " + cur.value + " (DB) to " + modelVersion + " (software)");
+                    }
+                } else {
+                    log.debug("doInit: possible to create - proceeding");
                 }
             } else {
+                // new installation
                 log.debug("doInit: possible to create - proceeding");
+                createTables = true;
+                cur = new KeyValue(modelName);
+                ddls = createSQL;
             }
 
             // start transaction
             txn.startTransaction();
-            if (cur != null) {
-                cur = vdao.lock(modelName);
-            }
-            
-            // select SQL to execute
-            List<String> ddls = new ArrayList<>(); // no-op
-            if (cur != null) {
+            if (cur != null && !createTables) {
                 // recheck upgrade with lock
+                cur = vdao.lock(modelName);
                 if (modelVersion.equals(cur.value)) {
                     log.debug("doInit: already up to date - nothing to do");
                     // empty ddls ok: need to commit so can't return here
@@ -232,10 +252,6 @@ public abstract class InitDatabase {
                 } else {
                     throw new UnsupportedOperationException("doInit: cannot convert version " + cur.value + " (DB) to " + modelVersion + " (software)");
                 }
-            } else {
-                // new installation
-                cur = new KeyValue(modelName);
-                ddls = createSQL;
             }
 
             boolean ret = false;
@@ -250,7 +266,11 @@ public abstract class InitDatabase {
                     }
                 }
                 // update ModelVersion
-                prevVersion = cur.value;
+                if (createTables) {
+                    prevVersion = modelVersion;
+                } else {
+                    prevVersion = cur.value;
+                }
                 cur.value = modelVersion;
                 vdao.put(cur);
                 ret = true;
@@ -468,6 +488,35 @@ public abstract class InitDatabase {
         }
 
         return ret;
+    }
+
+    private boolean tableInDatabase() {
+        String tableName = ModelVersion.class.getSimpleName();
+        Connection con = null;
+        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+        try {
+            con = jdbc.getDataSource().getConnection();
+            DatabaseMetaData dm = con.getMetaData();
+            String db = database == null ? null : database.toLowerCase();
+            String sm = this.schema == null ? null : this.schema.toLowerCase();
+            ResultSet rs = dm.getTables(db, sm, tableName.toLowerCase(), null);
+            if (rs != null && !rs.next()) {
+                log.debug("table does not exist: " + tableName);
+                return false;
+            }
+            log.debug("table exists: " + tableName);
+        } catch (SQLException oops) {
+            throw new RuntimeException("failed to determine if table exists: " + tableName, oops);
+        } finally {
+            if (con != null) {
+                try {
+                    con.close();
+                } catch (SQLException ignore) {
+                    log.debug("failed to close database metadata query result", ignore);
+                }
+            }
+        }
+        return true;
     }
 
 }
