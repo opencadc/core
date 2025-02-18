@@ -107,7 +107,7 @@ public class KeyValueDAOTest {
         Log4jInit.setLevel("ca.nrc.cadc.db.version", Level.INFO);
 
         DBConfig dbrc = new DBConfig();
-        ConnectionConfig cc = dbrc.getConnectionConfig("KEYVALUE_DAO_TEST", DATABASE);
+        ConnectionConfig cc = dbrc.getConnectionConfig("DBUTIL_TEST", DATABASE);
         DBUtil.createJNDIDataSource("jdbc/KeyValueDAOTest", cc);
         dataSource = DBUtil.findJNDIDataSource("jdbc/KeyValueDAOTest");
 

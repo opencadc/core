@@ -106,7 +106,7 @@ public class InitDatabaseTest {
     
     public InitDatabaseTest() throws Exception {
         DBConfig dbrc = new DBConfig();
-        ConnectionConfig cc = dbrc.getConnectionConfig("INITDB_TEST", "cadctest");
+        ConnectionConfig cc = dbrc.getConnectionConfig("DBUTIL_TEST", "cadctest");
         DBUtil.createJNDIDataSource("jdbc/InitDatabaseTest", cc);
         this.dataSource = DBUtil.findJNDIDataSource("jdbc/InitDatabaseTest");
     }

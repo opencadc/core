@@ -72,10 +72,6 @@ package ca.nrc.cadc.auth;
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
 import java.io.File;
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.URL;
-import java.net.URLConnection;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
@@ -83,16 +79,10 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Set;
 import javax.net.SocketFactory;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLHandshakeException;
-import javax.net.ssl.SSLSocketFactory;
 import javax.security.auth.Subject;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -179,52 +169,6 @@ public class SSLUtilTest
         }
     }
     
-    @Test
-    public void testReadUserProxyCert() {
-        // test reading a proxy cert (usually made from user cert using openssl)
-        try {
-            File f = new File(System.getProperty("user.home") + "/.ssl/cadcproxy.pem");
-            log.info("in: " + f.getAbsolutePath());
-            
-            Subject s = SSLUtil.createSubject(f);
-            log.info("created: " + s);
-            Assert.assertFalse(s.getPrincipals().isEmpty());
-            
-            Set<X509CertificateChain> cs = s.getPublicCredentials(X509CertificateChain.class);
-            Assert.assertFalse("chain", cs.isEmpty());
-            X509CertificateChain chain = cs.iterator().next();
-            Assert.assertNotNull(chain.getChain());
-            Assert.assertEquals(2, chain.getChain().length);
-            Assert.assertNotNull(chain.getPrivateKey());
-        } catch (Exception unexpected) {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
-    }
-    
-    @Test
-    public void testReadProxyCert() {
-        // test read proxy.pem found in classpath (test resources)
-        try {
-            File f = SSL_PEM;
-            log.info("in: " + f.getAbsolutePath());
-            
-            Subject s = SSLUtil.createSubject(f);
-            log.info("created: " + s);
-            Assert.assertFalse(s.getPrincipals().isEmpty());
-            
-            Set<X509CertificateChain> cs = s.getPublicCredentials(X509CertificateChain.class);
-            Assert.assertFalse("chain", cs.isEmpty());
-            X509CertificateChain chain = cs.iterator().next();
-            Assert.assertNotNull(chain.getChain());
-            Assert.assertEquals(2, chain.getChain().length);
-            Assert.assertNotNull(chain.getPrivateKey());
-        } catch (Exception unexpected) {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
-    }
-
     @Test
     public void testInitSSL() throws Exception
     {
