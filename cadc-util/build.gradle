@@ -39,6 +39,6 @@ dependencies {
     testImplementation 'org.easymock:easymock:3.6'
     testImplementation 'org.skyscreamer:jsonassert:1.5.0'
 
-    intTestRuntime 'org.postgresql:postgresql:[42.2.8,)'
+    intTestImplementation 'org.postgresql:postgresql:[42.2.8,)'
 }
 
