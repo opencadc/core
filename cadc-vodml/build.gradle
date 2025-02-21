@@ -1,6 +1,5 @@
 plugins {
-    id 'java'
-    id 'maven'
+    id 'java-library'
     id 'maven-publish'
     id 'application'
     id 'checkstyle'
@@ -23,17 +22,17 @@ def git_url = 'https://github.com/opencadc/core'
 mainClassName = 'ca.nrc.cadc.vodml.Main'
 
 dependencies {
-    compile 'org.opencadc:cadc-util:[1.6,2.0)'
+    implementation 'org.opencadc:cadc-util:[1.6,2.0)'
 
-    compile 'org.jdom:jdom2:2.0.6'
-    compile 'com.helger:ph-schematron:5.6.5'
-    compile 'net.sf.saxon:Saxon-HE:[9.8,10)'
+    implementation 'org.jdom:jdom2:2.0.6'
+    implementation 'com.helger:ph-schematron:5.6.5'
+    implementation 'net.sf.saxon:Saxon-HE:[9.8,10)'
 
-    runtime 'org.slf4j:slf4j-api:[1.7.30,)'
-    runtime 'org.slf4j:slf4j-ext:[1.7.30,)'
+    implementation 'org.slf4j:slf4j-api:[1.7.30,)'
+    implementation 'org.slf4j:slf4j-ext:[1.7.30,)'
     
     
-    testCompile 'junit:junit:4.13' 
+    testImplementation 'junit:junit:4.13' 
 }
 
 apply from: '../opencadc.gradle'

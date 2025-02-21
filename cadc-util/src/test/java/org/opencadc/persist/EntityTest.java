@@ -109,34 +109,41 @@ public class EntityTest {
     @Test
     public void testEntity() {
         // base: the cadc-inventory-0.x configuration
-        doEntityTest(false, false);
-        doNewVersionTest(false, false);
+        doEntityTest(false, false, false);
+        doNewVersionTest(false, false, false);
     }
     
     @Test
     public void testEntityTruncateDates() {
         // the caom2-2.4 configuration
-        doEntityTest(true, false);
-        doNewVersionTest(true, false);
+        doEntityTest(true, false, false);
+        doNewVersionTest(true, false, false);
     }
     
     @Test
     public void testEntityDigestFieldNames() {
         // the cadc-vos-2.x configuration
-        doEntityTest(false, true);
-        doNewVersionTest(false, true);
+        doEntityTest(false, true, false);
+        doNewVersionTest(false, true, false);
+    }
+    
+    @Test
+    public void testEntityDigestFieldNamesLower() {
+        // the cadc-vos-2.x configuration
+        doEntityTest(false, true, true);
+        doNewVersionTest(false, true, true);
     }
     
     @Test
     public void testEntitySafeMode() {
         // no known use, but truncateDates and digestFieldNames is the safest mode
-        doEntityTest(true, true);
-        doNewVersionTest(true, true);
+        doEntityTest(true, true, true);
+        doNewVersionTest(true, true, true);
     }
 
-    private void doEntityTest(boolean trunc, boolean dig) {
+    private void doEntityTest(boolean trunc, boolean dig, boolean digL) {
         try {
-            SampleEntity sample = new SampleEntity("name-of-this-entity", trunc, dig);
+            SampleEntity sample = new SampleEntity("name-of-this-entity", trunc, dig, digL);
             log.info("created: " + sample);
             
             URI mcs1 = sample.computeMetaChecksum(MessageDigest.getInstance("MD5"));
@@ -186,11 +193,11 @@ public class EntityTest {
             Assert.assertNotEquals(mcs7, mcs12);
             
             // entities do not get included in metaChecksum
-            sample.children.add(new SampleEntity("flibble", trunc, dig));
+            sample.children.add(new SampleEntity("flibble", trunc, dig, digL));
             URI tcs1 = sample.computeMetaChecksum(MessageDigest.getInstance("MD5"));
             Assert.assertEquals(mcs12, tcs1);
             
-            sample.relation = new SampleEntity("flibble", trunc, dig);
+            sample.relation = new SampleEntity("flibble", trunc, dig, digL);
             mcs11 = sample.computeMetaChecksum(MessageDigest.getInstance("MD5"));
             Assert.assertEquals(mcs12, mcs11);
             
@@ -212,13 +219,13 @@ public class EntityTest {
     }
     
     // also doubles as a sub-class/extension test
-    private void doNewVersionTest(boolean trunc, boolean dig) {
+    private void doNewVersionTest(boolean trunc, boolean dig, boolean digL) {
         try {
-            SampleEntity v1 = new SampleEntity("name-of-this-entity", trunc, dig);
+            SampleEntity v1 = new SampleEntity("name-of-this-entity", trunc, dig, digL);
             log.info("created: " + v1);
             URI mcs1 = v1.computeMetaChecksum(MessageDigest.getInstance("MD5"));
             
-            SampleEntityV2 v2 = new SampleEntityV2(v1.getID(), v1.getName(), trunc, dig);
+            SampleEntityV2 v2 = new SampleEntityV2(v1.getID(), v1.getName(), trunc, dig, digL);
             log.info("created: " + v1);
             URI mcs2 = v2.computeMetaChecksum(MessageDigest.getInstance("MD5"));
             
@@ -232,7 +239,7 @@ public class EntityTest {
     @Test
     public void testNonState() {
         try {
-            SampleEntity sample = new SampleEntity("name-of-this-entity", false, false);
+            SampleEntity sample = new SampleEntity("name-of-this-entity", false, false, false);
             log.info("created: " + sample);
             
             URI mcs1 = sample.computeMetaChecksum(MessageDigest.getInstance("MD5"));

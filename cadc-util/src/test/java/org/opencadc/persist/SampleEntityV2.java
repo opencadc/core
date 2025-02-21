@@ -80,8 +80,8 @@ public class SampleEntityV2 extends SampleEntity {
     public Integer optionalInt;
     public String optionalString;
     
-    public SampleEntityV2(UUID id, String name, boolean trunc, boolean dig) {
-        super(id, name, trunc, dig);
+    public SampleEntityV2(UUID id, String name, boolean trunc, boolean dig, boolean digL) {
+        super(id, name, trunc, dig, digL);
     }
     
     public String toString() {

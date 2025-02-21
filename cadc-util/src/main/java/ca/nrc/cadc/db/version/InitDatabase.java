@@ -230,6 +230,9 @@ public abstract class InitDatabase {
                     }
                 } else {
                     log.debug("doInit: possible to create - proceeding");
+                    createTables = true;
+                    cur = new KeyValue(modelName);
+                    ddls = createSQL;
                 }
             } else {
                 // new installation
@@ -239,6 +242,9 @@ public abstract class InitDatabase {
                 ddls = createSQL;
             }
 
+            if (createTables) {
+                
+            }
             // start transaction
             txn.startTransaction();
             if (cur != null && !createTables) {
