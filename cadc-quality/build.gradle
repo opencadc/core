@@ -1,5 +1,5 @@
 plugins {
-    id 'java'
+    id 'java-library'
     id 'maven-publish'
     id 'checkstyle'
 }
@@ -8,6 +8,8 @@ repositories {
     mavenCentral()
     mavenLocal()
 }
+
+apply from: '../opencadc.gradle'
 
 sourceCompatibility = 1.8
 
