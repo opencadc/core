@@ -97,7 +97,7 @@ import org.apache.log4j.Logger;
  * data model is susceptible to this, it can use the "digestFieldNames" option to prevent
  * it, but changing options will change existing (stored) metaChecksum values so a change
  * like this has an operational impact that needs to be evaluated.
- * </p><p>
+ * <p>
  * The safest and most portable use it to always use <code>digestFieldNames == true</code>
  * and to use <code>digestFieldNamesLowerCase == true</code> to make the calculation
  * independent of the standard/preferred naming in different programming languages. For example,
