@@ -272,13 +272,15 @@ public class IterableContent<E extends Content, T> extends Element {
             next = null;
 
             if (this.iterator.hasNext()) {
-                B nextB = this.iterator.next();
                 try {
+                    B nextB = this.iterator.next();
                     // convert the object
                     next = contentConverter.convert(nextB);
                 } catch (Exception ex) {
+                    contentConverter.handleException(ex);
                     // assume the converter did something useful and stop iterating
-                    log.debug(contentConverter.getClass().getName() + " failed to convert", ex);
+                    log.warn(contentConverter.getClass().getName() + " failed to convert row, reason: " + ex);
+                    log.debug(contentConverter.getClass().getName() + " failed to convert row, reason: ", ex);
                     return;
                 }
             }
