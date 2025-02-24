@@ -104,7 +104,8 @@ import org.apache.log4j.Logger;
  * this implementation uses reflection and java code style is typically camel-case; using
  * lower case to digest field names is more portable as it  is easier to create an equivalent
  * python implementation where lower case is the norm.
- * </p><p>
+ * </p>
+ * <p>
  * Entity supports converting various standard data types to bytes: primitive numeric values, wrapped
  * numeric values (Numbers), arrays of bytes and numbers, UUID, URI, and String. Classes that wrap a
  * single internal value can implement the PrimitiveWrapper method to extract the wrapped value (any
