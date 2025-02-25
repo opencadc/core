@@ -187,8 +187,13 @@ public class Main implements Runnable, TransferListener {
                 doit.setOverwrite(true);
                 doit.setTransferListener(this);
                 doit.run();
+                if (doit.getThrowable() != null) {
+                    throw doit.getThrowable();
+                }
             } catch (MalformedURLException ex) {
                 log.error("invalid input URL: " + surl);
+            } catch (Throwable t) {
+                log.error("FAIL", t);
             }
         }
     }

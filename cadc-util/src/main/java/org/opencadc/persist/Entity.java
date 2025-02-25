@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2024.                            (c) 2024.
+*  (c) 2025.                            (c) 2025.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -91,12 +91,27 @@ import java.util.UUID;
 import org.apache.log4j.Logger;
 
 /**
- * Base class for entity persistence. The metaChecksum algorithm implemented here has a
+ * Base class for entity persistence. The base metaChecksum algorithm implemented here has a
  * flaw where moving a value from one optional field to another (with no values contributing
  * bytes in between) does not cause the computed metaChecksum to change. If a specific
  * data model is susceptible to this, it can use the "digestFieldNames" option to prevent
  * it, but changing options will change existing (stored) metaChecksum values so a change
  * like this has an operational impact that needs to be evaluated.
+ * <p>
+ * The safest and most portable use is to always use <code>digestFieldNames == true</code>
+ * and to use <code>digestFieldNamesLowerCase == true</code> to make the calculation
+ * independent of the standard/preferred naming in different programming languages. For example,
+ * this implementation uses reflection and java code style is typically camel-case; using
+ * lower case to digest field names is more portable as it  is easier to create an equivalent
+ * python implementation where lower case is the norm.
+ * </p>
+ * <p>
+ * Entity supports converting various standard data types to bytes: primitive numeric values, wrapped
+ * numeric values (Numbers), arrays of bytes and numbers, UUID, URI, and String. Classes that wrap a
+ * single internal value can implement the PrimitiveWrapper method to extract the wrapped value (any
+ * of the previously mentioned types); enums should also have a getValue() method to return a consistent
+ * value to be converted to bytes and digested.
+ * </p>
  * 
  * @author pdowler
  */
@@ -107,6 +122,7 @@ public abstract class Entity {
     public static boolean MCS_DEBUG = false;  // way to much debug when true
     
     private final boolean digestFieldNames;
+    private final boolean digestFieldNamesLowerCase;
     private final boolean truncateDateToSec;
     private UUID id;
     private Date lastModified;
@@ -133,11 +149,11 @@ public abstract class Entity {
      * Backwards compatible constructor: digestFieldNames==false.
      * 
      * @param truncateDateToSec truncate Date values to seconds when converting to bytes for meta checksum calculation
-     * @deprecated hard code Entity(boolean, boolean) in model
+     * @deprecated hard code Entity(boolean, boolean, boolean) in model
      */
     @Deprecated
     protected Entity(boolean truncateDateToSec) {
-        this(truncateDateToSec, false);
+        this(truncateDateToSec, false, false);
     }
     
     /**
@@ -145,42 +161,45 @@ public abstract class Entity {
      *
      * @param id assign the specified Entity.id
      * @param truncateDateToSec truncate Date values to seconds when converting to bytes for meta checksum calculation
-     * @deprecated hard code Entity(UUID, boolean, boolean) in model
+     * @deprecated hard code Entity(UUID, boolean, boolean, boolean) in model
      */
     @Deprecated
     protected Entity(UUID id, boolean truncateDateToSec) {
-        this(id, truncateDateToSec, false);
+        this(id, truncateDateToSec, false, false);
     }
     
     /**
-     * Constructor. This creates a new entity with a random UUID.
+     * Constructor.This creates a new entity with a random UUID.
      * 
      * @param truncateDateToSec truncate Date values to seconds when converting to bytes for meta checksum calculation
      * @param digestFieldNames when a field is not null (or collection is non-empty), include the field name in the
      *                         metaChecksum calculation
+     * @param digestFieldNamesLowerCase convert field names to lower case before digesting
      */
-    protected Entity(boolean truncateDateToSec, boolean digestFieldNames) {
-        this(UUID.randomUUID(), truncateDateToSec, digestFieldNames);
+    protected Entity(boolean truncateDateToSec, boolean digestFieldNames, boolean digestFieldNamesLowerCase) {
+        this(UUID.randomUUID(), truncateDateToSec, digestFieldNames, digestFieldNamesLowerCase);
     }
     
     /**
-     * Constructor. This creates an entity with an existing UUID when reconstructing an instance. The
-     * truncateDateToSec option should be used if instances of the model are to be serialised or stored
-     * in a way that does not recover the exact timestamp to milliseconds. The digestFieldNames option
-     * is needed for any model with "adjacent" fields that could contain the same value; this option
-     * ensures that "moving" the value from one field to another will change the checksum by changing
-     * the sequence of bytes that are digested.
+     * Constructor.This creates an entity with an existing UUID when reconstructing an instance. The
+ truncateDateToSec option should be used if instances of the model are to be serialized or stored
+ in a way that does not recover the exact timestamp to milliseconds. The digestFieldNames option
+ is needed for any model with "adjacent" fields that could contain the same value; this option
+ ensures that "moving" the value from one field to another will change the checksum by changing
+ the sequence of bytes that are digested.
      * 
      * @param id unique ID value to assign/restore
      * @param truncateDateToSec truncate Date values to seconds when converting to bytes for meta checksum calculation
      * @param digestFieldNames when a field is not null (or collection is non-empty), include the field name in the
      *                         metaChecksum calculation
+     * @param digestFieldNamesLowerCase convert field names to lower case before digesting
      */
-    protected Entity(UUID id, boolean truncateDateToSec, boolean digestFieldNames) {
+    protected Entity(UUID id, boolean truncateDateToSec, boolean digestFieldNames, boolean digestFieldNamesLowerCase) {
         Entity.assertNotNull(Entity.class, "id", id);
         this.id = id;
         this.truncateDateToSec = truncateDateToSec;
         this.digestFieldNames = digestFieldNames;
+        this.digestFieldNamesLowerCase = digestFieldNamesLowerCase;
         this.localPackage = this.getClass().getPackage().getName();
     }
 
@@ -314,13 +333,14 @@ public abstract class Entity {
                 Object fo = f.get(o);
                 if (fo != null) {
                     Class ac = fo.getClass();
-                    if (ac.isEnum()) {
+                    if (ac.isEnum() || PrimitiveWrapper.class.isAssignableFrom(ac)) {
                         try {
+                            log.warn("unwrap: " + ac.getSimpleName() + ".getValue()");
                             Method m = ac.getMethod("getValue");
                             Object val = m.invoke(fo);
                             digest.update(primitiveValueToBytes(val, cf));
                             if (digestFieldNames) {
-                                digest.update(primitiveValueToBytes(cf, cf)); // field name
+                                digest.update(fieldNameToBytes(cf)); // field name
                             }
                         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
                             throw new RuntimeException("BUG - enum " + ac.getName() + " does not have getValue()", ex);
@@ -330,7 +350,7 @@ public abstract class Entity {
                         int num = digest.getNumBytes();
                         calcMetaChecksum(ac, fo, digest);
                         if (digestFieldNames && num < digest.getNumBytes()) {
-                            digest.update(primitiveValueToBytes(cf, cf)); // field name
+                            digest.update(fieldNameToBytes(cf)); // field name
                         }
                     } else if (fo instanceof Collection) {
                         Collection stuff = (Collection) fo;
@@ -339,7 +359,7 @@ public abstract class Entity {
                             while (i.hasNext()) {
                                 Object co = i.next();
                                 Class cc = co.getClass();
-                                if (cc.isEnum()) {
+                                if (cc.isEnum() || PrimitiveWrapper.class.isAssignableFrom(cc)) {
                                     try {
                                         Method m = cc.getMethod("getValue");
                                         Object val = m.invoke(co);
@@ -355,13 +375,13 @@ public abstract class Entity {
                                 }
                             }
                             if (digestFieldNames) {
-                                digest.update(primitiveValueToBytes(cf, cf)); // field name
+                                digest.update(fieldNameToBytes(cf)); // field name
                             }
                         }
                     } else {
                         digest.update(primitiveValueToBytes(fo, cf));
                         if (digestFieldNames) {
-                            digest.update(primitiveValueToBytes(cf, cf)); // field name
+                            digest.update(fieldNameToBytes(cf)); // field name
                         }
                     }
                 } else if (MCS_DEBUG) {
@@ -523,6 +543,7 @@ public abstract class Entity {
             System.arraycopy(msb, 0, ret, 0, 8);
             System.arraycopy(lsb, 0, ret, 8, 8);
         } else if (o instanceof NumericPrincipal) {
+            // TODO: thisd could have been accomplished with PrimitiveWrapper -> UUID
             NumericPrincipal np = (NumericPrincipal) o;
             UUID uuid = np.getUUID();
             byte[] msb = HexUtil.toBytes(uuid.getMostSignificantBits());
@@ -532,6 +553,13 @@ public abstract class Entity {
             System.arraycopy(lsb, 0, ret, 8, 8);
         } else if (o instanceof byte[]) {
             ret = (byte[]) o;
+        } else if (o instanceof double[]) {
+            double[] da = (double[]) o;
+            ret = new byte[8 * da.length];
+            for (int i = 0; i < da.length; i++) {
+                byte[] b = HexUtil.toBytes(Double.doubleToLongBits(da[i])); // IEEE754 double
+                System.arraycopy(b, 0, ret, i * 8, 8);
+            }
         }
 
         if (ret != null) {
@@ -546,6 +574,28 @@ public abstract class Entity {
         }
 
         throw new UnsupportedOperationException("unexpected primitive/value type: " + o.getClass().getName());
+    }
+
+    protected byte[] fieldNameToBytes(String name) {
+        String val = name.trim();
+        if (digestFieldNamesLowerCase) {
+            val = val.toLowerCase();
+        }
+        byte[] ret = null;
+        try {
+            ret = val.getBytes("UTF-8");
+        } catch (UnsupportedEncodingException ex) {
+            throw new RuntimeException("BUG: failed to encode String in UTF-8", ex);
+        }
+        if (ret != null) {
+            if (MCS_DEBUG) {
+                String dfn = " digest-field-name";
+                log.debug(val.getClass().getSimpleName() + " " + name + " = " + val + " " + ret.length + " bytes" + dfn);
+            }
+            return ret;
+        }
+
+        throw new RuntimeException("BUG: null field name");
     }
 
     private static class FieldComparator implements Comparator<Field> {

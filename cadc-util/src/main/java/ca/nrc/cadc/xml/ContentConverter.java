@@ -82,5 +82,9 @@ import org.jdom2.Content;
 public interface ContentConverter<E extends Content, T> {
     
     public E convert(T obj);
+    
+    default void handleException(Exception ex) {
+        // no-op
+    }
 
 }
