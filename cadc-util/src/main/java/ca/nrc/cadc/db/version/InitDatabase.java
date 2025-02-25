@@ -242,9 +242,6 @@ public abstract class InitDatabase {
                 ddls = createSQL;
             }
 
-            if (createTables) {
-                
-            }
             // start transaction
             txn.startTransaction();
             if (cur != null && !createTables) {

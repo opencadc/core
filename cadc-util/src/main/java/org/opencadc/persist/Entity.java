@@ -98,7 +98,7 @@ import org.apache.log4j.Logger;
  * it, but changing options will change existing (stored) metaChecksum values so a change
  * like this has an operational impact that needs to be evaluated.
  * <p>
- * The safest and most portable use it to always use <code>digestFieldNames == true</code>
+ * The safest and most portable use is to always use <code>digestFieldNames == true</code>
  * and to use <code>digestFieldNamesLowerCase == true</code> to make the calculation
  * independent of the standard/preferred naming in different programming languages. For example,
  * this implementation uses reflection and java code style is typically camel-case; using
