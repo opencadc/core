@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2011.                            (c) 2011.
+ *  (c) 2025.                            (c) 2025.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -76,7 +76,7 @@ import java.util.Date;
 import org.springframework.jdbc.core.RowMapper;
 
 /**
- * Map a single column of UTC timestamp values to standard Date objects.
+ * Map a single column of timestamp values to standard Date objects.
  *
  * @author pdowler
  */

@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2024.                            (c) 2024.
+ *  (c) 2025.                            (c) 2025.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -122,11 +122,10 @@ public class JdbcMapUtil {
             return null;
         }
         try {
-            return new URI((String) o);
+            return new URI(o);
         } catch (Throwable t) {
             throw new UnsupportedOperationException("converting " + o.getClass().getName() + " " + o + " to URI", t);
         }
-        //throw new UnsupportedOperationException("converting " + o.getClass().getName() + " " + o + " to URI");
     }
 
     public static Boolean getBoolean(ResultSet rs, int col)
