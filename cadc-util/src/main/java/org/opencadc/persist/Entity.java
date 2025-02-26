@@ -485,9 +485,11 @@ public abstract class Entity {
             if (f.getGenericType() instanceof ParameterizedType) {
                 ParameterizedType pt = (ParameterizedType) f.getGenericType();
                 Type[] ptypes = pt.getActualTypeArguments();
-                Class genType = (Class) ptypes[0];
-                if (Entity.class.isAssignableFrom(genType)) {
-                    return true;
+                if (ptypes[0] instanceof Class) {
+                    Class genType = (Class) ptypes[0];
+                    if (Entity.class.isAssignableFrom(genType)) {
+                        return true;
+                    }
                 }
             }
         }
