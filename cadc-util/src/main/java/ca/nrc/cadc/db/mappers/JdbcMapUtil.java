@@ -178,16 +178,7 @@ public class JdbcMapUtil {
     public static Long getLong(ResultSet rs, int col)
             throws SQLException {
         Object o = rs.getObject(col);
-        if (o == null) {
-            return null;
-        }
-        if (o instanceof Long) {
-            return (Long) o;
-        }
-        if (o instanceof Number) {
-            return ((Number) o).longValue();
-        }
-        throw new UnsupportedOperationException("converting " + o.getClass().getName() + " " + o + " to Long");
+        return objectToLong(o);
     }
 
     public static UUID getUUID(ResultSet rs, int col)
@@ -277,10 +268,13 @@ public class JdbcMapUtil {
         }
         if (o instanceof Array) {
             Array a = (Array) o;
-            String[] ao = (String[]) a.getArray();
+            o = a.getArray();
+        }
+        if (o instanceof String[]) {
+            String[] ao = (String[]) o; 
             return ao;
         }
-        return null;
+        throw new UnsupportedOperationException("converting " + o.getClass().getName() + " " + o + " to String[]");
     }
 
     public static double[] getDoubleArray(ResultSet rs, int col)
