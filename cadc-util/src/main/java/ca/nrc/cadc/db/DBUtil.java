@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2016.                            (c) 2016.
+*  (c) 2025.                            (c) 2025.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -73,13 +73,11 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.Properties;
-
 import javax.management.ObjectName;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
-
 import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
 import org.apache.commons.dbcp2.PoolableConnectionFactory;
@@ -103,23 +101,22 @@ public class DBUtil {
     public static String DEFAULT_JNDI_ENV_CONTEXT = "java:/comp/env";
 
     /**
-     * Create a DataSource with a single connection to the server. The DataSource is
-     * tested before return. All failures are thrown as RuntimeException with a
-     * Throwable (cause).
+     * Create a DataSource with a single connection to the server. Defaults to 
+     * suppressClose==true and test==true.
      *
-     * @param config
+     * @param config connection configuration info
      * @return a connected single connection DataSource
      * @throws DBConfigException
      */
     public static DataSource getDataSource(ConnectionConfig config) throws DBConfigException {
-        return getDataSource(config, false, true);
+        return getDataSource(config, true, true);
     }
 
     /**
      * Create a DataSource with a single connection to the server. All failures are
      * thrown as RuntimeException with a Throwable (cause).
      *
-     * @param config
+     * @param config connection configuration info
      * @param suppressClose suppress close calls on the underlying Connection
      * @param test          test the datasource before return (might throw)
      * @return a connected single connection DataSource
