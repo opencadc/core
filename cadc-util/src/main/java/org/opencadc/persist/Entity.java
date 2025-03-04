@@ -167,7 +167,30 @@ public abstract class Entity {
     protected Entity(UUID id, boolean truncateDateToSec) {
         this(id, truncateDateToSec, false, false);
     }
+
+    /**
+     * Backwards compatible constructor: digestFieldNamesLowerCase==false.
+     *
+     * @param truncateDateToSec truncate Date values to seconds when converting to bytes for meta checksum calculation
+     * @param digestFieldNames when a field is not null (or collection is non-empty), include the field name in the
+     *                         metaChecksum calculation
+     */
+    protected Entity(boolean truncateDateToSec, boolean digestFieldNames) {
+        this(truncateDateToSec, digestFieldNames, false);
+    }
     
+    /**
+     * Backwards compatible constructor: digestFieldNamesLowerCase==false.
+     *
+     * @param id assign the specified Entity.id
+     * @param truncateDateToSec truncate Date values to seconds when converting to bytes for meta checksum calculation
+     * @param digestFieldNames when a field is not null (or collection is non-empty), include the field name in the
+     *                         metaChecksum calculation
+     */
+    protected Entity(UUID id, boolean truncateDateToSec, boolean digestFieldNames) {
+        this(id, truncateDateToSec, digestFieldNames, false);
+    }
+
     /**
      * Constructor.This creates a new entity with a random UUID.
      * 
