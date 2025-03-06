@@ -70,7 +70,6 @@
 package ca.nrc.cadc.log;
 
 import ca.nrc.cadc.auth.AuthenticationUtil;
-import ca.nrc.cadc.auth.Authorizer;
 import ca.nrc.cadc.auth.HttpPrincipal;
 import ca.nrc.cadc.auth.IdentityManager;
 import ca.nrc.cadc.cred.client.CredUtil;
@@ -79,15 +78,12 @@ import ca.nrc.cadc.util.Log4jInit;
 import ca.nrc.cadc.util.MultiValuedProperties;
 import ca.nrc.cadc.util.PropertiesReader;
 import ca.nrc.cadc.util.StringUtil;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Constructor;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.AccessControlException;
 import java.security.Principal;
-import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -209,28 +205,33 @@ public class LogControlServlet extends HttpServlet {
             webapp = "[?]";
         }
 
-        String thisPkg = LogControlServlet.class.getPackage().getName();
-        Log4jInit.setLevel(webapp, thisPkg, Level.WARN);
-        logger.warn("log level: " + thisPkg + " =  " + Level.WARN);
+        try {
+            String thisPkg = LogControlServlet.class.getPackage().getName();
+            Log4jInit.setLevel(webapp, thisPkg, Level.WARN);
+            logger.warn("log level: " + thisPkg + " =  " + Level.WARN);
 
-        String packageParamValues = config.getInitParameter(PACKAGES_PARAM);
-        if (packageParamValues != null) {
-            StringTokenizer stringTokenizer = new StringTokenizer(packageParamValues, " \n\t\r", false);
-            while (stringTokenizer.hasMoreTokens()) {
-                String pkg = stringTokenizer.nextToken();
-                if (pkg.length() > 0) {
-                    logger.warn(pkg + ": " + level);
-                    Log4jInit.setLevel(webapp, pkg, level);
-                    if (!packages.contains(pkg)) {
-                        packages.add(pkg);
+            String packageParamValues = config.getInitParameter(PACKAGES_PARAM);
+            if (packageParamValues != null) {
+                StringTokenizer stringTokenizer = new StringTokenizer(packageParamValues, " \n\t\r", false);
+                while (stringTokenizer.hasMoreTokens()) {
+                    String pkg = stringTokenizer.nextToken();
+                    if (pkg.length() > 0) {
+                        logger.warn(pkg + ": " + level);
+                        Log4jInit.setLevel(webapp, pkg, level);
+                        if (!packages.contains(pkg)) {
+                            packages.add(pkg);
+                        }
                     }
                 }
             }
+            // these are here to help detect problems with logging setup
+            logger.warn("init complete");
+            logger.info("init: YOU SHOULD NEVER SEE THIS MESSAGE -- " + thisPkg + " should not be included in " + PACKAGES_PARAM);
+        } catch (Throwable t) {
+            System.out.println("FAIL: cannot initialize log4j");
+            t.printStackTrace();
+            throw new RuntimeException("FAIL: cannot initialize log4j", t);
         }
-
-        // these are here to help detect problems with logging setup
-        logger.warn("init complete");
-        logger.info("init: YOU SHOULD NEVER SEE THIS MESSAGE -- " + thisPkg + " should not be included in " + PACKAGES_PARAM);
     }
 
     /**
