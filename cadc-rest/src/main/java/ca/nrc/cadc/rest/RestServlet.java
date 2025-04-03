@@ -499,15 +499,21 @@ public class RestServlet extends HttpServlet {
                         try {
                             URI loginServiceURI = getLocalServiceURI(Standards.SECURITY_METHOD_PASSWORD);
                             if (loginServiceURI != null) {
-                                RegistryClient rc = new RegistryClient();
-                                URL loginURL = rc.getServiceURL(loginServiceURI, Standards.SECURITY_METHOD_PASSWORD, AuthMethod.ANON);
-                                if (loginURL != null) {
-                                    StringBuilder c2 = new StringBuilder();
-                                    c2.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA_BEARER);
-                                    c2.append(" standard_id=\"").append(Standards.SECURITY_METHOD_PASSWORD.toString()).append("\"");
-                                    c2.append(", access_url=\"").append(loginURL).append("\"");
-                                    c2.append(", HACK=temporary");
-                                    out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, c2.toString());
+                                
+                                try {
+                                    // this is a temporary hack for CADC SSO prototype, so skip if it fails
+                                    RegistryClient rc = new RegistryClient();
+                                    URL loginURL = rc.getServiceURL(loginServiceURI, Standards.SECURITY_METHOD_PASSWORD, AuthMethod.ANON);
+                                    if (loginURL != null) {
+                                        StringBuilder c2 = new StringBuilder();
+                                        c2.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA_BEARER);
+                                        c2.append(" standard_id=\"").append(Standards.SECURITY_METHOD_PASSWORD.toString()).append("\"");
+                                        c2.append(", access_url=\"").append(loginURL).append("\"");
+                                        c2.append(", HACK=temporary");
+                                        out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, c2.toString());
+                                    }
+                                } catch (Exception ignore) {
+                                    log.debug("temporary SSO hack failed", ignore);
                                 }
                             }                            
                         } catch (NoSuchElementException notSupported) {
