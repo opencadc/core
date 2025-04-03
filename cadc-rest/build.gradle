@@ -15,7 +15,7 @@ sourceCompatibility = 1.8
 
 group = 'org.opencadc'
 
-version = '1.4.2'
+version = '1.4.3'
 
 description = 'OpenCADC REST server library'
 def git_url = 'https://github.com/opencadc/core'
@@ -25,7 +25,7 @@ dependencies {
     implementation 'commons-io:commons-io:[2.18.0,3.0)' // force this because of CVE-2024-47554
     implementation 'javax.servlet:javax.servlet-api:3.1.0'
     implementation 'org.opencadc:cadc-util:[1.9.5,2.0)'
-    implementation 'org.opencadc:cadc-registry:[1.5,)'
+    implementation 'org.opencadc:cadc-registry:[1.8,)'
 
     testCompile 'junit:junit:4.13'
 }
