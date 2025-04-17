@@ -452,6 +452,9 @@ public abstract class HttpTransfer implements Runnable {
      * @return uri or null
      */
     public URI getDigest() {
+        if (digest == null) {
+            return null;
+        }
         return DigestUtil.getURI(this.digest);
     }
 
