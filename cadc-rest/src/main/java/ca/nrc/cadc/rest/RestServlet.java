@@ -128,7 +128,7 @@ public class RestServlet extends HttpServlet {
         SEC_METHOD_CHALLENGES.put(Standards.SECURITY_METHOD_CERT, AuthenticationUtil.CHALLENGE_TYPE_IVOA_X509);
         SEC_METHOD_CHALLENGES.put(Standards.SECURITY_METHOD_OPENID, AuthenticationUtil.CHALLENGE_TYPE_BEARER);
         SEC_METHOD_CHALLENGES.put(Standards.SECURITY_METHOD_TOKEN, AuthenticationUtil.CHALLENGE_TYPE_BEARER);
-        SEC_METHOD_CHALLENGES.put(Standards.SECURITY_METHOD_COOKIE, "ivoa_cookie");
+        SEC_METHOD_CHALLENGES.put(Standards.SECURITY_METHOD_COOKIE, AuthenticationUtil.CHALLENGE_TYPE_IVOA_COOKIE);
     }
             
     private Class<RestAction> getAction;
@@ -484,25 +484,62 @@ public class RestServlet extends HttpServlet {
             
         } else {
             log.debug("adding challenges for " + im.getClass().getName());
+            RegistryClient rc = new RegistryClient();
+            LocalAuthority localAuthority = new LocalAuthority();
             for (URI sm :  im.getSecurityMethods()) {
                 String challenge = SEC_METHOD_CHALLENGES.get(sm);
                 log.debug(sm + " -> " + challenge);
                 if (challenge != null) {
-                    // TODO: check System.getProperty(CERT_HEADER_ENABLE) aka trust ingress to do client cert validation?
-                    // TODO: check for duplicate challenges (map does contain them)?
                     StringBuilder sb = new StringBuilder();
                     sb.append(challenge);
+
+                    // try to add alternative challenges that are augmented with info on how to acquire such a credential
+                    // catch and log failures at debug so this cannot break things
                     if (challenge.equals(AuthenticationUtil.CHALLENGE_TYPE_BASIC)) {
+                        // augment the primary challenge
                         sb.append(" realm=\"").append(realm).append("\"");
+                    } else if (challenge.equals(AuthenticationUtil.CHALLENGE_TYPE_IVOA_X509)
+                            || challenge.equals(AuthenticationUtil.CHALLENGE_TYPE_IVOA_COOKIE)) {
+                        final URI standardID;
+                        if (challenge.equals(AuthenticationUtil.CHALLENGE_TYPE_IVOA_X509)) {
+                            standardID = Standards.CRED_PROXY_10;
+                        } else {
+                            // make something up for now
+                            standardID = URI.create("ivo://ivoa.net/std/Cred#cookie-issuer");
+                        }
+                        try {
+                            URI certGenService = localAuthority.getServiceURI(standardID.toASCIIString());
+                            if (certGenService != null) {
+                                AuthMethod[] ams = new AuthMethod[] {
+                                    // plausible credential exchange methods
+                                    AuthMethod.COOKIE, AuthMethod.PASSWORD, AuthMethod.TOKEN
+                                };
+                                try {
+                                    for (AuthMethod a : ams) {
+                                        URL url = rc.getServiceURL(certGenService, standardID, a);
+                                        if (url != null) {
+                                            // create alternate challenges
+                                            StringBuilder c2 = new StringBuilder();
+                                            c2.append(challenge);
+                                            c2.append(" standard_id=\"").append(Standards.getSecurityMethod(a)).append("\"");
+                                            c2.append(", access_url=\"").append(url).append("\"");
+                                            out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, c2.toString());
+                                        }
+                                    }
+                                } catch (Exception ignore) {
+                                    log.debug("failed to augment " + sm + " challenge", ignore);
+                                }
+                            }
+                        } catch (NoSuchElementException notSupported) {
+                            log.debug("LocalAuthority -- not found: " + sm, notSupported);
+                        }
                     } else if (challenge.equalsIgnoreCase(AuthenticationUtil.CHALLENGE_TYPE_BEARER)) {
                         // temporary hack to add ivoa_token challenge with standard_id
                         try {
-                            URI loginServiceURI = getLocalServiceURI(Standards.SECURITY_METHOD_PASSWORD);
+                            URI loginServiceURI = localAuthority.getServiceURI(Standards.SECURITY_METHOD_PASSWORD.toASCIIString());
                             if (loginServiceURI != null) {
-                                
                                 try {
                                     // this is a temporary hack for CADC SSO prototype, so skip if it fails
-                                    RegistryClient rc = new RegistryClient();
                                     URL loginURL = rc.getServiceURL(loginServiceURI, Standards.SECURITY_METHOD_PASSWORD, AuthMethod.ANON);
                                     if (loginURL != null) {
                                         StringBuilder c2 = new StringBuilder();
