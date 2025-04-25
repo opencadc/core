@@ -126,6 +126,7 @@ public class AuthenticationUtil {
     public static final String CHALLENGE_TYPE_BASIC = "Basic";
     public static final String CHALLENGE_TYPE_IVOA_BEARER = "ivoa_bearer";
     public static final String CHALLENGE_TYPE_IVOA_X509 = "ivoa_x509";
+    public static final String CHALLENGE_TYPE_IVOA_COOKIE = "ivoa_cookie";
     @Deprecated
     public static final String TOKEN_TYPE_CADC = AUTH_HEADER;
 

@@ -128,7 +128,7 @@ public class RestServlet extends HttpServlet {
         SEC_METHOD_CHALLENGES.put(Standards.SECURITY_METHOD_CERT, AuthenticationUtil.CHALLENGE_TYPE_IVOA_X509);
         SEC_METHOD_CHALLENGES.put(Standards.SECURITY_METHOD_OPENID, AuthenticationUtil.CHALLENGE_TYPE_BEARER);
         SEC_METHOD_CHALLENGES.put(Standards.SECURITY_METHOD_TOKEN, AuthenticationUtil.CHALLENGE_TYPE_BEARER);
-        SEC_METHOD_CHALLENGES.put(Standards.SECURITY_METHOD_COOKIE, "ivoa_cookie");
+        SEC_METHOD_CHALLENGES.put(Standards.SECURITY_METHOD_COOKIE, AuthenticationUtil.CHALLENGE_TYPE_IVOA_COOKIE);
     }
             
     private Class<RestAction> getAction;
@@ -484,25 +484,62 @@ public class RestServlet extends HttpServlet {
             
         } else {
             log.debug("adding challenges for " + im.getClass().getName());
+            RegistryClient rc = new RegistryClient();
+            LocalAuthority localAuthority = new LocalAuthority();
             for (URI sm :  im.getSecurityMethods()) {
                 String challenge = SEC_METHOD_CHALLENGES.get(sm);
                 log.debug(sm + " -> " + challenge);
                 if (challenge != null) {
-                    // TODO: check System.getProperty(CERT_HEADER_ENABLE) aka trust ingress to do client cert validation?
-                    // TODO: check for duplicate challenges (map does contain them)?
                     StringBuilder sb = new StringBuilder();
                     sb.append(challenge);
+
+                    // try to add alternative challenges that are augmented with info on how to acquire such a credential
+                    // catch and log failures at debug so this cannot break things
                     if (challenge.equals(AuthenticationUtil.CHALLENGE_TYPE_BASIC)) {
+                        // augment the primary challenge
                         sb.append(" realm=\"").append(realm).append("\"");
+                    } else if (challenge.equals(AuthenticationUtil.CHALLENGE_TYPE_IVOA_X509)
+                            || challenge.equals(AuthenticationUtil.CHALLENGE_TYPE_IVOA_COOKIE)) {
+                        final URI standardID;
+                        if (challenge.equals(AuthenticationUtil.CHALLENGE_TYPE_IVOA_X509)) {
+                            standardID = Standards.CRED_PROXY_10;
+                        } else {
+                            // make something up for now
+                            standardID = URI.create("ivo://ivoa.net/std/Cred#cookie-issuer");
+                        }
+                        try {
+                            URI certGenService = localAuthority.getServiceURI(standardID.toASCIIString());
+                            if (certGenService != null) {
+                                AuthMethod[] ams = new AuthMethod[] {
+                                    // plausible credential exchange methods
+                                    AuthMethod.COOKIE, AuthMethod.PASSWORD, AuthMethod.TOKEN
+                                };
+                                try {
+                                    for (AuthMethod a : ams) {
+                                        URL url = rc.getServiceURL(certGenService, standardID, a);
+                                        if (url != null) {
+                                            // create alternate challenges
+                                            StringBuilder c2 = new StringBuilder();
+                                            c2.append(challenge);
+                                            c2.append(" standard_id=\"").append(Standards.getSecurityMethod(a)).append("\"");
+                                            c2.append(", access_url=\"").append(url).append("\"");
+                                            out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, c2.toString());
+                                        }
+                                    }
+                                } catch (Exception ignore) {
+                                    log.debug("failed to augment " + sm + " challenge", ignore);
+                                }
+                            }
+                        } catch (NoSuchElementException notSupported) {
+                            log.debug("LocalAuthority -- not found: " + sm, notSupported);
+                        }
                     } else if (challenge.equalsIgnoreCase(AuthenticationUtil.CHALLENGE_TYPE_BEARER)) {
                         // temporary hack to add ivoa_token challenge with standard_id
                         try {
-                            URI loginServiceURI = getLocalServiceURI(Standards.SECURITY_METHOD_PASSWORD);
+                            URI loginServiceURI = localAuthority.getServiceURI(Standards.SECURITY_METHOD_PASSWORD.toASCIIString());
                             if (loginServiceURI != null) {
-                                
                                 try {
                                     // this is a temporary hack for CADC SSO prototype, so skip if it fails
-                                    RegistryClient rc = new RegistryClient();
                                     URL loginURL = rc.getServiceURL(loginServiceURI, Standards.SECURITY_METHOD_PASSWORD, AuthMethod.ANON);
                                     if (loginURL != null) {
                                         StringBuilder c2 = new StringBuilder();
@@ -526,91 +563,6 @@ public class RestServlet extends HttpServlet {
                 }
             }
         }
-
-        /*
-            log.debug("Setting " + AuthenticationUtil.AUTHENTICATE_HEADER + " header");
-            boolean addBearerChallenge = false;
-            try {
-                URI loginServiceURI = getLocalServiceURI(Standards.SECURITY_METHOD_PASSWORD);
-                URL loginURL = rc.getServiceURL(loginServiceURI, Standards.SECURITY_METHOD_PASSWORD, AuthMethod.ANON);
-                StringBuilder sb = new StringBuilder();
-                sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA_BEARER).append(" standard_id=\"")
-                    .append(Standards.SECURITY_METHOD_PASSWORD.toString()).append("\", ");
-                sb.append("access_url=\"").append(loginURL).append("\"");
-                appendAuthenticateErrorInfo(AuthenticationUtil.CHALLENGE_TYPE_IVOA_BEARER, sb, ex, false);
-                out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
-                addBearerChallenge = true;
-            } catch (NoSuchElementException notSupported) {
-                log.debug("LocalAuthority -- not found: " + Standards.SECURITY_METHOD_PASSWORD, notSupported);
-            }
-            
-            try {
-                URI authorizeServiceURI = getLocalServiceURI(Standards.SECURITY_METHOD_OPENID);
-                if (authorizeServiceURI != null) {
-                    URL authorizeURL = null;
-                    if ("https".equals(authorizeServiceURI.getScheme())) {
-                        try {
-                            authorizeURL = authorizeServiceURI.toURL();
-                        } catch (MalformedURLException configEx) {
-                            throw new RuntimeException("CONFIG: invalid OpenID provider URL: " + authorizeURL, configEx);
-                        }
-                    } else if ("ivo".equals(authorizeServiceURI.getScheme())) {
-                        authorizeURL = rc.getServiceURL(authorizeServiceURI, Standards.SECURITY_METHOD_OPENID, AuthMethod.ANON);
-                    } else {
-                        log.warn("unrecognized URI scheme for OpenID provider: " + authorizeServiceURI);
-                    }
-                    // only the challenge - not the token acquisition info
-                    if (authorizeURL != null) {
-                        addBearerChallenge = true;
-                    }
-                }
-            } catch (NoSuchElementException notSupported) {
-                log.debug("LocalAuthority -- not found: " + Standards.SECURITY_METHOD_OAUTH, notSupported);
-            }
-            
-            if (addBearerChallenge) {
-                // plain bearer challenge
-                StringBuilder sb = new StringBuilder();
-                sb.append(AuthenticationUtil.CHALLENGE_TYPE_BEARER);
-                appendAuthenticateErrorInfo(AuthenticationUtil.CHALLENGE_TYPE_BEARER, sb, ex, true);
-                out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
-            }
-            
-            try {
-                // header for delegated x509 client proxy certificates
-                URI cdpProxyServiceURI = getLocalServiceURI(Standards.CRED_PROXY_10);
-                if (cdpProxyServiceURI != null) {
-                    Capabilities caps = rc.getCapabilities(cdpProxyServiceURI);
-                    if (caps != null) {
-                        Capability c = caps.findCapability(Standards.CRED_PROXY_10);
-                        if (c != null) {
-                            for (Interface i : c.getInterfaces()) {
-                                List<URI> securityMethods = i.getSecurityMethods();
-                                for (URI s : securityMethods) {
-                                    if (s.equals(Standards.SECURITY_METHOD_HTTP_BASIC) || s.equals(Standards.SECURITY_METHOD_PASSWORD)) {
-                                        StringBuilder sb = new StringBuilder();
-                                        sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA_X509).append(" standard_id=\"")
-                                        .append(s.toASCIIString()).append("\", ");
-                                        sb.append("access_url=\"").append(i.getAccessURL().getURL()).append("\"");
-                                        out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
-                                    }
-                                }
-                            }
-                        }
-                        // assumption: if there is a local CDP#delegate configured, then client certs are supported
-                        Capability dc = caps.findCapability(Standards.CRED_DELEGATE_10);
-                        if (dc != null) {
-                            StringBuilder sb = new StringBuilder();
-                            sb.append(AuthenticationUtil.CHALLENGE_TYPE_IVOA_X509);
-                            out.addHeader(AuthenticationUtil.AUTHENTICATE_HEADER, sb.toString());
-                        }
-                    }
-                }
-            } catch (NoSuchElementException | ResourceNotFoundException | IOException notSupported) {
-                log.debug("LocalAuthority -- not found: " + Standards.CRED_PROXY_10, notSupported);
-            }
-        }
-        */
     }
     
     /**
