@@ -165,10 +165,14 @@ public class TokenValidatorTest {
             } catch (NotAuthenticatedException ex) {
                 Assert.assertTrue("exception message", ex.getMessage().contains("unsupported challenge type: ivoa"));
             }
-            
-            // invalid bearer token
+
+
+            // invalid bearer token (expired
+            Date expired = new Date(new Date().getTime() - (48 * 3600 * 1000));
             subject = new Subject();
-            authPrincipal = new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, "Bearer tampered");
+            token = new SignedToken(new HttpPrincipal("user"), URI.create("the:scope"), expired, domains);
+            value = SignedToken.format(token);
+            authPrincipal = new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, "Bearer " + value);
             subject.getPrincipals().add(authPrincipal);
             try {
                 subject = TokenValidator.validateTokens(subject);
@@ -178,6 +182,13 @@ public class TokenValidatorTest {
                 Assert.assertEquals("invalid_token", e.getAuthError().getValue());
             }
             
+            // invalid bearer CADC access token - ignored
+            subject = new Subject();
+            authPrincipal = new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, "Bearer tampered");
+            subject.getPrincipals().add(authPrincipal);
+            subject = TokenValidator.validateTokens(subject);
+            Assert.assertTrue("invalid bearer token ignored", subject.getPrincipals().contains(authPrincipal));
+
             // unsupported challenge type
             subject = new Subject();
             token = new SignedToken(new HttpPrincipal("user"), null, expiry, domains);
