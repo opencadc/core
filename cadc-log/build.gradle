@@ -9,11 +9,11 @@ repositories {
     mavenLocal()
 }
 
-sourceCompatibility = 1.8
+sourceCompatibility = 11
 
 group = 'org.opencadc'
 
-version = '1.2.2'
+version = '1.2.3'
 
 description = 'OpenCADC Logging Init server library'
 def git_url = 'https://github.com/opencadc/core'
