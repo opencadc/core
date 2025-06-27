@@ -120,6 +120,12 @@ public class SyncInput {
             }
         }
     }
+    
+    // for subclass stubs used in unit tests
+    protected SyncInput() {
+        this.request = null;
+        this.inlineContentHandler = null;
+    }
 
     /**
      * Get the real client IP address. The REST binding is split up as follows:
@@ -268,7 +274,8 @@ public class SyncInput {
     }
 
     /**
-     * Get an inline content object.
+     * Get an inline content object. The returned object may be a List if multiple
+     * inline objects were captured.
      *
      * @param name name of inline object
      * @return an object for the specified content name; may be null
@@ -280,6 +287,7 @@ public class SyncInput {
     /**
      * Process all input. For HEAD, GET, and DELETE: process parameters. 
      * For POST and PUT: process parameters, bare content stream, and multipart.
+     * TBD: DELETE with parameters is sketchy.
      * 
      * @throws IOException fail to read
      * @throws ResourceNotFoundException thrown by InlineContentHandler 
@@ -359,7 +367,19 @@ public class SyncInput {
         }
 
         InlineContentHandler.Content c = inlineContentHandler.accept(name, contentType, new CloseWrapper(inputStream));
-        content.put(c.name, c.value);
+        Object o = content.get(c.name);
+        if (o == null) {
+            content.put(c.name, c.value);
+        } else if (o instanceof List) {
+            List cur = (List) o;
+            cur.add(c);
+        } else {
+            // multipart: replace single item with list
+            List<Object> cur = new ArrayList<>();
+            cur.add(o);
+            cur.add(c.value);
+            content.put(c.name, cur);
+        }
     }
 
     // this is here to aid in debugging InputStream failures like the one where some library code

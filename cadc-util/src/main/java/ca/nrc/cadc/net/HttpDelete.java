@@ -125,6 +125,7 @@ public class HttpDelete extends HttpTransfer {
         conn.setUseCaches(false);
         conn.setDoInput(true);
         conn.setDoOutput(false);
+        conn.setInstanceFollowRedirects(followRedirects);
         
         setRequestHeaders(conn);
         setRequestAuthHeaders(conn);

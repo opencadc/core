@@ -11,11 +11,11 @@ repositories {
 
 apply from: '../opencadc.gradle'
 
-sourceCompatibility = 1.8
+sourceCompatibility = 11
 
 group = 'org.opencadc'
 
-version = '1.4.5'
+version = '1.4.6'
 
 description = 'OpenCADC REST server library'
 def git_url = 'https://github.com/opencadc/core'
@@ -25,7 +25,7 @@ dependencies {
     api 'commons-io:commons-io:[2.18.0,3.0)' // force this because of CVE-2024-47554
     implementation 'javax.servlet:javax.servlet-api:3.1.0'
     implementation 'org.opencadc:cadc-util:[1.12.4,2.0)'
-    implementation 'org.opencadc:cadc-registry:[1.7,)'
+    implementation 'org.opencadc:cadc-registry:[1.8.0,)'
 
-    testCompile 'junit:junit:4.13'
+    testImplementation 'junit:junit:4.13'
 }
