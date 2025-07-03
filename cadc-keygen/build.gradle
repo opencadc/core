@@ -1,6 +1,5 @@
 plugins {
     id 'java'
-    id 'maven'
     id 'application'
 }
 
@@ -9,7 +8,7 @@ repositories {
     mavenLocal()
 }
 
-sourceCompatibility = 1.8
+sourceCompatibility = 11
 
 group = 'org.opencadc'
 
@@ -18,15 +17,15 @@ version = '1.0'
 mainClassName = 'ca.nrc.cadc.keygen.Main'
 
 dependencies {
-    compile 'org.opencadc:cadc-util:[1.6,2.0)'
+    implementation 'org.opencadc:cadc-util:[1.6,2.0)'
     
-    testCompile 'junit:junit:4.13'
+    testImplementation 'junit:junit:4.13'
 }
 
 configurations {
-  runtime.exclude group: 'javax.servlet'
-  runtime.exclude group: 'org.jdom'
-  runtime.exclude group: 'org.json'
-  runtime.exclude group: 'org.springframework'
-  runtime.exclude group: 'xerces'
+  runtimeOnly.exclude group: 'javax.servlet'
+  runtimeOnly.exclude group: 'org.jdom'
+  runtimeOnly.exclude group: 'org.json'
+  runtimeOnly.exclude group: 'org.springframework'
+  runtimeOnly.exclude group: 'xerces'
 }

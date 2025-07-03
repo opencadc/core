@@ -15,7 +15,7 @@ sourceCompatibility = 1.8
 
 group = 'org.opencadc'
 
-version = '1.12.5'
+version = '1.12.6'
 
 description = 'OpenCADC core utility library'
 def git_url = 'https://github.com/opencadc/core'
@@ -36,9 +36,12 @@ dependencies {
     implementation 'org.apache.commons:commons-dbcp2:[2.8.0,2.9.0)'
 
     testImplementation 'junit:junit:4.13'
-    testImplementation 'org.easymock:easymock:3.6'
+    testImplementation 'org.easymock:easymock:[3.6,)'
     testImplementation 'org.skyscreamer:jsonassert:1.5.0'
 
     intTestImplementation 'org.postgresql:postgresql:[42.2.8,)'
 }
 
+configurations {
+  implementation.exclude group: 'com.github.spotbugs'
+}
