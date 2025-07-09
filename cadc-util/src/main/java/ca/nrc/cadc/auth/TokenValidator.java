@@ -96,7 +96,7 @@ public class TokenValidator {
      * @throws AccessControlException 
      */
     public static Subject validateTokens(Subject subject) throws NotAuthenticatedException {
-        
+
         // cookies
         Set<CookiePrincipal> cookiePrincipals = subject.getPrincipals(CookiePrincipal.class);
         log.debug("validateTokens: found " + cookiePrincipals.size() + " cookie principals");
@@ -116,7 +116,7 @@ public class TokenValidator {
                 }
             }
         }
-        
+
         // tokens
         Set<AuthorizationTokenPrincipal> tokenPrincipals = subject.getPrincipals(AuthorizationTokenPrincipal.class);
         log.debug("validateTokens: found " + tokenPrincipals.size() + " token principals");
@@ -149,11 +149,14 @@ public class TokenValidator {
                 log.debug("credentials: " + credentials);
 
                 try {
+                    if (!SignedToken.isSignedToken(credentials)) {
+                        continue;  // could be a JWT for downstream processing
+                    }
                     SignedToken validatedToken = SignedToken.parse(credentials);
                     subject.getPrincipals().addAll(validatedToken.getIdentityPrincipals());
 
                     AuthorizationToken authToken = new AuthorizationToken(
-                        challengeType, credentials, validatedToken.getDomains(), validatedToken.getScope());
+                            challengeType, credentials, validatedToken.getDomains(), validatedToken.getScope());
 
                     log.debug("Adding token credential to subject, removing token principal");
                     subject.getPublicCredentials().add(authToken);

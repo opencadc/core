@@ -112,7 +112,7 @@ public class AuthenticationUtil {
 
     // HTTP/1.1 Authorization header as defined by RFC 7235
     public static final String AUTHORIZATION_HEADER = "Authorization";
-    
+
     // HTTP/1.1 WWW-Authenticate header
     public static final String AUTHENTICATE_HEADER = "WWW-Authenticate";
     
@@ -775,6 +775,9 @@ public class AuthenticationUtil {
     public static String getPrincipalType(Principal userID) {
         if (userID instanceof X500Principal) {
             return IdentityType.X500.getValue().toLowerCase();
+        }
+        if (userID instanceof OpenIdPrincipal) {
+            return ((OpenIdPrincipal)userID).getIssuer().toExternalForm();
         }
         if (userID instanceof HttpPrincipal) {
             return IdentityType.USERNAME.getValue().toLowerCase();
