@@ -128,6 +128,7 @@ public class X500IdentityManager implements IdentityManager {
     public Set<URI> getSecurityMethods() {
         Set<URI> ret = new TreeSet<>();
         ret.add(URI.create("ivo://ivoa.net/sso#tls-with-certificate"));
+        ret.add(URI.create("ivo://ivoa.net/sso#anon"));
         return ret;
     }
 }
