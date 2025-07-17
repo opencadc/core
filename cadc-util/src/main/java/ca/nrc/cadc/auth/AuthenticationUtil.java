@@ -91,6 +91,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
@@ -342,8 +343,24 @@ public class AuthenticationUtil {
 
         Subject subject = new Subject(false, principals, publicCred, privateCred);
         subject = validateSubject(subject);
-        // reject un-validated authorization
-        Set<AuthorizationTokenPrincipal> unvalidated = subject.getPrincipals(AuthorizationTokenPrincipal.class);
+
+        // reject un-validated authorization for bearer or basic auth
+        Set<AuthorizationTokenPrincipal> unvalidated =
+                subject.getPrincipals(AuthorizationTokenPrincipal.class)
+                       .stream()
+                       .filter(authorizationTokenPrincipal -> {
+                           final String headerValue = authorizationTokenPrincipal.getHeaderValue();
+                           if (headerValue != null && headerValue.startsWith(CHALLENGE_TYPE_BEARER)) {
+                               final String[] headerValueParts = headerValue.split(" ");
+                               if (headerValueParts.length == 2) {
+                                   final String challengeType = headerValueParts[0];
+                                   return AuthenticationUtil.CHALLENGE_TYPE_BEARER.equalsIgnoreCase(challengeType)
+                                           || AuthenticationUtil.CHALLENGE_TYPE_BASIC.equalsIgnoreCase(challengeType);
+                               }
+                           }
+
+                           return false;
+                       }).collect(Collectors.toSet());
         if (!unvalidated.isEmpty()) {
             AuthorizationTokenPrincipal atp = unvalidated.iterator().next();
             throw new NotAuthenticatedException("unhandled auth: " + atp.getHeaderKey() + " " + atp.getHeaderValue());
