@@ -771,6 +771,9 @@ public class AuthenticationUtil {
         if (userID instanceof X500Principal) {
             return IdentityType.X500.getValue().toLowerCase();
         }
+        if (userID instanceof OpenIdPrincipal) {
+            return IdentityType.OPENID.getValue().toLowerCase();
+        }
         if (userID instanceof HttpPrincipal) {
             return IdentityType.USERNAME.getValue().toLowerCase();
         }
