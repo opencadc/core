@@ -146,10 +146,10 @@ public class TokenValidator {
                             log.debug("Adding token credential to subject, removing token principal");
                             subject.getPublicCredentials().add(authToken);
                             subject.getPrincipals().remove(p);
-                        } // else: other kind of bearer token: leave AuthorizationTokenPrincipal for additional
-                          // processing
+                        } // else: other kind of bearer token: leave AuthorizationTokenPrincipal for more processing
                     } catch (Exception ex) {
-                        throw new NotAuthenticatedException(challengeType, AuthError.INVALID_TOKEN, ex.getMessage(), ex);
+                        throw new NotAuthenticatedException(
+                                challengeType, AuthError.INVALID_TOKEN, ex.getMessage(), ex);
                     }
                 }
             }
