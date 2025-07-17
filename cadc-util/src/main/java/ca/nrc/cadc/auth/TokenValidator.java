@@ -125,44 +125,32 @@ public class TokenValidator {
             log.debug("header value: " + p.getHeaderValue());
             String credentials = null;
             String challengeType = null;
-            if (AuthenticationUtil.TOKEN_TYPE_CADC.equals(p.getHeaderKey())) {
-                challengeType = AuthenticationUtil.TOKEN_TYPE_CADC;
-                credentials = p.getHeaderValue().trim();
-            } else if (AuthenticationUtil.AUTHORIZATION_HEADER.equals(p.getHeaderKey())) {
+            if (AuthenticationUtil.AUTHORIZATION_HEADER.equals(p.getHeaderKey())) {
                 // parse the token into challenge type and credentials.
                 int spaceIndex = p.getHeaderValue().indexOf(" ");
                 if (spaceIndex == -1) {
                     throw new NotAuthenticatedException(challengeType, AuthError.INVALID_REQUEST,
-                        "missing authorization challenge");
+                            "missing authorization challenge");
                 }
                 challengeType = p.getHeaderValue().substring(0, spaceIndex).trim();
                 if (AuthenticationUtil.CHALLENGE_TYPE_BEARER.equalsIgnoreCase(challengeType)) {
                     credentials = p.getHeaderValue().substring(spaceIndex + 1).trim();
-                }
-                // else: ignore
-                //    throw new NotAuthenticatedException(challengeType, AuthError.INVALID_REQUEST,
-                //        "unsupported challenge type: " + challengeType);
-                //}
-            }
-            if (challengeType != null && credentials != null) {
-                log.debug("challenge type: " + challengeType);
-                log.debug("credentials: " + credentials);
+                    try {
+                        if (SignedToken.isSignedToken(credentials)) {
+                            SignedToken validatedToken = SignedToken.parse(credentials);
+                            subject.getPrincipals().addAll(validatedToken.getIdentityPrincipals());
 
-                try {
-                    if (!SignedToken.isSignedToken(credentials)) {
-                        continue;  // could be a JWT for downstream processing
+                            AuthorizationToken authToken = new AuthorizationToken(
+                                    challengeType, credentials, validatedToken.getDomains(), validatedToken.getScope());
+
+                            log.debug("Adding token credential to subject, removing token principal");
+                            subject.getPublicCredentials().add(authToken);
+                            subject.getPrincipals().remove(p);
+                        } // else: other kind of bearer token: leave AuthorizationTokenPrincipal for additional
+                          // processing
+                    } catch (Exception ex) {
+                        throw new NotAuthenticatedException(challengeType, AuthError.INVALID_TOKEN, ex.getMessage(), ex);
                     }
-                    SignedToken validatedToken = SignedToken.parse(credentials);
-                    subject.getPrincipals().addAll(validatedToken.getIdentityPrincipals());
-
-                    AuthorizationToken authToken = new AuthorizationToken(
-                            challengeType, credentials, validatedToken.getDomains(), validatedToken.getScope());
-
-                    log.debug("Adding token credential to subject, removing token principal");
-                    subject.getPublicCredentials().add(authToken);
-                    subject.getPrincipals().remove(p);
-                } catch (Exception ex) {
-                    throw new NotAuthenticatedException(challengeType, AuthError.INVALID_TOKEN, ex.getMessage(), ex);
                 }
             }
             // ignore other challenge types

@@ -107,9 +107,6 @@ import org.apache.log4j.Logger;
  */
 public class AuthenticationUtil {
 
-    @Deprecated // Should be using standard Authorization header
-    public static final String AUTH_HEADER = "X-CADC-DelegationToken";
-
     // HTTP/1.1 Authorization header as defined by RFC 7235
     public static final String AUTHORIZATION_HEADER = "Authorization";
 
@@ -127,8 +124,6 @@ public class AuthenticationUtil {
     public static final String CHALLENGE_TYPE_IVOA_BEARER = "ivoa_bearer";
     public static final String CHALLENGE_TYPE_IVOA_X509 = "ivoa_x509";
     public static final String CHALLENGE_TYPE_IVOA_COOKIE = "ivoa_cookie";
-    @Deprecated
-    public static final String TOKEN_TYPE_CADC = AUTH_HEADER;
 
     // Mandatory support list of RDN descriptors according to RFC 4512.
     private static final String[] ORDERED_RDN_KEYS = new String[] { "DC", "CN", "OU", "O", "STREET", "L", "ST", "C", "UID" };
@@ -775,9 +770,6 @@ public class AuthenticationUtil {
     public static String getPrincipalType(Principal userID) {
         if (userID instanceof X500Principal) {
             return IdentityType.X500.getValue().toLowerCase();
-        }
-        if (userID instanceof OpenIdPrincipal) {
-            return ((OpenIdPrincipal)userID).getIssuer().toExternalForm();
         }
         if (userID instanceof HttpPrincipal) {
             return IdentityType.USERNAME.getValue().toLowerCase();

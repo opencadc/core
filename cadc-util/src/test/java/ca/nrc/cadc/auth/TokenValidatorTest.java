@@ -127,28 +127,16 @@ public class TokenValidatorTest {
             subject = TokenValidator.validateTokens(subject);
             Assert.assertEquals("cookie credential", 1, subject.getPublicCredentials(SSOCookieCredential.class).size());
             Assert.assertEquals("cookie principal", 0, subject.getPrincipals(AuthorizationTokenPrincipal.class).size());
-            
-            // test cadc deprecated tokens
-            subject = new Subject();
-            token = new SignedToken(new HttpPrincipal("user"), null, expiry, domains);
-            value = SignedToken.format(token);
-            AuthorizationTokenPrincipal authPrincipal = new AuthorizationTokenPrincipal(AuthenticationUtil.TOKEN_TYPE_CADC, value);
-            subject.getPrincipals().add(authPrincipal);
-            subject = TokenValidator.validateTokens(subject);
-            Assert.assertEquals("token credential", 1, subject.getPublicCredentials(AuthorizationToken.class).size());
-            AuthorizationToken authToken = subject.getPublicCredentials(AuthorizationToken.class).iterator().next();
-            Assert.assertEquals("cadc token type", AuthenticationUtil.TOKEN_TYPE_CADC, authToken.getType());
-            Assert.assertEquals("cadc token value", value, authToken.getCredentials());
-            
+
             // bearer tokens
             subject = new Subject();
             token = new SignedToken(new HttpPrincipal("user"), URI.create("the:scope"), expiry, domains);
             value = SignedToken.format(token);
-            authPrincipal = new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, "Bearer " + value);
+            AuthorizationTokenPrincipal authPrincipal = new AuthorizationTokenPrincipal(AuthenticationUtil.AUTHORIZATION_HEADER, "Bearer " + value);
             subject.getPrincipals().add(authPrincipal);
             subject = TokenValidator.validateTokens(subject);
             Assert.assertEquals("token credential", 1, subject.getPublicCredentials(AuthorizationToken.class).size());
-            authToken = subject.getPublicCredentials(AuthorizationToken.class).iterator().next();
+            AuthorizationToken authToken = subject.getPublicCredentials(AuthorizationToken.class).iterator().next();
             Assert.assertEquals("bearer token type", AuthenticationUtil.CHALLENGE_TYPE_BEARER, authToken.getType());
             Assert.assertEquals("bearer token value", value, authToken.getCredentials());
             Assert.assertEquals("bearer token scope", "the:scope", authToken.getScope().toString());

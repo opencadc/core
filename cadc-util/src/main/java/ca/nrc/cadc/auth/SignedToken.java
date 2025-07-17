@@ -249,19 +249,15 @@ public class SignedToken implements Serializable {
     }
 
     /**
-     * Checks whether a token is a CADC access token or not
+     * Checks whether a token is a signed token or not.
      * @param text Token to check
      * @return true if the token is a CADC access token, false otherwise
      */
     public static boolean isSignedToken(String text) {
-        if (text.startsWith(SignedToken.EXPIRY_LABEL)) {
-            return true;
-        }
-        // otherwise assume it is a base64 encoded token
         try {
-            String val = new String(Base64.decode(text));
+            String val = Base64.decodeString(text);
             return val.contains(VALUE_DELIM);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException ignore) {
             // not a base64 encoded string
             return false;
         }
