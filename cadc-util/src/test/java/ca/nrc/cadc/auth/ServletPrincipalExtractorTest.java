@@ -42,7 +42,6 @@ import static org.junit.Assert.assertTrue;
 
 import ca.nrc.cadc.util.Log4jInit;
 import ca.nrc.cadc.util.PropertiesReader;
-import ca.nrc.cadc.util.RSASignatureGeneratorValidatorTest;
 import ca.nrc.cadc.util.RsaSignatureGenerator;
 
 import java.io.File;
@@ -54,9 +53,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.easymock.EasyMock;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -106,7 +103,6 @@ public class ServletPrincipalExtractorTest
 
             expect(request.getAttribute(
                     ServletPrincipalExtractor.CERT_REQUEST_ATTRIBUTE)).andReturn(null);
-            expect(request.getHeader(AuthenticationUtil.AUTH_HEADER)).andReturn(null);
             expect(request.getHeaders("Authorization")).andReturn(Collections.emptyEnumeration());
             expect(request.getCookies()).andReturn(cookies);
             expect(request.getRemoteUser()).andReturn(null).times(2);

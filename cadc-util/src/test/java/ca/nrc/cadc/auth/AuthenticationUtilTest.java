@@ -80,24 +80,19 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
-import ca.nrc.cadc.util.RsaSignatureGenerator;
 
-import java.io.File;
 import java.net.InetAddress;
 import java.net.PasswordAuthentication;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.PrivilegedAction;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -472,7 +467,6 @@ public class AuthenticationUtilTest
 
             expect(mockRequest.getRemoteUser()).andReturn(null).atLeastOnce();
             expect(mockRequest.getCookies()).andReturn(null).atLeastOnce();
-            expect(mockRequest.getHeader(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
             expect(mockRequest.getHeaders("Authorization")).andReturn(Collections.emptyEnumeration());
             expect(mockRequest.getAttribute(
                     "javax.servlet.request.X509Certificate")).andReturn(null).atLeastOnce();
@@ -513,7 +507,6 @@ public class AuthenticationUtilTest
 
             expect(mockRequest.getRemoteUser()).andReturn(null).atLeastOnce();
             expect(mockRequest.getCookies()).andReturn(null).atLeastOnce();
-            expect(mockRequest.getHeader(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
             expect(mockRequest.getHeaders("Authorization")).andReturn(Collections.emptyEnumeration());
             expect(mockRequest.getAttribute(
                     "javax.servlet.request.X509Certificate")).andReturn(null).atLeastOnce();
@@ -553,7 +546,6 @@ public class AuthenticationUtilTest
 
             expect(mockRequest.getRemoteUser()).andReturn("foo").atLeastOnce();
             expect(mockRequest.getCookies()).andReturn(null).atLeastOnce();
-            expect(mockRequest.getHeader(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
             expect(mockRequest.getHeaders("Authorization")).andReturn(Collections.emptyEnumeration());
             expect(mockRequest.getAttribute(
                     "javax.servlet.request.X509Certificate")).andReturn(null).atLeastOnce();
@@ -669,7 +661,6 @@ public class AuthenticationUtilTest
 
             expect(mockRequest.getRemoteUser()).andReturn(null).atLeastOnce();
             expect(mockRequest.getCookies()).andReturn(null).atLeastOnce();
-            expect(mockRequest.getHeader(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
             expect(mockRequest.getHeader("Authorization")).andReturn(null);
             expect(mockRequest.getAttribute(
                     "javax.servlet.request.X509Certificate")).andReturn(ca).atLeastOnce();
@@ -755,7 +746,6 @@ public class AuthenticationUtilTest
 
             expect(mockRequest.getRemoteUser()).andReturn(null).atLeastOnce();
             expect(mockRequest.getCookies()).andReturn(cookies).atLeastOnce();
-            expect(mockRequest.getHeader(AuthenticationUtil.AUTH_HEADER)).andReturn(null).atLeastOnce();
             expect(mockRequest.getHeader("Authorization")).andReturn(null);
             expect(mockRequest.getAttribute(
                     "javax.servlet.request.X509Certificate")).andReturn(null).atLeastOnce();
