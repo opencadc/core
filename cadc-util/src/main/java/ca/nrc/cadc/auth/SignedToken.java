@@ -256,7 +256,7 @@ public class SignedToken implements Serializable {
     public static boolean isSignedToken(String text) {
         try {
             String val = Base64.decodeString(text);
-            return val.contains(VALUE_DELIM);
+            return val.contains(EXPIRY_LABEL);
         } catch (IllegalArgumentException ignore) {
             // not a base64 encoded string
             return false;

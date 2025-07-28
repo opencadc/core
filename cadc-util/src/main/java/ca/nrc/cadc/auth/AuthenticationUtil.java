@@ -111,7 +111,7 @@ public class AuthenticationUtil {
     public static final String AUTHORIZATION_HEADER = "Authorization";
 
     // HTTP/1.1 WWW-Authenticate header
-    public static final String AUTHENTICATE_HEADER = "WWW-Authenticate";
+    public static final String doAUTHENTICATE_HEADER = "WWW-Authenticate";
     
     // IVOA header to indicate successful authentication.  Value is a principal name.
     public static final String VO_AUTHENTICATED_HEADER = "x-vo-authenticated";
