@@ -136,13 +136,6 @@ public class ServletPrincipalExtractor implements PrincipalExtractor {
             }
         }
 
-        // custom header (deprecated)
-        String cadcTokenHeader = request.getHeader(AuthenticationUtil.AUTH_HEADER);
-        if (cadcTokenHeader != null) {
-            AuthorizationTokenPrincipal principal = new AuthorizationTokenPrincipal(AuthenticationUtil.AUTH_HEADER, cadcTokenHeader);
-            principals.add(principal);
-        }
-
         // authorization header
         Enumeration<String> authTokens = request.getHeaders(AuthenticationUtil.AUTHORIZATION_HEADER);
         while (authTokens.hasMoreElements()) {

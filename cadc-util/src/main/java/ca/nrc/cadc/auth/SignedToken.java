@@ -249,6 +249,21 @@ public class SignedToken implements Serializable {
     }
 
     /**
+     * Checks whether a token is a signed token or not.
+     * @param text Token to check
+     * @return true if the token is a CADC access token, false otherwise
+     */
+    public static boolean isSignedToken(String text) {
+        try {
+            String val = Base64.decodeString(text);
+            return val.contains(EXPIRY_LABEL);
+        } catch (IllegalArgumentException ignore) {
+            // not a base64 encoded string
+            return false;
+        }
+    }
+
+    /**
      * Builds a DelegationToken from a text string
      *
      * @param text       Token to parse
