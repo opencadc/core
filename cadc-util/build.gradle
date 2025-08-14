@@ -15,7 +15,7 @@ sourceCompatibility = 1.8
 
 group = 'org.opencadc'
 
-version = '1.12.8'
+version = '1.12.9'
 
 description = 'OpenCADC core utility library'
 def git_url = 'https://github.com/opencadc/core'
@@ -31,13 +31,14 @@ dependencies {
 
     implementation 'org.bouncycastle:bcprov-jdk18on:[1.70,2.0)'
     implementation 'org.bouncycastle:bcpkix-jdk18on:[1.70,2.0)'
-    implementation 'javax.servlet:javax.servlet-api:3.1.0'
     implementation 'xerces:xercesImpl:[2.12.2,)'
     implementation 'org.apache.commons:commons-dbcp2:[2.8.0,2.9.0)'
+    compileOnly 'javax.servlet:javax.servlet-api:3.1.0'
 
     testImplementation 'junit:junit:4.13'
     testImplementation 'org.easymock:easymock:[3.6,)'
     testImplementation 'org.skyscreamer:jsonassert:1.5.0'
+    testImplementation 'javax.servlet:javax.servlet-api:3.1.0'
 
     intTestImplementation 'org.postgresql:postgresql:[42.2.8,)'
 }
