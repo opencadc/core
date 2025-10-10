@@ -70,12 +70,13 @@
 package ca.nrc.cadc.net;
 
 import ca.nrc.cadc.io.RandomAccessSource;
-import org.apache.log4j.Logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+
+import org.apache.log4j.Logger;
 
 /**
  * A RandomAccessSource implementation that uses HTTP range requests to provide
