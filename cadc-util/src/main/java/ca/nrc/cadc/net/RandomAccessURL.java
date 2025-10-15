@@ -71,10 +71,11 @@ package ca.nrc.cadc.net;
 
 import ca.nrc.cadc.io.RandomAccessSource;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
@@ -92,8 +93,17 @@ public class RandomAccessURL implements RandomAccessSource {
     private long position = 0;
     private final long contentLength;
 
-    // Fails if range requests not supported
-    public RandomAccessURL(URL url) throws IOException, ResourceNotFoundException {
+    /**
+     * Constructs a RandomAccessURL for the provided URL.
+     * This constructor performs a HEAD request to verify that the provided URL supports HTTP range requests and fetches the content length. If the server does not support range requests, an UnsupportedOperationException is thrown.
+     *
+     * @param url The URL to check.
+     * @throws IOException                   If an I/O error occurs.
+     * @throws ResourceNotFoundException     If the resource is not found.
+     * @throws UnsupportedOperationException If range requests are not supported by the server.
+     */
+    public RandomAccessURL(URL url) throws IOException, ResourceNotFoundException, UnsupportedOperationException {
+        log.debug("RandomAccessURL requested for URL: " + url);
         this.url = url;
         this.contentLength = fetchContentLength(url);
     }
@@ -112,12 +122,12 @@ public class RandomAccessURL implements RandomAccessSource {
             return -1;
         }
 
-        int bytesToRead = (int) Math.min(length, contentLength - position);
+        int bytesToRead = (int) Math.min(length, Math.min(contentLength - position, buffer.length - offset));
+        long rangeEnd = position + bytesToRead - 1;
+        String range = "bytes=" + position + "-" + rangeEnd;
 
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        HttpGet get = new HttpGet(url, bos);
-        String range = "bytes=" + position + "-" + (position + bytesToRead - 1);
-        get.setRequestProperty("Range", range);
+        HttpGet get = new HttpGet(url, true);
+        get.setRequestProperty("range", range);
         get.setFollowRedirects(true);
 
         try {
@@ -125,6 +135,8 @@ public class RandomAccessURL implements RandomAccessSource {
         } catch (ResourceAlreadyExistsException | ResourceNotFoundException | InterruptedException e) {
             throw new RuntimeException(e);
         }
+
+        validatePartialContentResponse(get, position, rangeEnd);
 
         InputStream in = get.getInputStream();
         int bytesRead = in.read(buffer, offset, bytesToRead);
@@ -141,8 +153,7 @@ public class RandomAccessURL implements RandomAccessSource {
 
     // Verifies that the URL supports range requests and fetches the content length.
     private long fetchContentLength(URL url) throws IOException, ResourceNotFoundException {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        HttpGet get = new HttpGet(url, bos);
+        HttpGet get = new HttpGet(url, true);
         get.setHeadOnly(true);
         get.setFollowRedirects(true);
 
@@ -150,7 +161,7 @@ public class RandomAccessURL implements RandomAccessSource {
             get.prepare();
             long contentLength = get.getContentLength();
 
-            String acceptRanges = get.getResponseHeader("Accept-Ranges");
+            String acceptRanges = get.getResponseHeader("accept-ranges");
             if (acceptRanges == null) {
                 throw new UnsupportedOperationException("Range requests not supported for this URL : " + url);
             }
@@ -161,4 +172,33 @@ public class RandomAccessURL implements RandomAccessSource {
         }
     }
 
+    @Override
+    public void close() throws IOException {
+        // Nothing to close
+    }
+
+    // verify status code and content-range header
+    private void validatePartialContentResponse(HttpGet get, long expectedStart, long expectedEnd) throws IOException {
+        log.debug("Validating partial content response");
+        int responseCode = get.getResponseCode();
+        String contentRange = get.getResponseHeader("content-range");
+        if (responseCode != 206 || contentRange == null) {
+            throw new IOException("Expected HTTP 206 Partial Content and Content-Range header, got: " + responseCode + ", Content-Range: " + contentRange);
+        }
+
+        Pattern pattern = Pattern.compile("bytes (\\d+)-(\\d+)/(\\d+|\\*)");
+        Matcher matcher = pattern.matcher(contentRange);
+        if (matcher.matches()) {
+            long start = Long.parseLong(matcher.group(1));
+            long end = Long.parseLong(matcher.group(2));
+
+            if (start != expectedStart || end != expectedEnd) {
+                throw new IOException(String.format("Server returned unexpected range: %d-%d (expected %d-%d)",
+                        start, end, expectedStart, expectedEnd));
+            }
+        } else {
+            throw new IOException("Invalid content-range format: " + contentRange);
+        }
+        log.debug("Partial content response validated");
+    }
 }

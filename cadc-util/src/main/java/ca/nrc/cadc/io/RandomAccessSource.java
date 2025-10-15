@@ -69,13 +69,14 @@
 
 package ca.nrc.cadc.io;
 
+import java.io.Closeable;
 import java.io.IOException;
 
 /**
  * An abstraction for a random-access data source that allows seeking,
  * reading and querying length.
  */
-public interface RandomAccessSource {
+public interface RandomAccessSource extends Closeable {
     void seek(long position) throws IOException;
 
     int read(byte[] buffer, int offset, int length) throws IOException;
