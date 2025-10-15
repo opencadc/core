@@ -95,7 +95,8 @@ public class RandomAccessURL implements RandomAccessSource {
 
     /**
      * Constructs a RandomAccessURL for the provided URL.
-     * This constructor performs a HEAD request to verify that the provided URL supports HTTP range requests and fetches the content length. If the server does not support range requests, an UnsupportedOperationException is thrown.
+     * This constructor performs a HEAD request to verify that the provided URL supports HTTP range requests and fetches the content length.
+     * If the server does not support range requests, an UnsupportedOperationException is thrown.
      *
      * @param url The URL to check.
      * @throws IOException                   If an I/O error occurs.
