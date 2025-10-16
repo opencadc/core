@@ -124,13 +124,13 @@ public abstract class HttpTransfer implements Runnable {
      * Not documented in HttpURLConnection. A client specified Expect(ation)
      * was not satisfied.
      */
-    static final int HTTP_RANGE_NOT_SATISFIABLE = 416;
-    static final int HTTP_EXPECT_FAIL = 417;
+    @Deprecated static final int HTTP_RANGE_NOT_SATISFIABLE = 416;
+    @Deprecated static final int HTTP_EXPECT_FAIL = 417;
     
     /**
      * Not documented in HttpURLConnection. The resource is locked.
      */
-    static final int HTTP_LOCKED = 423;
+    @Deprecated static final int HTTP_LOCKED = 423;
 
     static {
         String jv = "Java " + System.getProperty("java.version") + ";" + System.getProperty("java.vendor");
@@ -139,17 +139,17 @@ public abstract class HttpTransfer implements Runnable {
     }
     
     public static final String DEFAULT_USER_AGENT;
-    public static final String CADC_CONTENT_LENGTH_HEADER = "X-CADC-Content-Length";
-    public static final String CADC_STREAM_HEADER = "X-CADC-Stream";
-    public static final String CADC_PARTIAL_READ_HEADER = "X-CADC-Partial-Read";
-    
-    public static final String CONTENT_ENCODING = "Content-Encoding";
-    public static final String CONTENT_LENGTH = "Content-Length";
-    public static final String CONTENT_MD5 = "Content-MD5";
-    public static final String CONTENT_TYPE = "Content-Type";
-    public static final String DIGEST = "Digest";
-    
-    public static final String SERVICE_RETRY = "Retry-After";
+    @Deprecated public static final String CADC_CONTENT_LENGTH_HEADER = "X-CADC-Content-Length";
+    @Deprecated public static final String CADC_STREAM_HEADER = "X-CADC-Stream";
+    @Deprecated public static final String CADC_PARTIAL_READ_HEADER = "X-CADC-Partial-Read";
+
+    @Deprecated public static final String CONTENT_ENCODING = "Content-Encoding";
+    @Deprecated public static final String CONTENT_LENGTH = "Content-Length";
+    @Deprecated public static final String CONTENT_MD5 = "Content-MD5";
+    @Deprecated public static final String CONTENT_TYPE = "Content-Type";
+    @Deprecated public static final String DIGEST = "Digest";
+
+    @Deprecated public static final String SERVICE_RETRY = "Retry-After";
 
     public static final int DEFAULT_BUFFER_SIZE = 8 * 1024; // 8KB
     // note: the combination of a large buffer, small-ish streamed put w/ no
