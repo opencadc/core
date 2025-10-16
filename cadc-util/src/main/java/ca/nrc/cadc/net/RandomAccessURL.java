@@ -69,6 +69,11 @@
 
 package ca.nrc.cadc.net;
 
+import static ca.nrc.cadc.net.HttpConstants.HDR_ACCEPT_RANGES;
+import static ca.nrc.cadc.net.HttpConstants.HDR_CONTENT_RANGE;
+import static ca.nrc.cadc.net.HttpConstants.HDR_RANGE;
+import static ca.nrc.cadc.net.HttpConstants.RANGE_BYTES;
+
 import ca.nrc.cadc.io.RandomAccessSource;
 
 import java.io.IOException;
@@ -125,10 +130,10 @@ public class RandomAccessURL implements RandomAccessSource {
 
         int bytesToRead = (int) Math.min(length, Math.min(contentLength - position, buffer.length - offset));
         long rangeEnd = position + bytesToRead - 1;
-        String range = "bytes=" + position + "-" + rangeEnd;
+        String range = RANGE_BYTES + "=" + position + "-" + rangeEnd;
 
         HttpGet get = new HttpGet(url, true);
-        get.setRequestProperty("range", range);
+        get.setRequestProperty(HDR_RANGE, range);
         get.setFollowRedirects(true);
 
         try {
@@ -162,7 +167,7 @@ public class RandomAccessURL implements RandomAccessSource {
             get.prepare();
             long contentLength = get.getContentLength();
 
-            String acceptRanges = get.getResponseHeader("accept-ranges");
+            String acceptRanges = get.getResponseHeader(HDR_ACCEPT_RANGES);
             if (acceptRanges == null) {
                 throw new UnsupportedOperationException("Range requests not supported for this URL : " + url);
             }
@@ -182,7 +187,7 @@ public class RandomAccessURL implements RandomAccessSource {
     private void validatePartialContentResponse(HttpGet get, long expectedStart, long expectedEnd) throws IOException {
         log.debug("Validating partial content response");
         int responseCode = get.getResponseCode();
-        String contentRange = get.getResponseHeader("content-range");
+        String contentRange = get.getResponseHeader(HDR_CONTENT_RANGE);
         if (responseCode != 206 || contentRange == null) {
             throw new IOException("Expected HTTP 206 Partial Content and Content-Range header, got: " + responseCode + ", Content-Range: " + contentRange);
         }
