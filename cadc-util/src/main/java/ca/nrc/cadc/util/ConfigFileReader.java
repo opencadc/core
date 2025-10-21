@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2023.                            (c) 2023.
+*  (c) 2025.                            (c) 2025.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -65,74 +65,94 @@
 ************************************************************************
 */
 
-package org.opencadc.persist;
+package ca.nrc.cadc.util;
 
-import java.net.URI;
-import java.util.Date;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.UUID;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.log4j.Logger;
 
 /**
- *
+ * Common code to find and read text-based configuration files. The default comment 
+ * character is #, but this can be changed before reading.
+ * 
  * @author pdowler
  */
-public class SampleEntity extends Entity implements Comparable<SampleEntity> {
-    private static final Logger log = Logger.getLogger(SampleEntity.class);
+public class ConfigFileReader {
+    private static final Logger log = Logger.getLogger(ConfigFileReader.class);
 
-    private final String name;
-    
-    public URI uriVal;
-    public Double doubleVal;
-    public Long longVal;
-    public Date dateVal;
-    public final SortedSet<String> strList = new TreeSet<>();
-    public SampleStringEnum sampleSE;
-    public SampleIntEnum sampleIE;
-    public Nested nested;
-    
-    // not included
-    public Set<SampleEntity> children = new TreeSet<>();
-    public SampleEntity relation;
-    public static String staticVal;
-    public transient String transientVal;
-    
-    
-    public SampleEntity(String name, boolean truncateDateToSec, boolean digestFieldNames, boolean digestFieldNamesLowerCase) { 
-        super(truncateDateToSec, digestFieldNames, digestFieldNamesLowerCase);
-        this.name = name;
-    }
-    
-    public SampleEntity(UUID id, String name, boolean truncateDateToSec, boolean digestFieldNames, boolean digestFieldNamesLowerCase) {
-        super(id, truncateDateToSec, digestFieldNames, digestFieldNamesLowerCase);
-        this.name = name;
-    }
+    private static final String DEFAULT_CONFIG_DIR = System.getProperty("user.home") + "/config";
+    public static final String CONFIG_DIR_SYSTEM_PROPERTY = ConfigFileReader.class.getName() + ".dir";
 
-    public String getName() {
-        return name;
-    }
+    private final File configFile;
+    private String commentChars = "#";
     
-    public String toString() {
-        return "SampleEntity[" + name + "]";
-    }
-
-    @Override
-    public int compareTo(SampleEntity se) {
-        if (se == null) {
-            return 1; // nulls after
+    /**
+     * Normal constructor to find the specified config file. This method checks for a
+     * custom location (ca.nrc.cadc.util.ConfigFileReader.dir system property) and 
+     * defaults to {user.home}/config.
+     * 
+     * @param filename relative filename for the configuration
+     */
+    public ConfigFileReader(String filename) {
+        if (filename == null) {
+            throw new IllegalArgumentException("filename cannot be null.");
         }
-        return name.compareTo(se.name);
+
+        String configDir = DEFAULT_CONFIG_DIR;
+        if (System.getProperty(CONFIG_DIR_SYSTEM_PROPERTY) != null) {
+            configDir = System.getProperty(CONFIG_DIR_SYSTEM_PROPERTY);
+        }
+
+        this.configFile = new File(new File(configDir), filename);
     }
     
-    static class Nested {
-        public String nstr1;
-        public String nstr2;
+    public ConfigFileReader(File configFile) {
+        this.configFile = configFile;
+    }
+    
+    /**
+     * Specify one or more characters that delimit comments. The comment character 
+     * and any text after it on the same line are ignored. Blank lines (0-length or 
+     * whitespace) are always ignored.
+     * 
+     * @param commentChars new set of comment characters
+     */
+    public final void setCommentChars(String commentChars) {
+        this.commentChars = commentChars;
+    }
 
-        @Override
-        public String toString() {
-            return "Nested[" + nstr1 + "," + nstr2 + "]";
+    public boolean canRead() {
+        return Files.isReadable(this.configFile.toPath());
+    }
+
+    /**
+     * Get all the active lines from the properties file. This strips out empty lines and comments.
+     * 
+     * @return list of active lines
+     */
+    public List<String> getRawContent() throws IOException {
+        List<String> ret = new ArrayList<>();
+        
+        BufferedReader br = new BufferedReader(new FileReader(configFile));
+        String line;
+        while ((line = br.readLine()) != null) {
+            for (char c : commentChars.toCharArray()) {
+                int i = line.indexOf(c);
+                if (i >= 0) {
+                    line = line.substring(0, i);                
+                }
+            }
+            line = line.trim();
+            if (!line.isEmpty()) {
+                ret.add(line);
+            }
         }
+        
+        return ret;
     }
 }

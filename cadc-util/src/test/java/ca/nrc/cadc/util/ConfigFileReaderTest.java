@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2023.                            (c) 2023.
+*  (c) 2025.                            (c) 2025.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -65,74 +65,70 @@
 ************************************************************************
 */
 
-package org.opencadc.persist;
+package ca.nrc.cadc.util;
 
-import java.net.URI;
-import java.util.Date;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.UUID;
+import java.util.List;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  *
  * @author pdowler
  */
-public class SampleEntity extends Entity implements Comparable<SampleEntity> {
-    private static final Logger log = Logger.getLogger(SampleEntity.class);
+public class ConfigFileReaderTest {
+    private static final Logger log = Logger.getLogger(ConfigFileReaderTest.class);
 
-    private final String name;
-    
-    public URI uriVal;
-    public Double doubleVal;
-    public Long longVal;
-    public Date dateVal;
-    public final SortedSet<String> strList = new TreeSet<>();
-    public SampleStringEnum sampleSE;
-    public SampleIntEnum sampleIE;
-    public Nested nested;
-    
-    // not included
-    public Set<SampleEntity> children = new TreeSet<>();
-    public SampleEntity relation;
-    public static String staticVal;
-    public transient String transientVal;
-    
-    
-    public SampleEntity(String name, boolean truncateDateToSec, boolean digestFieldNames, boolean digestFieldNamesLowerCase) { 
-        super(truncateDateToSec, digestFieldNames, digestFieldNamesLowerCase);
-        this.name = name;
+    static {
+        Log4jInit.setLevel("ca.nrc.cadc.util", Level.INFO);
     }
     
-    public SampleEntity(UUID id, String name, boolean truncateDateToSec, boolean digestFieldNames, boolean digestFieldNamesLowerCase) {
-        super(id, truncateDateToSec, digestFieldNames, digestFieldNamesLowerCase);
-        this.name = name;
-    }
-
-    public String getName() {
-        return name;
+    public ConfigFileReaderTest() {
     }
     
-    public String toString() {
-        return "SampleEntity[" + name + "]";
-    }
-
-    @Override
-    public int compareTo(SampleEntity se) {
-        if (se == null) {
-            return 1; // nulls after
+    @Test
+    public void testIgnore() {
+        String userHome = System.getProperty("user.home");
+        try {
+            System.setProperty("user.home", "build/resources/test");
+            ConfigFileReader r = new ConfigFileReader("comments.properties");
+            List<String> lines = r.getRawContent();
+            log.info("content:");
+            for (String s : lines) {
+                log.info("[" + s + "]");
+            }
+            Assert.assertEquals(0, lines.size());
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        } finally {
+            System.setProperty("user.home", userHome);
         }
-        return name.compareTo(se.name);
     }
     
-    static class Nested {
-        public String nstr1;
-        public String nstr2;
-
-        @Override
-        public String toString() {
-            return "Nested[" + nstr1 + "," + nstr2 + "]";
+    @Test
+    public void testSample() {
+        String userHome = System.getProperty("user.home");
+        try {
+            System.setProperty("user.home", "build/resources/test");
+            ConfigFileReader r = new ConfigFileReader("sample.properties");
+            List<String> lines = r.getRawContent();
+            log.info("content:");
+            for (String s : lines) {
+                log.info("[" + s + "]");
+            }
+            Assert.assertEquals(5, lines.size());
+            Assert.assertTrue(lines.contains("key1"));
+            Assert.assertTrue(lines.contains("key2 = value"));
+            Assert.assertTrue(lines.contains("key3"));
+            Assert.assertTrue(lines.contains("key4 = value"));
+            Assert.assertTrue(lines.contains("key5 = value"));
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        } finally {
+            System.setProperty("user.home", userHome);
         }
     }
 }

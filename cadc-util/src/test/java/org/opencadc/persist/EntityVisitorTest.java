@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2023.                            (c) 2023.
+*  (c) 2025.                            (c) 2025.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -67,72 +67,63 @@
 
 package org.opencadc.persist;
 
-import java.net.URI;
-import java.util.Date;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.UUID;
+import ca.nrc.cadc.util.Log4jInit;
+import java.util.Collection;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.Test;
 
 /**
  *
  * @author pdowler
  */
-public class SampleEntity extends Entity implements Comparable<SampleEntity> {
-    private static final Logger log = Logger.getLogger(SampleEntity.class);
+public class EntityVisitorTest {
+    private static final Logger log = Logger.getLogger(EntityVisitorTest.class);
 
-    private final String name;
-    
-    public URI uriVal;
-    public Double doubleVal;
-    public Long longVal;
-    public Date dateVal;
-    public final SortedSet<String> strList = new TreeSet<>();
-    public SampleStringEnum sampleSE;
-    public SampleIntEnum sampleIE;
-    public Nested nested;
-    
-    // not included
-    public Set<SampleEntity> children = new TreeSet<>();
-    public SampleEntity relation;
-    public static String staticVal;
-    public transient String transientVal;
-    
-    
-    public SampleEntity(String name, boolean truncateDateToSec, boolean digestFieldNames, boolean digestFieldNamesLowerCase) { 
-        super(truncateDateToSec, digestFieldNames, digestFieldNamesLowerCase);
-        this.name = name;
+    static {
+        Log4jInit.setLevel("org.opencadc.persist", Level.DEBUG);
     }
     
-    public SampleEntity(UUID id, String name, boolean truncateDateToSec, boolean digestFieldNames, boolean digestFieldNamesLowerCase) {
-        super(id, truncateDateToSec, digestFieldNames, digestFieldNamesLowerCase);
-        this.name = name;
-    }
-
-    public String getName() {
-        return name;
+    public EntityVisitorTest() { 
     }
     
-    public String toString() {
-        return "SampleEntity[" + name + "]";
-    }
-
-    @Override
-    public int compareTo(SampleEntity se) {
-        if (se == null) {
-            return 1; // nulls after
-        }
-        return name.compareTo(se.name);
+    @Test
+    public void testLogVisitor() {
+        
+        SampleEntity e = new SampleEntity("foo", false, true, true);
+        e.dateVal = null;
+        e.doubleVal = 2.0;
+        e.longVal = 123L;
+        e.nested = new SampleEntity.Nested();
+        e.nested.nstr1 = "flibble";
+        
+        log.info("testLogVisitor: START");
+        e.visit(new LogVisitor());
+        log.info("testLogVisitor: DONE");
     }
     
-    static class Nested {
-        public String nstr1;
-        public String nstr2;
+    private class LogVisitor implements EntityVisitor {
 
         @Override
-        public String toString() {
-            return "Nested[" + nstr1 + "," + nstr2 + "]";
+        public void visitCollection(String vodmlID, Collection val) {
+            System.out.println("visit collection: " + vodmlID + " " + val.size());
         }
+        
+        @Override
+        public void visitLeaf(String vodmlID, Object val) {
+            System.out.println("visit leaf: " + vodmlID + " " + val);
+        }
+
+        @Override
+        public void visitNode(String vodmlID, Object val) {
+            System.out.println("visit node: " + vodmlID + " " + val);
+        }
+
+        @Override
+        public void visitNull(String vodmlID) {
+            System.out.println("visit null: " + vodmlID);
+        }
+        
+        
     }
 }
