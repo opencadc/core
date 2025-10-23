@@ -185,7 +185,7 @@ public class EntityTest {
             Assert.assertEquals(mcs7, mcs10);
             
             // nested object
-            sample.nested = new SampleEntity.Nested();
+            sample.nested = new SampleEntity.Nested(null);
             URI mcs11 = sample.computeMetaChecksum(MessageDigest.getInstance("MD5"));
             Assert.assertEquals(mcs7, mcs11);
             sample.nested.nstr1 = "boo";

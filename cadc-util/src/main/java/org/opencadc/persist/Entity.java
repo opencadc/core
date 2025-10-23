@@ -368,6 +368,8 @@ public abstract class Entity {
                                 } else if (isDataModelClass(cc)) {
                                     // depth-first recursion
                                     visitImpl(cc, co, ev);
+                                    // visit intermediate DM class
+                                    ev.visitNode(cf, co);
                                 } else {
                                     ev.visitLeaf(cf, co);
                                 }
