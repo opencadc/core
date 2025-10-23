@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2023.                            (c) 2023.
+*  (c) 2025.                            (c) 2025.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -67,94 +67,40 @@
 
 package org.opencadc.persist;
 
-import java.net.URI;
-import java.util.Date;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.UUID;
-import org.apache.log4j.Logger;
+import java.util.Collection;
 
 /**
- *
+ * Interface for a visitor of the Entity data structure.
+ * 
  * @author pdowler
  */
-public class SampleEntity extends Entity implements Comparable<SampleEntity> {
-    private static final Logger log = Logger.getLogger(SampleEntity.class);
-
-    private final String name;
+public interface EntityVisitor {
+    /**
+     * Visit a collection of values.
+     * @param vodmlID the {declaringClass}.{fieldName} aka vodml-id
+     * @param val the collection
+     */
+    public void visitCollection(String vodmlID, Collection val);
     
-    public URI uriVal;
-    public Double doubleVal;
-    public Long longVal;
-    public Date dateVal;
-    public final SortedSet<String> strList = new TreeSet<>();
-    public SampleStringEnum sampleSE;
-    public SampleIntEnum sampleIE;
-    public Nested nested;
-    public final Set<Nested> nestedSet = new TreeSet<>();
-    public final Set<Nested> emptySet = new TreeSet<>();
+    /**
+     * Visit a leaf field aka primitive value.
+     * 
+     * @param vodmlID the {declaringClass}.{fieldName} aka vodml-id
+     * @param val the value of the field, may be null
+     */
+    public void visitLeaf(String vodmlID, Object val);
     
-    // not included
-    public Set<SampleEntity> children = new TreeSet<>();
-    public SampleEntity relation;
-    public static String staticVal;
-    public transient String transientVal;
+    /**
+     * Visit an intermediate node in the model data structure.
+     * 
+     * @param vodmlID the {declaringClass}.{fieldName} aka vodml-id
+     * @param val the value of the field, may be null
+     */
+    public void visitNode(String vodmlID, Object val);
     
-    
-    public SampleEntity(String name, boolean truncateDateToSec, boolean digestFieldNames, boolean digestFieldNamesLowerCase) { 
-        super(truncateDateToSec, digestFieldNames, digestFieldNamesLowerCase);
-        this.name = name;
-    }
-    
-    public SampleEntity(UUID id, String name, boolean truncateDateToSec, boolean digestFieldNames, boolean digestFieldNamesLowerCase) {
-        super(id, truncateDateToSec, digestFieldNames, digestFieldNamesLowerCase);
-        this.name = name;
-    }
-
-    public String getName() {
-        return name;
-    }
-    
-    public String toString() {
-        return "SampleEntity[" + name + "]";
-    }
-
-    @Override
-    public int compareTo(SampleEntity se) {
-        if (se == null) {
-            return 1; // nulls after
-        }
-        return name.compareTo(se.name);
-    }
-    
-    static class Nested implements Comparable {
-        public String nstr1;
-        public String nstr2;
-
-        public Nested(String nstr1) {
-            this.nstr1 = nstr1;
-        }
-
-        @Override
-        public String toString() {
-            return "Nested[" + nstr1 + "," + nstr2 + "]";
-        }
-
-        @Override
-        public int compareTo(Object o) {
-             // nulls last
-            if (o == null) {
-                return 1;
-            }
-            Nested rhs = (Nested) o;
-            if (nstr1 == null && rhs.nstr1 != null) {
-                return -1;
-            }
-            if (nstr1 != null && rhs.nstr1 == null) {
-                return 1;
-            }
-            return nstr1.compareTo(rhs.nstr1);
-        }
-    }
+    /**
+     * Visit a null value. This could be a node or a primitive.
+     * @param vodmlID the {declaringClass}.{fieldName} aka vodml-id
+     */
+    public void visitNull(String vodmlID);
 }

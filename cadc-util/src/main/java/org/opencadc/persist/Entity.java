@@ -307,7 +307,86 @@ public abstract class Entity {
                 + this.getClass().getName(), e);
         }
     }
-    
+
+    /**
+     * Visit the state of the entity in the standard traversal order: depth first, alphabetic.
+     * @param ev 
+     */
+    public void visit(EntityVisitor ev) {
+        visitImpl(this.getClass(), this, ev);
+        
+    }
+
+    private void visitImpl(Class c, Object o, EntityVisitor ev) {
+        try { 
+            if (o instanceof Entity) {
+                Entity ce = (Entity) o;
+                ev.visitLeaf("Entity.id", o);
+                ev.visitLeaf("Entity.metaProducer", ce.metaProducer);
+            }
+            
+            SortedSet<Field> fields = getStateFields(c);
+            for (Field f : fields) {
+                String cf = f.getDeclaringClass().getSimpleName() + "." + f.getName();
+                f.setAccessible(true);
+                Object fo = f.get(o);
+                
+                
+                if (fo == null) {
+                    ev.visitNull(cf);
+                } else {
+                    Class ac = fo.getClass();
+                    if (ac.isEnum() || PrimitiveWrapper.class.isAssignableFrom(ac)) {
+                        try {
+                            log.warn("unwrap: " + ac.getSimpleName() + ".getValue()");
+                            Method m = ac.getMethod("getValue");
+                            Object val = m.invoke(fo);
+                            ev.visitLeaf(cf, val);
+                        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
+                            throw new RuntimeException("BUG - enum " + ac.getName() + " does not have getValue()", ex);
+                        }
+                    } else if (isDataModelClass(ac)) {
+                        // depth-first recursion
+                        visitImpl(ac, fo, ev);
+                        // visit intermediate DM class
+                        ev.visitNode(cf, fo);
+                    } else if (fo instanceof Collection) {
+                        Collection stuff = (Collection) fo;
+                        if (!stuff.isEmpty()) {
+                            Iterator i = stuff.iterator();
+                            while (i.hasNext()) {
+                                Object co = i.next();
+                                Class cc = co.getClass();
+                                if (cc.isEnum() || PrimitiveWrapper.class.isAssignableFrom(cc)) {
+                                    try {
+                                        Method m = cc.getMethod("getValue");
+                                        Object val = m.invoke(co);
+                                        ev.visitLeaf(cf, val);
+                                    } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
+                                        throw new RuntimeException("BUG", ex);
+                                    }
+                                } else if (isDataModelClass(cc)) {
+                                    // depth-first recursion
+                                    visitImpl(cc, co, ev);
+                                    // visit intermediate DM class
+                                    ev.visitNode(cf, co);
+                                } else {
+                                    ev.visitLeaf(cf, co);
+                                }
+                            }
+                        }
+                        ev.visitCollection(cf, stuff);
+                    } else {
+                        ev.visitLeaf(cf, fo);
+                    }
+                }
+            }
+
+        } catch (IllegalAccessException bug) {
+            throw new RuntimeException("Unable to calculate metaChecksum for class " + c.getName(), bug);
+        }
+    }
+
     /**
      * Update the provided digest with state fields (values) from the specified object. 
      * This method does not finalize the digest so in principle more values can be 
