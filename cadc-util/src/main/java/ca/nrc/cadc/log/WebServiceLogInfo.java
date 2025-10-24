@@ -72,6 +72,7 @@ package ca.nrc.cadc.log;
 import ca.nrc.cadc.auth.AuthMethod;
 import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.auth.HttpPrincipal;
+import ca.nrc.cadc.auth.IdentityManager;
 import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.util.StringUtil;
 import java.lang.reflect.Field;
@@ -84,7 +85,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import javax.security.auth.Subject;
-import javax.security.auth.x500.X500Principal;
 import org.apache.log4j.Logger;
 
 /**
@@ -342,18 +342,18 @@ public abstract class WebServiceLogInfo {
     protected String getUser(Subject subject) {
         try {
             if (subject != null) {
+                // backwards compat for cadc-specific abuse of HttpPrincipal
                 final Set<HttpPrincipal> httpPrincipals = subject.getPrincipals(HttpPrincipal.class);
                 if (!httpPrincipals.isEmpty()) {
                     HttpPrincipal principal = httpPrincipals.iterator().next();
-                    this.proxyUser = principal.getProxyUser();
-                    return principal.getName();
+                    if (principal.getProxyUser() != null) {
+                        this.proxyUser = principal.getProxyUser(); // side effect
+                        return principal.getName();
+                    }
                 }
-
-                final Set<X500Principal> x500Principals = subject.getPrincipals(X500Principal.class);
-                if (!x500Principals.isEmpty()) {
-                    X500Principal principal = x500Principals.iterator().next();
-                    return principal.getName();
-                }
+                // defer to configured IM
+                IdentityManager im = AuthenticationUtil.getIdentityManager();
+                return im.toDisplayString(subject);
             }
         } catch (Throwable t) {
             // ignore - can't throw exceptions here
