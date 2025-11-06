@@ -92,6 +92,8 @@ public class SampleEntity extends Entity implements Comparable<SampleEntity> {
     public SampleStringEnum sampleSE;
     public SampleIntEnum sampleIE;
     public Nested nested;
+    public final Set<Nested> nestedSet = new TreeSet<>();
+    public final Set<Nested> emptySet = new TreeSet<>();
     
     // not included
     public Set<SampleEntity> children = new TreeSet<>();
@@ -126,13 +128,33 @@ public class SampleEntity extends Entity implements Comparable<SampleEntity> {
         return name.compareTo(se.name);
     }
     
-    static class Nested {
+    static class Nested implements Comparable {
         public String nstr1;
         public String nstr2;
+
+        public Nested(String nstr1) {
+            this.nstr1 = nstr1;
+        }
 
         @Override
         public String toString() {
             return "Nested[" + nstr1 + "," + nstr2 + "]";
+        }
+
+        @Override
+        public int compareTo(Object o) {
+             // nulls last
+            if (o == null) {
+                return 1;
+            }
+            Nested rhs = (Nested) o;
+            if (nstr1 == null && rhs.nstr1 != null) {
+                return -1;
+            }
+            if (nstr1 != null && rhs.nstr1 == null) {
+                return 1;
+            }
+            return nstr1.compareTo(rhs.nstr1);
         }
     }
 }

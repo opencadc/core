@@ -71,6 +71,7 @@ import ca.nrc.cadc.util.Log4jInit;
 import java.util.Collection;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -94,15 +95,25 @@ public class EntityVisitorTest {
         e.dateVal = null;
         e.doubleVal = 2.0;
         e.longVal = 123L;
-        e.nested = new SampleEntity.Nested();
-        e.nested.nstr1 = "flibble";
+        e.nested = new SampleEntity.Nested("flibble");
+        e.nestedSet.add(new SampleEntity.Nested("abc"));
+        e.nestedSet.add(new SampleEntity.Nested("def"));
+        e.strList.add("foo");
         
         log.info("testLogVisitor: START");
-        e.visit(new LogVisitor());
+        LogVisitor v = new LogVisitor();
+        e.visit(v);
         log.info("testLogVisitor: DONE");
+        
+        Assert.assertEquals("numLeaf", 9, v.numLeaf);
+        Assert.assertEquals("numNode", 3, v.numNode); // nested, nestedSet, emptySet
+        Assert.assertEquals("numNull", 7, v.numNull);
     }
     
     private class LogVisitor implements EntityVisitor {
+        int numLeaf = 0;
+        int numNode = 0;
+        int numNull = 0;
 
         @Override
         public void visitCollection(String vodmlID, Collection val) {
@@ -112,16 +123,19 @@ public class EntityVisitorTest {
         @Override
         public void visitLeaf(String vodmlID, Object val) {
             System.out.println("visit leaf: " + vodmlID + " " + val);
+            numLeaf++;
         }
 
         @Override
         public void visitNode(String vodmlID, Object val) {
             System.out.println("visit node: " + vodmlID + " " + val);
+            numNode++;
         }
 
         @Override
         public void visitNull(String vodmlID) {
             System.out.println("visit null: " + vodmlID);
+            numNull++;
         }
         
         
