@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2016.                            (c) 2016.
+*  (c) 2025.                            (c) 2025.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,77 +62,109 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
 */
 
 package ca.nrc.cadc.net;
 
+import ca.nrc.cadc.util.Log4jInit;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
- * Simple wrapper around a Content-Type value to support comparisons. Current:
- * strips all extraneous whitespace. TODO: more careful comparison of parameters
- * that is order-independent.
- * 
+ *
  * @author pdowler
  */
-public class ContentType {
-    private static final Logger log = Logger.getLogger(ContentType.class);
+public class ContentTypeTest {
+    private static final Logger log = Logger.getLogger(ContentTypeTest.class);
 
-    private String value;
-    private String baseType;
-
-    public ContentType(String value) {
-        if (value == null) {
-            throw new IllegalArgumentException("null value");
-        }
-        
-        this.value = toCanonicalForm(value);
-        if (baseType == null) {
-            throw new IllegalArgumentException("null base type");
-        }
+    static {
+        Log4jInit.setLevel(ContentTypeTest.class.getPackageName(), Level.INFO);
     }
 
-    @Override
-    public String toString() {
-        return "ContentType[" + value + "]";
+    public ContentTypeTest() { 
     }
-
-    public String getValue() {
-        return value;
-    }
-
-    public String getBaseType() {
-        return baseType;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
+    
+    @Test
+    public void testNull() {
+        try {
+            ContentType ct = new ContentType(null);
+        } catch (IllegalArgumentException expected) {
+            log.info("caught expected: " + expected);
+        } catch (Exception unexpected) {
+            log.error("unexpected", unexpected);
+            Assert.fail("unexpected: " + unexpected);
         }
-        
-        if (obj instanceof ContentType) {
-            ContentType rhs = (ContentType) obj;
-            return value.equalsIgnoreCase(rhs.value);
-        }
-        return false;
     }
-
-    // remove extraneous whitespace
-    private String toCanonicalForm(String s) {
-        s = s.trim();
-        String[] parts = s.split(";");
-        StringBuilder sb = new StringBuilder();
-        sb.append(parts[0].trim()); // base type
-        this.baseType = parts[0].trim();
-        for (int i = 1; i < parts.length; i++) {
-            // parameters
-            sb.append(";").append(parts[i].trim());
+    
+    @Test
+    public void testBase() {
+        try {
+            String s = "text/plain";
+            ContentType ct = new ContentType(s);
+            Assert.assertEquals(s, ct.getBaseType());
+            Assert.assertEquals(s, ct.getValue());
+            
+            ct = new ContentType(" text/plain ");
+            Assert.assertEquals(s, ct.getBaseType());
+            Assert.assertEquals(s, ct.getValue());
+        } catch (IllegalArgumentException expected) {
+            log.info("caught expected: " + expected);
+        } catch (Exception unexpected) {
+            log.error("unexpected", unexpected);
+            Assert.fail("unexpected: " + unexpected);
         }
-        
-        return sb.toString();
+    }
+    
+    @Test
+    public void testWithParam() {
+        try {
+            String b = "application/x-votable+xml";
+            String p1 = ";serialization=binary2";
+            String p2 = ";content=datalink";
+            String ex1 = b + p1;
+            String ex2 = b + p1 + p2;
+
+            String s = b + p1;
+            log.info("try: " + s);
+            ContentType ct = new ContentType(s);
+            Assert.assertEquals(b, ct.getBaseType());
+            log.info(s + " -> " + ct.getValue());
+            Assert.assertEquals(ex1, ct.getValue());
+            
+            s = b + "; serialization=binary2";
+            log.info("try: " + s);
+            ct = new ContentType(s);
+            Assert.assertEquals(b, ct.getBaseType());
+            log.info(s + " -> " + ct.getValue());
+            
+            s = b + " ; serialization=binary2";
+            log.info("try: " + s);
+            ct = new ContentType(s);
+            Assert.assertEquals(b, ct.getBaseType());
+            log.info(s + " -> " + ct.getValue());
+            
+            s = b + p1 + p2;
+            log.info("try: " + s);
+            ct = new ContentType(s);
+            Assert.assertEquals(b, ct.getBaseType());
+            log.info(s + " -> " + ct.getValue());
+            Assert.assertEquals(ex2, ct.getValue());
+            
+            s = b + p1 + " " + p2;
+            log.info("try: " + s);
+            ct = new ContentType(s);
+            Assert.assertEquals(b, ct.getBaseType());
+            log.info(s + " -> " + ct.getValue());
+            Assert.assertEquals(ex2, ct.getValue());
+            
+        } catch (IllegalArgumentException expected) {
+            log.info("caught expected: " + expected);
+        } catch (Exception unexpected) {
+            log.error("unexpected", unexpected);
+            Assert.fail("unexpected: " + unexpected);
+        }
     }
 }
