@@ -122,8 +122,8 @@ public class ContentTypeTest {
     public void testWithParam() {
         try {
             String b = "application/x-votable+xml";
-            String p1 = ";serialization=binary2";
-            String p2 = ";content=datalink";
+            String p1 = "; serialization=binary2";
+            String p2 = "; content=datalink";
             String ex1 = b + p1;
             String ex2 = b + p1 + p2;
 
@@ -133,32 +133,41 @@ public class ContentTypeTest {
             Assert.assertEquals(b, ct.getBaseType());
             log.info(s + " -> " + ct.getValue());
             Assert.assertEquals(ex1, ct.getValue());
+            Assert.assertEquals(1, ct.getParameters().size());
             
             s = b + "; serialization=binary2";
             log.info("try: " + s);
             ct = new ContentType(s);
             Assert.assertEquals(b, ct.getBaseType());
             log.info(s + " -> " + ct.getValue());
+            Assert.assertEquals(ex1, ct.getValue());
+            Assert.assertEquals(1, ct.getParameters().size());
             
             s = b + " ; serialization=binary2";
             log.info("try: " + s);
             ct = new ContentType(s);
             Assert.assertEquals(b, ct.getBaseType());
             log.info(s + " -> " + ct.getValue());
+            Assert.assertEquals(ex1, ct.getValue());
+            Assert.assertEquals(1, ct.getParameters().size());
             
             s = b + p1 + p2;
             log.info("try: " + s);
             ct = new ContentType(s);
             Assert.assertEquals(b, ct.getBaseType());
             log.info(s + " -> " + ct.getValue());
-            Assert.assertEquals(ex2, ct.getValue());
+            Assert.assertEquals(2, ct.getParameters().size());
+            Assert.assertTrue(ct.getValue().contains(p1));
+            Assert.assertTrue(ct.getValue().contains(p2));
             
             s = b + p1 + " " + p2;
             log.info("try: " + s);
             ct = new ContentType(s);
             Assert.assertEquals(b, ct.getBaseType());
             log.info(s + " -> " + ct.getValue());
-            Assert.assertEquals(ex2, ct.getValue());
+            Assert.assertEquals(2, ct.getParameters().size());
+            Assert.assertTrue(ct.getValue().contains(p1));
+            Assert.assertTrue(ct.getValue().contains(p2));
             
         } catch (IllegalArgumentException expected) {
             log.info("caught expected: " + expected);

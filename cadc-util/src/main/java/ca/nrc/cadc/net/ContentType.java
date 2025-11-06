@@ -69,6 +69,9 @@
 
 package ca.nrc.cadc.net;
 
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import org.apache.log4j.Logger;
 
 /**
@@ -83,6 +86,7 @@ public class ContentType {
 
     private String value;
     private String baseType;
+    private final SortedMap<String,String> parameters = new TreeMap<>();
 
     public ContentType(String value) {
         if (value == null) {
@@ -108,6 +112,10 @@ public class ContentType {
         return baseType;
     }
 
+    public SortedMap<String, String> getParameters() {
+        return parameters;
+    }
+    
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {
@@ -125,14 +133,20 @@ public class ContentType {
     private String toCanonicalForm(String s) {
         s = s.trim();
         String[] parts = s.split(";");
-        StringBuilder sb = new StringBuilder();
-        sb.append(parts[0].trim()); // base type
         this.baseType = parts[0].trim();
         for (int i = 1; i < parts.length; i++) {
             // parameters
-            sb.append(";").append(parts[i].trim());
+            String[] kv = parts[i].trim().split("=");
+            if (kv.length == 2) {
+                parameters.put(kv[0], kv[1]);
+            }
         }
-        
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(baseType);
+        for (Map.Entry<String,String> me : parameters.entrySet()) {
+            sb.append("; ").append(me.getKey()).append("=").append(me.getValue());
+        }
         return sb.toString();
     }
 }
