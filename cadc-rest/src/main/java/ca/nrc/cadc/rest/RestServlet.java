@@ -156,8 +156,19 @@ public class RestServlet extends HttpServlet {
         this.headAction = loadAction(config, "head", true);
         StringBuilder sb = new StringBuilder();
         
-        // appName: war file foo#bar.war, context path /foo/bar -> foo-bar
-        this.appName = config.getServletContext().getContextPath().substring(1).replaceAll("/", "-");
+        // appName: 
+        // foo.war : context path /foo -> foo
+        // foo#bar.war : context path /foo/bar -> foo-bar
+        // ROOT.war : context path null or empty string or / -> ROOT
+        String ctx = config.getServletContext().getContextPath();
+        if (ctx == null || ctx.length() == 0 || "/".equals(ctx)) {
+            this.appName = "ROOT";
+        } else {
+            if (ctx.charAt(0) == '/') {
+                ctx = ctx.substring(1);
+            }
+            this.appName = ctx.replaceAll("/", "-");
+        }
         this.componentID = appName  + "." + config.getServletName();
         String augment = config.getInitParameter(AUGMENT_SUBJECT_PARAM);
         if (augment != null && augment.equalsIgnoreCase(Boolean.FALSE.toString())) {
