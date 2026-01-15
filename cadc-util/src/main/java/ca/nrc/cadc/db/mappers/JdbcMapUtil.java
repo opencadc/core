@@ -131,6 +131,10 @@ public class JdbcMapUtil {
     public static Boolean getBoolean(ResultSet rs, int col)
             throws SQLException {
         Object o = rs.getObject(col);
+        return getBoolean(o);
+    }
+                
+    public static Boolean getBoolean(Object o) {
         if (o == null) {
             return null;
         }
@@ -160,9 +164,51 @@ public class JdbcMapUtil {
         throw new UnsupportedOperationException("converting " + o.getClass().getName() + " " + o + " to Boolean");
     }
 
+    public static Byte getByte(ResultSet rs, int col)
+            throws SQLException {
+        Object o = rs.getObject(col);
+        return getByte(o);
+    }
+
+    public static Byte getByte(Object o) {
+        if (o == null) {
+            return null;
+        }
+        if (o instanceof Byte) {
+            return (Byte) o;
+        }
+        if (o instanceof Number) {
+            return ((Number) o).byteValue();
+        }
+        throw new UnsupportedOperationException("converting " + o.getClass().getName() + " " + o + " to Byte");
+    }
+    
+    public static Short getShort(ResultSet rs, int col)
+            throws SQLException {
+        Object o = rs.getObject(col);
+        return getShort(o);
+    }
+
+    public static Short getShort(Object o) {
+        if (o == null) {
+            return null;
+        }
+        if (o instanceof Short) {
+            return (Short) o;
+        }
+        if (o instanceof Number) {
+            return ((Number) o).shortValue();
+        }
+        throw new UnsupportedOperationException("converting " + o.getClass().getName() + " " + o + " to Short");
+    }
+
     public static Integer getInteger(ResultSet rs, int col)
             throws SQLException {
         Object o = rs.getObject(col);
+        return getInteger(o);
+    }
+    
+    public static Integer getInteger(Object o) {
         if (o == null) {
             return null;
         }
@@ -178,7 +224,20 @@ public class JdbcMapUtil {
     public static Long getLong(ResultSet rs, int col)
             throws SQLException {
         Object o = rs.getObject(col);
-        return objectToLong(o);
+        return getLong(o);
+    }
+    
+    public static Long getLong(Object o) {
+        if (o == null) {
+            return null;
+        }
+        if (o instanceof Long) {
+            return (Long) o;
+        }
+        if (o instanceof Number) {
+            return ((Number) o).longValue();
+        }
+        throw new UnsupportedOperationException("converting " + o.getClass().getName() + " " + o + " to Long");
     }
 
     public static UUID getUUID(ResultSet rs, int col)
@@ -216,6 +275,10 @@ public class JdbcMapUtil {
     public static Float getFloat(ResultSet rs, int col)
             throws SQLException {
         Object o = rs.getObject(col);
+        return getFloat(o);
+    }
+    
+    public static Float getFloat(Object o) {
         if (o == null) {
             return null;
         }
@@ -231,10 +294,10 @@ public class JdbcMapUtil {
     public static Double getDouble(ResultSet rs, int col)
             throws SQLException {
         Object o = rs.getObject(col);
-        return objectToDouble(o);
+        return getDouble(o);
     }
 
-    private static Double objectToDouble(Object o) {
+    public static Double getDouble(Object o) {
         if (o == null) {
             return null;
         }
@@ -247,19 +310,6 @@ public class JdbcMapUtil {
         throw new UnsupportedOperationException("converting " + o.getClass().getName() + " " + o + " to Double");
     }
     
-    private static Long objectToLong(Object o) {
-        if (o == null) {
-            return null;
-        }
-        if (o instanceof Long) {
-            return (Long) o;
-        }
-        if (o instanceof Number) {
-            return ((Number) o).longValue();
-        }
-        throw new UnsupportedOperationException("converting " + o.getClass().getName() + " " + o + " to Long");
-    }
-
     public static String[] getTextArray(ResultSet rs, int col)
             throws SQLException {
         Object o = rs.getObject(col);
@@ -280,6 +330,10 @@ public class JdbcMapUtil {
     public static double[] getDoubleArray(ResultSet rs, int col)
             throws SQLException {
         Object o = rs.getObject(col);
+        return getDoubleArray(o);
+    }
+    
+    public static double[] getDoubleArray(Object o) throws SQLException {
         if (o == null) {
             return null;
         }
@@ -288,16 +342,86 @@ public class JdbcMapUtil {
             Object[] ao = (Object[]) a.getArray();
             double[] ret = new double[ao.length];
             for (int i = 0; i < ao.length; i++) {
-                ret[i] = objectToDouble(ao[i]);
+                ret[i] = getDouble(ao[i]);
             }
             return ret;
         }
         throw new UnsupportedOperationException("converting " + o.getClass().getName() + " " + o + " to double[]");
     }
 
+    public static byte[] getByteArray(ResultSet rs, int col)
+            throws SQLException {
+        Object o = rs.getObject(col);
+        return getByteArray(o);
+    }
+    
+    public static byte[] getByteArray(Object o) throws SQLException {
+        if (o == null) {
+            return null;
+        }
+        if (o instanceof Array) {
+            Array a = (Array) o;
+            Object[] ao = (Object[]) a.getArray();
+            byte[] ret = new byte[ao.length];
+            for (int i = 0; i < ao.length; i++) {
+                ret[i] = getByte(ao[i]);
+            }
+            return ret;
+        }
+        throw new UnsupportedOperationException("converting " + o.getClass().getName() + " " + o + " to byte[]");
+    }
+
+    public static short[] getShortArray(ResultSet rs, int col)
+            throws SQLException {
+        Object o = rs.getObject(col);
+        return getShortArray(o);
+    }
+    
+    public static short[] getShortArray(Object o) throws SQLException {
+        if (o == null) {
+            return null;
+        }
+        if (o instanceof Array) {
+            Array a = (Array) o;
+            Object[] ao = (Object[]) a.getArray();
+            short[] ret = new short[ao.length];
+            for (int i = 0; i < ao.length; i++) {
+                ret[i] = getShort(ao[i]);
+            }
+            return ret;
+        }
+        throw new UnsupportedOperationException("converting " + o.getClass().getName() + " " + o + " to short[]");
+    }
+    
+    public static int[] getIntArray(ResultSet rs, int col)
+            throws SQLException {
+        Object o = rs.getObject(col);
+        return getIntArray(o);
+    }
+    
+    public static int[] getIntArray(Object o) throws SQLException {
+        if (o == null) {
+            return null;
+        }
+        if (o instanceof Array) {
+            Array a = (Array) o;
+            Object[] ao = (Object[]) a.getArray();
+            int[] ret = new int[ao.length];
+            for (int i = 0; i < ao.length; i++) {
+                ret[i] = getInteger(ao[i]);
+            }
+            return ret;
+        }
+        throw new UnsupportedOperationException("converting " + o.getClass().getName() + " " + o + " to int[]");
+    }
+
     public static long[] getLongArray(ResultSet rs, int col)
             throws SQLException {
         Object o = rs.getObject(col);
+        return getLongArray(o);
+    }
+    
+    public static long[] getLongArray(Object o) throws SQLException {
         if (o == null) {
             return null;
         }
@@ -306,7 +430,7 @@ public class JdbcMapUtil {
             Object[] ao = (Object[]) a.getArray();
             long[] ret = new long[ao.length];
             for (int i = 0; i < ao.length; i++) {
-                ret[i] = objectToLong(ao[i]);
+                ret[i] = getLong(ao[i]);
             }
             return ret;
         }
@@ -317,17 +441,5 @@ public class JdbcMapUtil {
             throws SQLException {
         Object o = rs.getTimestamp(col, cal);
         return DateUtil.toDate(o);
-    }
-
-    public static byte[] getByteArray(ResultSet rs, int col)
-            throws SQLException {
-        Object o = rs.getObject(col);
-        if (o == null) {
-            return null;
-        }
-        if (o instanceof byte[]) {
-            return (byte[]) o;
-        }
-        throw new UnsupportedOperationException("converting " + o.getClass().getName() + " " + o + " to byte[]");
     }
 }
