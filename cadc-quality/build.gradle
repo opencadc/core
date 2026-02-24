@@ -23,7 +23,7 @@ def git_url = 'https://github.com/opencadc/core'
 checkstyle {
     ignoreFailures = false
     configFile = file("${projectDir}/src/main/resources/cadc_checkstyle.xml") 
-    toolVersion = '10.12.5'
+    toolVersion = '8.2'
     sourceSets = [project.sourceSets.test]
 }
 
