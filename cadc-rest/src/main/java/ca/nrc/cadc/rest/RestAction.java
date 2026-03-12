@@ -395,27 +395,35 @@ public abstract class RestAction implements PrivilegedExceptionAction<Object> {
             handleException(ex, 403, "permission denied -- reason: invalid proxy certficate", false, true);
         } catch (IllegalArgumentException | UnsupportedOperationException | InlineContentException ex) {
             logInfo.setSuccess(true);
+            logInfo.setMessage(ex.getMessage());
             handleException(ex, 400, ex.getMessage(), false, false);
         } catch (ResourceNotFoundException ex) {
             logInfo.setSuccess(true);
+            logInfo.setMessage(ex.getMessage());
             handleException(ex, 404, ex.getMessage(), false, false);
         } catch (ResourceAlreadyExistsException ex) {
             logInfo.setSuccess(true);
+            logInfo.setMessage(ex.getMessage());
             handleException(ex, 409, ex.getMessage(), false, false);
         } catch (PreconditionFailedException ex) {
             logInfo.setSuccess(true);
             handleException(ex, 412, ex.getMessage(), false, false);
         } catch (ByteLimitExceededException ex) {
             logInfo.setSuccess(true);
-            handleException(ex, 413, ex.getMessage(), false, false);
+            String msg = "limit: " + ex.getLimit();
+            logInfo.setMessage("limit: " + msg);
+            handleException(ex, 413, msg, false, false);
         } catch (RangeNotSatisfiableException ex) {
             logInfo.setSuccess(true);
+            logInfo.setMessage(ex.getMessage());
             handleException(ex, 416, ex.getMessage(), false, false);
         } catch (ExpectationFailedException ex) {
             logInfo.setSuccess(true);
+            logInfo.setMessage(ex.getMessage());
             handleException(ex, 417, ex.getMessage(), false, false);
         } catch (TransientException ex) {
             logInfo.setSuccess(true);
+            logInfo.setMessage(ex.getMessage());
             syncOutput.setHeader(HttpTransfer.SERVICE_RETRY, ex.getRetryDelay());
             if (!readable || !writable) {
                 // exception due to service state: keep logs tidy

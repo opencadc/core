@@ -91,14 +91,7 @@ public class ConfigFileReader {
     private final File configFile;
     private String commentChars = "#";
     
-    /**
-     * Normal constructor to find the specified config file. This method checks for a
-     * custom location (ca.nrc.cadc.util.ConfigFileReader.dir system property) and 
-     * defaults to {user.home}/config.
-     * 
-     * @param filename relative filename for the configuration
-     */
-    public ConfigFileReader(String filename) {
+    public static File findConfigFile(String filename) {
         if (filename == null) {
             throw new IllegalArgumentException("filename cannot be null.");
         }
@@ -108,7 +101,18 @@ public class ConfigFileReader {
             configDir = System.getProperty(CONFIG_DIR_SYSTEM_PROPERTY);
         }
 
-        this.configFile = new File(new File(configDir), filename);
+        return new File(new File(configDir), filename);
+    }
+
+    /**
+     * Normal constructor to find the specified config file. This method checks for a
+     * custom location (ca.nrc.cadc.util.ConfigFileReader.dir system property) and 
+     * defaults to {user.home}/config.
+     * 
+     * @param filename relative filename for the configuration
+     */
+    public ConfigFileReader(String filename) {
+        this.configFile = findConfigFile(filename);
     }
     
     public ConfigFileReader(File configFile) {
