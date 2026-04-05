@@ -74,12 +74,10 @@ import ca.nrc.cadc.net.DigestUtil;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-
 import java.net.URI;
 import java.text.DateFormat;
 import java.util.Date;
 import javax.servlet.http.HttpServletResponse;
-
 import org.apache.log4j.Logger;
 
 /**
