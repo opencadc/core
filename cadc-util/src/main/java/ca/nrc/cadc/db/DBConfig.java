@@ -70,7 +70,6 @@
 package ca.nrc.cadc.db;
 
 import ca.nrc.cadc.util.StringUtil;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;

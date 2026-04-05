@@ -70,7 +70,6 @@
 package ca.nrc.cadc.auth;
 
 import ca.nrc.cadc.date.DateUtil;
-
 import ca.nrc.cadc.util.PropertiesReader;
 import java.io.IOException;
 import java.net.URI;

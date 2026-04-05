@@ -76,7 +76,7 @@ import java.util.List;
 
 /**
  * @deprecated
- * Replaced by StorageResolver.
+ *     Replaced by StorageResolver.
  *     Interface for handlers that convert a URI to a URL that allows retrieval.
  * 
  * @author pdowler

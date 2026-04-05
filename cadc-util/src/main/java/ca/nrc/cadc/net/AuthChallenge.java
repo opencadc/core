@@ -69,7 +69,6 @@ package ca.nrc.cadc.net;
 
 import java.util.Map;
 import java.util.TreeMap;
-
 import org.apache.log4j.Logger;
 
 /**

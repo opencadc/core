@@ -8,7 +8,7 @@ configurations {
 
 dependencies {
     testImplementation 'com.puppycrawl.tools:checkstyle:10.12.5'
-    checkstyleDep 'org.opencadc:cadc-quality:[1.0,1.1)'
+    checkstyleDep 'org.opencadc:cadc-quality:[1.1,)'
 }
 
 checkstyle {

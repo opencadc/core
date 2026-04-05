@@ -70,11 +70,9 @@
 package ca.nrc.cadc.log;
 
 import ca.nrc.cadc.net.NetUtil;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import javax.servlet.http.HttpServletRequest;
-
 import org.apache.log4j.Logger;
 
 

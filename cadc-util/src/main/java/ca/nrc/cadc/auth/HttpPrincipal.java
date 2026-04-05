@@ -70,7 +70,6 @@
 package ca.nrc.cadc.auth;
 
 import ca.nrc.cadc.util.StringUtil;
-
 import java.io.Serializable;
 import java.security.Principal;
 

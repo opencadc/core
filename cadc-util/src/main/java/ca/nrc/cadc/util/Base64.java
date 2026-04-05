@@ -297,6 +297,7 @@ public class Base64 {
     
     // Dummy constructor.
     //private Base64Coder() {}
-    private Base64() { }
+    private Base64() {
+    }
 
 } // end class Base64Coder

@@ -71,14 +71,9 @@ package ca.nrc.cadc.net;
 
 import ca.nrc.cadc.auth.NotAuthenticatedException;
 import ca.nrc.cadc.io.ByteLimitExceededException;
-import ca.nrc.cadc.net.event.TransferEvent;
-
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -92,7 +87,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 import javax.net.ssl.HttpsURLConnection;
-
 import org.apache.log4j.Logger;
 
 /**

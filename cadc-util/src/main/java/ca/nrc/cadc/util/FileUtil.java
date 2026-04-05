@@ -70,7 +70,6 @@
 package ca.nrc.cadc.util;
 
 import ca.nrc.cadc.net.NetUtil;
-
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.File;

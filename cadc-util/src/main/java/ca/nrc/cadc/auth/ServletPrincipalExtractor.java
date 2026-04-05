@@ -71,7 +71,6 @@ package ca.nrc.cadc.auth;
 
 import ca.nrc.cadc.util.ArrayUtil;
 import ca.nrc.cadc.util.StringUtil;
-
 import java.security.AccessControlException;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
@@ -79,10 +78,8 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
-
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
-
 import org.apache.log4j.Logger;
 
 /**

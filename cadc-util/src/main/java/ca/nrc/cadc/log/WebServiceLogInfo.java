@@ -83,7 +83,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-
 import javax.security.auth.Subject;
 import org.apache.log4j.Logger;
 
@@ -120,7 +119,9 @@ public abstract class WebServiceLogInfo {
 
     public String user;
 
-    protected WebServiceLogInfo() { }
+    protected WebServiceLogInfo() {
+
+    }
 
     /**
      * Generates the log.info message for the start of the request.

@@ -74,7 +74,6 @@ import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import javax.net.ssl.X509KeyManager;
-
 import org.apache.log4j.Logger;
 
 /**
