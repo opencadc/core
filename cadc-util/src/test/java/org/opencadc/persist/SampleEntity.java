@@ -102,13 +102,15 @@ public class SampleEntity extends Entity implements Comparable<SampleEntity> {
     public transient String transientVal;
     
     
-    public SampleEntity(String name, boolean truncateDateToSec, boolean digestFieldNames, boolean digestFieldNamesLowerCase) { 
-        super(truncateDateToSec, digestFieldNames, digestFieldNamesLowerCase);
+    public SampleEntity(String name, boolean truncateDateToSec, boolean digestFieldNames, boolean digestFieldNamesLowerCase,
+            boolean digestZeroByteAfterListItem) { 
+        super(truncateDateToSec, digestFieldNames, digestFieldNamesLowerCase, digestZeroByteAfterListItem);
         this.name = name;
     }
     
-    public SampleEntity(UUID id, String name, boolean truncateDateToSec, boolean digestFieldNames, boolean digestFieldNamesLowerCase) {
-        super(id, truncateDateToSec, digestFieldNames, digestFieldNamesLowerCase);
+    public SampleEntity(UUID id, String name, boolean truncateDateToSec, boolean digestFieldNames, boolean digestFieldNamesLowerCase,
+            boolean digestZeroByteAfterListItem) { 
+        super(id, truncateDateToSec, digestFieldNames, digestFieldNamesLowerCase, digestZeroByteAfterListItem);
         this.name = name;
     }
 

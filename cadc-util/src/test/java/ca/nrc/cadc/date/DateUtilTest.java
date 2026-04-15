@@ -289,6 +289,16 @@ public class DateUtilTest
             Assert.fail("unexpected exception: " + unexpected);
             throw unexpected;
         }
+        
+        DateFormat df = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
+        String str = "2026-03-08T02:02:41.056";
+        Date orig = df.parse(str);
+        double mjd = DateUtil.toModifiedJulianDate(orig);
+        Date actual = DateUtil.fromModifiedJulianDate(mjd);
+        log.info(str + " -> " + df.format(orig) + " -> " + mjd + " -> " + df.format(actual));
+        Assert.assertEquals(orig, actual);
+        
+        
     }
 
     @Test

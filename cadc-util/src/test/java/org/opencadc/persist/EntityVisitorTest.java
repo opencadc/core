@@ -91,7 +91,7 @@ public class EntityVisitorTest {
     @Test
     public void testLogVisitor() {
         
-        SampleEntity e = new SampleEntity("foo", false, true, true);
+        SampleEntity e = new SampleEntity("foo", false, true, true, true);
         e.dateVal = null;
         e.doubleVal = 2.0;
         e.longVal = 123L;
