@@ -75,5 +75,5 @@ package org.opencadc.persist;
  * @author pdowler
  */
 public interface PrimitiveWrapper {
-    public Object getValue();
+    public Object getWrappedValue();
 }

@@ -399,7 +399,7 @@ public abstract class Entity {
                     Class ac = fo.getClass();
                     if (fo instanceof PrimitiveWrapper) {
                         PrimitiveWrapper pw = (PrimitiveWrapper) fo;
-                        fo = pw.getValue();
+                        fo = pw.getWrappedValue();
                         ac = fo.getClass();
                     }
                     if (ac.isEnum()) {
@@ -442,7 +442,7 @@ public abstract class Entity {
                                 Class cc = co.getClass();
                                 if (co instanceof PrimitiveWrapper) {
                                     PrimitiveWrapper cpo = (PrimitiveWrapper) co;
-                                    co = cpo.getValue();
+                                    co = cpo.getWrappedValue();
                                     cc = co.getClass();
                                 }
                                 if (cc.isEnum()) {
