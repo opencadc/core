@@ -75,5 +75,12 @@ package org.opencadc.persist;
  * @author pdowler
  */
 public interface PrimitiveWrapper {
+    /**
+     * Unwrap the inner state and return it. The return value can be a primitive,
+     * immutable class (String, URI, Double, Long, etc), a primitive array (e.g. double[]),
+     * or a java.util.Collection (possibly empty).
+     * 
+     * @return the wrapped value
+     */
     public Object getWrappedValue();
 }

@@ -146,7 +146,7 @@ public abstract class Entity {
             throw new IllegalArgumentException("invalid " + caller.getSimpleName() + "." + name + ": null");
         }
     }
-    
+
     /**
      * Constructor. This creates a new entity with a random UUID.
      * 
@@ -297,7 +297,12 @@ public abstract class Entity {
                     ev.visitNull(cf);
                 } else {
                     Class ac = fo.getClass();
-                    if (ac.isEnum() || PrimitiveWrapper.class.isAssignableFrom(ac)) {
+                    if (fo instanceof PrimitiveWrapper) {
+                        PrimitiveWrapper pw = (PrimitiveWrapper) fo;
+                        fo = pw.getWrappedValue();
+                        ac = fo.getClass();
+                    }
+                    if (ac.isEnum()) {
                         try {
                             log.warn("unwrap: " + ac.getSimpleName() + ".getValue()");
                             Method m = ac.getMethod("getValue");
@@ -318,7 +323,12 @@ public abstract class Entity {
                             while (i.hasNext()) {
                                 Object co = i.next();
                                 Class cc = co.getClass();
-                                if (cc.isEnum() || PrimitiveWrapper.class.isAssignableFrom(cc)) {
+                                if (co instanceof PrimitiveWrapper) {
+                                    PrimitiveWrapper cpo = (PrimitiveWrapper) co;
+                                    co = cpo.getWrappedValue();
+                                    cc = co.getClass();
+                                }
+                                if (cc.isEnum()) {
                                     try {
                                         Method m = cc.getMethod("getValue");
                                         Object val = m.invoke(co);
@@ -398,6 +408,7 @@ public abstract class Entity {
                 if (fo != null) {
                     Class ac = fo.getClass();
                     if (fo instanceof PrimitiveWrapper) {
+                        // unwrap
                         PrimitiveWrapper pw = (PrimitiveWrapper) fo;
                         fo = pw.getWrappedValue();
                         ac = fo.getClass();
@@ -420,19 +431,6 @@ public abstract class Entity {
                         if (digestFieldNames && num < digest.getNumBytes()) {
                             digest.update(fieldNameToBytes(cf)); // field name
                         }
-                    } else if (ac.isArray()) {
-                        Iterator iter = new ArrayIterator(fo);
-                        if (iter.hasNext()) {
-                            // arrays of primitive only
-                            while (iter.hasNext()) {
-                                Object co = iter.next();
-                                Class cc = co.getClass();
-                                digest.update(primitiveValueToBytes(co, cf));
-                            }
-                            if (digestFieldNames) {
-                                digest.update(fieldNameToBytes(cf)); // field name
-                            }
-                        }
                     } else if (fo instanceof Collection) {
                         Collection stuff = (Collection) fo;
                         if (!stuff.isEmpty()) {
@@ -441,6 +439,7 @@ public abstract class Entity {
                                 Object co = iter.next();
                                 Class cc = co.getClass();
                                 if (co instanceof PrimitiveWrapper) {
+                                    // unwrap
                                     PrimitiveWrapper cpo = (PrimitiveWrapper) co;
                                     co = cpo.getWrappedValue();
                                     cc = co.getClass();
@@ -456,17 +455,6 @@ public abstract class Entity {
                                 } else if (isDataModelClass(cc)) {
                                     // depth-first recursion
                                     calcMetaChecksum(cc, co, digest);
-                                } else if (cc.isArray()) {
-                                    // use case: Interval -> Object[]
-                                    Iterator ai = new ArrayIterator(co);
-                                    if (ai.hasNext()) {
-                                        // arrays of primitive only
-                                        while (ai.hasNext()) {
-                                            Object ico = ai.next();
-                                            Class icc = co.getClass();
-                                            digest.update(primitiveValueToBytes(ico, cf));
-                                        }
-                                    }
                                 } else {
                                     digest.update(primitiveValueToBytes(co, cf));
                                 }
@@ -682,6 +670,13 @@ public abstract class Entity {
             ret = new byte[8 * da.length];
             for (int i = 0; i < da.length; i++) {
                 byte[] b = HexUtil.toBytes(Double.doubleToLongBits(da[i])); // IEEE754 double
+                System.arraycopy(b, 0, ret, i * 8, 8);
+            }
+        } else if (o instanceof long[]) {
+            long[] da = (long[]) o;
+            ret = new byte[8 * da.length];
+            for (int i = 0; i < da.length; i++) {
+                byte[] b = HexUtil.toBytes(da[i]);
                 System.arraycopy(b, 0, ret, i * 8, 8);
             }
         }
