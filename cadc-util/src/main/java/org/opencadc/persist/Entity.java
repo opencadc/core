@@ -499,28 +499,6 @@ public abstract class Entity {
         }
     }
     
-    private static class ArrayIterator implements Iterator {
-        private Object arr;
-        private int len;
-        private int cur;
-
-        public ArrayIterator(Object arr) {
-            this.arr = arr;
-            this.len = java.lang.reflect.Array.getLength(arr);
-            this.cur = 0;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return cur < len;
-        }
-
-        @Override
-        public Object next() {
-            return java.lang.reflect.Array.get(arr, cur++);
-        }
-    }
-
     public static class MessageDigestWrapper {
         private MessageDigest digest;
         private int numBytes = 0;
