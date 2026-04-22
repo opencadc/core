@@ -97,7 +97,9 @@ public class SampleEntity extends Entity implements Comparable<SampleEntity> {
     
     // not included
     public Set<SampleEntity> children = new TreeSet<>();
-    public SampleEntity relation;
+    public SampleEntity child1;
+    public SampleEntity child2;
+    public SampleEntity child3;
     public static String staticVal;
     public transient String transientVal;
     

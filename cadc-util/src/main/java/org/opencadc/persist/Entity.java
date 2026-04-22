@@ -288,13 +288,13 @@ public abstract class Entity {
             
             SortedSet<Field> fields = getStateFields(c);
             for (Field f : fields) {
-                String cf = f.getDeclaringClass().getSimpleName() + "." + f.getName();
+                String vodmlID = f.getDeclaringClass().getSimpleName() + "." + f.getName();
                 f.setAccessible(true);
                 Object fo = f.get(o);
                 
                 
                 if (fo == null) {
-                    ev.visitNull(cf);
+                    ev.visitNull(vodmlID);
                 } else {
                     Class ac = fo.getClass();
                     if (fo instanceof PrimitiveWrapper) {
@@ -307,7 +307,7 @@ public abstract class Entity {
                             log.warn("unwrap: " + ac.getSimpleName() + ".getValue()");
                             Method m = ac.getMethod("getValue");
                             Object val = m.invoke(fo);
-                            ev.visitLeaf(cf, val);
+                            ev.visitLeaf(vodmlID, val);
                         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
                             throw new RuntimeException("BUG - enum " + ac.getName() + " does not have getValue()", ex);
                         }
@@ -315,7 +315,7 @@ public abstract class Entity {
                         // depth-first recursion
                         visitImpl(ac, fo, ev);
                         // visit intermediate DM class
-                        ev.visitNode(cf, fo);
+                        ev.visitNode(vodmlID, fo);
                     } else if (fo instanceof Collection) {
                         Collection stuff = (Collection) fo;
                         if (!stuff.isEmpty()) {
@@ -332,7 +332,7 @@ public abstract class Entity {
                                     try {
                                         Method m = cc.getMethod("getValue");
                                         Object val = m.invoke(co);
-                                        ev.visitLeaf(cf, val);
+                                        ev.visitLeaf(vodmlID, val);
                                     } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
                                         throw new RuntimeException("BUG", ex);
                                     }
@@ -340,19 +340,36 @@ public abstract class Entity {
                                     // depth-first recursion
                                     visitImpl(cc, co, ev);
                                     // visit intermediate DM class
-                                    ev.visitNode(cf, co);
+                                    ev.visitNode(vodmlID, co);
                                 } else {
-                                    ev.visitLeaf(cf, co);
+                                    ev.visitLeaf(vodmlID, co);
                                 }
                             }
                         }
-                        ev.visitCollection(cf, stuff);
+                        ev.visitCollection(vodmlID, stuff);
                     } else {
-                        ev.visitLeaf(cf, fo);
+                        ev.visitLeaf(vodmlID, fo);
                     }
                 }
             }
 
+            SortedSet<Field> cfields = getChildFields(c);
+            for (Field cf : cfields) {
+                String vodmlID = cf.getDeclaringClass().getSimpleName() + "." + cf.getName();
+                cf.setAccessible(true);
+                Object cfo = cf.get(o);
+                if (cfo == null) {
+                    ev.visitChildNull(vodmlID);
+                } else if (cfo instanceof Collection) {
+                    // child fields always collection, never null
+                    Collection stuff = (Collection) cfo;
+                    ev.visitChildCollection(vodmlID, stuff);
+                } else {
+                    Entity e = (Entity) cfo;
+                    ev.visitChildEntity(vodmlID, e);
+                }
+            }
+            
         } catch (IllegalAccessException bug) {
             throw new RuntimeException("Unable to calculate metaChecksum for class " + c.getName(), bug);
         }

@@ -208,7 +208,7 @@ public class EntityTest {
             URI tcs1 = sample.computeMetaChecksum(MessageDigest.getInstance("MD5"));
             Assert.assertEquals(mcs12, tcs1);
             
-            sample.relation = new SampleEntity("flibble", trunc, dig, digL, digZB);
+            sample.child1 = new SampleEntity("flibble", trunc, dig, digL, digZB);
             mcs11 = sample.computeMetaChecksum(MessageDigest.getInstance("MD5"));
             Assert.assertEquals(mcs12, mcs11);
             
