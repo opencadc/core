@@ -88,7 +88,9 @@ public class FileMetadata {
     private String fileCRC;
     private String uncompressedFileCRC;
 
-    public FileMetadata() { }
+    public FileMetadata() {
+
+    }
 
     @Override
     public String toString() {

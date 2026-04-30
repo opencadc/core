@@ -70,11 +70,8 @@
 package ca.nrc.cadc.auth;
 
 import ca.nrc.cadc.util.ArgumentMap;
-
 import java.io.File;
-
 import javax.security.auth.Subject;
-
 import org.apache.log4j.Logger;
 
 /**

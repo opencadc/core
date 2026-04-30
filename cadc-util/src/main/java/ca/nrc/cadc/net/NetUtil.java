@@ -73,7 +73,6 @@
 package ca.nrc.cadc.net;
 
 import ca.nrc.cadc.util.StringUtil;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -85,9 +84,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
-
 import javax.servlet.http.HttpServletRequest;
-
 import org.apache.log4j.Logger;
 
 

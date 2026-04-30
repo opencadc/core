@@ -75,13 +75,11 @@ import static ca.nrc.cadc.net.HttpConstants.HDR_RANGE;
 import static ca.nrc.cadc.net.HttpConstants.RANGE_BYTES;
 
 import ca.nrc.cadc.io.RandomAccessSource;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.log4j.Logger;
 
 /**

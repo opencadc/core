@@ -112,8 +112,9 @@ public class StringBuilderWriter extends Writer {
     }
 
     @Override
-    public void close() throws IOException
-    {}
+    public void close() throws IOException {
+
+    }
 
     public void reset() {
         sb.setLength(0);

@@ -70,16 +70,13 @@
 package ca.nrc.cadc.auth;
 
 import ca.nrc.cadc.util.Base64;
-
 import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Set;
-
 import javax.security.auth.x500.X500Principal;
-
 import org.apache.log4j.Logger;
 
 /**

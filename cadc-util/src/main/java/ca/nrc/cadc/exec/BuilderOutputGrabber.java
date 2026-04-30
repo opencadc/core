@@ -34,7 +34,6 @@
 package ca.nrc.cadc.exec;
 
 import ca.nrc.cadc.util.ArrayUtil;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,7 +44,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.log4j.Logger;
 
 /**
