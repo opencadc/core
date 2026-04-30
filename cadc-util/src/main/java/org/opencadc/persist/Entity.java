@@ -120,10 +120,12 @@ public abstract class Entity {
 
     private final String localPackage;
     public static boolean MCS_DEBUG = false;  // way to much debug when true
+    public static byte[] ZERO_BYTE = new byte[] { (byte) 0 };
     
     private final boolean digestFieldNames;
     private final boolean digestFieldNamesLowerCase;
     private final boolean truncateDateToSec;
+    private final boolean digestZeroByteAfterListItem;
     private UUID id;
     private Date lastModified;
     private URI metaChecksum;
@@ -144,85 +146,44 @@ public abstract class Entity {
             throw new IllegalArgumentException("invalid " + caller.getSimpleName() + "." + name + ": null");
         }
     }
-    
-    /**
-     * Backwards compatible constructor: digestFieldNames==false.
-     * 
-     * @param truncateDateToSec truncate Date values to seconds when converting to bytes for meta checksum calculation
-     * @deprecated hard code Entity(boolean, boolean, boolean) in model
-     */
-    @Deprecated
-    protected Entity(boolean truncateDateToSec) {
-        this(truncateDateToSec, false, false);
-    }
-    
-    /**
-     * Backwards compatible constructor: digestFieldNames==false.
-     *
-     * @param id assign the specified Entity.id
-     * @param truncateDateToSec truncate Date values to seconds when converting to bytes for meta checksum calculation
-     * @deprecated hard code Entity(UUID, boolean, boolean, boolean) in model
-     */
-    @Deprecated
-    protected Entity(UUID id, boolean truncateDateToSec) {
-        this(id, truncateDateToSec, false, false);
-    }
 
     /**
-     * Backwards compatible constructor: digestFieldNamesLowerCase==false.
-     *
-     * @param truncateDateToSec truncate Date values to seconds when converting to bytes for meta checksum calculation
-     * @param digestFieldNames when a field is not null (or collection is non-empty), include the field name in the
-     *                         metaChecksum calculation
-     */
-    protected Entity(boolean truncateDateToSec, boolean digestFieldNames) {
-        this(truncateDateToSec, digestFieldNames, false);
-    }
-    
-    /**
-     * Backwards compatible constructor: digestFieldNamesLowerCase==false.
-     *
-     * @param id assign the specified Entity.id
-     * @param truncateDateToSec truncate Date values to seconds when converting to bytes for meta checksum calculation
-     * @param digestFieldNames when a field is not null (or collection is non-empty), include the field name in the
-     *                         metaChecksum calculation
-     */
-    protected Entity(UUID id, boolean truncateDateToSec, boolean digestFieldNames) {
-        this(id, truncateDateToSec, digestFieldNames, false);
-    }
-
-    /**
-     * Constructor.This creates a new entity with a random UUID.
+     * Constructor. This creates a new entity with a random UUID.
      * 
      * @param truncateDateToSec truncate Date values to seconds when converting to bytes for meta checksum calculation
      * @param digestFieldNames when a field is not null (or collection is non-empty), include the field name in the
      *                         metaChecksum calculation
      * @param digestFieldNamesLowerCase convert field names to lower case before digesting
+     * @param digestZeroByteAfterListItem digest a single byte value 0 after item in a collection
      */
-    protected Entity(boolean truncateDateToSec, boolean digestFieldNames, boolean digestFieldNamesLowerCase) {
-        this(UUID.randomUUID(), truncateDateToSec, digestFieldNames, digestFieldNamesLowerCase);
+    protected Entity(boolean truncateDateToSec, boolean digestFieldNames, boolean digestFieldNamesLowerCase,
+            boolean digestZeroByteAfterListItem) {
+        this(UUID.randomUUID(), truncateDateToSec, digestFieldNames, digestFieldNamesLowerCase, digestZeroByteAfterListItem);
     }
     
     /**
      * Constructor.This creates an entity with an existing UUID when reconstructing an instance. The
- truncateDateToSec option should be used if instances of the model are to be serialized or stored
- in a way that does not recover the exact timestamp to milliseconds. The digestFieldNames option
- is needed for any model with "adjacent" fields that could contain the same value; this option
- ensures that "moving" the value from one field to another will change the checksum by changing
- the sequence of bytes that are digested.
+     * truncateDateToSec option should be used if instances of the model are to be serialized or stored
+     * in a way that does not recover the exact timestamp to milliseconds. The digestFieldNames option
+     * is needed for any model with "adjacent" fields that could contain the same value; this option
+     * ensures that "moving" the value from one field to another will change the checksum by changing
+     *  the sequence of bytes that are digested.
      * 
      * @param id unique ID value to assign/restore
      * @param truncateDateToSec truncate Date values to seconds when converting to bytes for meta checksum calculation
      * @param digestFieldNames when a field is not null (or collection is non-empty), include the field name in the
      *                         metaChecksum calculation
      * @param digestFieldNamesLowerCase convert field names to lower case before digesting
+     * @param digestZeroByteAfterListItem digest a single byte value 0 after item in a collection
      */
-    protected Entity(UUID id, boolean truncateDateToSec, boolean digestFieldNames, boolean digestFieldNamesLowerCase) {
+    protected Entity(UUID id, boolean truncateDateToSec, boolean digestFieldNames, boolean digestFieldNamesLowerCase,
+            boolean digestZeroByteAfterListItem) {
         Entity.assertNotNull(Entity.class, "id", id);
         this.id = id;
         this.truncateDateToSec = truncateDateToSec;
         this.digestFieldNames = digestFieldNames;
         this.digestFieldNamesLowerCase = digestFieldNamesLowerCase;
+        this.digestZeroByteAfterListItem = digestZeroByteAfterListItem;
         this.localPackage = this.getClass().getPackage().getName();
     }
 
@@ -327,21 +288,26 @@ public abstract class Entity {
             
             SortedSet<Field> fields = getStateFields(c);
             for (Field f : fields) {
-                String cf = f.getDeclaringClass().getSimpleName() + "." + f.getName();
+                String vodmlID = f.getDeclaringClass().getSimpleName() + "." + f.getName();
                 f.setAccessible(true);
                 Object fo = f.get(o);
                 
                 
                 if (fo == null) {
-                    ev.visitNull(cf);
+                    ev.visitNull(vodmlID);
                 } else {
                     Class ac = fo.getClass();
-                    if (ac.isEnum() || PrimitiveWrapper.class.isAssignableFrom(ac)) {
+                    if (fo instanceof PrimitiveWrapper) {
+                        PrimitiveWrapper pw = (PrimitiveWrapper) fo;
+                        fo = pw.getWrappedValue();
+                        ac = fo.getClass();
+                    }
+                    if (ac.isEnum()) {
                         try {
                             log.warn("unwrap: " + ac.getSimpleName() + ".getValue()");
                             Method m = ac.getMethod("getValue");
                             Object val = m.invoke(fo);
-                            ev.visitLeaf(cf, val);
+                            ev.visitLeaf(vodmlID, val);
                         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
                             throw new RuntimeException("BUG - enum " + ac.getName() + " does not have getValue()", ex);
                         }
@@ -349,7 +315,7 @@ public abstract class Entity {
                         // depth-first recursion
                         visitImpl(ac, fo, ev);
                         // visit intermediate DM class
-                        ev.visitNode(cf, fo);
+                        ev.visitNode(vodmlID, fo);
                     } else if (fo instanceof Collection) {
                         Collection stuff = (Collection) fo;
                         if (!stuff.isEmpty()) {
@@ -357,11 +323,16 @@ public abstract class Entity {
                             while (i.hasNext()) {
                                 Object co = i.next();
                                 Class cc = co.getClass();
-                                if (cc.isEnum() || PrimitiveWrapper.class.isAssignableFrom(cc)) {
+                                if (co instanceof PrimitiveWrapper) {
+                                    PrimitiveWrapper cpo = (PrimitiveWrapper) co;
+                                    co = cpo.getWrappedValue();
+                                    cc = co.getClass();
+                                }
+                                if (cc.isEnum()) {
                                     try {
                                         Method m = cc.getMethod("getValue");
                                         Object val = m.invoke(co);
-                                        ev.visitLeaf(cf, val);
+                                        ev.visitLeaf(vodmlID, val);
                                     } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
                                         throw new RuntimeException("BUG", ex);
                                     }
@@ -369,19 +340,36 @@ public abstract class Entity {
                                     // depth-first recursion
                                     visitImpl(cc, co, ev);
                                     // visit intermediate DM class
-                                    ev.visitNode(cf, co);
+                                    ev.visitNode(vodmlID, co);
                                 } else {
-                                    ev.visitLeaf(cf, co);
+                                    ev.visitLeaf(vodmlID, co);
                                 }
                             }
                         }
-                        ev.visitCollection(cf, stuff);
+                        ev.visitCollection(vodmlID, stuff);
                     } else {
-                        ev.visitLeaf(cf, fo);
+                        ev.visitLeaf(vodmlID, fo);
                     }
                 }
             }
 
+            SortedSet<Field> cfields = getChildFields(c);
+            for (Field cf : cfields) {
+                String vodmlID = cf.getDeclaringClass().getSimpleName() + "." + cf.getName();
+                cf.setAccessible(true);
+                Object cfo = cf.get(o);
+                if (cfo == null) {
+                    ev.visitChildNull(vodmlID);
+                } else if (cfo instanceof Collection) {
+                    // child fields always collection, never null
+                    Collection stuff = (Collection) cfo;
+                    ev.visitChildCollection(vodmlID, stuff);
+                } else {
+                    Entity e = (Entity) cfo;
+                    ev.visitChildEntity(vodmlID, e);
+                }
+            }
+            
         } catch (IllegalAccessException bug) {
             throw new RuntimeException("Unable to calculate metaChecksum for class " + c.getName(), bug);
         }
@@ -433,11 +421,17 @@ public abstract class Entity {
                 String cf = f.getDeclaringClass().getSimpleName() + "." + f.getName();
                 f.setAccessible(true);
                 Object fo = f.get(o);
+                
                 if (fo != null) {
                     Class ac = fo.getClass();
-                    if (ac.isEnum() || PrimitiveWrapper.class.isAssignableFrom(ac)) {
+                    if (fo instanceof PrimitiveWrapper) {
+                        // unwrap
+                        PrimitiveWrapper pw = (PrimitiveWrapper) fo;
+                        fo = pw.getWrappedValue();
+                        ac = fo.getClass();
+                    }
+                    if (ac.isEnum()) {
                         try {
-                            log.warn("unwrap: " + ac.getSimpleName() + ".getValue()");
                             Method m = ac.getMethod("getValue");
                             Object val = m.invoke(fo);
                             digest.update(primitiveValueToBytes(val, cf));
@@ -457,11 +451,17 @@ public abstract class Entity {
                     } else if (fo instanceof Collection) {
                         Collection stuff = (Collection) fo;
                         if (!stuff.isEmpty()) {
-                            Iterator i = stuff.iterator();
-                            while (i.hasNext()) {
-                                Object co = i.next();
+                            Iterator iter = stuff.iterator();
+                            while (iter.hasNext()) {
+                                Object co = iter.next();
                                 Class cc = co.getClass();
-                                if (cc.isEnum() || PrimitiveWrapper.class.isAssignableFrom(cc)) {
+                                if (co instanceof PrimitiveWrapper) {
+                                    // unwrap
+                                    PrimitiveWrapper cpo = (PrimitiveWrapper) co;
+                                    co = cpo.getWrappedValue();
+                                    cc = co.getClass();
+                                }
+                                if (cc.isEnum()) {
                                     try {
                                         Method m = cc.getMethod("getValue");
                                         Object val = m.invoke(co);
@@ -474,6 +474,9 @@ public abstract class Entity {
                                     calcMetaChecksum(cc, co, digest);
                                 } else {
                                     digest.update(primitiveValueToBytes(co, cf));
+                                }
+                                if (digestZeroByteAfterListItem) {
+                                    digest.update(ZERO_BYTE);
                                 }
                             }
                             if (digestFieldNames) {
@@ -664,6 +667,13 @@ public abstract class Entity {
                 byte[] b = HexUtil.toBytes(Double.doubleToLongBits(da[i])); // IEEE754 double
                 System.arraycopy(b, 0, ret, i * 8, 8);
             }
+        } else if (o instanceof long[]) {
+            long[] da = (long[]) o;
+            ret = new byte[8 * da.length];
+            for (int i = 0; i < da.length; i++) {
+                byte[] b = HexUtil.toBytes(da[i]);
+                System.arraycopy(b, 0, ret, i * 8, 8);
+            }
         }
 
         if (ret != null) {
@@ -677,7 +687,7 @@ public abstract class Entity {
             return ret;
         }
 
-        throw new UnsupportedOperationException("unexpected primitive/value type: " + o.getClass().getName());
+        throw new UnsupportedOperationException("unexpected primitive/value type: " + o.getClass().getName() + " field: " + name);
     }
 
     protected byte[] fieldNameToBytes(String name) {
