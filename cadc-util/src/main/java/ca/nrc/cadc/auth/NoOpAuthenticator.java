@@ -68,7 +68,6 @@
 package ca.nrc.cadc.auth;
 
 import javax.security.auth.Subject;
-
 import org.apache.log4j.Logger;
 
 /**

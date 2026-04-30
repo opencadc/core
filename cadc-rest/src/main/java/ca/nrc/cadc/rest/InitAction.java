@@ -216,6 +216,7 @@ public abstract class InitAction {
     /**
      * Called during shutdown by the RestServlet destroy() method.
      */
-    public void doShutdown() {}
+    public void doShutdown() {
+    }
 
 }

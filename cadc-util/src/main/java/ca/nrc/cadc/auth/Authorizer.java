@@ -70,7 +70,6 @@
 package ca.nrc.cadc.auth;
 
 import ca.nrc.cadc.net.TransientException;
-
 import java.io.FileNotFoundException;
 import java.net.URI;
 import java.security.AccessControlException;

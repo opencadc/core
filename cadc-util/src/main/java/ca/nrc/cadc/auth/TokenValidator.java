@@ -68,13 +68,10 @@
 package ca.nrc.cadc.auth;
 
 import ca.nrc.cadc.auth.NotAuthenticatedException.AuthError;
-
 import java.security.AccessControlException;
 import java.util.List;
 import java.util.Set;
-
 import javax.security.auth.Subject;
-
 import org.apache.log4j.Logger;
 
 /**

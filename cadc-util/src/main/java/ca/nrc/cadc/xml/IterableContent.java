@@ -75,7 +75,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
-
 import org.apache.log4j.Logger;
 import org.jdom2.Content;
 import org.jdom2.Element;

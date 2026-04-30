@@ -109,8 +109,10 @@ public class JsonOutputter implements Serializable {
     
     private final List<String> listElementNames = new ArrayList<String>();
     private final List<String> stringElementNames = new ArrayList<String>();
-    
-    public JsonOutputter() { }
+
+    public JsonOutputter() {
+
+    }
 
     /**
      * List of element names that are always written as list (array using [ ])

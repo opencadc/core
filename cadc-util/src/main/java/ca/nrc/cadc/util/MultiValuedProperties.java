@@ -91,7 +91,9 @@ public class MultiValuedProperties {
     
     private final Map<String, List<String>> props = new HashMap<String, List<String>>();
 
-    public MultiValuedProperties() { }
+    public MultiValuedProperties() {
+
+    }
 
     public boolean isEmpty() {
         return props.isEmpty();
