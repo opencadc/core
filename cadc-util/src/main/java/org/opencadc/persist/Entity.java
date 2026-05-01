@@ -146,6 +146,30 @@ public abstract class Entity {
             throw new IllegalArgumentException("invalid " + caller.getSimpleName() + "." + name + ": null");
         }
     }
+    
+    // backwards compat ctors for cadc-vos
+    @Deprecated
+    protected Entity(boolean truncateDateToSec, boolean digestFieldNames) {
+        this(truncateDateToSec, digestFieldNames, false, false);
+    }
+
+    @Deprecated
+    protected Entity(UUID id, boolean truncateDateToSec, boolean digestFieldNames) {
+        this(id, truncateDateToSec, digestFieldNames, false, false);
+    }
+    // end: cadc-vos
+
+    // backwards compat ctor for cadc-inventory
+    @Deprecated
+    protected Entity(boolean truncateDateToSec, boolean digestFieldNames, boolean digestFieldNamesLowerCase) {
+        this(truncateDateToSec, digestFieldNames, digestFieldNamesLowerCase, false);
+    }
+
+    @Deprecated
+    protected Entity(UUID id, boolean truncateDateToSec, boolean digestFieldNames, boolean digestFieldNamesLowerCase) {
+        this(id, truncateDateToSec, digestFieldNames, digestFieldNamesLowerCase, false);
+    }
+    // end: cadc-inventory
 
     /**
      * Constructor. This creates a new entity with a random UUID.
