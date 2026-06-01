@@ -18,6 +18,11 @@ checkstyle {
     sourceSets = []
 }
 
+// enable additional warnings
+tasks.withType(JavaCompile) {
+    options.compilerArgs << "-Xlint:deprecation" << "-Xlint:unchecked"
+}
+
 sourceSets {
     intTest {
         java {
