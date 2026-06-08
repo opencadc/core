@@ -99,8 +99,32 @@ public interface EntityVisitor {
     public void visitNode(String vodmlID, Object val);
     
     /**
-     * Visit a null value. This could be a node or a primitive.
+     * Visit a null value. This could be a node or a leaf.
      * @param vodmlID the {declaringClass}.{fieldName} aka vodml-id
      */
     public void visitNull(String vodmlID);
+    
+    /**
+     * Visit a collection of child entity(s).
+     * 
+     * @param vodmlID the {declaringClass}.{fieldName} aka vodml-id
+     * @param val the collection
+     */
+    public void visitChildCollection(String vodmlID, Collection val);
+    
+    /**
+     * Visit a null child entity value.
+     * 
+     * @param vodmlID the {declaringClass}.{fieldName} aka vodml-id
+     */
+    public void visitChildNull(String vodmlID);
+    
+    /**
+     * Visit a direct child entity. There is no recursion into the structure of
+     * the child entity.
+     * 
+     * @param vodmlID the {declaringClass}.{fieldName} aka vodml-id
+     * @param val the entity
+     */
+    public void visitChildEntity(String vodmlID, Entity val);
 }

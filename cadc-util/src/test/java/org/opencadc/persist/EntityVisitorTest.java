@@ -91,7 +91,7 @@ public class EntityVisitorTest {
     @Test
     public void testLogVisitor() {
         
-        SampleEntity e = new SampleEntity("foo", false, true, true);
+        SampleEntity e = new SampleEntity("foo", false, true, true, true);
         e.dateVal = null;
         e.doubleVal = 2.0;
         e.longVal = 123L;
@@ -99,6 +99,7 @@ public class EntityVisitorTest {
         e.nestedSet.add(new SampleEntity.Nested("abc"));
         e.nestedSet.add(new SampleEntity.Nested("def"));
         e.strList.add("foo");
+        e.child1 = new SampleEntity("foo.child1", false, true, true, true);
         
         log.info("testLogVisitor: START");
         LogVisitor v = new LogVisitor();
@@ -108,16 +109,25 @@ public class EntityVisitorTest {
         Assert.assertEquals("numLeaf", 9, v.numLeaf);
         Assert.assertEquals("numNode", 3, v.numNode); // nested, nestedSet, emptySet
         Assert.assertEquals("numNull", 7, v.numNull);
+        Assert.assertEquals("numCol", 3, v.numCol);
+        Assert.assertEquals("numChildCol", 1, v.numChildCol);
+        Assert.assertEquals("numChildEntity", 1, v.numChildEntity);
+        Assert.assertEquals("numChildNull", 2, v.numChildNull);
     }
     
     private class LogVisitor implements EntityVisitor {
         int numLeaf = 0;
         int numNode = 0;
         int numNull = 0;
+        int numCol = 0;
+        int numChildCol = 0;
+        int numChildNull = 0;
+        int numChildEntity = 0;
 
         @Override
         public void visitCollection(String vodmlID, Collection val) {
             System.out.println("visit collection: " + vodmlID + " " + val.size());
+            numCol++;
         }
         
         @Override
@@ -137,7 +147,23 @@ public class EntityVisitorTest {
             System.out.println("visit null: " + vodmlID);
             numNull++;
         }
-        
-        
+
+        @Override
+        public void visitChildCollection(String vodmlID, Collection val) {
+            System.out.println("visit collection<entity>: " + vodmlID);
+            numChildCol++;
+        }
+
+        @Override
+        public void visitChildNull(String vodmlID) {
+            System.out.println("visit child null: " + vodmlID);
+            numChildNull++;
+        }
+
+        @Override
+        public void visitChildEntity(String vodmlID, Entity val) {
+            System.out.println("visit child entity: " + vodmlID);
+            numChildEntity++;
+        }
     }
 }
