@@ -90,6 +90,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URL;
@@ -190,13 +191,12 @@ public abstract class HttpTransfer implements Runnable {
     }
 
     /**
-     * The maximum retry delay (128 seconds).
+     * The maximum retry delay (90 seconds).
      */
-    public static final int MAX_RETRY_DELAY = 128;
-    public static final int DEFAULT_RETRY_DELAY = 30;
-    
+    public static final int MAX_RETRY_DELAY = 90;
+    public static final int DEFAULT_RETRY_DELAY = 1;
     protected int maxRetries = 3;
-    protected int retryDelay = 1; // 1, 2, 4 sec
+    protected int retryDelay = DEFAULT_RETRY_DELAY; // 1, 2, 4 sec
     protected RetryReason retryReason = RetryReason.TRANSIENT;
 
     protected int numRetries = 0;
@@ -824,13 +824,9 @@ public abstract class HttpTransfer implements Runnable {
             if (dt == 0) {
                 if (curRetryDelay == 0) {
                     curRetryDelay = retryDelay;
-                }
-                
-                if (curRetryDelay > 0) {
+                } else if (curRetryDelay < MAX_RETRY_DELAY) {
                     dt = curRetryDelay;
                     curRetryDelay *= 2;
-                } else {
-                    dt = DEFAULT_RETRY_DELAY;
                 }
             }
             
@@ -839,25 +835,25 @@ public abstract class HttpTransfer implements Runnable {
     }
     
     protected void checkErrors(URL url, HttpURLConnection conn)
-            throws AccessControlException, NotAuthenticatedException,
+            throws AccessControlException, NotAuthenticatedException, PermissionDeniedException,
             ByteLimitExceededException, ExpectationFailedException, IllegalArgumentException,
             PreconditionFailedException, ResourceAlreadyExistsException, ResourceNotFoundException,
-            TransientException, IOException, InterruptedException, RangeNotSatisfiableException {
+            RemoteServiceException, TransientException, IOException, InterruptedException, RangeNotSatisfiableException {
         try {
             this.responseCode = conn.getResponseCode();
             log.debug("checkErrors: " + responseCode + " for " + url);
             captureResponseHeaders(conn);
         } catch (SocketTimeoutException ex) {
-            int timeoutRetryDelay = DEFAULT_RETRY_DELAY;
-            if (connectionTimeout > 0 || readTimeout > 0) {
+            //int timeoutRetryDelay = DEFAULT_RETRY_DELAY;
+            //if (connectionTimeout > 0 || readTimeout > 0) {
                 // user specified timeouts are indicative of how responsive the client expects the
                 // server to be...
-                timeoutRetryDelay = Math.max(connectionTimeout, readTimeout) / 1000; // ms to sec
-            }
-            throw new TransientException("connection/read timeout: " + url, ex, timeoutRetryDelay);
+            //    timeoutRetryDelay = Math.max(connectionTimeout, readTimeout) / 1000; // ms to sec
+            //}
+            throw new TransientException("connection/read timeout: " + url, ex);
+        } catch (SocketException ex) {
+            throw new RemoteServiceException("url=" + toLoggableString(url) + " msg=" + ex.getMessage());
         }
-        
-        
         
         if (100 <= responseCode && responseCode < 400) {
             return;
@@ -877,13 +873,13 @@ public abstract class HttpTransfer implements Runnable {
                     // invalid client-cert
                     throw new NotAuthenticatedException(responseBody);
                 }
-                throw new IOException(responseBody);
+                throw new RemoteServiceException("url=" + toLoggableString(url) + " msg=" + responseBody);
 
             case HttpURLConnection.HTTP_UNAUTHORIZED:
                 throw new NotAuthenticatedException(responseBody);
             case HttpURLConnection.HTTP_FORBIDDEN:
-                throw new AccessControlException(responseBody);
-            case HTTP_LOCKED:
+                throw new NotAuthenticatedException(responseBody);
+            case HttpConstants.HTTP_LOCKED:
                 throw new ResourceLockedException(responseBody);
             case HttpURLConnection.HTTP_NOT_FOUND:
                 throw new ResourceNotFoundException(responseBody);
@@ -891,19 +887,18 @@ public abstract class HttpTransfer implements Runnable {
                 throw new ResourceAlreadyExistsException(responseBody);
             case HttpURLConnection.HTTP_PRECON_FAILED:
                 throw new PreconditionFailedException(responseBody);
-
             case HttpURLConnection.HTTP_ENTITY_TOO_LARGE:
                 throw new ByteLimitExceededException(responseBody, -1);
-            case HTTP_RANGE_NOT_SATISFIABLE:
+            case HttpConstants.HTTP_RANGE_NOT_SATISFIABLE:
                 throw new RangeNotSatisfiableException(responseBody);
-            case HTTP_EXPECT_FAIL:
+            case HttpConstants.HTTP_EXPECT_FAIL:
                 throw new ExpectationFailedException(responseBody);
 
             case HttpURLConnection.HTTP_INTERNAL_ERROR:
-                String loggableURL = toLoggableString(url);
-                throw new RemoteServiceException("url=" + loggableURL + " msg=" + responseBody);
+                throw new RemoteServiceException("url=" + toLoggableString(url) + " msg=" + responseBody);
                 
             case HttpURLConnection.HTTP_UNAVAILABLE:
+            case HttpURLConnection.HTTP_GATEWAY_TIMEOUT:
                 throw new TransientException(responseBody);
 
             default:
