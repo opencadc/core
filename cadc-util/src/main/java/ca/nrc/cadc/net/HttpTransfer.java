@@ -844,15 +844,9 @@ public abstract class HttpTransfer implements Runnable {
             log.debug("checkErrors: " + responseCode + " for " + url);
             captureResponseHeaders(conn);
         } catch (SocketTimeoutException ex) {
-            //int timeoutRetryDelay = DEFAULT_RETRY_DELAY;
-            //if (connectionTimeout > 0 || readTimeout > 0) {
-                // user specified timeouts are indicative of how responsive the client expects the
-                // server to be...
-            //    timeoutRetryDelay = Math.max(connectionTimeout, readTimeout) / 1000; // ms to sec
-            //}
-            throw new TransientException("connection/read timeout: " + url, ex);
+            throw new TransientException("url=" + toLoggableString(url) + " connection/read timeout");
         } catch (SocketException ex) {
-            throw new RemoteServiceException("url=" + toLoggableString(url) + " msg=" + ex.getMessage());
+            throw new RemoteServiceException("url=" + toLoggableString(url) + " " + ex.getMessage());
         }
         
         if (100 <= responseCode && responseCode < 400) {
