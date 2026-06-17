@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2020.                            (c) 2020.
+*  (c) 2026.                            (c) 2026.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -872,7 +872,7 @@ public abstract class HttpTransfer implements Runnable {
             case HttpURLConnection.HTTP_UNAUTHORIZED:
                 throw new NotAuthenticatedException(responseBody);
             case HttpURLConnection.HTTP_FORBIDDEN:
-                throw new NotAuthenticatedException(responseBody);
+                throw new PermissionDeniedException(responseBody);
             case HttpConstants.HTTP_LOCKED:
                 throw new ResourceLockedException(responseBody);
             case HttpURLConnection.HTTP_NOT_FOUND:
