@@ -47,37 +47,25 @@ tasks.withType(Checkstyle).each { checkstyleTask ->
     }
 }
 
-tasks.withType(Test) {
-    // reset the report destinations so that intTests go to their own page
-    //reports.html.destination = file("${reporting.baseDir}/${name}")
-    reports.html.destination = file(reporting.baseDir.getAbsolutePath() + '/' + name)
-
-    // Assign all Java system properties from
-    // the command line to the tests
+tasks.withType(Test).configureEach {
+    // separate report destinations for each test task
+    reports.html.outputLocation = layout.buildDirectory.dir("reports/tests/${name}")
+    
+    // assign all Java system properties from the command line to the tests
     systemProperties System.properties
+    
+    testLogging {
+        events "PASSED", "FAILED", "SKIPPED"
+    }
 }
 
-task intTest(type: Test) {
-    // set the configuration context
+tasks.register('intTest', Test) {
+    // Set the configuration context
     testClassesDirs = sourceSets.intTest.output.classesDirs
     classpath = sourceSets.intTest.runtimeClasspath
     
-    // run the tests always
+    // Run the tests always
     outputs.upToDateWhen { false }
-}
-
-test {
-    testLogging {
-        events "PASSED", "FAILED", "SKIPPED"
-        // "STARTED", 
-    }
-}
-
-intTest {
-    testLogging {
-        events "PASSED", "FAILED", "SKIPPED"
-        // "STARTED",
-    }
 }
 
 pluginManager.withPlugin('maven-publish') {
@@ -92,6 +80,6 @@ pluginManager.withPlugin('maven-publish') {
 }
 
 // backwards compat usage
-task install {
-    dependsOn 'publishToMavenLocal'
+tasks.register('install') {
+    dependsOn(tasks.named('publishToMavenLocal'))
 }

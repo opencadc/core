@@ -69,7 +69,6 @@
 
 package ca.nrc.cadc.net;
 
-import ca.nrc.cadc.io.ThreadedIO;
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
 import java.io.ByteArrayOutputStream;
@@ -89,149 +88,276 @@ import org.junit.Test;
  *
  * @author pdowler
  */
-public class HttpGetTest {
-
-    private static Logger log = Logger.getLogger(HttpGetTest.class);
+public class HttpDownloadTest 
+{
+    private static Logger log = Logger.getLogger(HttpDownloadTest.class);
 
     private final URL okURL;
+    private final URL resumableURL;
+    private final URL redirectURL;
     private final URL permissionDeniedURL;
     private final URL notFoundURL;
-
+    
     private File tmpDir;
 
     static {
         Log4jInit.setLevel("ca.nrc.cadc.net", Level.DEBUG);
     }
 
-    public HttpGetTest() throws Exception {
-        this.okURL = new URL("https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/robots.txt");
+    public HttpDownloadTest() throws Exception {
+        this.okURL = new URL("https://raw.githubusercontent.com/opencadc/core/refs/heads/main/opencadc.gradle");
+        this.resumableURL = okURL;
+        this.redirectURL = new URL("https://httpbin.org/redirect?url=" + okURL);
         this.permissionDeniedURL = new URL("https://httpbin.org/status/403");
         this.notFoundURL = new URL("https://httpbin.org/status/404");
-
+        
         this.tmpDir = new File(System.getProperty("java.io.tmpdir"));
-    }
-
-    @Test
-    public void testHeadOnly() throws Exception {
-        log.debug("TEST: testHeadOnly");
-        URL src = okURL;
-        ByteArrayOutputStream dest = new ByteArrayOutputStream();
-        try {
-            HttpGet dl = new HttpGet(src, dest);
-            dl.setHeadOnly(true);
-            dl.run();
-            Assert.assertEquals("response code", 200, dl.getResponseCode());
-            Assert.assertTrue("no bytes read", dest.toByteArray().length == 0); // did not actually read bytes
-            Assert.assertTrue("content-length", dl.getContentLength() > 0L);
-            Assert.assertNotNull("content-type", dl.getContentType());
-        } catch (Exception unexpected) {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
     }
     
     @Test
-    public void testHeadNotFound() throws Exception {
-        log.debug("TEST: testHeadNotFound");
-        URL src = notFoundURL;
+    public void testDownloadFileHeadOnly() throws Exception
+    {
+        log.debug("TEST: testDownloadFileHeadOnly");
+        URL src = okURL;
         ByteArrayOutputStream dest = new ByteArrayOutputStream();
-        try {
-            HttpGet dl = new HttpGet(src, dest);
+        try
+        {
+            HttpDownload dl = new HttpDownload(src, dest);
             dl.setHeadOnly(true);
             dl.run();
-            Assert.assertEquals("response code", 404, dl.getResponseCode());
-            Assert.assertTrue("no bytes read", dest.toByteArray().length == 0); // did not actually read bytes
-        } catch (Exception unexpected) {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
-    }
-
-    @Test
-    public void testPrepareInputStream() throws Exception {
-        log.debug("TEST: testPrepareInputStream");
-
-        try {
-            URL src = okURL;
-            HttpGet dl = new HttpGet(src, true);
-            dl.prepare();
             Assert.assertEquals("response code", 200, dl.getResponseCode());
-
-            ByteArrayOutputStream dest = new ByteArrayOutputStream();
-            ThreadedIO tio = new ThreadedIO();
-            tio.ioLoop(dest, dl.getInputStream());
-            byte[] out = dest.toByteArray();
-            Assert.assertNotNull("dest stream after download", out);
-            Assert.assertTrue("size > 0", out.length > 0);
-            Assert.assertNotNull(dl.getContentType());
-            Assert.assertTrue("content-length > 0", dl.getContentLength() > 0);
-            Assert.assertEquals("size == content-length", out.length, dl.getContentLength());
-        } catch (Exception unexpected) {
+            Assert.assertTrue("content-length == 0", dest.toByteArray().length == 0);
+            Assert.assertNotNull("content-type", dl.getContentType());
+        }
+        catch (Exception unexpected)
+        {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
     @Test
-    public void testDownloadToOutputStream() throws Exception {
-        log.debug("TEST: testDownloadToOutputStream");
+    public void testDownloadFileToFile() throws Exception
+    {
+        log.debug("TEST: testDownloadFileToFile");
+        URL src = okURL;
+        File dest = new File(tmpDir, "robots.txt");
+        dest.deleteOnExit();
+        try
+        {
+            if (dest.exists())
+                dest.delete();
+            Assert.assertTrue("dest file does not exist before download", !dest.exists());
+            HttpDownload dl = new HttpDownload(src, dest);
+            dl.setOverwrite(true);
+            dl.run();
+            Assert.assertEquals("response code", 200, dl.getResponseCode());
+            File out = dl.getFile();
+            Assert.assertNotNull("result file", out);
+            Assert.assertTrue("dest file exists after download", out.exists());
+            Assert.assertTrue("dest file size > 0", out.length() > 0);
+        }
+        catch (Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
 
-        try {
+    @Test
+    public void testDownloadFileToDir() throws Exception
+    {
+        log.debug("TEST: testDownloadFileToDir");
+        URL src = okURL;
+        File dest = tmpDir;
+        try
+        {
+            HttpDownload dl = new HttpDownload(src, dest);
+            dl.setOverwrite(true);
+            dl.run();
+            Assert.assertEquals("response code", 200, dl.getResponseCode());
+            File out = dl.getFile();
+            Assert.assertNotNull("result file", out);
+            Assert.assertTrue("dest file exists after download", out.exists());
+            Assert.assertTrue("dest file size > 0", out.length() > 0);
+            Assert.assertEquals("filename", "opencadc.gradle", out.getName());
+        }
+        catch (Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+        finally
+        {
+            if (dest != null)
+                dest.delete();
+        }
+    }
+
+    @Test
+    public void testDownloadFileWithCreateDir() throws Exception
+    {
+        log.debug("TEST: testDownloadFileWithCreateDir");
+        URL src = okURL;
+        File base = new File(tmpDir, HttpDownloadTest.class.getSimpleName());
+        File dest = new File(base, "bar/baz/robots.txt");
+        try
+        {
+            FileUtil.delete(base, true);
+            Assert.assertTrue("base dir does not exist before download", !base.exists());
+            HttpDownload dl = new HttpDownload(src, dest);
+            dl.setOverwrite(true);
+            dl.run();
+            Assert.assertEquals("response code", 200, dl.getResponseCode());
+            File out = dl.getFile();
+            Assert.assertNotNull("result file", out);
+            Assert.assertTrue("dest file exists after download", out.exists());
+            Assert.assertTrue("dest file size > 0", out.length() > 0);
+            Assert.assertEquals("filename", "robots.txt", out.getName());
+            File p = out.getParentFile();
+            Assert.assertEquals("dirname", "baz", p.getName());
+            p = p.getParentFile();
+            Assert.assertEquals("dirname", "bar", p.getName());
+        }
+        catch (Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+        finally
+        {
+            if (base != null)
+                FileUtil.delete(base, true);
+        }
+    }
+
+    @Test
+    public void testDownloadFileToRelativeFile() throws Exception
+    {
+        log.debug("TEST: testDownloadFileToRelativeFile");
+        URL src = okURL;
+        File dest = new File("robots.txt");
+        dest.deleteOnExit();
+        try
+        {
+            // relative fails if file does not exist
+            if (dest.exists())
+                dest.delete();
+            Assert.assertTrue("dest file does not exist before download", !dest.exists());
+            HttpDownload dl = new HttpDownload(src, dest);
+            Assert.fail("expected IllegalArgumentException");
+        }
+        catch(IllegalArgumentException expected)
+        {
+            log.debug("caught expected: " + expected);
+        }
+        catch (Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+
+    @Test
+    public void testDownloadFileToRelativeDir() throws Exception
+    {
+        log.debug("TEST: testDownloadFileToRelativeDir");
+        URL src = okURL;
+        File dest = new File("build/tmp");
+        File out = null;
+        try
+        {
+            HttpDownload dl = new HttpDownload(src, dest);
+            dl.setOverwrite(true);
+            dl.run();
+            Assert.assertEquals("response code", 200, dl.getResponseCode());
+            out = dl.getFile();
+            Assert.assertNotNull("result file", out);
+            Assert.assertTrue("dest file exists after download", out.exists());
+            Assert.assertTrue("dest file size > 0", out.length() > 0);
+        }
+        catch (Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+        finally
+        {
+            if (out != null)
+                out.delete();
+        }
+    }
+
+    @Test
+    public void testDownloadToOutputStream() throws Exception
+    {
+        log.debug("TEST: testDownloadToOutputStream");
+        
+        try
+        {
             URL src = okURL;
             ByteArrayOutputStream dest = new ByteArrayOutputStream(8192);
-            HttpGet dl = new HttpGet(src, dest);
+            HttpDownload dl = new HttpDownload(src, dest);
             dl.run();
             dest.close();
             byte[] out = dest.toByteArray();
             Assert.assertEquals("response code", 200, dl.getResponseCode());
+            Assert.assertNull(dl.getFile());
             Assert.assertNotNull("dest stream after download", out);
             Assert.assertTrue("size > 0", out.length > 0);
             Assert.assertNotNull(dl.getContentType());
             Assert.assertTrue("content-length > 0", dl.getContentLength() > 0);
             Assert.assertEquals("size == content-length", out.length, dl.getContentLength());
-        } catch (Exception unexpected) {
+        }
+        catch (Exception unexpected)
+        {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
     @Test
-    public void testDownloadToInputStreamWrapper() throws Exception {
+    public void testDownloadToInputStreamWrapper() throws Exception
+    {
         log.debug("TEST: testDownloadToInputStreamWrapper");
 
-        try {
+        try
+        {
             URL src = okURL;
             ByteArrayOutputStream dest = new ByteArrayOutputStream(8192);
             TestWrapper tw = new TestWrapper(dest);
-            HttpGet dl = new HttpGet(src, tw);
+            HttpDownload dl = new HttpDownload(src, tw);
             dl.run();
             dest.close();
             byte[] out = dest.toByteArray();
             Assert.assertEquals("response code", 200, dl.getResponseCode());
+            Assert.assertNull(dl.getFile());
             Assert.assertNotNull("dest stream after download", out);
             Assert.assertTrue("size > 0", out.length > 0);
             Assert.assertNotNull(dl.getContentType());
             Assert.assertTrue("content-length > 0", dl.getContentLength() > 0);
             Assert.assertEquals("size == content-length", out.length, dl.getContentLength());
-        } catch (Exception unexpected) {
+        }
+        catch (Exception unexpected)
+        {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
-
-    private class TestWrapper implements InputStreamWrapper {
-
+    private class TestWrapper implements InputStreamWrapper
+    {
         OutputStream dest;
-
-        TestWrapper(OutputStream dest) {
+        TestWrapper(OutputStream dest)
+        {
             this.dest = dest;
         }
-
         public void read(InputStream in)
-                throws IOException {
+            throws IOException
+        {
             byte[] buf = new byte[2048];
             int n = in.read(buf);
-            while (n != -1) {
+            while(n != -1)
+            {
                 dest.write(buf, 0, n);
                 n = in.read(buf);
             }
@@ -240,51 +366,97 @@ public class HttpGetTest {
     }
 
     @Test
-    public void testDownloadWithCustomRequestProperty() throws Exception {
+    public void testDownloadWithCustomRequestProperty() throws Exception
+    {
         log.debug("TEST: testCustomRequestProperty");
 
-        try {
+        try
+        {
             URL src = okURL;
             ByteArrayOutputStream dest = new ByteArrayOutputStream(8192);
-            HttpGet dl = new HttpGet(src, dest);
+            HttpDownload dl = new HttpDownload(src, dest);
             dl.setRequestProperty("X-Custom-Prop", "hello");
             dl.run();
             dest.close();
             byte[] out = dest.toByteArray();
             Assert.assertEquals("response code", 200, dl.getResponseCode());
+            Assert.assertNull(dl.getFile());
             Assert.assertNotNull("dest stream after download", out);
             Assert.assertTrue("size > 0", out.length > 0);
-        } catch (Exception unexpected) {
+        }
+        catch (Exception unexpected)
+        {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
     @Test
-    public void testPrepareNotFound() throws Exception {
-        log.debug("TEST: testPrepareNotFound");
+    public void testResumeDownload() throws Exception
+    {
+        log.debug("TEST: testResumeDownload");
+        URL src = okURL;
+        File part = new File(tmpDir, "robots.txt.part");
+        File dest = new File(tmpDir, "robots.txt");
+        try
+        {
+            if (part.exists())
+                part.delete();
+            Assert.assertTrue("part file does not exist before download", !part.exists());
 
-        try {
-            URL src = notFoundURL;
-            HttpGet dl = new HttpGet(src, true);
-            dl.prepare();
-            Assert.fail("expected ResourceNotFoundException, got: " + dl.getResponseCode());
-        } catch (ResourceNotFoundException expected) {
-            log.info("caught expected: " + expected);
-        } catch (Exception unexpected) {
+            if (dest.exists())
+                dest.delete();
+            Assert.assertTrue("dest file does not exist before download", !dest.exists());
+
+            // get the whole file and keep part of it
+            ByteArrayOutputStream bos = new ByteArrayOutputStream(8192);
+            HttpDownload dl = new HttpDownload(src, bos);
+            dl.run();
+            bos.close();
+            byte[] data = bos.toByteArray();
+            int len = data.length/2;
+            Assert.assertTrue("partial bytes", (len > 0));
+            Assert.assertNotNull("dest stream after download", data);
+            Assert.assertTrue("size > 0", data.length > 0);
+            FileOutputStream fos = new FileOutputStream(part);
+            fos.write(data, 0, len); // write half of it
+            fos.close();
+            log.debug("part file length: " + part.length());
+            Assert.assertTrue("part file exist after partial download", part.exists());
+            Assert.assertTrue("part file has right number of bytes", (part.length() == len));
+
+            dl = new HttpDownload(src, dest);
+            dl.run();
+            File out = dl.getFile();
+            Assert.assertNotNull("result file", out);
+            Assert.assertTrue("dest file exists after download", out.exists());
+            Assert.assertEquals("dest file size", data.length, out.length());
+            Assert.assertTrue("part file does not exists after download", !part.exists());
+        }
+        catch (Exception unexpected)
+        {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
+        finally
+        {
+            if (part != null)
+                part.delete();
+            if (dest != null)
+                dest.delete();
+        }
     }
-
+    
     @Test
-    public void testDownloadNotFound() throws Exception {
+    public void testDownloadNotFound() throws Exception
+    {
         log.debug("TEST: testDownloadNotFound");
 
-        try {
+        try
+        {
             URL src = notFoundURL;
             ByteArrayOutputStream dest = new ByteArrayOutputStream(8192);
-            HttpGet dl = new HttpGet(src, dest);
+            HttpDownload dl = new HttpDownload(src, dest);
             dl.run();
             Throwable t = dl.getThrowable();
             Assert.assertEquals("response code", 404, dl.getResponseCode());
@@ -292,44 +464,34 @@ public class HttpGetTest {
             Assert.assertTrue("throwable should be ResourceNotFoundException", t instanceof ResourceNotFoundException);
             log.debug("found expected exception: " + t.toString());
             //Assert.assertTrue(t.getMessage().startsWith("not found"));
-        } catch (Exception unexpected) {
+        }
+        catch (Exception unexpected)
+        {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
-
+    
     @Test
-    public void testPreparePermissionDenied() throws Exception {
-        log.debug("TEST: testPreparePermissionDenied");
-
-        try {
-            URL src = permissionDeniedURL;
-            HttpGet dl = new HttpGet(src, true);
-            dl.prepare();
-            Assert.fail("expected AccessControlException, got: " + dl.getResponseCode());
-        } catch (AccessControlException expected) {
-            log.info("caught expected: " + expected);
-        } catch (Exception unexpected) {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
-    }
-
-    @Test
-    public void testDownloadPermissionDenied() throws Exception {
+    public void testDownloadPermissionDenied() throws Exception
+    {
         log.debug("TEST: testDownloadPermissionDenied");
 
-        try {
+        try
+        {
             URL src = permissionDeniedURL;
             ByteArrayOutputStream dest = new ByteArrayOutputStream(8192);
-            HttpGet dl = new HttpGet(src, dest);
+            HttpDownload dl = new HttpDownload(src, dest);
             dl.run();
-            Assert.assertEquals("response code", 403, dl.getResponseCode());
             Throwable t = dl.getThrowable();
-            log.debug("found exception: " + t);
+            Assert.assertEquals("response code", 403, dl.getResponseCode());
             Assert.assertNotNull(t);
             Assert.assertTrue("throwable should be AccessControlException", t instanceof AccessControlException);
-        } catch (Exception unexpected) {
+            log.debug("found expected exception: " + t.toString());
+            //Assert.assertTrue(t.getMessage().startsWith("permission denied"));
+        }
+        catch (Exception unexpected)
+        {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
