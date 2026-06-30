@@ -105,8 +105,8 @@ public class HttpDownloadTest
     }
 
     public HttpDownloadTest() throws Exception {
-        this.okURL = new URL("https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/robots.txt");
-        this.resumableURL = new URL("https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/robots.txt");
+        this.okURL = new URL("https://raw.githubusercontent.com/opencadc/core/refs/heads/main/opencadc.gradle");
+        this.resumableURL = okURL;
         this.redirectURL = new URL("https://httpbin.org/redirect?url=" + okURL);
         this.permissionDeniedURL = new URL("https://httpbin.org/status/403");
         this.notFoundURL = new URL("https://httpbin.org/status/404");
@@ -180,7 +180,7 @@ public class HttpDownloadTest
             Assert.assertNotNull("result file", out);
             Assert.assertTrue("dest file exists after download", out.exists());
             Assert.assertTrue("dest file size > 0", out.length() > 0);
-            Assert.assertEquals("filename", "robots.txt", out.getName());
+            Assert.assertEquals("filename", "opencadc.gradle", out.getName());
         }
         catch (Exception unexpected)
         {

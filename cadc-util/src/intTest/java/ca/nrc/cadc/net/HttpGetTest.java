@@ -104,7 +104,7 @@ public class HttpGetTest {
     }
 
     public HttpGetTest() throws Exception {
-        this.okURL = new URL("https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/robots.txt");
+        this.okURL = new URL("https://raw.githubusercontent.com/opencadc/core/refs/heads/main/opencadc.gradle");
         this.permissionDeniedURL = new URL("https://httpbin.org/status/403");
         this.notFoundURL = new URL("https://httpbin.org/status/404");
 
