@@ -101,7 +101,19 @@ public class HttpUpload extends HttpTransfer {
     private InputStream istream;
     private OutputStreamWrapper wrapper;
     private FileContent fileContent;
-    
+    private HttpURLConnection conn;
+    private boolean isCallerDriven = false;
+
+    /**
+     * Construct an HttpUpload for caller-driven mode.
+     * Usage: Write to getOutputStream(), then call finish() to close the connection.
+     * Note: run() or prepare() can't be used with this constructor because nothing is provided upfront to write.
+     */
+    public HttpUpload(URL url) {
+        super(url, false);
+        isCallerDriven = true;
+    }
+
     public HttpUpload(File src, URL dest) {
         super(dest, false);
         this.localFile = src;
@@ -225,6 +237,9 @@ public class HttpUpload extends HttpTransfer {
             TransientException, IOException, InterruptedException,
             RangeNotSatisfiableException {
         boolean ok = false;
+        if (isCallerDriven) {
+            throw new IllegalStateException("prepare() not allowed for caller-driven mode");
+        }
         try {
             doActionWithRetryLoop();
             ok = true;
@@ -243,6 +258,9 @@ public class HttpUpload extends HttpTransfer {
             ResourceAlreadyExistsException, ResourceNotFoundException, 
             TransientException, IOException, InterruptedException {
         log.debug(this.toString());
+        if (isCallerDriven) {
+            throw new IllegalStateException("run() not allowed for caller-driven mode");
+        }
         if (!go) {
             return; // cancelled while queued, event notification handled in terminate()
         }
@@ -253,21 +271,9 @@ public class HttpUpload extends HttpTransfer {
 
             fireEvent(TransferEvent.CONNECTING);
 
-            HttpURLConnection conn = (HttpURLConnection) this.remoteURL.openConnection();
-            super.setRequestOptions(conn);
-            conn.setRequestMethod("PUT");
-            conn.setUseCaches(false);
-            conn.setDoInput(true);
-            conn.setDoOutput(true);
-        
-            setRequestHeaders(conn);
-            setRequestAuthHeaders(conn);
-            if (conn instanceof HttpsURLConnection) {
-                HttpsURLConnection sslConn = (HttpsURLConnection) conn;
-                initHTTPS(sslConn);
-            }
+            openConnection();
 
-            doPut(conn);
+            doPut();
             this.responseStream = conn.getInputStream();
             log.debug("completed");
             fireEvent(TransferEvent.COMPLETED);
@@ -286,7 +292,7 @@ public class HttpUpload extends HttpTransfer {
         }
     }
 
-    private void doPut(HttpURLConnection conn)
+    private void doPut()
         throws AccessControlException, NotAuthenticatedException,
             ByteLimitExceededException, ExpectationFailedException, 
             IllegalArgumentException, PreconditionFailedException, 
@@ -368,5 +374,64 @@ public class HttpUpload extends HttpTransfer {
         }
 
         checkErrors(remoteURL, conn);
+    }
+
+    /**
+     * Open the upload connection and return the OutputStream to write the
+     * request body to.
+     * This method opens the connection immediately.
+     * Use this instead of run() when you want to write to the connection
+     * directly rather than supplying an InputStream up front.
+     *
+     * @return the OutputStream of the underlying HttpURLConnection
+     * @throws IOException if the connection cannot be opened
+     */
+    public OutputStream getOutputStream() throws IOException {
+        if (!isCallerDriven) {
+            throw new IllegalStateException("Caller-driven mode is off for this HttpUpload instance. Use run() or prepare() instead.");
+        }
+        if (conn == null) {
+            openConnection();
+        }
+        return conn.getOutputStream();
+    }
+
+    private void openConnection() throws IOException {
+        conn = (HttpURLConnection) this.remoteURL.openConnection();
+        super.setRequestOptions(conn);
+        conn.setRequestMethod("PUT");
+        conn.setUseCaches(false);
+        conn.setDoInput(true);
+        conn.setDoOutput(true);
+
+        setRequestHeaders(conn);
+        setRequestAuthHeaders(conn);
+        if (conn instanceof HttpsURLConnection) {
+            HttpsURLConnection sslConn = (HttpsURLConnection) conn;
+            initHTTPS(sslConn);
+        }
+    }
+
+    /**
+     * Note: Must only be called after getOutputStream() and after the stream has been
+     * closed. Must not be called if run() or prepare() was used instead.
+     *
+     * @throws IllegalStateException if connection is not open
+     * @throws IOException on network errors reading the response
+     */
+    public void finish() throws AccessControlException, NotAuthenticatedException,
+            ExpectationFailedException, IllegalArgumentException,
+            PreconditionFailedException, ResourceAlreadyExistsException, ResourceNotFoundException,
+            TransientException, IOException, InterruptedException, RangeNotSatisfiableException {
+        if (conn == null) {
+            throw new IllegalStateException("no connection to close");
+        }
+        try {
+            checkErrors(remoteURL, conn);
+        } finally {
+            conn.disconnect();
+            conn = null;
+        }
+
     }
 }
