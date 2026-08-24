@@ -89,6 +89,9 @@ public class AuthorizationToken {
     // scopes present in the token
     private List<String> scopes = new ArrayList<>();
     
+    // audiences present in the token
+    private List<String> audience = new ArrayList<>();
+    
     /**
      * Standard contructor.
      * 
@@ -116,6 +119,10 @@ public class AuthorizationToken {
         if (scopes != null) {
             this.scopes.addAll(scopes);
         }
+    }
+
+    public List<String> getAudience() {
+        return audience;
     }
     
     /**
