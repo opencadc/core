@@ -139,7 +139,9 @@ public class TokenValidatorTest {
             AuthorizationToken authToken = subject.getPublicCredentials(AuthorizationToken.class).iterator().next();
             Assert.assertEquals("bearer token type", AuthenticationUtil.CHALLENGE_TYPE_BEARER, authToken.getType());
             Assert.assertEquals("bearer token value", value, authToken.getCredentials());
-            Assert.assertEquals("bearer token scope", "the:scope", authToken.getScope().toString());
+            Assert.assertFalse(authToken.getScopes().isEmpty());
+            String authTokenScope = authToken.getScopes().get(0);
+            Assert.assertEquals("bearer token scope", "the:scope", authTokenScope);
             Assert.assertEquals("token principal", 0, subject.getPrincipals(AuthorizationTokenPrincipal.class).size());
             
             // ivoa tokens

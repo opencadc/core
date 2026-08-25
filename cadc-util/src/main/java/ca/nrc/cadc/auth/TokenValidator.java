@@ -138,7 +138,8 @@ public class TokenValidator {
                             subject.getPrincipals().addAll(validatedToken.getIdentityPrincipals());
 
                             AuthorizationToken authToken = new AuthorizationToken(
-                                    challengeType, credentials, validatedToken.getDomains(), validatedToken.getScope());
+                                    challengeType, credentials, validatedToken.getDomains());
+                            authToken.getScopes().add(validatedToken.getScope().toASCIIString());
 
                             log.debug("Adding token credential to subject, removing token principal");
                             subject.getPublicCredentials().add(authToken);

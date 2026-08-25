@@ -68,6 +68,7 @@
 package ca.nrc.cadc.auth;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -83,26 +84,26 @@ public class AuthorizationToken {
     private String credentials;
     
     // Domain-level scope.
-    private List<String> domains;
+    private List<String> domains = new ArrayList<>();
     
-    // Application-level scope.
-    private URI scope;
+    // scopes present in the token
+    private List<String> scopes = new ArrayList<>();
+    
+    // audiences present in the token
+    private List<String> audience = new ArrayList<>();
     
     /**
-     * Contructor.
+     * Standard contructor.
+     * 
      * @param type The type of the token. (eg, Bearer)
      * @param credentials The token credentials.
+     * @param domains one or more internet domains/server names where the token can be sent
      */
     public AuthorizationToken(String type, String credentials, List<String> domains) {
         this(type, credentials, domains, null);
     }
-    
-    /**
-     * Contructor.
-     * @param type The type of the token. (eg, Bearer)
-     * @param credentials The token credentials.
-     */
-    public AuthorizationToken(String type, String credentials, List<String> domains, URI scope) {
+
+    private AuthorizationToken(String type, String credentials, List<String> domains, List<String> scopes) {
         if (type == null) {
             throw new IllegalArgumentException("type required");
         }
@@ -114,8 +115,22 @@ public class AuthorizationToken {
         }
         this.type = type;
         this.credentials = credentials;
-        this.domains = domains;
-        this.scope = scope;
+        this.domains.addAll(domains);
+        if (scopes != null) {
+            this.scopes.addAll(scopes);
+        }
+    }
+
+    public List<String> getAudience() {
+        return audience;
+    }
+    
+    /**
+     * List of scopes for this token.
+     * @return 
+     */
+    public List<String> getScopes() {
+        return scopes;
     }
     
     /**
@@ -143,19 +158,11 @@ public class AuthorizationToken {
     }
     
     /**
-     * Scope getter.
-     * @return The scope.
-     */
-    public URI getScope() {
-        return scope;
-    }
-    
-    /**
      * String output.
      */
     @Override
     public String toString() {
-        return "AuthorizationToken[type=[" + type + "],domains=" + domains + ", scope=[" + scope + "]]";
+        return "AuthorizationToken[type=[" + type + "],domains=" + domains + "]";
     }
 
 }
